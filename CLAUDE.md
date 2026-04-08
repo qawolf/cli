@@ -7,6 +7,6 @@ Path-scoped rules are in `.claude/rules/` and load automatically when editing ma
 After editing a file, run:
 
 ```bash
-bunx eslint --fix <file>
-bunx prettier --write <file>
+bun run lint:fix
+bun run format
 ```
