@@ -26,5 +26,6 @@ Thumbs.db
 # Bun
 bun.lockb
 
-# Claude Code local settings
-.claude/settings.local.json
+# Local overrides
+*.local.md
+*.local.json
