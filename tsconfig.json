@@ -7,7 +7,8 @@
     "outDir": "dist",
     "rootDir": "src",
     "noEmit": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "types": ["bun-types"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
