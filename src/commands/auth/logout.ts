@@ -34,12 +34,12 @@ export async function handleLogout(
         task: () => deleteApiKey(ctx.configDir),
       },
     ],
-    () => authCopy.logout.success,
+    () => "Credentials removed",
   );
-
-  ctx.ui.output({ loggedOut: true }, authCopy.logout.success);
 
   if (ctx.ui.mode === "human") {
     ctx.ui.outro(authCopy.logout.success);
+  } else {
+    ctx.ui.output({ loggedOut: true }, authCopy.logout.success);
   }
 }

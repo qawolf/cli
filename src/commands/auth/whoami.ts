@@ -14,10 +14,14 @@ export async function handleWhoami(
 
   ctx.ui.gap();
   ctx.ui.intro(authCopy.title);
-  ctx.ui.note(`Source: ${resolved.source}`, authCopy.whoamiAuthenticated);
-  ctx.ui.output(
-    { authenticated: true, source: resolved.source },
-    `Authenticated (source: ${resolved.source})`,
-  );
-  ctx.ui.outro(authCopy.outroReady);
+
+  if (ctx.ui.mode === "human") {
+    ctx.ui.note(`Source: ${resolved.source}`, authCopy.whoamiAuthenticated);
+    ctx.ui.outro(authCopy.outroReady);
+  } else {
+    ctx.ui.output(
+      { authenticated: true, source: resolved.source },
+      `Authenticated (source: ${resolved.source})`,
+    );
+  }
 }
