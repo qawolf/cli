@@ -1,6 +1,7 @@
 import type { StyledClack } from "../clack/index.js";
 import type { OutputMode } from "../env.js";
 import { formatCIError } from "./formatters/ci.js";
+import { writeJsonDiagnostic } from "./write.js";
 
 type ErrorDeps = { mode: OutputMode; clack: StyledClack };
 
@@ -17,9 +18,7 @@ export function createError({
         process.stderr.write(formatCIError(title, body));
         break;
       case "json":
-        process.stderr.write(
-          JSON.stringify({ type: "error", title, body }) + "\n",
-        );
+        writeJsonDiagnostic({ type: "error", title, body });
         break;
     }
   };

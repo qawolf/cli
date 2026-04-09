@@ -1,5 +1,6 @@
 import type { StyledClack } from "../clack/index.js";
 import type { OutputMode } from "../env.js";
+import { writeJsonDiagnostic, writeStderrLine } from "./write.js";
 
 type OutroDeps = { mode: OutputMode; clack: StyledClack };
 
@@ -13,10 +14,10 @@ export function createOutro({
         clack.outro(message);
         break;
       case "agent":
-        process.stderr.write(`${message}\n`);
+        writeStderrLine(message);
         break;
       case "json":
-        process.stderr.write(JSON.stringify({ type: "outro", message }) + "\n");
+        writeJsonDiagnostic({ type: "outro", message });
         break;
     }
   };

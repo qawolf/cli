@@ -1,5 +1,6 @@
 import type { StyledClack } from "../clack/index.js";
 import type { OutputMode } from "../env.js";
+import { writeJsonDiagnostic, writeStderrLine } from "./write.js";
 
 type NoteDeps = { mode: OutputMode; clack: StyledClack };
 
@@ -13,12 +14,10 @@ export function createNote({
         clack.note(message, title);
         break;
       case "agent":
-        process.stderr.write(`${title ? `${title}: ` : ""}${message}\n`);
+        writeStderrLine(`${title ? `${title}: ` : ""}${message}`);
         break;
       case "json":
-        process.stderr.write(
-          JSON.stringify({ type: "note", title, message }) + "\n",
-        );
+        writeJsonDiagnostic({ type: "note", title, message });
         break;
     }
   };

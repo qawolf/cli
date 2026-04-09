@@ -1,5 +1,6 @@
 import type { StyledClack } from "../clack/index.js";
 import type { OutputMode } from "../env.js";
+import { writeJsonDiagnostic, writeStderrLine } from "./write.js";
 
 type SuccessDeps = { mode: OutputMode; clack: StyledClack };
 
@@ -13,12 +14,10 @@ export function createSuccess({
         clack.log.success(message);
         break;
       case "agent":
-        process.stderr.write(`${message}\n`);
+        writeStderrLine(message);
         break;
       case "json":
-        process.stderr.write(
-          JSON.stringify({ type: "success", message }) + "\n",
-        );
+        writeJsonDiagnostic({ type: "success", message });
         break;
     }
   };

@@ -1,5 +1,6 @@
 import type { StyledClack } from "../clack/index.js";
 import type { OutputMode } from "../env.js";
+import { writeJsonDiagnostic, writeStderrLine } from "./write.js";
 
 export interface ProgressStep<T = unknown> {
   message: string;
@@ -50,28 +51,24 @@ export function createWithProgress({
       }
       case "agent": {
         for (const step of steps) {
-          process.stderr.write(`${step.message}\n`);
+          writeStderrLine(step.message);
           results.push(await step.task());
         }
 
         const typed = results as InferStepResults<typeof steps>;
         const doneMessage = typeof done === "function" ? done(typed) : done;
-        process.stderr.write(`${doneMessage}\n`);
+        writeStderrLine(doneMessage);
         return typed;
       }
       case "json": {
         for (const step of steps) {
-          process.stderr.write(
-            JSON.stringify({ type: "step", message: step.message }) + "\n",
-          );
+          writeJsonDiagnostic({ type: "step", message: step.message });
           results.push(await step.task());
         }
 
         const typed = results as InferStepResults<typeof steps>;
         const doneMessage = typeof done === "function" ? done(typed) : done;
-        process.stderr.write(
-          JSON.stringify({ type: "success", message: doneMessage }) + "\n",
-        );
+        writeJsonDiagnostic({ type: "success", message: doneMessage });
         return typed;
       }
     }

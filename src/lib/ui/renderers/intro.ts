@@ -1,5 +1,6 @@
 import type { StyledClack } from "../clack/index.js";
 import type { OutputMode } from "../env.js";
+import { writeJsonDiagnostic, writeStderrLine } from "./write.js";
 
 type IntroDeps = { mode: OutputMode; clack: StyledClack };
 
@@ -13,10 +14,10 @@ export function createIntro({
         clack.intro(title);
         break;
       case "agent":
-        process.stderr.write(`${title}\n`);
+        writeStderrLine(title);
         break;
       case "json":
-        process.stderr.write(JSON.stringify({ type: "intro", title }) + "\n");
+        writeJsonDiagnostic({ type: "intro", title });
         break;
     }
   };

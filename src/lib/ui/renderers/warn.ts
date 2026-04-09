@@ -1,5 +1,6 @@
 import type { StyledClack } from "../clack/index.js";
 import type { OutputMode } from "../env.js";
+import { writeJsonDiagnostic, writeStderrLine } from "./write.js";
 
 type WarnDeps = { mode: OutputMode; clack: StyledClack };
 
@@ -13,10 +14,10 @@ export function createWarn({
         clack.log.warn(message);
         break;
       case "agent":
-        process.stderr.write(`${message}\n`);
+        writeStderrLine(message);
         break;
       case "json":
-        process.stderr.write(JSON.stringify({ type: "warn", message }) + "\n");
+        writeJsonDiagnostic({ type: "warn", message });
         break;
     }
   };

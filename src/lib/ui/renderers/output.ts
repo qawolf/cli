@@ -1,6 +1,6 @@
 import type { StyledClack } from "../clack/index.js";
 import type { OutputMode } from "../env.js";
-import { writeJsonLine } from "./json.js";
+import { writeJsonLine, writeStderrLine } from "./write.js";
 
 type OutputDeps = { mode: OutputMode; clack: StyledClack };
 
@@ -17,7 +17,7 @@ export function createOutput({
         writeJsonLine(data);
         break;
       case "agent":
-        process.stderr.write(`${humanMessage}\n`);
+        writeStderrLine(humanMessage);
         break;
     }
   };
