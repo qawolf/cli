@@ -8,10 +8,18 @@ import { authCopy } from "../../lib/copy/index.js";
 import { errorMessage } from "../../lib/errors.js";
 
 export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
+  if (ctx.ui.mode !== "human") {
+    ctx.ui.error(authCopy.login.nonInteractive);
+    return { error: "non-interactive" };
+  }
+
   const existing = await resolveApiKey(ctx.configDir);
   if (existing) {
-    ctx.ui.info(authCopy.alreadyConfigured);
-    return;
+    const reauth = await ctx.ui.confirm(authCopy.login.reAuthPrompt);
+    if (!reauth.ok || !reauth.value) {
+      ctx.ui.info(authCopy.alreadyConfigured);
+      return;
+    }
   }
 
   ctx.ui.gap();

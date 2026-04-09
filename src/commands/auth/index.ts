@@ -1,7 +1,8 @@
 import type { Command } from "commander";
 
 import { withContext } from "../../lib/context.js";
-import { handleAuth } from "./auth.js";
+import { handleLogin } from "./login.js";
+import { handleLogout } from "./logout.js";
 import { handleWhoami } from "./whoami.js";
 
 export function registerAuthCommand(program: Command): void {
@@ -9,7 +10,15 @@ export function registerAuthCommand(program: Command): void {
     .command("auth")
     .description("Manage authentication with QA Wolf");
 
-  auth.action(withContext(handleAuth));
+  auth
+    .command("login")
+    .description("Authenticate with your QA Wolf API key")
+    .action(withContext(handleLogin));
+
+  auth
+    .command("logout")
+    .description("Remove stored credentials")
+    .action(withContext(handleLogout));
 
   auth
     .command("whoami")
