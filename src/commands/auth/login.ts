@@ -17,7 +17,10 @@ export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
   ctx.ui.gap();
   ctx.ui.intro(authCopy.title);
 
-  const result = await ctx.ui.password(authCopy.promptApiKey);
+  const result = await ctx.ui.password(
+    authCopy.promptApiKey,
+    "Set QAWOLF_API_KEY to authenticate in non-interactive environments.",
+  );
   if (!result.ok) {
     ctx.ui.cancel(authCopy.cancelled);
     return;

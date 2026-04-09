@@ -53,23 +53,36 @@ describe("createPassword", () => {
   });
 
   describe("json mode", () => {
-    it("throws because interactive input is required", async () => {
+    it("throws with base message when no hint is provided", async () => {
       const clack = makeClack();
       const password = createPassword({ mode: "json", clack });
 
       await expect(password("Enter API key")).rejects.toThrow(
-        "ctx.password() requires human mode (current: json)",
+        "This command requires an interactive terminal.",
+      );
+    });
+
+    it("throws with hint when provided", async () => {
+      const clack = makeClack();
+      const password = createPassword({ mode: "json", clack });
+
+      await expect(
+        password("Enter API key", "Set QAWOLF_API_KEY instead."),
+      ).rejects.toThrow(
+        "This command requires an interactive terminal. Set QAWOLF_API_KEY instead.",
       );
     });
   });
 
   describe("agent mode", () => {
-    it("throws because interactive input is required", async () => {
+    it("throws with hint when provided", async () => {
       const clack = makeClack();
       const password = createPassword({ mode: "agent", clack });
 
-      await expect(password("Enter API key")).rejects.toThrow(
-        "ctx.password() requires human mode (current: agent)",
+      await expect(
+        password("Enter API key", "Set QAWOLF_API_KEY instead."),
+      ).rejects.toThrow(
+        "This command requires an interactive terminal. Set QAWOLF_API_KEY instead.",
       );
     });
   });

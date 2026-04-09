@@ -8,9 +8,15 @@ type PasswordDeps = { mode: OutputMode; clack: StyledClack };
 export function createPassword({
   mode,
   clack,
-}: PasswordDeps): (message: string) => Promise<PromptResult<string>> {
-  return async (message: string): Promise<PromptResult<string>> => {
-    assertHumanMode(mode, "password");
+}: PasswordDeps): (
+  message: string,
+  hint?: string,
+) => Promise<PromptResult<string>> {
+  return async (
+    message: string,
+    hint?: string,
+  ): Promise<PromptResult<string>> => {
+    assertHumanMode(mode, hint);
     const value = await clack.password({ message });
     if (clack.isCancel(value)) return { ok: false };
     return { ok: true, value };

@@ -4,22 +4,20 @@ import { assertHumanMode } from "./assertHumanMode.js";
 
 describe("assertHumanMode", () => {
   it("does not throw when mode is human", () => {
-    expect(() => assertHumanMode("human", "someMethod")).not.toThrow();
+    expect(() => assertHumanMode("human")).not.toThrow();
   });
 
-  it("throws with descriptive message when mode is json", () => {
-    expect(() => assertHumanMode("json", "someMethod")).toThrow(
-      "ctx.someMethod() requires human mode (current: json). This is a bug — the caller should check ctx.mode first.",
+  it("throws with base message when no hint is provided", () => {
+    expect(() => assertHumanMode("json")).toThrow(
+      "This command requires an interactive terminal.",
     );
   });
 
-  it("throws with descriptive message when mode is agent", () => {
-    expect(() => assertHumanMode("agent", "someMethod")).toThrow(
-      "ctx.someMethod() requires human mode (current: agent). This is a bug — the caller should check ctx.mode first.",
+  it("throws with hint appended when provided", () => {
+    expect(() =>
+      assertHumanMode("agent", "Set QAWOLF_API_KEY instead."),
+    ).toThrow(
+      "This command requires an interactive terminal. Set QAWOLF_API_KEY instead.",
     );
-  });
-
-  it("includes the method name in the error message", () => {
-    expect(() => assertHumanMode("json", "prompt")).toThrow("ctx.prompt()");
   });
 });
