@@ -16,7 +16,7 @@ export async function handleWhoami(
 
   if (ui.mode === "human") {
     ui.gap();
-    ui.intro(authCopy.whoamiTitle);
+    ui.intro(authCopy.title);
     ui.note(`Source: ${resolved.source}`, authCopy.whoamiAuthenticated);
     ui.outro(authCopy.outroReady);
   } else {

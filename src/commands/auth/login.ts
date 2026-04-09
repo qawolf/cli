@@ -19,15 +19,13 @@ export async function handleLogin(
   }
 
   ui.gap();
-  ui.intro(authCopy.introTitle);
+  ui.intro(authCopy.title);
 
   const result = await ui.password(authCopy.promptApiKey);
   if (!result.ok) {
     ui.cancel(authCopy.cancelled);
     return;
   }
-
-  let saveResult: SaveApiKeyResult | undefined;
 
   try {
     await ui.withProgress(
@@ -41,13 +39,12 @@ export async function handleLogin(
         },
         {
           message: authCopy.storing,
-          task: async () => {
-            saveResult = await saveApiKey(configDir, result.value);
-          },
+          task: async () => saveApiKey(configDir, result.value),
         },
       ],
-      () => {
-        return saveResult?.stored === "file"
+      (results) => {
+        const saveResult = results[1] as SaveApiKeyResult;
+        return saveResult.stored === "file"
           ? authCopy.storedFile
           : authCopy.storedKeychain;
       },

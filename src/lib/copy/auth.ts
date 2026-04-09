@@ -1,5 +1,5 @@
 export const authCopy = {
-  introTitle: "QA Wolf Authentication",
+  title: "QA Wolf Authentication",
   promptApiKey: "Paste your QA Wolf API Key",
   verifying: "Verifying API key",
   storing: "Storing API key securely",
@@ -9,7 +9,6 @@ export const authCopy = {
   alreadyConfigured: "API key configured.",
   outroReady: "Ready.",
   cancelled: "Setup cancelled.",
-  whoamiTitle: "QA Wolf Authentication",
   whoamiAuthenticated: "Authenticated",
   validationRequired: "API key is required",
   validationFailed: "API key is invalid. Check your key and try again.",
