@@ -1,7 +1,5 @@
-import { createStyledClack } from "../clack/index.js";
-import { type OutputFlags, detectOutputMode } from "../env.js";
-import type { UIContext } from "./types.js";
-
+import { createStyledClack } from "./clack/index.js";
+import { type OutputFlags, detectOutputMode } from "./env.js";
 import { createCancel } from "./renderers/cancel.js";
 import { createError } from "./renderers/error.js";
 import { createGap } from "./renderers/gap.js";
@@ -16,6 +14,7 @@ import { createStep } from "./renderers/step.js";
 import { createSuccess } from "./renderers/success.js";
 import { createWarn } from "./renderers/warn.js";
 import { createWithProgress } from "./renderers/withProgress.js";
+import type { UIContext } from "./types.js";
 
 export function createUI(flags: OutputFlags): UIContext {
   const mode = detectOutputMode(flags);

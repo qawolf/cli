@@ -1,6 +1,6 @@
-import type { StyledClack } from "../../clack/index.js";
-import type { OutputMode } from "../../env.js";
-import { assertHumanMode } from "../assertHumanMode.js";
+import type { StyledClack } from "../clack/index.js";
+import type { OutputMode } from "../env.js";
+import { assertHumanMode } from "./assertHumanMode.js";
 
 type StepDeps = { mode: OutputMode; clack: StyledClack };
 

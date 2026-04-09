@@ -1,10 +1,8 @@
-export {
-  type ProgressStep,
-  type PromptResult,
-  type UIContext,
-  createUI,
-} from "./context/index.js";
-export { formatCIError } from "./ci.js";
+export { createUI } from "./createUi.js";
+export type { PromptResult } from "./renderers/types.js";
+export type { ProgressStep, WithProgressFn } from "./renderers/withProgress.js";
+export type { UIContext } from "./types.js";
+export { formatCIError } from "./renderers/formatters/ci.js";
 export {
   type OutputFlags,
   type OutputMode,

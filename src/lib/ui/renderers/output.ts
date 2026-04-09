@@ -1,5 +1,5 @@
-import type { StyledClack } from "../../clack/index.js";
-import type { OutputMode } from "../../env.js";
+import type { StyledClack } from "../clack/index.js";
+import type { OutputMode } from "../env.js";
 import { writeJsonLine } from "./json.js";
 
 type OutputDeps = { mode: OutputMode; clack: StyledClack };

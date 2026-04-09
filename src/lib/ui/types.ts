@@ -1,13 +1,6 @@
-import type { OutputMode } from "../env.js";
-
-export type PromptResult<T> = { ok: true; value: T } | { ok: false };
-
-export interface ProgressStep {
-  message: string;
-  task: () => Promise<unknown>;
-}
-
-export type WithProgressDone = string | ((results: unknown[]) => string);
+import type { OutputMode } from "./env.js";
+import type { PromptResult } from "./renderers/types.js";
+import type { WithProgressFn } from "./renderers/withProgress.js";
 
 export interface UIContext {
   readonly mode: OutputMode;
@@ -20,10 +13,7 @@ export interface UIContext {
   note(message: string, title?: string): void;
   outro(message: string): void;
   password(message: string): Promise<PromptResult<string>>;
-  withProgress(
-    steps: ProgressStep[],
-    done: WithProgressDone,
-  ): Promise<unknown[]>;
+  withProgress: WithProgressFn;
   step(message: string): void;
   success(message: string): void;
   warn(message: string): void;

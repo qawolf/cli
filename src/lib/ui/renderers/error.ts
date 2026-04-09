@@ -1,6 +1,6 @@
-import type { StyledClack } from "../../clack/index.js";
-import { formatCIError } from "../../ci.js";
-import type { OutputMode } from "../../env.js";
+import type { StyledClack } from "../clack/index.js";
+import { formatCIError } from "./formatters/ci.js";
+import type { OutputMode } from "../env.js";
 
 type ErrorDeps = { mode: OutputMode; clack: StyledClack };
 

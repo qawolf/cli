@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { type StyledClack } from "../../clack/index.js";
+import { type StyledClack } from "../clack/index.js";
 import { createOutput } from "./output.js";
 
 function makeClack(): StyledClack {

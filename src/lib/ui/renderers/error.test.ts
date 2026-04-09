@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { type StyledClack } from "../../clack/index.js";
-import { formatCIError } from "../../ci.js";
+import { type StyledClack } from "../clack/index.js";
+import { formatCIError } from "./formatters/ci.js";
 import { createError } from "./error.js";
 
 function makeClack(): StyledClack {

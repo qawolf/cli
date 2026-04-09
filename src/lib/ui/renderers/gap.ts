@@ -1,4 +1,4 @@
-import type { OutputMode } from "../../env.js";
+import type { OutputMode } from "../env.js";
 
 type GapDeps = { mode: OutputMode };
 

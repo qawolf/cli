@@ -1,5 +1,5 @@
-import type { StyledClack } from "../../clack/index.js";
-import type { OutputMode } from "../../env.js";
+import type { StyledClack } from "../clack/index.js";
+import type { OutputMode } from "../env.js";
 
 type InfoDeps = { mode: OutputMode; clack: StyledClack };
 
