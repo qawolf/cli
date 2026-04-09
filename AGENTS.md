@@ -62,6 +62,7 @@ API clients live in `clients/` — one module per auth boundary. Command handler
 - Prefer `undefined` over `null`
 - Colocate types with their domain (`commands/flows/` exports `FlowListItem`, not a shared types dir)
 - Organize directories by meaning, not by shape
+- File names use camelCase (`resolveAuth.ts`, not `resolve-auth.ts`)
 
 ## After Editing
 
