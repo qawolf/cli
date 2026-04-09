@@ -1,10 +1,10 @@
 import type { Command } from "commander";
 
 import { getConfigDir } from "./paths.js";
-import { type OutputFlags, type UIContext, createUI } from "./ui/index.js";
+import { type OutputFlags, type UI, createUI } from "./ui/index.js";
 
 export type CommandContext = {
-  readonly ui: UIContext;
+  readonly ui: UI;
   readonly configDir: string;
 };
 

@@ -2,7 +2,7 @@ import type { OutputMode } from "./env.js";
 import type { PromptResult } from "./renderers/types.js";
 import type { WithProgressFn } from "./renderers/withProgress.js";
 
-export interface UIContext {
+export interface UI {
   readonly mode: OutputMode;
 
   // layout

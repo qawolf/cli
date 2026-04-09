@@ -14,9 +14,9 @@ import { createStep } from "./renderers/step.js";
 import { createSuccess } from "./renderers/success.js";
 import { createWarn } from "./renderers/warn.js";
 import { createWithProgress } from "./renderers/withProgress.js";
-import type { UIContext } from "./types.js";
+import type { UI } from "./types.js";
 
-export function createUI(flags: OutputFlags): UIContext {
+export function createUI(flags: OutputFlags): UI {
   const mode = detectOutputMode(flags);
   const clack = createStyledClack();
 
