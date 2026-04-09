@@ -12,6 +12,21 @@ export const authCopy = {
   whoamiAuthenticated: "Authenticated",
   validationRequired: "API key is required",
   validationFailed: "API key is invalid. Check your key and try again.",
+  login: {
+    nonInteractive:
+      "auth login requires an interactive terminal. Set the QAWOLF_API_KEY environment variable for CI authentication.",
+    reAuthPrompt: "You are already authenticated. Re-authenticate?",
+  },
+  logout: {
+    title: "Log Out",
+    confirmPrompt: "Are you sure you want to log out?",
+    notAuthenticated: "Not currently authenticated.",
+    envVarWarning:
+      "Credentials set via QAWOLF_API_KEY env var cannot be removed by this command. Unset the variable to log out.",
+    deleting: "Removing stored credentials",
+    success: "Logged out successfully.",
+    cancelled: "Logout cancelled.",
+  },
   ci: {
     errorTitle: "QA Wolf API key not found.",
     errorBody: [
