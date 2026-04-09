@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createWithProgress } from "./withProgress.js";
 
@@ -23,17 +23,60 @@ function createMockClack(spinner: MockSpinner): {
 }
 
 describe("createWithProgress", () => {
-  it("throws in non-human mode", async () => {
-    const spinner = createMockSpinner();
-    const clack = createMockClack(spinner);
-    const withProgress = createWithProgress({
-      mode: "json",
-      clack: clack as never,
-    });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-    await expect(
-      withProgress([{ message: "step", task: async () => "result" }], "done"),
-    ).rejects.toThrow("ctx.withProgress() requires human mode (current: json)");
+  describe("json mode", () => {
+    it("runs tasks and writes progress to stderr", async () => {
+      const stderrSpy = vi
+        .spyOn(process.stderr, "write")
+        .mockImplementation(() => true);
+      const spinner = createMockSpinner();
+      const clack = createMockClack(spinner);
+      const withProgress = createWithProgress({
+        mode: "json",
+        clack: clack as never,
+      });
+
+      const results = await withProgress(
+        [{ message: "step", task: async () => "result" }],
+        "done",
+      );
+
+      expect(results).toEqual(["result"]);
+      expect(stderrSpy).toHaveBeenCalledWith("  step\n");
+      expect(stderrSpy).toHaveBeenCalledWith("  done\n");
+      expect(spinner.start).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("agent mode", () => {
+    it("runs tasks and writes progress to stderr", async () => {
+      const stderrSpy = vi
+        .spyOn(process.stderr, "write")
+        .mockImplementation(() => true);
+      const spinner = createMockSpinner();
+      const clack = createMockClack(spinner);
+      const withProgress = createWithProgress({
+        mode: "agent",
+        clack: clack as never,
+      });
+
+      const results = await withProgress(
+        [
+          { message: "verifying", task: async () => "ok" },
+          { message: "storing", task: async () => "saved" },
+        ],
+        "All done!",
+      );
+
+      expect(results).toEqual(["ok", "saved"]);
+      expect(stderrSpy).toHaveBeenCalledWith("  verifying\n");
+      expect(stderrSpy).toHaveBeenCalledWith("  storing\n");
+      expect(stderrSpy).toHaveBeenCalledWith("  All done!\n");
+      expect(spinner.start).not.toHaveBeenCalled();
+    });
   });
 
   it("calls spinner.start on first step", async () => {
