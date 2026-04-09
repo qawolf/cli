@@ -1,26 +1,24 @@
 import { resolveApiKey } from "../../lib/auth/index.js";
+import { type CommandContext, type CommandResult } from "../../lib/context.js";
 import { authCopy } from "../../lib/copy/index.js";
-import type { UIContext } from "../../lib/ui/index.js";
 
 export async function handleWhoami(
-  ui: UIContext,
-  configDir: string,
-): Promise<void> {
-  const resolved = await resolveApiKey(configDir);
+  ctx: CommandContext,
+): Promise<CommandResult> {
+  const resolved = await resolveApiKey(ctx.configDir);
 
   if (!resolved) {
-    ui.error(authCopy.ci.errorTitle, authCopy.ci.errorBody);
-    process.exitCode = 1;
-    return;
+    ctx.ui.error(authCopy.ci.errorTitle, authCopy.ci.errorBody);
+    return { error: "not authenticated" };
   }
 
-  if (ui.mode === "human") {
-    ui.gap();
-    ui.intro(authCopy.title);
-    ui.note(`Source: ${resolved.source}`, authCopy.whoamiAuthenticated);
-    ui.outro(authCopy.outroReady);
+  if (ctx.ui.mode === "human") {
+    ctx.ui.gap();
+    ctx.ui.intro(authCopy.title);
+    ctx.ui.note(`Source: ${resolved.source}`, authCopy.whoamiAuthenticated);
+    ctx.ui.outro(authCopy.outroReady);
   } else {
-    ui.output(
+    ctx.ui.output(
       { authenticated: true, source: resolved.source },
       `Authenticated (source: ${resolved.source})`,
     );

@@ -1,34 +1,30 @@
 import {
-  type SaveApiKeyResult,
   resolveApiKey,
   saveApiKey,
   validateApiKey,
 } from "../../lib/auth/index.js";
+import { type CommandContext, type CommandResult } from "../../lib/context.js";
 import { authCopy } from "../../lib/copy/index.js";
 import { errorMessage } from "../../lib/errors.js";
-import type { UIContext } from "../../lib/ui/index.js";
 
-export async function handleLogin(
-  ui: UIContext,
-  configDir: string,
-): Promise<void> {
-  const existing = await resolveApiKey(configDir);
+export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
+  const existing = await resolveApiKey(ctx.configDir);
   if (existing) {
-    ui.info(authCopy.alreadyConfigured);
+    ctx.ui.info(authCopy.alreadyConfigured);
     return;
   }
 
-  ui.gap();
-  ui.intro(authCopy.title);
+  ctx.ui.gap();
+  ctx.ui.intro(authCopy.title);
 
-  const result = await ui.password(authCopy.promptApiKey);
+  const result = await ctx.ui.password(authCopy.promptApiKey);
   if (!result.ok) {
-    ui.cancel(authCopy.cancelled);
+    ctx.ui.cancel(authCopy.cancelled);
     return;
   }
 
   try {
-    await ui.withProgress(
+    await ctx.ui.withProgress(
       [
         {
           message: authCopy.verifying,
@@ -39,21 +35,19 @@ export async function handleLogin(
         },
         {
           message: authCopy.storing,
-          task: async () => saveApiKey(configDir, result.value),
+          task: async () => saveApiKey(ctx.configDir, result.value),
         },
       ],
-      (results) => {
-        const saveResult = results[1] as SaveApiKeyResult;
+      ([, saveResult]) => {
         return saveResult.stored === "file"
           ? authCopy.storedFile
           : authCopy.storedKeychain;
       },
     );
   } catch (err: unknown) {
-    ui.error(errorMessage(err));
-    process.exitCode = 1;
-    return;
+    ctx.ui.error(errorMessage(err));
+    return { error: errorMessage(err) };
   }
 
-  ui.outro(authCopy.outroSuccess);
+  ctx.ui.outro(authCopy.outroSuccess);
 }
