@@ -19,7 +19,7 @@ export interface StyledClack {
     success(message: string): void;
     warn(message: string): void;
   };
-  intro(title?: string): void;
+  intro(title: string): void;
   note(message?: string, title?: string): void;
   outro(message: string): void;
   cancel(message: string): void;
@@ -41,8 +41,8 @@ export function createStyledClack(): StyledClack {
     password,
     isCancel,
     spinner,
-    intro(title?: string) {
-      intro(styledTitle(title ?? ""));
+    intro(title: string) {
+      intro(styledTitle(title));
     },
   };
 }
