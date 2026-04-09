@@ -1,5 +1,6 @@
 import {
   cancel,
+  confirm,
   intro,
   isCancel,
   log,
@@ -23,6 +24,7 @@ export interface StyledClack {
   note(message?: string, title?: string): void;
   outro(message: string): void;
   cancel(message: string): void;
+  confirm(opts: { message: string }): Promise<boolean | symbol>;
   password(opts: { message: string }): Promise<string | symbol>;
   isCancel(value: unknown): value is symbol;
   spinner(): {
@@ -38,6 +40,7 @@ export function createStyledClack(): StyledClack {
     note,
     outro,
     cancel,
+    confirm,
     password,
     isCancel,
     spinner,

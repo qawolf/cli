@@ -12,6 +12,7 @@ export interface UI {
   intro(title: string): void;
   note(message: string, title?: string): void;
   outro(message: string): void;
+  confirm(message: string): Promise<PromptResult<boolean>>;
   password(message: string, hint?: string): Promise<PromptResult<string>>;
   withProgress: WithProgressFn;
   step(message: string): void;

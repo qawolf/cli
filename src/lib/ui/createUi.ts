@@ -1,6 +1,7 @@
 import { createStyledClack } from "./clack/index.js";
 import { type OutputFlags, detectOutputMode } from "./env.js";
 import { createCancel } from "./renderers/cancel.js";
+import { createConfirm } from "./renderers/confirm.js";
 import { createError } from "./renderers/error.js";
 import { createGap } from "./renderers/gap.js";
 import { createInfo } from "./renderers/info.js";
@@ -22,6 +23,7 @@ export function createUI(flags: OutputFlags): UI {
 
   return {
     mode,
+    confirm: createConfirm({ mode, clack }),
     gap: createGap({ mode }),
     intro: createIntro({ mode, clack }),
     note: createNote({ mode, clack }),
