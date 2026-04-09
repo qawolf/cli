@@ -1,26 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { type StyledClack } from "../clack/index.js";
+import { makeClack } from "../clack/styledClack.mock.js";
 import { createOutro } from "./outro.js";
-
-function makeClack(): StyledClack {
-  return {
-    log: {
-      info: vi.fn(),
-      error: vi.fn(),
-      step: vi.fn(),
-      success: vi.fn(),
-      warn: vi.fn(),
-    },
-    intro: vi.fn(),
-    note: vi.fn(),
-    outro: vi.fn(),
-    cancel: vi.fn(),
-    password: vi.fn(),
-    isCancel: vi.fn(),
-    spinner: vi.fn(),
-  } as unknown as StyledClack;
-}
 
 describe("createOutro", () => {
   afterEach(() => {
