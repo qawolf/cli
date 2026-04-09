@@ -13,8 +13,10 @@ export function createIntro({
         clack.intro(title);
         break;
       case "agent":
+        process.stderr.write(`${title}\n`);
+        break;
       case "json":
-        process.stderr.write(`  ${title}\n`);
+        process.stderr.write(JSON.stringify({ type: "intro", title }) + "\n");
         break;
     }
   };

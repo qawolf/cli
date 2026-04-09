@@ -13,8 +13,10 @@ export function createStep({
         clack.log.step(message);
         break;
       case "agent":
+        process.stderr.write(`${message}\n`);
+        break;
       case "json":
-        process.stderr.write(`  ${message}\n`);
+        process.stderr.write(JSON.stringify({ type: "step", message }) + "\n");
         break;
     }
   };

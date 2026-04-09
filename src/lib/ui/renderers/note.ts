@@ -13,10 +13,12 @@ export function createNote({
         clack.note(message, title);
         break;
       case "agent":
-        process.stderr.write(`  ${title ? `${title}: ` : ""}${message}\n`);
+        process.stderr.write(`${title ? `${title}: ` : ""}${message}\n`);
         break;
       case "json":
-        process.stderr.write(`  ${title ? `${title}: ` : ""}${message}\n`);
+        process.stderr.write(
+          JSON.stringify({ type: "note", title, message }) + "\n",
+        );
         break;
     }
   };

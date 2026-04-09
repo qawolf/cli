@@ -13,8 +13,12 @@ export function createSuccess({
         clack.log.success(message);
         break;
       case "agent":
+        process.stderr.write(`${message}\n`);
+        break;
       case "json":
-        process.stderr.write(`  ${message}\n`);
+        process.stderr.write(
+          JSON.stringify({ type: "success", message }) + "\n",
+        );
         break;
     }
   };

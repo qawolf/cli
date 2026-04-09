@@ -13,10 +13,10 @@ export function createInfo({
         clack.log.info(message);
         break;
       case "agent":
-        process.stderr.write(`  ${message}\n`);
+        process.stderr.write(`${message}\n`);
         break;
       case "json":
-        process.stderr.write(`  ${message}\n`);
+        process.stderr.write(JSON.stringify({ type: "info", message }) + "\n");
         break;
     }
   };

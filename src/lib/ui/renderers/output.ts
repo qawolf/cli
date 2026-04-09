@@ -17,7 +17,7 @@ export function createOutput({
         writeJsonLine(data);
         break;
       case "agent":
-        process.stderr.write(`  ${humanMessage}\n`);
+        process.stderr.write(`${humanMessage}\n`);
         break;
     }
   };

@@ -48,16 +48,30 @@ export function createWithProgress({
         s.stop(doneMessage);
         return typed;
       }
-      case "agent":
-      case "json": {
+      case "agent": {
         for (const step of steps) {
-          process.stderr.write(`  ${step.message}\n`);
+          process.stderr.write(`${step.message}\n`);
           results.push(await step.task());
         }
 
         const typed = results as InferStepResults<typeof steps>;
         const doneMessage = typeof done === "function" ? done(typed) : done;
-        process.stderr.write(`  ${doneMessage}\n`);
+        process.stderr.write(`${doneMessage}\n`);
+        return typed;
+      }
+      case "json": {
+        for (const step of steps) {
+          process.stderr.write(
+            JSON.stringify({ type: "step", message: step.message }) + "\n",
+          );
+          results.push(await step.task());
+        }
+
+        const typed = results as InferStepResults<typeof steps>;
+        const doneMessage = typeof done === "function" ? done(typed) : done;
+        process.stderr.write(
+          JSON.stringify({ type: "success", message: doneMessage }) + "\n",
+        );
         return typed;
       }
     }

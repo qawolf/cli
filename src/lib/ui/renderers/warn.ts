@@ -13,8 +13,10 @@ export function createWarn({
         clack.log.warn(message);
         break;
       case "agent":
+        process.stderr.write(`${message}\n`);
+        break;
       case "json":
-        process.stderr.write(`  ${message}\n`);
+        process.stderr.write(JSON.stringify({ type: "warn", message }) + "\n");
         break;
     }
   };
