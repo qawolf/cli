@@ -14,13 +14,5 @@ export async function validateApiKey(
   }
 
   // Stub — replace with real fetch call when endpoint is identified
-  // Pattern:
-  //   const response = await fetch(`${baseUrl}/api/auth/me`, {
-  //     headers: { Authorization: `Bearer ${apiKey}` },
-  //   });
-  //   if (!response.ok) return { valid: false, error: `API returned ${response.status}` };
-  //   const data = await response.json();
-  //   return { valid: true, teamName: data.teamName };
-
   return { valid: true, teamName: "unknown" };
 }

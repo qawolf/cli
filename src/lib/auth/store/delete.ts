@@ -29,8 +29,9 @@ async function deleteFromFile(
 export async function deleteApiKey(
   configDir: string,
 ): Promise<DeleteApiKeyResult> {
-  return {
-    keychain: deleteFromKeychain(),
-    file: await deleteFromFile(configDir),
-  };
+  const [keychain, file] = await Promise.all([
+    Promise.resolve(deleteFromKeychain()),
+    deleteFromFile(configDir),
+  ]);
+  return { keychain, file };
 }
