@@ -20,6 +20,22 @@ export type WithProgressFn = <Steps extends readonly ProgressStep[]>(
   done: WithProgressDone<InferStepResults<Steps>>,
 ) => Promise<InferStepResults<Steps>>;
 
+type FinalizeResult<Steps extends readonly ProgressStep[]> = {
+  typed: InferStepResults<Steps>;
+  doneMessage: string;
+};
+
+// TypeScript cannot narrow an accumulated unknown[] to a mapped tuple type,
+// so a single assertion is unavoidable here.
+function finalizeResults<Steps extends readonly ProgressStep[]>(
+  results: unknown[],
+  done: WithProgressDone<InferStepResults<Steps>>,
+): FinalizeResult<Steps> {
+  const typed = results as InferStepResults<Steps>;
+  const doneMessage = typeof done === "function" ? done(typed) : done;
+  return { typed, doneMessage };
+}
+
 type WithProgressDeps = { mode: OutputMode; clack: StyledClack };
 
 export function createWithProgress({
@@ -44,8 +60,7 @@ export function createWithProgress({
           results.push(await step.task());
         }
 
-        const typed = results as InferStepResults<typeof steps>;
-        const doneMessage = typeof done === "function" ? done(typed) : done;
+        const { typed, doneMessage } = finalizeResults(results, done);
         s.stop(doneMessage);
         return typed;
       }
@@ -55,8 +70,7 @@ export function createWithProgress({
           results.push(await step.task());
         }
 
-        const typed = results as InferStepResults<typeof steps>;
-        const doneMessage = typeof done === "function" ? done(typed) : done;
+        const { typed, doneMessage } = finalizeResults(results, done);
         writeStderrLine(doneMessage);
         return typed;
       }
@@ -66,8 +80,7 @@ export function createWithProgress({
           results.push(await step.task());
         }
 
-        const typed = results as InferStepResults<typeof steps>;
-        const doneMessage = typeof done === "function" ? done(typed) : done;
+        const { typed, doneMessage } = finalizeResults(results, done);
         writeJsonDiagnostic({ type: "success", message: doneMessage });
         return typed;
       }
