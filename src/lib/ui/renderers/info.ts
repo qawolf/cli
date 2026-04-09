@@ -16,6 +16,7 @@ export function createInfo({
         process.stderr.write(`  ${message}\n`);
         break;
       case "json":
+        process.stderr.write(`  ${message}\n`);
         break;
     }
   };

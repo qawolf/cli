@@ -16,6 +16,7 @@ export function createNote({
         process.stderr.write(`  ${title ? `${title}: ` : ""}${message}\n`);
         break;
       case "json":
+        process.stderr.write(`  ${title ? `${title}: ` : ""}${message}\n`);
         break;
     }
   };

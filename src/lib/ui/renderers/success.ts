@@ -1,6 +1,5 @@
 import type { StyledClack } from "../clack/index.js";
 import type { OutputMode } from "../env.js";
-import { assertHumanMode } from "./assertHumanMode.js";
 
 type SuccessDeps = { mode: OutputMode; clack: StyledClack };
 
@@ -9,7 +8,14 @@ export function createSuccess({
   clack,
 }: SuccessDeps): (message: string) => void {
   return (message: string): void => {
-    assertHumanMode(mode, "success");
-    clack.log.success(message);
+    switch (mode) {
+      case "human":
+        clack.log.success(message);
+        break;
+      case "agent":
+      case "json":
+        process.stderr.write(`  ${message}\n`);
+        break;
+    }
   };
 }

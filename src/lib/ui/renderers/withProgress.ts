@@ -1,6 +1,5 @@
 import type { StyledClack } from "../clack/index.js";
 import type { OutputMode } from "../env.js";
-import { assertHumanMode } from "./assertHumanMode.js";
 
 export interface ProgressStep<T = unknown> {
   message: string;
@@ -27,24 +26,40 @@ export function createWithProgress({
   clack,
 }: WithProgressDeps): WithProgressFn {
   return async (steps, done) => {
-    assertHumanMode(mode, "withProgress");
-    const s = clack.spinner();
-    const total = steps.length;
     const results: unknown[] = [];
 
-    for (const [i, step] of steps.entries()) {
-      const label = `(${String(i + 1)}/${String(total)}) ${step.message}`;
-      if (i === 0) {
-        s.start(label);
-      } else {
-        s.message(label);
-      }
-      results.push(await step.task());
-    }
+    switch (mode) {
+      case "human": {
+        const s = clack.spinner();
+        const total = steps.length;
 
-    const typed = results as InferStepResults<typeof steps>;
-    const doneMessage = typeof done === "function" ? done(typed) : done;
-    s.stop(doneMessage);
-    return typed;
+        for (const [i, step] of steps.entries()) {
+          const label = `(${String(i + 1)}/${String(total)}) ${step.message}`;
+          if (i === 0) {
+            s.start(label);
+          } else {
+            s.message(label);
+          }
+          results.push(await step.task());
+        }
+
+        const typed = results as InferStepResults<typeof steps>;
+        const doneMessage = typeof done === "function" ? done(typed) : done;
+        s.stop(doneMessage);
+        return typed;
+      }
+      case "agent":
+      case "json": {
+        for (const step of steps) {
+          process.stderr.write(`  ${step.message}\n`);
+          results.push(await step.task());
+        }
+
+        const typed = results as InferStepResults<typeof steps>;
+        const doneMessage = typeof done === "function" ? done(typed) : done;
+        process.stderr.write(`  ${doneMessage}\n`);
+        return typed;
+      }
+    }
   };
 }

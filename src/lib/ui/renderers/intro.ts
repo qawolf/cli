@@ -1,6 +1,5 @@
 import type { StyledClack } from "../clack/index.js";
 import type { OutputMode } from "../env.js";
-import { assertHumanMode } from "./assertHumanMode.js";
 
 type IntroDeps = { mode: OutputMode; clack: StyledClack };
 
@@ -9,7 +8,14 @@ export function createIntro({
   clack,
 }: IntroDeps): (title: string) => void {
   return (title: string): void => {
-    assertHumanMode(mode, "intro");
-    clack.intro(title);
+    switch (mode) {
+      case "human":
+        clack.intro(title);
+        break;
+      case "agent":
+      case "json":
+        process.stderr.write(`  ${title}\n`);
+        break;
+    }
   };
 }
