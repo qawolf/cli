@@ -39,7 +39,7 @@ describe("createSuccess", () => {
   });
 
   describe("json mode", () => {
-    it("writes message to stderr", () => {
+    it("writes parseable JSON to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -48,13 +48,16 @@ describe("createSuccess", () => {
 
       success("Operation completed");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Operation completed\n");
+      expect(stderrSpy).toHaveBeenCalledWith(
+        JSON.stringify({ type: "success", message: "Operation completed" }) +
+          "\n",
+      );
       expect(clack.log.success).not.toHaveBeenCalled();
     });
   });
 
   describe("agent mode", () => {
-    it("writes message to stderr", () => {
+    it("writes left-aligned message to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -63,7 +66,7 @@ describe("createSuccess", () => {
 
       success("Operation completed");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Operation completed\n");
+      expect(stderrSpy).toHaveBeenCalledWith("Operation completed\n");
       expect(clack.log.success).not.toHaveBeenCalled();
     });
   });

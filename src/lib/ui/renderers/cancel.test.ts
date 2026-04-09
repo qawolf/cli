@@ -39,7 +39,7 @@ describe("createCancel", () => {
   });
 
   describe("json mode", () => {
-    it("writes message to stderr", () => {
+    it("writes parseable JSON to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -48,13 +48,16 @@ describe("createCancel", () => {
 
       cancel("Operation cancelled");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Operation cancelled\n");
+      expect(stderrSpy).toHaveBeenCalledWith(
+        JSON.stringify({ type: "cancel", message: "Operation cancelled" }) +
+          "\n",
+      );
       expect(clack.cancel).not.toHaveBeenCalled();
     });
   });
 
   describe("agent mode", () => {
-    it("writes message to stderr", () => {
+    it("writes left-aligned message to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -63,7 +66,7 @@ describe("createCancel", () => {
 
       cancel("Operation cancelled");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Operation cancelled\n");
+      expect(stderrSpy).toHaveBeenCalledWith("Operation cancelled\n");
       expect(clack.cancel).not.toHaveBeenCalled();
     });
   });

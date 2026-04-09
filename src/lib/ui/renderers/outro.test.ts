@@ -39,7 +39,7 @@ describe("createOutro", () => {
   });
 
   describe("json mode", () => {
-    it("writes message to stderr", () => {
+    it("writes parseable JSON to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -48,13 +48,15 @@ describe("createOutro", () => {
 
       outro("All done!");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  All done!\n");
+      expect(stderrSpy).toHaveBeenCalledWith(
+        JSON.stringify({ type: "outro", message: "All done!" }) + "\n",
+      );
       expect(clack.outro).not.toHaveBeenCalled();
     });
   });
 
   describe("agent mode", () => {
-    it("writes message to stderr", () => {
+    it("writes left-aligned message to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -63,7 +65,7 @@ describe("createOutro", () => {
 
       outro("All done!");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  All done!\n");
+      expect(stderrSpy).toHaveBeenCalledWith("All done!\n");
       expect(clack.outro).not.toHaveBeenCalled();
     });
   });

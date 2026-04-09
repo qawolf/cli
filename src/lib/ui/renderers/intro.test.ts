@@ -39,7 +39,7 @@ describe("createIntro", () => {
   });
 
   describe("json mode", () => {
-    it("writes title to stderr", () => {
+    it("writes parseable JSON to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -48,13 +48,15 @@ describe("createIntro", () => {
 
       intro("QA Wolf");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  QA Wolf\n");
+      expect(stderrSpy).toHaveBeenCalledWith(
+        JSON.stringify({ type: "intro", title: "QA Wolf" }) + "\n",
+      );
       expect(clack.intro).not.toHaveBeenCalled();
     });
   });
 
   describe("agent mode", () => {
-    it("writes title to stderr", () => {
+    it("writes left-aligned title to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -63,7 +65,7 @@ describe("createIntro", () => {
 
       intro("QA Wolf");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  QA Wolf\n");
+      expect(stderrSpy).toHaveBeenCalledWith("QA Wolf\n");
       expect(clack.intro).not.toHaveBeenCalled();
     });
   });

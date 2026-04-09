@@ -51,7 +51,7 @@ describe("createError", () => {
   });
 
   describe("json mode", () => {
-    it("writes to stderr using formatCIError format", () => {
+    it("writes parseable JSON to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -61,13 +61,31 @@ describe("createError", () => {
       error("API error", "Invalid key.");
 
       expect(stderrSpy).toHaveBeenCalledWith(
-        formatCIError("API error", "Invalid key."),
+        JSON.stringify({
+          type: "error",
+          title: "API error",
+          body: "Invalid key.",
+        }) + "\n",
+      );
+    });
+
+    it("writes parseable JSON without body to stderr", () => {
+      const clack = makeClack();
+      const stderrSpy = vi
+        .spyOn(process.stderr, "write")
+        .mockImplementation(() => true);
+      const error = createError({ mode: "json", clack });
+
+      error("Network failure");
+
+      expect(stderrSpy).toHaveBeenCalledWith(
+        JSON.stringify({ type: "error", title: "Network failure" }) + "\n",
       );
     });
   });
 
   describe("agent mode", () => {
-    it("writes to stderr using formatCIError format", () => {
+    it("writes left-aligned formatted error to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")

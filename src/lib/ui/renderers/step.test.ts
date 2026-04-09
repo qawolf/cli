@@ -39,7 +39,7 @@ describe("createStep", () => {
   });
 
   describe("json mode", () => {
-    it("writes message to stderr", () => {
+    it("writes parseable JSON to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -48,13 +48,15 @@ describe("createStep", () => {
 
       step("Fetching data");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Fetching data\n");
+      expect(stderrSpy).toHaveBeenCalledWith(
+        JSON.stringify({ type: "step", message: "Fetching data" }) + "\n",
+      );
       expect(clack.log.step).not.toHaveBeenCalled();
     });
   });
 
   describe("agent mode", () => {
-    it("writes message to stderr", () => {
+    it("writes left-aligned message to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -63,7 +65,7 @@ describe("createStep", () => {
 
       step("Fetching data");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Fetching data\n");
+      expect(stderrSpy).toHaveBeenCalledWith("Fetching data\n");
       expect(clack.log.step).not.toHaveBeenCalled();
     });
   });

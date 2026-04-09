@@ -51,7 +51,7 @@ describe("createNote", () => {
   });
 
   describe("json mode", () => {
-    it("writes title and message to stderr", () => {
+    it("writes parseable JSON with title to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -61,12 +61,16 @@ describe("createNote", () => {
       note("API key loaded", "Authenticated");
 
       expect(stderrSpy).toHaveBeenCalledWith(
-        "  Authenticated: API key loaded\n",
+        JSON.stringify({
+          type: "note",
+          title: "Authenticated",
+          message: "API key loaded",
+        }) + "\n",
       );
       expect(clack.note).not.toHaveBeenCalled();
     });
 
-    it("writes message without title to stderr", () => {
+    it("writes parseable JSON without title to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -75,13 +79,15 @@ describe("createNote", () => {
 
       note("Some detail");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Some detail\n");
+      expect(stderrSpy).toHaveBeenCalledWith(
+        JSON.stringify({ type: "note", message: "Some detail" }) + "\n",
+      );
       expect(clack.note).not.toHaveBeenCalled();
     });
   });
 
   describe("agent mode", () => {
-    it("writes title and message to stderr", () => {
+    it("writes left-aligned title and message to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -90,13 +96,11 @@ describe("createNote", () => {
 
       note("API key loaded", "Authenticated");
 
-      expect(stderrSpy).toHaveBeenCalledWith(
-        "  Authenticated: API key loaded\n",
-      );
+      expect(stderrSpy).toHaveBeenCalledWith("Authenticated: API key loaded\n");
       expect(clack.note).not.toHaveBeenCalled();
     });
 
-    it("writes message without title to stderr", () => {
+    it("writes left-aligned message without title to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -105,7 +109,7 @@ describe("createNote", () => {
 
       note("Some detail");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Some detail\n");
+      expect(stderrSpy).toHaveBeenCalledWith("Some detail\n");
       expect(clack.note).not.toHaveBeenCalled();
     });
   });

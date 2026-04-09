@@ -39,7 +39,7 @@ describe("createWarn", () => {
   });
 
   describe("json mode", () => {
-    it("writes message to stderr", () => {
+    it("writes parseable JSON to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -48,13 +48,15 @@ describe("createWarn", () => {
 
       warn("Deprecated API");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Deprecated API\n");
+      expect(stderrSpy).toHaveBeenCalledWith(
+        JSON.stringify({ type: "warn", message: "Deprecated API" }) + "\n",
+      );
       expect(clack.log.warn).not.toHaveBeenCalled();
     });
   });
 
   describe("agent mode", () => {
-    it("writes message to stderr", () => {
+    it("writes left-aligned message to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -63,7 +65,7 @@ describe("createWarn", () => {
 
       warn("Deprecated API");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Deprecated API\n");
+      expect(stderrSpy).toHaveBeenCalledWith("Deprecated API\n");
       expect(clack.log.warn).not.toHaveBeenCalled();
     });
   });

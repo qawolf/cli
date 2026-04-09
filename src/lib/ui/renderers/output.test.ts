@@ -54,7 +54,7 @@ describe("createOutput", () => {
   });
 
   describe("agent mode", () => {
-    it("writes indented message to stderr", () => {
+    it("writes left-aligned message to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -63,7 +63,7 @@ describe("createOutput", () => {
 
       output({ id: 1 }, "Operation succeeded");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Operation succeeded\n");
+      expect(stderrSpy).toHaveBeenCalledWith("Operation succeeded\n");
     });
   });
 });

@@ -39,7 +39,7 @@ describe("createInfo", () => {
   });
 
   describe("json mode", () => {
-    it("writes message to stderr", () => {
+    it("writes parseable JSON to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -48,13 +48,15 @@ describe("createInfo", () => {
 
       info("Already configured");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Already configured\n");
+      expect(stderrSpy).toHaveBeenCalledWith(
+        JSON.stringify({ type: "info", message: "Already configured" }) + "\n",
+      );
       expect(clack.log.info).not.toHaveBeenCalled();
     });
   });
 
   describe("agent mode", () => {
-    it("writes message to stderr", () => {
+    it("writes left-aligned message to stderr", () => {
       const clack = makeClack();
       const stderrSpy = vi
         .spyOn(process.stderr, "write")
@@ -63,7 +65,7 @@ describe("createInfo", () => {
 
       info("Already configured");
 
-      expect(stderrSpy).toHaveBeenCalledWith("  Already configured\n");
+      expect(stderrSpy).toHaveBeenCalledWith("Already configured\n");
       expect(clack.log.info).not.toHaveBeenCalled();
     });
   });
