@@ -1,0 +1,27 @@
+export const authCopy = {
+  introTitle: "QA Wolf Authentication",
+  promptApiKey: "Paste your QA Wolf API Key",
+  verifying: "Verifying API key",
+  storing: "Storing API key securely",
+  storedKeychain: "Stored in system keychain",
+  storedFile: "Stored in local config (system keychain unavailable)",
+  outroSuccess: "Authenticated! You're ready to go.",
+  alreadyConfigured: "API key configured.",
+  outroReady: "Ready.",
+  cancelled: "Setup cancelled.",
+  whoamiTitle: "QA Wolf Authentication",
+  whoamiAuthenticated: "Authenticated",
+  validationRequired: "API key is required",
+  validationFailed: "API key is invalid. Check your key and try again.",
+  ci: {
+    errorTitle: "QA Wolf API key not found.",
+    errorBody: [
+      "Set the QAWOLF_API_KEY environment variable to authenticate.",
+      "",
+      "Example:",
+      "  export QAWOLF_API_KEY=qaw_your_api_key",
+      "",
+      "Get your API key at https://app.qawolf.com/settings/integrations",
+    ].join("\n"),
+  },
+} as const;
