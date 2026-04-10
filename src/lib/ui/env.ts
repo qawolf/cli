@@ -30,6 +30,7 @@ export function detectOutputMode(flags: OutputFlags): OutputMode {
   if (flags.json) return "json";
   if (flags.agent) return "agent";
   if (isAgentEnvironment()) return "agent";
+  if (isCI()) return "json";
   if (process.stdout.isTTY) return "human";
   return "json";
 }

@@ -71,6 +71,12 @@ describe("detectOutputMode", () => {
   beforeEach(() => {
     delete process.env["CLAUDE_CODE"];
     delete process.env["CURSOR_SESSION_ID"];
+    delete process.env["CI"];
+    delete process.env["GITHUB_ACTIONS"];
+    delete process.env["GITLAB_CI"];
+    delete process.env["CIRCLECI"];
+    delete process.env["JENKINS_URL"];
+    delete process.env["BUILDKITE"];
   });
 
   afterEach(() => {
@@ -102,6 +108,16 @@ describe("detectOutputMode", () => {
       writable: true,
     });
     expect(detectOutputMode({})).toBe("human");
+  });
+
+  it("returns json in CI even with TTY stdout", () => {
+    Object.defineProperty(process.stdout, "isTTY", {
+      value: true,
+      configurable: true,
+      writable: true,
+    });
+    process.env["CI"] = "true";
+    expect(detectOutputMode({})).toBe("json");
   });
 
   it("returns json when piped", () => {
