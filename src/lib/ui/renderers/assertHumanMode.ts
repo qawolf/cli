@@ -8,6 +8,6 @@ export function assertHumanMode(
     const message = hint
       ? `This command requires an interactive terminal. ${hint}`
       : "This command requires an interactive terminal.";
-    throw new Error(message);
+    throw Error(message);
   }
 }

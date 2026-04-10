@@ -41,7 +41,7 @@ export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
           message: authCopy.verifying,
           task: async () => {
             const v = await validateApiKey(result.value);
-            if (!v.valid) throw new Error(authCopy.validationFailed);
+            if (!v.valid) throw Error(authCopy.validationFailed);
           },
         },
         {

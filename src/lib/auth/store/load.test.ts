@@ -27,7 +27,7 @@ function makeEntryMock(getPassword: () => string | null): void {
 
 function makeEntryThrow(message: string): void {
   MockEntry.mockImplementation(function () {
-    throw new Error(message);
+    throw Error(message);
   });
 }
 
@@ -79,9 +79,7 @@ describe("loadApiKey", () => {
 
   it("returns found: false with errors from both keychain and file when both fail", async () => {
     makeEntryThrow("keychain locked");
-    mockReadFile.mockRejectedValue(
-      new Error("ENOENT: no such file or directory"),
-    );
+    mockReadFile.mockRejectedValue(Error("ENOENT: no such file or directory"));
 
     const result = await loadApiKey("/tmp/config");
 
