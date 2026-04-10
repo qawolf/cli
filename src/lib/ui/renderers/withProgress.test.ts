@@ -132,6 +132,32 @@ describe("createWithProgress", () => {
       expect(results).toEqual([42, "hello", true]);
     });
 
+    it("stops spinner when a task throws", async () => {
+      const spinner = createMockSpinner();
+      const clack = createMockClack(spinner);
+      const withProgress = createWithProgress({
+        mode: "human",
+        clack: clack as never,
+      });
+
+      await expect(
+        withProgress(
+          [
+            {
+              message: "will fail",
+              task: async () => {
+                throw Error("task error");
+              },
+            },
+          ],
+          "done",
+        ),
+      ).rejects.toThrow("task error");
+
+      expect(spinner.start).toHaveBeenCalledOnce();
+      expect(spinner.stop).toHaveBeenCalledOnce();
+    });
+
     it("labels include step numbering", async () => {
       const spinner = createMockSpinner();
       const clack = createMockClack(spinner);

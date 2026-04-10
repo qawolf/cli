@@ -50,19 +50,24 @@ export function createWithProgress({
         const s = clack.spinner();
         const total = steps.length;
 
-        for (const [i, step] of steps.entries()) {
-          const label = `(${String(i + 1)}/${String(total)}) ${step.message}`;
-          if (i === 0) {
-            s.start(label);
-          } else {
-            s.message(label);
+        try {
+          for (const [i, step] of steps.entries()) {
+            const label = `(${String(i + 1)}/${String(total)}) ${step.message}`;
+            if (i === 0) {
+              s.start(label);
+            } else {
+              s.message(label);
+            }
+            results.push(await step.task());
           }
-          results.push(await step.task());
-        }
 
-        const { typed, doneMessage } = finalizeResults(results, done);
-        s.stop(doneMessage);
-        return typed;
+          const { typed, doneMessage } = finalizeResults(results, done);
+          s.stop(doneMessage);
+          return typed;
+        } catch (err) {
+          s.stop();
+          throw err;
+        }
       }
       case "agent": {
         for (const step of steps) {
