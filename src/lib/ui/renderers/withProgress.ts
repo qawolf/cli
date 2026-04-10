@@ -65,7 +65,7 @@ export function createWithProgress({
           s.stop(doneMessage);
           return typed;
         } catch (err) {
-          s.stop();
+          s.stop("");
           throw err;
         }
       }
