@@ -1,5 +1,6 @@
 import type { StyledClack } from "../clack/index.js";
 import type { OutputMode } from "../env.js";
+import { errorMessage } from "../../errors.js";
 import { writeJsonDiagnostic, writeStderrLine } from "./write.js";
 
 export interface ProgressStep<T = unknown> {
@@ -65,7 +66,7 @@ export function createWithProgress({
           s.stop(doneMessage);
           return typed;
         } catch (err) {
-          s.stop("");
+          s.stop(errorMessage(err));
           throw err;
         }
       }
