@@ -10,14 +10,20 @@ function makeDeps(result: GetIdentityResult) {
 
 describe("validateApiKey", () => {
   it("returns invalid for empty key without calling the API", async () => {
-    const deps = makeDeps({ ok: true, data: { team: { createdAt: "", id: "", name: "" } } });
+    const deps = makeDeps({
+      ok: true,
+      data: { team: { createdAt: "", id: "", name: "" } },
+    });
     const result = await validateApiKey("", deps);
     expect(result).toEqual({ valid: false, error: "API key is empty" });
     expect(deps.getIdentity).not.toHaveBeenCalled();
   });
 
   it("returns invalid for whitespace-only key without calling the API", async () => {
-    const deps = makeDeps({ ok: true, data: { team: { createdAt: "", id: "", name: "" } } });
+    const deps = makeDeps({
+      ok: true,
+      data: { team: { createdAt: "", id: "", name: "" } },
+    });
     const result = await validateApiKey("   ", deps);
     expect(result).toEqual({ valid: false, error: "API key is empty" });
     expect(deps.getIdentity).not.toHaveBeenCalled();
