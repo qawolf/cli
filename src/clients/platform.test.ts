@@ -1,3 +1,4 @@
+import superjson from "superjson";
 import { describe, expect, it, vi } from "vitest";
 
 import { getIdentity } from "./platform.js";
@@ -10,29 +11,52 @@ function mockFetch(impl: (...args: unknown[]) => unknown): () => void {
   };
 }
 
+// tRPC wraps successful responses with superjson serialization
+function trpcSuccessResponse(data: unknown): unknown {
+  return {
+    result: { data: superjson.serialize(data) },
+  };
+}
+
+// tRPC error responses
+function trpcErrorResponse(
+  message: string,
+  code: number,
+  httpStatus: number,
+): unknown {
+  return {
+    error: {
+      message,
+      code,
+      data: { code: "UNAUTHORIZED", httpStatus },
+    },
+  };
+}
+
 describe("getIdentity", () => {
-  it("sends the API key as a Bearer token", async () => {
+  it("sends the API key as a Bearer token to the tRPC endpoint", async () => {
     vi.stubEnv("QAWOLF_API_URL", "https://test.qawolf.com");
+    const teamData = {
+      createdAt: "2024-01-01T00:00:00.000Z",
+      id: "team_1",
+      name: "Test Team",
+    };
     const restore = mockFetch(() =>
       Promise.resolve({
         ok: true,
-        json: () =>
-          Promise.resolve({
-            team: {
-              createdAt: "2024-01-01T00:00:00.000Z",
-              id: "team_1",
-              name: "Test Team",
-            },
-          }),
+        headers: new Headers({ "content-type": "application/json" }),
+        json: () => Promise.resolve(trpcSuccessResponse({ team: teamData })),
       }),
     );
 
     await getIdentity("qawolf_mykey");
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      "https://test.qawolf.com/api/v0/identity",
+      expect.stringContaining("https://test.qawolf.com/api/trpc/identity.get"),
       expect.objectContaining({
-        headers: { Authorization: "Bearer qawolf_mykey" },
+        headers: expect.objectContaining({
+          Authorization: "Bearer qawolf_mykey",
+        }),
       }),
     );
 
@@ -50,7 +74,8 @@ describe("getIdentity", () => {
     const restore = mockFetch(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ team: teamData }),
+        headers: new Headers({ "content-type": "application/json" }),
+        json: () => Promise.resolve(trpcSuccessResponse({ team: teamData })),
       }),
     );
 
@@ -61,14 +86,21 @@ describe("getIdentity", () => {
     vi.unstubAllEnvs();
   });
 
-  it("returns error on non-ok response", async () => {
+  it("returns error on auth failure", async () => {
     vi.stubEnv("QAWOLF_API_URL", "https://test.qawolf.com");
     const restore = mockFetch(() =>
       Promise.resolve({
         ok: false,
         status: 401,
-        statusText: "Unauthorized",
-        text: () => Promise.resolve("Invalid API token"),
+        headers: new Headers({ "content-type": "application/json" }),
+        json: () =>
+          Promise.resolve(
+            trpcErrorResponse(
+              "Invalid API token in Authorization header",
+              -32001,
+              401,
+            ),
+          ),
       }),
     );
 
@@ -76,7 +108,7 @@ describe("getIdentity", () => {
     expect(result).toEqual({
       ok: false,
       status: 401,
-      error: "Invalid API token",
+      error: "Invalid API token in Authorization header",
     });
 
     restore();
@@ -103,8 +135,9 @@ describe("getIdentity", () => {
     const restore = mockFetch(() =>
       Promise.resolve({
         ok: true,
-        status: 200,
-        json: () => Promise.resolve({ unexpected: "shape" }),
+        headers: new Headers({ "content-type": "application/json" }),
+        json: () =>
+          Promise.resolve(trpcSuccessResponse({ unexpected: "shape" })),
       }),
     );
 
@@ -121,24 +154,23 @@ describe("getIdentity", () => {
 
   it("uses default API URL when QAWOLF_API_URL is not set", async () => {
     delete process.env["QAWOLF_API_URL"];
+    const teamData = {
+      createdAt: "2024-01-01T00:00:00.000Z",
+      id: "team_1",
+      name: "Test",
+    };
     const restore = mockFetch(() =>
       Promise.resolve({
         ok: true,
-        json: () =>
-          Promise.resolve({
-            team: {
-              createdAt: "2024-01-01T00:00:00.000Z",
-              id: "team_1",
-              name: "Test",
-            },
-          }),
+        headers: new Headers({ "content-type": "application/json" }),
+        json: () => Promise.resolve(trpcSuccessResponse({ team: teamData })),
       }),
     );
 
     await getIdentity("qawolf_key");
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      "https://app.qawolf.com/api/v0/identity",
+      expect.stringContaining("https://app.qawolf.com/api/trpc/identity.get"),
       expect.anything(),
     );
 
