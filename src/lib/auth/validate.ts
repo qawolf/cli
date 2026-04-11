@@ -1,18 +1,43 @@
+import {
+  type GetIdentityResult,
+  getIdentity as getIdentityFromPlatform,
+} from "../../clients/platform.js";
+
 import type { ValidateApiKeyResult } from "./types.js";
 
-/**
- * Validates a QA Wolf API key against the platform.
- *
- * TODO: Wire to actual QA Wolf endpoint when available.
- * Stub accepts any non-empty key.
- */
+type Dependencies = {
+  getIdentity: (apiKey: string) => Promise<GetIdentityResult>;
+};
+
+const defaultDeps: Dependencies = {
+  getIdentity: getIdentityFromPlatform,
+};
+
 export async function validateApiKey(
   apiKey: string,
+  deps: Dependencies = defaultDeps,
 ): Promise<ValidateApiKeyResult> {
   if (!apiKey.trim()) {
     return { valid: false, error: "API key is empty" };
   }
 
-  // Stub — replace with real fetch call when endpoint is identified
-  return { valid: true, teamName: "unknown" };
+  const result = await deps.getIdentity(apiKey);
+
+  if (!result.ok) {
+    if (result.status === 401 || result.status === 403) {
+      return {
+        valid: false,
+        error: "API key is invalid or unauthorized",
+      };
+    }
+    return {
+      valid: false,
+      error: `Could not verify API key: ${result.error}`,
+    };
+  }
+
+  return {
+    valid: true,
+    team: result.data.team,
+  };
 }

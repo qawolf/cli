@@ -14,6 +14,12 @@ export type LoadApiKeyResult =
   | { found: true; key: string; source: StorageSource }
   | { found: false; errors?: { keychain?: string; file?: string } };
 
+export type TeamIdentity = {
+  createdAt: string;
+  id: string;
+  name: string;
+};
+
 export type ValidateApiKeyResult =
-  | { valid: true; teamName: string }
-  | { valid: false; error?: string };
+  | { valid: true; team: TeamIdentity }
+  | { valid: false; error: string | undefined };

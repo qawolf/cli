@@ -10,6 +10,8 @@ export const authCopy = {
   outroReady: "Ready.",
   cancelled: "Setup cancelled.",
   whoamiAuthenticated: "Authenticated",
+  whoamiVerificationFailed:
+    "API key is stored but could not be verified. Check your key and try again.",
   validationRequired: "API key is required",
   validationFailed: "API key is invalid. Check your key and try again.",
   login: {
