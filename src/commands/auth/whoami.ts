@@ -20,7 +20,7 @@ export async function handleWhoami(
   if (!validation.valid) {
     if (ctx.ui.mode === "human") {
       ctx.ui.note(`Source: ${resolved.source}`, authCopy.whoamiAuthenticated);
-      ctx.ui.warn(validation.error ?? authCopy.whoamiVerificationFailed);
+      ctx.ui.warn(validation.error);
     } else {
       ctx.ui.output(
         {

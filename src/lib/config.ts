@@ -1,6 +1,4 @@
 export function getApiBaseUrl(): string {
-  return (
-    process.env["QAWOLF_API_URL"]?.replace(/\/+$/, "") ??
-    "https://app.qawolf.com"
-  );
+  const envUrl = process.env["QAWOLF_API_URL"]?.replace(/\/+$/, "");
+  return envUrl || "https://app.qawolf.com";
 }

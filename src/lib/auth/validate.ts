@@ -24,7 +24,10 @@ export async function validateApiKey(
   const result = await deps.getIdentity(apiKey);
 
   if (!result.ok) {
-    if (result.status === 401 || result.status === 403) {
+    if (
+      "status" in result &&
+      (result.status === 401 || result.status === 403)
+    ) {
       return {
         valid: false,
         error: "API key is invalid or unauthorized",

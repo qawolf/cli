@@ -72,7 +72,6 @@ describe("validateApiKey", () => {
   it("returns invalid with error message on network failure", async () => {
     const deps = makeDeps({
       ok: false,
-      status: 0,
       error: "fetch failed",
     } as GetIdentityResult);
 

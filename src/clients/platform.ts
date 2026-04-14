@@ -8,8 +8,7 @@ import superjson, { type SuperJSONResult } from "superjson";
 import { z } from "zod";
 
 import { getApiBaseUrl } from "~/lib/config.js";
-
-export { type ValidateApiKeyResult, validateApiKey } from "~/lib/auth/index.js";
+import { errorMessage } from "~/lib/errors.js";
 
 // Transformer matching the platform's createTrpcTransformer().
 // Both sides must agree on serialization for tRPC to work.
@@ -44,11 +43,10 @@ export type IdentityResponse = z.infer<typeof identityResponseSchema>;
 
 export type GetIdentityResult =
   | { ok: true; data: IdentityResponse }
-  | { ok: false; status: number; error: string };
+  | { ok: false; status: number; error: string }
+  | { ok: false; error: string };
 
-function createPlatformClient(
-  apiKey: string,
-): ReturnType<typeof createTRPCClient<any>> {
+function createPlatformClient(apiKey: string) {
   return createTRPCClient({
     links: [
       httpLink({
@@ -75,17 +73,16 @@ export async function getIdentity(apiKey: string): Promise<GetIdentityResult> {
   }
 }
 
-function mapTrpcError(error: unknown): {
-  ok: false;
-  status: number;
-  error: string;
-} {
+type GetIdentityError = Extract<GetIdentityResult, { ok: false }>;
+
+function mapTrpcError(error: unknown): GetIdentityError {
   if (isTRPCClientError(error)) {
-    const status =
-      (error.data as { httpStatus?: number } | undefined)?.httpStatus ?? 0;
-    return { ok: false, status, error: error.message };
+    const httpStatus = (error.data as { httpStatus?: number } | undefined)
+      ?.httpStatus;
+    if (httpStatus !== undefined) {
+      return { ok: false, status: httpStatus, error: error.message };
+    }
+    return { ok: false, error: error.message };
   }
-  const message =
-    error instanceof Error ? error.message : "Unknown network error";
-  return { ok: false, status: 0, error: message };
+  return { ok: false, error: errorMessage(error) };
 }
