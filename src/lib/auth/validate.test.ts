@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { GetIdentityResult } from "../../clients/platform.js";
+import type { GetIdentityResult } from "~/clients/platform.js";
 
 import { validateApiKey } from "./validate.js";
 
