@@ -1,6 +1,6 @@
-import type { StyledClack } from "../clack/index.js";
-import type { OutputMode } from "../env.js";
-import { errorMessage } from "../../errors.js";
+import type { StyledClack } from "~/lib/ui/clack/index.js";
+import type { OutputMode } from "~/lib/ui/env.js";
+import { errorMessage } from "~/lib/errors.js";
 import { writeJsonDiagnostic, writeStderrLine } from "./write.js";
 
 export interface ProgressStep<T = unknown> {

@@ -1,6 +1,6 @@
-import { deleteApiKey, resolveApiKey } from "../../lib/auth/index.js";
-import { type CommandContext, type CommandResult } from "../../lib/context.js";
-import { authCopy } from "../../lib/copy/index.js";
+import { deleteApiKey, resolveApiKey } from "~/lib/auth/index.js";
+import { type CommandContext, type CommandResult } from "~/lib/context.js";
+import { authCopy } from "~/lib/copy/index.js";
 
 export async function handleLogout(
   ctx: CommandContext,

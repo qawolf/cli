@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { makeClack } from "../clack/styledClack.mock.js";
+import { makeClack } from "~/lib/ui/clack/styledClack.mock.js";
 import { formatCIError } from "./formatters/ci.js";
 import { createError } from "./error.js";
 

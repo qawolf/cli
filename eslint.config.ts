@@ -9,4 +9,20 @@ export default tseslint.config(
   {
     ignores: ["dist/", "node_modules/"],
   },
+  {
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["../*"],
+              message:
+                'Use "~/" path alias instead of relative parent imports.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

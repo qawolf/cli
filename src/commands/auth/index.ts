@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 
-import { withContext } from "../../lib/context.js";
+import { withContext } from "~/lib/context.js";
 import { handleLogin } from "./login.js";
 import { handleLogout } from "./logout.js";
 import { handleWhoami } from "./whoami.js";

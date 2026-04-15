@@ -1,5 +1,5 @@
-import type { StyledClack } from "../clack/index.js";
-import type { OutputMode } from "../env.js";
+import type { StyledClack } from "~/lib/ui/clack/index.js";
+import type { OutputMode } from "~/lib/ui/env.js";
 import { writeJsonDiagnostic, writeStderrLine } from "./write.js";
 
 type WarnDeps = { mode: OutputMode; clack: StyledClack };

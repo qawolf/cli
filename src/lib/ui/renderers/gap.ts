@@ -1,4 +1,4 @@
-import type { OutputMode } from "../env.js";
+import type { OutputMode } from "~/lib/ui/env.js";
 import { writeStderrLine } from "./write.js";
 
 type GapDeps = { mode: OutputMode };

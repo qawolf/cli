@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { makeClack } from "../clack/styledClack.mock.js";
+import { makeClack } from "~/lib/ui/clack/styledClack.mock.js";
 import { createStep } from "./step.js";
 
 describe("createStep", () => {

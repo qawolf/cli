@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { StorageSource } from "../types.js";
+import type { StorageSource } from "~/lib/auth/types.js";
 
 export const credentialsFileSchema = z.object({
   apiKey: z.string().min(1),
