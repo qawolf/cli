@@ -18,7 +18,7 @@
     "dev": "bun run src/main.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "install:binary": "bun run build:binary && cp dist/qawolf /usr/local/bin/qawolf",
+    "install:binary": "bun run build:binary && mkdir -p ~/.local/bin && cp dist/qawolf ~/.local/bin/qawolf",
     "install:local": "bun run build && npm link",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
