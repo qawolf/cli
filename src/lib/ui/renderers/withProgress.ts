@@ -1,6 +1,5 @@
 import type { StyledClack } from "~/lib/ui/clack/index.js";
 import type { OutputMode } from "~/lib/ui/env.js";
-import { errorMessage } from "~/lib/errors.js";
 import { writeJsonDiagnostic, writeStderrLine } from "./write.js";
 
 export interface ProgressStep<T = unknown> {
@@ -50,14 +49,15 @@ export function createWithProgress({
       case "human": {
         const s = clack.spinner();
         const total = steps.length;
+        let currentLabel = "";
 
         try {
           for (const [i, step] of steps.entries()) {
-            const label = `(${String(i + 1)}/${String(total)}) ${step.message}`;
+            currentLabel = `(${String(i + 1)}/${String(total)}) ${step.message}`;
             if (i === 0) {
-              s.start(label);
+              s.start(currentLabel);
             } else {
-              s.message(label);
+              s.message(currentLabel);
             }
             results.push(await step.task());
           }
@@ -66,7 +66,7 @@ export function createWithProgress({
           s.stop(doneMessage);
           return typed;
         } catch (err) {
-          s.stop(errorMessage(err));
+          s.error(currentLabel);
           throw err;
         }
       }
