@@ -54,7 +54,7 @@ describe("getIdentity", () => {
     expect(result).toEqual({ ok: true, data: { team } });
   });
 
-  it("returns error with status on auth failure", async () => {
+  it("extracts `error` from JSON body on auth failure", async () => {
     vi.stubEnv("QAWOLF_API_URL", "https://test.qawolf.com");
     mockFetch(() =>
       Promise.resolve(
@@ -69,7 +69,27 @@ describe("getIdentity", () => {
     expect(result).toEqual({
       ok: false,
       status: 401,
-      error: '{"error":"You are not authenticated."}',
+      error: "You are not authenticated.",
+    });
+  });
+
+  it("falls back to statusText when body is not JSON", async () => {
+    vi.stubEnv("QAWOLF_API_URL", "https://test.qawolf.com");
+    mockFetch(() =>
+      Promise.resolve(
+        new Response("<html>Bad Gateway</html>", {
+          status: 502,
+          statusText: "Bad Gateway",
+          headers: { "content-type": "text/html" },
+        }),
+      ),
+    );
+
+    const result = await getIdentity("qawolf_key");
+    expect(result).toEqual({
+      ok: false,
+      status: 502,
+      error: "Bad Gateway",
     });
   });
 

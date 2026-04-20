@@ -36,7 +36,7 @@ export async function getIdentity(apiKey: string): Promise<GetIdentityResult> {
     return {
       ok: false,
       status: response.status,
-      error: body || response.statusText,
+      error: parseErrorBody(body) || response.statusText,
     };
   }
 
@@ -51,4 +51,24 @@ export async function getIdentity(apiKey: string): Promise<GetIdentityResult> {
   }
 
   return { ok: true, data: parsed.data };
+}
+
+// Extract `error` from a JSON body like `{"error":"..."}` so we don't
+// surface raw HTML/JSON to users. Empty string means "fall back to statusText".
+function parseErrorBody(body: string): string {
+  if (!body) return "";
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      "error" in parsed &&
+      typeof (parsed as { error: unknown }).error === "string"
+    ) {
+      return (parsed as { error: string }).error;
+    }
+  } catch {
+    // not JSON; fall through
+  }
+  return "";
 }
