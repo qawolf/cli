@@ -6,6 +6,7 @@ type MockSpinner = {
   start: ReturnType<typeof vi.fn>;
   message: ReturnType<typeof vi.fn>;
   stop: ReturnType<typeof vi.fn>;
+  error: ReturnType<typeof vi.fn>;
 };
 
 function createMockSpinner(): MockSpinner {
@@ -13,6 +14,7 @@ function createMockSpinner(): MockSpinner {
     start: vi.fn(),
     message: vi.fn(),
     stop: vi.fn(),
+    error: vi.fn(),
   };
 }
 
@@ -132,7 +134,7 @@ describe("createWithProgress", () => {
       expect(results).toEqual([42, "hello", true]);
     });
 
-    it("stops spinner when a task throws", async () => {
+    it("marks spinner as errored with the current step label when a task throws", async () => {
       const spinner = createMockSpinner();
       const clack = createMockClack(spinner);
       const withProgress = createWithProgress({
@@ -155,7 +157,9 @@ describe("createWithProgress", () => {
       ).rejects.toThrow("task error");
 
       expect(spinner.start).toHaveBeenCalledOnce();
-      expect(spinner.stop).toHaveBeenCalledOnce();
+      expect(spinner.error).toHaveBeenCalledOnce();
+      expect(spinner.error).toHaveBeenCalledWith("(1/1) will fail");
+      expect(spinner.stop).not.toHaveBeenCalled();
     });
 
     it("labels include step numbering", async () => {

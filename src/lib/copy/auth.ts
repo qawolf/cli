@@ -10,8 +10,8 @@ export const authCopy = {
   outroReady: "Ready.",
   cancelled: "Setup cancelled.",
   whoamiAuthenticated: "Authenticated",
+  whoamiFailed: "Authentication failed",
   validationRequired: "API key is required",
-  validationFailed: "API key is invalid. Check your key and try again.",
   login: {
     nonInteractive:
       "auth login requires an interactive terminal. Set the QAWOLF_API_KEY environment variable for CI authentication.",

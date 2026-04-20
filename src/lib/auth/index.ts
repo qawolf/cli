@@ -11,6 +11,7 @@ export {
   type ApiKeySource,
   type LoadApiKeyResult,
   type StorageSource,
+  type TeamIdentity,
   type ValidateApiKeyResult,
 } from "./types.js";
 export { validateApiKey } from "./validate.js";

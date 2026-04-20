@@ -1,4 +1,4 @@
-import { resolveApiKey } from "~/lib/auth/index.js";
+import { resolveApiKey, validateApiKey } from "~/lib/auth/index.js";
 import { type CommandContext, type CommandResult } from "~/lib/context.js";
 import { authCopy } from "~/lib/copy/index.js";
 
@@ -15,13 +15,44 @@ export async function handleWhoami(
   ctx.ui.gap();
   ctx.ui.intro(authCopy.title);
 
+  const validation = await validateApiKey(resolved.key);
+
+  if (!validation.valid) {
+    if (ctx.ui.mode === "human") {
+      ctx.ui.note(`Source: ${resolved.source}`, authCopy.whoamiFailed);
+      ctx.ui.warn(validation.error);
+    } else {
+      ctx.ui.output(
+        {
+          authenticated: false,
+          error: validation.error,
+          source: resolved.source,
+          valid: false,
+        },
+        `Authentication failed (source: ${resolved.source}): ${validation.error}`,
+      );
+    }
+    return { error: "invalid key" };
+  }
+
   if (ctx.ui.mode === "human") {
-    ctx.ui.note(`Source: ${resolved.source}`, authCopy.whoamiAuthenticated);
+    ctx.ui.note(
+      [
+        `Team:   ${validation.team.name}`,
+        `ID:     ${validation.team.id}`,
+        `Source: ${resolved.source}`,
+      ].join("\n"),
+      authCopy.whoamiAuthenticated,
+    );
     ctx.ui.outro(authCopy.outroReady);
   } else {
     ctx.ui.output(
-      { authenticated: true, source: resolved.source },
-      `Authenticated (source: ${resolved.source})`,
+      {
+        authenticated: true,
+        source: resolved.source,
+        team: validation.team,
+      },
+      `Authenticated as ${validation.team.name} (source: ${resolved.source})`,
     );
   }
 }

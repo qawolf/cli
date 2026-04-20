@@ -31,6 +31,7 @@ export interface StyledClack {
     start(message: string): void;
     message(message: string): void;
     stop(message: string): void;
+    error(message: string): void;
   };
 }
 
