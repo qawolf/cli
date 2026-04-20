@@ -75,7 +75,7 @@ describe("getIdentity", () => {
 
   it("returns error without status on network failure", async () => {
     vi.stubEnv("QAWOLF_API_URL", "https://test.qawolf.com");
-    mockFetch(() => Promise.reject(new Error("fetch failed")));
+    mockFetch(() => Promise.reject(Error("fetch failed")));
 
     const result = await getIdentity("qawolf_key");
     expect(result).toEqual({
