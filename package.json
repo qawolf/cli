@@ -30,10 +30,8 @@
   "dependencies": {
     "@clack/prompts": "^1.2.0",
     "@napi-rs/keyring": "^1.2.0",
-    "@trpc/client": "^11.8.1",
     "commander": "^14.0.3",
     "env-paths": "^4.0.0",
-    "superjson": "^2.2.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {
