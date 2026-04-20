@@ -13,15 +13,19 @@
   ],
   "scripts": {
     "build": "bun build ./src/main.ts --outfile dist/cli.js --target node --external @napi-rs/keyring",
+    "postbuild": "./scripts/postbuild.sh",
     "build:binary": "bun build --compile --bytecode ./src/main.ts --outfile dist/qawolf",
     "dev": "bun run src/main.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "install:binary": "bun run build:binary && mkdir -p ~/.local/bin && cp dist/qawolf ~/.local/bin/qawolf",
+    "install:local": "bun run build && npm link",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "uninstall:local": "npm unlink -g @qawolf/cli"
   },
   "dependencies": {
     "@clack/prompts": "^1.2.0",
