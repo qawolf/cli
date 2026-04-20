@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 
+import { errorMessage } from "./errors.js";
 import { getConfigDir } from "./paths.js";
 import { type OutputFlags, type UI, createUI } from "./ui/index.js";
 
@@ -22,7 +23,12 @@ export function withContext(
   return async (_opts: unknown, command: Command): Promise<void> => {
     const ui = createUI(command.optsWithGlobals<OutputFlags>());
     const configDir = getConfigDir();
-    const result = await fn({ ui, configDir });
-    if (result !== undefined) process.exitCode = 1;
+    try {
+      const result = await fn({ ui, configDir });
+      if (result !== undefined) process.exitCode = 1;
+    } catch (err: unknown) {
+      ui.error(errorMessage(err));
+      process.exitCode = 1;
+    }
   };
 }
