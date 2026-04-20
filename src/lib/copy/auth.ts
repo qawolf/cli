@@ -10,6 +10,7 @@ export const authCopy = {
   outroReady: "Ready.",
   cancelled: "Setup cancelled.",
   whoamiAuthenticated: "Authenticated",
+  whoamiFailed: "Authentication failed",
   validationRequired: "API key is required",
   login: {
     nonInteractive:

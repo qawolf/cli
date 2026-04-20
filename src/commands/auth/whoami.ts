@@ -19,17 +19,17 @@ export async function handleWhoami(
 
   if (!validation.valid) {
     if (ctx.ui.mode === "human") {
-      ctx.ui.note(`Source: ${resolved.source}`, authCopy.whoamiAuthenticated);
+      ctx.ui.note(`Source: ${resolved.source}`, authCopy.whoamiFailed);
       ctx.ui.warn(validation.error);
     } else {
       ctx.ui.output(
         {
-          authenticated: true,
+          authenticated: false,
           error: validation.error,
           source: resolved.source,
           valid: false,
         },
-        `Authenticated (source: ${resolved.source}) but key verification failed`,
+        `Authentication failed (source: ${resolved.source}): ${validation.error}`,
       );
     }
     return { error: "invalid key" };
