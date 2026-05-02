@@ -17,7 +17,6 @@ bun run format:check               # Prettier check
 bun run format                     # Prettier write
 bun run test                       # Vitest
 bun run test:watch                 # Vitest watch mode
-bunx turbo run typecheck lint test build  # all checks (cached, parallel)
 ```
 
 ## Testing
