@@ -3,3 +3,4 @@ set -e
 bun run lint --max-warnings 0
 bun run format:check
 bun run typecheck
+bun run knip

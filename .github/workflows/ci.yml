@@ -24,4 +24,6 @@ jobs:
       - run: bun run build
       - name: PR size check
         if: github.event_name == 'pull_request'
-        run: bash scripts/check-pr-size.sh ${{ github.base_ref }}
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: bash scripts/check-pr-size.sh "$BASE_REF"

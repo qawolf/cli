@@ -67,9 +67,7 @@
     "typescript/only-throw-error": "error",
     "typescript/prefer-promise-reject-errors": "error",
     "typescript/restrict-plus-operands": "error",
-    "typescript/switch-exhaustiveness-check": "error",
-
-    "typescript/unbound-method": "off"
+    "typescript/switch-exhaustiveness-check": "error"
   },
   "options": {
     "typeAware": true
@@ -79,5 +77,13 @@
     "node_modules/",
     "vitest.config.ts",
     "knip.config.ts"
+  ],
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.mock.ts"],
+      "rules": {
+        "typescript/unbound-method": "off"
+      }
+    }
   ]
 }
