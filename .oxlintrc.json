@@ -41,6 +41,11 @@
     "typescript/prefer-includes": "error",
     "typescript/prefer-ts-expect-error": "error",
     "typescript/return-await": "error",
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      { "ts": "never", "js": "always" }
+    ],
     "unicorn/filename-case": ["error", { "case": "camelCase" }],
     "unicorn/no-instanceof-array": "error",
     "unicorn/no-null": "error",
