@@ -20,18 +20,25 @@ function isAgentEnvironment(env: Record<string, string | undefined>): boolean {
   return Boolean(env["CLAUDE_CODE"] || env["CURSOR_SESSION_ID"]);
 }
 
-export function isInteractive(
-  stdinIsTTY: boolean,
-  env: Record<string, string | undefined>,
-): boolean {
+export function isInteractive({
+  stdinIsTTY = false,
+  env = {},
+}: {
+  stdinIsTTY?: boolean;
+  env?: Record<string, string | undefined>;
+} = {}): boolean {
   return stdinIsTTY && !isCI(env);
 }
 
-export function detectOutputMode(
-  flags: OutputFlags,
-  env: Record<string, string | undefined>,
-  stdoutIsTTY: boolean,
-): OutputMode {
+export function detectOutputMode({
+  flags = {},
+  env = {},
+  stdoutIsTTY = false,
+}: {
+  flags?: OutputFlags;
+  env?: Record<string, string | undefined>;
+  stdoutIsTTY?: boolean;
+} = {}): OutputMode {
   if (flags.json) return "json";
   if (flags.agent) return "agent";
   if (isAgentEnvironment(env)) return "agent";

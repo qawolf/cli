@@ -32,18 +32,21 @@ export function withContext(
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
     const env = process.env;
-    const outputMode = detectOutputMode(
-      command.optsWithGlobals<OutputFlags>(),
+    const outputMode = detectOutputMode({
+      flags: command.optsWithGlobals<OutputFlags>(),
       env,
-      Boolean(process.stdout.isTTY),
-    );
+      stdoutIsTTY: Boolean(process.stdout.isTTY),
+    });
     const ui = createUI(outputMode);
     try {
       const result = await fn({
         ui,
         configDir: getConfigDir(),
         outputMode,
-        isInteractive: isInteractive(Boolean(process.stdin.isTTY), env),
+        isInteractive: isInteractive({
+          stdinIsTTY: Boolean(process.stdin.isTTY),
+          env,
+        }),
         apiBaseUrl: getApiBaseUrl(env),
       });
       if (result !== undefined) process.exitCode = 1;
