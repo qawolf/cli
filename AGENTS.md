@@ -11,10 +11,11 @@ bun run dev -- <args>              # pass args to CLI (e.g. -- --help)
 bun run build                      # JS bundle → dist/cli.js
 bun run build:binary               # standalone binary → dist/qawolf
 bun run typecheck                  # tsc --noEmit
-bun run lint                       # ESLint
-bun run lint:fix                   # ESLint with auto-fix
-bun run format:check               # Prettier check
-bun run format                     # Prettier write
+bun run lint                       # oxlint
+bun run lint:fix                   # oxlint with auto-fix
+bun run format:check               # oxfmt check
+bun run format                     # oxfmt write
+bun run knip                       # dead-code / unused-dep detection
 bun run test                       # Vitest
 bun run test:watch                 # Vitest watch mode
 ```
@@ -54,18 +55,15 @@ API clients live in `clients/` — one module per auth boundary. Command handler
 
 ## Code Style
 
-- ESM throughout (`"type": "module"`)
-- TypeScript strict mode (extends `@tsconfig/strictest`)
-- `verbatimModuleSyntax` — use `import type` for type-only imports
 - Prefer string unions over enums
-- Prefer `undefined` over `null`
 - Colocate types with their domain (`commands/flows/` exports `FlowListItem`, not a shared types dir)
 - Organize directories by meaning, not by shape
-- File names use camelCase (`resolveAuth.ts`, not `resolve-auth.ts`)
 
 ## After Editing
 
 Run `bun run lint:fix` and `bun run format` on changed files. Do not make cosmetic or stylistic changes to files unrelated to your task.
+
+A pre-commit hook (`.githooks/pre-commit`) runs lint, format check, `knip`, and typecheck automatically. Activate it once per clone with `bun install`.
 
 ## Output Modes
 

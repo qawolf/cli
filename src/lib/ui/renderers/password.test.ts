@@ -11,8 +11,8 @@ describe("createPassword", () => {
   describe("human mode", () => {
     it("returns ok with value when user provides input", async () => {
       const clack = makeClack();
-      vi.mocked(clack.password).mockResolvedValue("my-secret");
-      vi.mocked(clack.isCancel).mockReturnValue(false);
+      clack.password.mockResolvedValue("my-secret");
+      clack.isCancel.mockReturnValue(false);
       const password = createPassword({ mode: "human", clack });
 
       const result = await password("Enter API key");
@@ -23,8 +23,8 @@ describe("createPassword", () => {
 
     it("returns not ok when user cancels", async () => {
       const clack = makeClack();
-      vi.mocked(clack.password).mockResolvedValue(Symbol("cancel"));
-      vi.mocked(clack.isCancel).mockReturnValue(true);
+      clack.password.mockResolvedValue(Symbol("cancel"));
+      clack.isCancel.mockReturnValue(true);
       const password = createPassword({ mode: "human", clack });
 
       const result = await password("Enter API key");

@@ -12,7 +12,7 @@ Use conventional commit format: `type(scope): description`
 **Examples from this repo:**
 
 - `feat(scaffold): add directory structure and minimal Commander app`
-- `build(config): add package.json, tsconfig, eslint, prettier, turbo`
+- `build(config): add package.json, tsconfig, oxlint, oxfmt`
 - `docs(readme): add development commands and turbo usage`
 - `chore(license): switch from MIT to Apache-2.0`
 

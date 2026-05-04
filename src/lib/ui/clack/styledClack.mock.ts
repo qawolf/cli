@@ -2,7 +2,8 @@ import { vi } from "vitest";
 
 import { type StyledClack } from "./styledClack.js";
 
-export function makeClack(): StyledClack {
+export function makeClack() {
+  const isCancel = vi.fn<(value: unknown) => boolean>();
   return {
     log: {
       info: vi.fn(),
@@ -17,7 +18,7 @@ export function makeClack(): StyledClack {
     cancel: vi.fn(),
     confirm: vi.fn(),
     password: vi.fn(),
-    isCancel: vi.fn(),
+    isCancel: isCancel as typeof isCancel & StyledClack["isCancel"],
     spinner: vi.fn(),
-  } as unknown as StyledClack;
+  } satisfies StyledClack;
 }

@@ -12,6 +12,7 @@
 bun run typecheck
 bun run lint
 bun run format:check
+bun run knip
 bun run test
 bun run build
 ```

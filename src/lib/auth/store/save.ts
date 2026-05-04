@@ -14,7 +14,7 @@ async function saveToFile(configDir: string, key: string): Promise<void> {
   // rw------- (owner read/write only)
   await writeFile(
     join(configDir, CREDENTIALS_FILE),
-    JSON.stringify(payload, null, 2),
+    JSON.stringify(payload, undefined, 2),
     { mode: 0o600 },
   );
 }

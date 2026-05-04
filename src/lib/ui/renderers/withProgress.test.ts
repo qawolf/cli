@@ -1,3 +1,4 @@
+// oxlint-disable eslint/max-lines -- file is 241 lines; splitting tracked in WIZ-10382
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createWithProgress } from "./withProgress.js";

@@ -2,10 +2,10 @@ import type { StyledClack } from "~/lib/ui/clack/index.js";
 import type { OutputMode } from "~/lib/ui/env.js";
 import { writeJsonDiagnostic, writeStderrLine } from "./write.js";
 
-export interface ProgressStep<T = unknown> {
+type ProgressStep<T = unknown> = {
   message: string;
   task: () => Promise<T>;
-}
+};
 
 type InferStepResults<T extends readonly ProgressStep[]> = {
   -readonly [K in keyof T]: T[K] extends ProgressStep<infer R> ? R : never;

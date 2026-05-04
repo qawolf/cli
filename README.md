@@ -27,10 +27,11 @@ bun run build:binary     # standalone binary → dist/qawolf (no runtime needed)
 
 ```bash
 bun run typecheck        # type check with tsc
-bun run lint             # ESLint
-bun run lint:fix         # ESLint with auto-fix
-bun run format:check     # Prettier check
-bun run format           # Prettier write
+bun run lint             # oxlint
+bun run lint:fix         # oxlint with auto-fix
+bun run format:check     # oxfmt check
+bun run format           # oxfmt write
+bun run knip             # unused files, dependencies, and exports
 bun run test             # Vitest
 ```
 

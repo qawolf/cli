@@ -4,27 +4,29 @@
   "private": true,
   "description": "Tools for agents, CI, and humans to interact with QA Wolf",
   "license": "Apache-2.0",
-  "type": "module",
   "bin": {
     "qawolf": "./dist/cli.js"
   },
   "files": [
     "dist"
   ],
+  "type": "module",
   "scripts": {
     "build": "bun build ./src/main.ts --outfile dist/cli.js --target node --external @napi-rs/keyring",
     "postbuild": "./scripts/postbuild.sh",
     "build:binary": "bun build --compile --bytecode ./src/main.ts --outfile dist/qawolf",
     "dev": "bun run src/main.ts",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
     "install:binary": "bun run build:binary && mkdir -p ~/.local/bin && cp dist/qawolf ~/.local/bin/qawolf",
     "install:local": "bun run build && npm link",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "knip": "knip",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "prepare": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git config core.hooksPath .githooks || true",
     "uninstall:local": "npm unlink -g @qawolf/cli"
   },
   "dependencies": {
@@ -35,22 +37,18 @@
     "zod": "4.4.2"
   },
   "devDependencies": {
-    "@commander-js/extra-typings": "14.0.0",
-    "@eslint/js": "10.0.1",
     "@tsconfig/bun": "1.0.10",
     "@tsconfig/strictest": "2.0.8",
     "@types/bun": "1.3.13",
-    "eslint": "10.3.0",
-    "eslint-config-prettier": "10.1.8",
-    "jiti": "2.6.1",
-    "prettier": "3.8.3",
-    "prettier-plugin-packagejson": "3.0.2",
+    "knip": "6.11.0",
+    "oxfmt": "0.47.0",
+    "oxlint": "1.62.0",
+    "oxlint-tsgolint": "0.22.1",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.59.1",
     "vitest": "4.1.5"
   },
-  "packageManager": "bun@1.3.11",
   "engines": {
     "node": ">=24"
-  }
+  },
+  "packageManager": "bun@1.3.11"
 }
