@@ -5,32 +5,30 @@ export type OutputFlags = {
   agent?: boolean;
 };
 
-export function isInteractive(): boolean {
-  return Boolean(process.stdin.isTTY) && !isCI();
-}
-
-function isCI(): boolean {
+export function isCI(env: Record<string, string | undefined>): boolean {
   return Boolean(
-    process.env["CI"] ||
-    process.env["GITHUB_ACTIONS"] ||
-    process.env["GITLAB_CI"] ||
-    process.env["CIRCLECI"] ||
-    process.env["JENKINS_URL"] ||
-    process.env["BUILDKITE"],
+    env["CI"] ||
+    env["GITHUB_ACTIONS"] ||
+    env["GITLAB_CI"] ||
+    env["CIRCLECI"] ||
+    env["JENKINS_URL"] ||
+    env["BUILDKITE"],
   );
 }
 
-function isAgentEnvironment(): boolean {
-  return Boolean(
-    process.env["CLAUDE_CODE"] || process.env["CURSOR_SESSION_ID"],
-  );
+function isAgentEnvironment(env: Record<string, string | undefined>): boolean {
+  return Boolean(env["CLAUDE_CODE"] || env["CURSOR_SESSION_ID"]);
 }
 
-export function detectOutputMode(flags: OutputFlags): OutputMode {
+export function detectOutputMode(
+  flags: OutputFlags,
+  env: Record<string, string | undefined>,
+  stdoutIsTTY: boolean | undefined,
+): OutputMode {
   if (flags.json) return "json";
   if (flags.agent) return "agent";
-  if (isAgentEnvironment()) return "agent";
-  if (isCI()) return "json";
-  if (process.stdout.isTTY) return "human";
+  if (isAgentEnvironment(env)) return "agent";
+  if (isCI(env)) return "json";
+  if (stdoutIsTTY) return "human";
   return "json";
 }
