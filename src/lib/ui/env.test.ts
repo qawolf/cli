@@ -14,27 +14,23 @@ describe("isInteractive", () => {
   it("returns false when stdin is not a TTY", () => {
     expect(isInteractive(false, {})).toBe(false);
   });
-
-  it("returns false when stdinIsTTY is undefined", () => {
-    expect(isInteractive(undefined, {})).toBe(false);
-  });
 });
 
 describe("detectOutputMode", () => {
   it("returns json when --json flag is set", () => {
-    expect(detectOutputMode({ json: true }, {}, undefined)).toBe("json");
+    expect(detectOutputMode({ json: true }, {}, false)).toBe("json");
   });
 
   it("returns agent when --agent flag is set", () => {
-    expect(detectOutputMode({ agent: true }, {}, undefined)).toBe("agent");
+    expect(detectOutputMode({ agent: true }, {}, false)).toBe("agent");
   });
 
   it("returns agent when CLAUDE_CODE env is set", () => {
-    expect(detectOutputMode({}, { CLAUDE_CODE: "1" }, undefined)).toBe("agent");
+    expect(detectOutputMode({}, { CLAUDE_CODE: "1" }, false)).toBe("agent");
   });
 
   it("returns agent when CURSOR_SESSION_ID env is set", () => {
-    expect(detectOutputMode({}, { CURSOR_SESSION_ID: "abc" }, undefined)).toBe(
+    expect(detectOutputMode({}, { CURSOR_SESSION_ID: "abc" }, false)).toBe(
       "agent",
     );
   });
@@ -52,17 +48,17 @@ describe("detectOutputMode", () => {
   });
 
   it("returns json when stdout is not a TTY", () => {
-    expect(detectOutputMode({}, {}, undefined)).toBe("json");
+    expect(detectOutputMode({}, {}, false)).toBe("json");
   });
 
   it("json flag takes precedence over agent flag", () => {
-    expect(detectOutputMode({ json: true, agent: true }, {}, undefined)).toBe(
+    expect(detectOutputMode({ json: true, agent: true }, {}, false)).toBe(
       "json",
     );
   });
 
   it("agent flag takes precedence over CI env", () => {
-    expect(detectOutputMode({ agent: true }, { CI: "true" }, undefined)).toBe(
+    expect(detectOutputMode({ agent: true }, { CI: "true" }, false)).toBe(
       "agent",
     );
   });

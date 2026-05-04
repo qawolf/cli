@@ -35,7 +35,7 @@ export function withContext(
     const outputMode = detectOutputMode(
       command.optsWithGlobals<OutputFlags>(),
       env,
-      process.stdout.isTTY,
+      Boolean(process.stdout.isTTY),
     );
     const ui = createUI(outputMode);
     try {
@@ -43,7 +43,7 @@ export function withContext(
         ui,
         configDir: getConfigDir(),
         outputMode,
-        isInteractive: isInteractive(process.stdin.isTTY, env),
+        isInteractive: isInteractive(Boolean(process.stdin.isTTY), env),
         apiBaseUrl: getApiBaseUrl(env),
       });
       if (result !== undefined) process.exitCode = 1;

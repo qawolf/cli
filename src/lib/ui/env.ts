@@ -21,16 +21,16 @@ function isAgentEnvironment(env: Record<string, string | undefined>): boolean {
 }
 
 export function isInteractive(
-  stdinIsTTY: boolean | undefined,
+  stdinIsTTY: boolean,
   env: Record<string, string | undefined>,
 ): boolean {
-  return Boolean(stdinIsTTY) && !isCI(env);
+  return stdinIsTTY && !isCI(env);
 }
 
 export function detectOutputMode(
   flags: OutputFlags,
   env: Record<string, string | undefined>,
-  stdoutIsTTY: boolean | undefined,
+  stdoutIsTTY: boolean,
 ): OutputMode {
   if (flags.json) return "json";
   if (flags.agent) return "agent";
