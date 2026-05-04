@@ -31,6 +31,7 @@ bun run lint             # oxlint
 bun run lint:fix         # oxlint with auto-fix
 bun run format:check     # oxfmt check
 bun run format           # oxfmt write
+bun run knip             # unused files, dependencies, and exports
 bun run test             # Vitest
 ```
 

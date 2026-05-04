@@ -63,7 +63,7 @@ API clients live in `clients/` — one module per auth boundary. Command handler
 
 Run `bun run lint:fix` and `bun run format` on changed files. Do not make cosmetic or stylistic changes to files unrelated to your task.
 
-A pre-commit hook (`.githooks/pre-commit`) runs lint, format check, and typecheck automatically. Activate it once per clone with `bun install`.
+A pre-commit hook (`.githooks/pre-commit`) runs lint, format check, `knip`, and typecheck automatically. Activate it once per clone with `bun install`.
 
 ## Output Modes
 
