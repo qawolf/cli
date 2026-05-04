@@ -5,7 +5,7 @@ export type OutputFlags = {
   agent?: boolean;
 };
 
-export function isCI(env: Record<string, string | undefined>): boolean {
+function isCI(env: Record<string, string | undefined>): boolean {
   return Boolean(
     env["CI"] ||
     env["GITHUB_ACTIONS"] ||
@@ -18,6 +18,13 @@ export function isCI(env: Record<string, string | undefined>): boolean {
 
 function isAgentEnvironment(env: Record<string, string | undefined>): boolean {
   return Boolean(env["CLAUDE_CODE"] || env["CURSOR_SESSION_ID"]);
+}
+
+export function isInteractive(
+  stdinIsTTY: boolean | undefined,
+  env: Record<string, string | undefined>,
+): boolean {
+  return Boolean(stdinIsTTY) && !isCI(env);
 }
 
 export function detectOutputMode(

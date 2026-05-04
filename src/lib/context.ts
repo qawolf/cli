@@ -7,7 +7,7 @@ import {
   type OutputFlags,
   type OutputMode,
   detectOutputMode,
-  isCI,
+  isInteractive,
 } from "./ui/env.js";
 import { type UI, createUI } from "./ui/index.js";
 
@@ -31,9 +31,10 @@ export function withContext(
   fn: ContextAction,
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
+    const env = process.env;
     const outputMode = detectOutputMode(
       command.optsWithGlobals<OutputFlags>(),
-      process.env,
+      env,
       process.stdout.isTTY,
     );
     const ui = createUI(outputMode);
@@ -42,8 +43,8 @@ export function withContext(
         ui,
         configDir: getConfigDir(),
         outputMode,
-        isInteractive: Boolean(process.stdin.isTTY) && !isCI(process.env),
-        apiBaseUrl: getApiBaseUrl(process.env),
+        isInteractive: isInteractive(process.stdin.isTTY, env),
+        apiBaseUrl: getApiBaseUrl(env),
       });
       if (result !== undefined) process.exitCode = 1;
     } catch (err: unknown) {
