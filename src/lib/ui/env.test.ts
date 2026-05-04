@@ -2,6 +2,24 @@ import { describe, expect, it } from "vitest";
 
 import { detectOutputMode, isInteractive } from "./env.js";
 
+describe("isInteractive", () => {
+  it("returns true when stdin is TTY and not in CI", () => {
+    expect(isInteractive(true, {})).toBe(true);
+  });
+
+  it("returns false when stdin is TTY but in CI", () => {
+    expect(isInteractive(true, { CI: "true" })).toBe(false);
+  });
+
+  it("returns false when stdin is not a TTY", () => {
+    expect(isInteractive(false, {})).toBe(false);
+  });
+
+  it("returns false when stdinIsTTY is undefined", () => {
+    expect(isInteractive(undefined, {})).toBe(false);
+  });
+});
+
 describe("detectOutputMode", () => {
   it("returns json when --json flag is set", () => {
     expect(detectOutputMode({ json: true }, {}, undefined)).toBe("json");
@@ -47,23 +65,5 @@ describe("detectOutputMode", () => {
     expect(detectOutputMode({ agent: true }, { CI: "true" }, undefined)).toBe(
       "agent",
     );
-  });
-});
-
-describe("isInteractive", () => {
-  it("returns true when stdin is TTY and not in CI", () => {
-    expect(isInteractive(true, {})).toBe(true);
-  });
-
-  it("returns false when stdin is TTY but in CI", () => {
-    expect(isInteractive(true, { CI: "true" })).toBe(false);
-  });
-
-  it("returns false when stdin is not a TTY", () => {
-    expect(isInteractive(false, {})).toBe(false);
-  });
-
-  it("returns false when stdinIsTTY is undefined", () => {
-    expect(isInteractive(undefined, {})).toBe(false);
   });
 });
