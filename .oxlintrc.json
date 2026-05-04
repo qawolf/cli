@@ -1,0 +1,83 @@
+{
+  "plugins": ["eslint", "typescript", "oxc", "import", "unicorn"],
+  "rules": {
+    "eslint/no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["../*"],
+            "message": "Use \"~/\" path alias instead of relative parent imports."
+          }
+        ]
+      }
+    ],
+    "eslint/max-lines": ["error", { "max": 200 }],
+    "eslint/eqeqeq": "error",
+    "eslint/no-case-declarations": "error",
+    "eslint/no-empty": "error",
+    "eslint/no-else-return": "error",
+    "eslint/no-fallthrough": "error",
+    "eslint/no-new-wrappers": "error",
+    "eslint/no-prototype-builtins": "error",
+    "eslint/no-redeclare": "error",
+    "eslint/no-regex-spaces": "error",
+    "eslint/no-unexpected-multiline": "error",
+    "eslint/no-useless-computed-key": "error",
+    "eslint/no-var": "error",
+    "eslint/object-shorthand": "error",
+    "eslint/operator-assignment": "error",
+    "eslint/prefer-const": "error",
+    "eslint/prefer-object-spread": "error",
+    "eslint/preserve-caught-error": "error",
+    "eslint/yoda": "error",
+    "typescript/array-type": "error",
+    "typescript/consistent-type-definitions": ["error", "type"],
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-extraneous-class": "error",
+    "typescript/no-unnecessary-template-expression": "error",
+    "typescript/no-unnecessary-type-arguments": "error",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/prefer-includes": "error",
+    "typescript/prefer-ts-expect-error": "error",
+    "typescript/return-await": "error",
+    "unicorn/filename-case": ["error", { "case": "camelCase" }],
+    "unicorn/no-instanceof-array": "error",
+    "unicorn/no-null": "error",
+    "unicorn/no-typeof-undefined": "error",
+    "unicorn/no-useless-promise-resolve-reject": "error",
+    "unicorn/prefer-array-some": "error",
+    "unicorn/prefer-node-protocol": "error",
+    "unicorn/prefer-optional-catch-binding": "error",
+    "unicorn/prefer-string-trim-start-end": "error",
+
+    "typescript/ban-ts-comment": "error",
+    "typescript/consistent-type-exports": "error",
+    "typescript/no-deprecated": "error",
+    "typescript/no-empty-object-type": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/no-require-imports": "error",
+    "typescript/no-unnecessary-type-constraint": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-enum-comparison": "error",
+    "typescript/no-unsafe-function-type": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/only-throw-error": "error",
+    "typescript/prefer-promise-reject-errors": "error",
+    "typescript/restrict-plus-operands": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+
+    "typescript/unbound-method": "off"
+  },
+  "options": {
+    "typeAware": true
+  },
+  "ignorePatterns": [
+    "dist/",
+    "node_modules/",
+    "vitest.config.ts",
+    "knip.config.ts"
+  ]
+}

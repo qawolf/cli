@@ -10,7 +10,7 @@
     "erasableSyntaxOnly": true,
     "rewriteRelativeImportExtensions": true,
     "verbatimModuleSyntax": true,
-    "types": ["bun-types"],
+    "types": ["bun"],
     "paths": {
       "~/*": ["./src/*"]
     }
