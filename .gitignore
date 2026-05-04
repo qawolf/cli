@@ -4,9 +4,6 @@ node_modules/
 # Build output
 dist/
 
-# Turborepo
-.turbo/
-
 # Environment
 .env
 .env.*
@@ -29,3 +26,6 @@ bun.lockb
 # Local overrides
 *.local.md
 *.local.json
+
+# QA Wolf CLI output
+.qawolf/

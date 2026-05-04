@@ -34,12 +34,6 @@ bun run format           # Prettier write
 bun run test             # Vitest
 ```
 
-Run everything at once with Turborepo (cached, parallel):
-
-```bash
-bunx turbo run typecheck lint build
-```
-
 ## License
 
 [Apache-2.0](LICENSE)

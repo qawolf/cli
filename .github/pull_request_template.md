@@ -9,7 +9,11 @@
 <!-- Concrete commands or steps to verify. -->
 
 ```bash
-bunx turbo run typecheck lint format:check test build
+bun run typecheck
+bun run lint
+bun run format:check
+bun run test
+bun run build
 ```
 
 # Checklist
