@@ -11,8 +11,8 @@ describe("createConfirm", () => {
   describe("human mode", () => {
     it("returns ok with true when user confirms", async () => {
       const clack = makeClack();
-      vi.mocked(clack.confirm).mockResolvedValue(true);
-      vi.mocked(clack.isCancel).mockReturnValue(false);
+      clack.confirm.mockResolvedValue(true);
+      clack.isCancel.mockReturnValue(false);
       const confirm = createConfirm({ mode: "human", clack });
 
       const result = await confirm("Are you sure?");
@@ -23,8 +23,8 @@ describe("createConfirm", () => {
 
     it("returns ok with false when user declines", async () => {
       const clack = makeClack();
-      vi.mocked(clack.confirm).mockResolvedValue(false);
-      vi.mocked(clack.isCancel).mockReturnValue(false);
+      clack.confirm.mockResolvedValue(false);
+      clack.isCancel.mockReturnValue(false);
       const confirm = createConfirm({ mode: "human", clack });
 
       const result = await confirm("Are you sure?");
@@ -34,8 +34,8 @@ describe("createConfirm", () => {
 
     it("returns not ok when user cancels", async () => {
       const clack = makeClack();
-      vi.mocked(clack.confirm).mockResolvedValue(Symbol("cancel"));
-      vi.mocked(clack.isCancel).mockReturnValue(true);
+      clack.confirm.mockResolvedValue(Symbol("cancel"));
+      clack.isCancel.mockReturnValue(true);
       const confirm = createConfirm({ mode: "human", clack });
 
       const result = await confirm("Are you sure?");

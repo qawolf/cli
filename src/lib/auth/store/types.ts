@@ -13,7 +13,7 @@ export type SaveApiKeyResult = {
   file: { stored: "file"; keychainError: string };
 }[StorageSource];
 
-export type DeleteOutcomeMap = {
+type DeleteOutcomeMap = {
   keychain: "deleted" | "unavailable";
   file: "deleted" | "not-found";
 };

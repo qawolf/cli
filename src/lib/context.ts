@@ -2,14 +2,15 @@ import type { Command } from "commander";
 
 import { errorMessage } from "./errors.js";
 import { getConfigDir } from "./paths.js";
-import { type OutputFlags, type UI, createUI } from "./ui/index.js";
+import { type OutputFlags } from "./ui/env.js";
+import { type UI, createUI } from "./ui/index.js";
 
 export type CommandContext = {
   readonly ui: UI;
   readonly configDir: string;
 };
 
-export type CommandError = {
+type CommandError = {
   readonly error: string;
 };
 

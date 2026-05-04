@@ -5,18 +5,18 @@ import type { IdentityResponse } from "~/clients/platform.js";
 export type StorageSource = "keychain" | "file";
 
 // "env" = QAWOLF_API_KEY environment variable
-export type ApiKeySource = "env" | StorageSource;
+type ApiKeySource = "env" | StorageSource;
 
-export interface ApiKeyResult {
+export type ApiKeyResult = {
   key: string;
   source: ApiKeySource;
-}
+};
 
 export type LoadApiKeyResult =
   | { found: true; key: string; source: StorageSource }
   | { found: false; errors?: { keychain?: string; file?: string } };
 
-export type TeamIdentity = IdentityResponse["team"];
+type TeamIdentity = IdentityResponse["team"];
 
 export type ValidateApiKeyResult =
   | { valid: true; team: TeamIdentity }

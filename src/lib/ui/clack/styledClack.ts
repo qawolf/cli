@@ -12,7 +12,7 @@ import {
 
 import { styledTitle } from "./theme.js";
 
-export interface StyledClack {
+export type StyledClack = {
   log: {
     info(message: string): void;
     error(message: string): void;
@@ -33,7 +33,7 @@ export interface StyledClack {
     stop(message: string): void;
     error(message: string): void;
   };
-}
+};
 
 export function createStyledClack(): StyledClack {
   return {
