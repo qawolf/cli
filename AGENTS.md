@@ -22,7 +22,7 @@ bun run test:watch                 # bun test --watch
 
 ## Testing
 
-Tests use bun:test. Run a single test file with `bun run test <path>`. Place test files next to the code they test, named `*.test.ts`.
+Tests use Bun's test runner. Run a single test file with `bun run test <path>`. Place test files next to the code they test, named `*.test.ts`.
 
 ## Project Structure
 
