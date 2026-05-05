@@ -27,6 +27,7 @@ describe("resolveApiKey", () => {
     });
 
     expect(result).toEqual({ key: "qaw_test_key", source: "env" });
+    expect(mockLoadApiKey).not.toHaveBeenCalled();
   });
 
   it("skips whitespace-only env var", async () => {

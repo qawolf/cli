@@ -16,7 +16,7 @@ function makeThrowingEntryClass(message: string): typeof Entry {
       throw Error(message);
     }
     getPassword(): string {
-      return "";
+      throw Error("unreachable");
     }
   } as unknown as typeof Entry;
 }
