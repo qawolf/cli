@@ -15,8 +15,11 @@ export function createRunner({
   deps: RunnerDeps;
   options: RunnerOptions;
 }): Runner {
+  if (options.retries < 0) {
+    throw new Error(`retries must be >= 0, got ${options.retries}`);
+  }
+
   const storage = deps.createStorage<FlowDeps>();
-  const workflowInputs = options.workflowInputs ?? {};
 
   return {
     run: async (flowDef: FlowDefinition): Promise<FlowRunResult> => {
@@ -37,6 +40,7 @@ export function createRunner({
           stepCounts.total = 0;
 
           try {
+            const workflowInputs = { ...options.workflowInputs };
             const flowDeps: FlowDeps = {
               inputs: workflowInputs,
               workflowInputs,
@@ -50,6 +54,7 @@ export function createRunner({
             };
 
             await storage.run(flowDeps, () => flowDef.callback(flowDeps));
+            if (aborted) break;
             return { passed: true, stepCounts, attempts: attempt };
           } catch (err) {
             lastError = new FlowRunError(flowDef.name, attempt, err);

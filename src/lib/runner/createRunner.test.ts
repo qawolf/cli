@@ -108,7 +108,7 @@ describe("createRunner", () => {
     expect((result.error as FlowRunError).attempt).toBe(1);
   });
 
-  it("passes both inputs and workflowInputs pointing at the same value", async () => {
+  it("passes both inputs and workflowInputs pointing at the same cloned object", async () => {
     const workflowInputs = { flowId: { key: "value" } };
     const runner = createRunner({
       deps: makeDeps(),
@@ -126,8 +126,11 @@ describe("createRunner", () => {
 
     await runner.run(flow);
 
-    expect(capturedInputs).toBe(workflowInputs);
-    expect(capturedWorkflowInputs).toBe(workflowInputs);
+    // inputs and workflowInputs are the same object inside flowDeps
+    expect(capturedInputs).toBe(capturedWorkflowInputs);
+    // they are a copy of the original, not the same reference
+    expect(capturedInputs).not.toBe(workflowInputs);
+    expect(capturedInputs).toEqual(workflowInputs);
   });
 
   it("fails the flow when a step fn throws", async () => {
