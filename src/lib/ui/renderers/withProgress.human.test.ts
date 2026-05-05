@@ -17,7 +17,7 @@ describe("createWithProgress — human mode", () => {
       "done",
     );
 
-    const s = clack.spinner();
+    const s = clack.createdSpinners[0]!;
     expect(s.start).toHaveBeenCalledTimes(1);
     expect(s.start).toHaveBeenCalledWith("(1/1) first step");
     expect(s.message).not.toHaveBeenCalled();
@@ -36,7 +36,7 @@ describe("createWithProgress — human mode", () => {
       "done",
     );
 
-    const s = clack.spinner();
+    const s = clack.createdSpinners[0]!;
     expect(s.start).toHaveBeenCalledTimes(1);
     expect(s.message).toHaveBeenCalledTimes(2);
     expect(s.message).toHaveBeenNthCalledWith(1, "(2/3) second");
@@ -52,7 +52,7 @@ describe("createWithProgress — human mode", () => {
       "All done!",
     );
 
-    const s = clack.spinner();
+    const s = clack.createdSpinners[0]!;
     expect(s.stop).toHaveBeenCalledTimes(1);
     expect(s.stop).toHaveBeenCalledWith("All done!");
   });
@@ -73,7 +73,7 @@ describe("createWithProgress — human mode", () => {
       doneFn,
     );
 
-    const s = clack.spinner();
+    const s = clack.createdSpinners[0]!;
     expect(doneFn).toHaveBeenCalledTimes(1);
     expect(doneFn).toHaveBeenCalledWith(["a", "b"]);
     expect(s.stop).toHaveBeenCalledWith("Finished with 2 results");
@@ -118,7 +118,7 @@ describe("createWithProgress — human mode", () => {
     expect(caughtError).toBeInstanceOf(Error);
     expect((caughtError as Error).message).toBe("task error");
 
-    const s = clack.spinner();
+    const s = clack.createdSpinners[0]!;
     expect(s.start).toHaveBeenCalledTimes(1);
     expect(s.error).toHaveBeenCalledTimes(1);
     expect(s.error).toHaveBeenCalledWith("(1/1) will fail");
@@ -137,7 +137,7 @@ describe("createWithProgress — human mode", () => {
       "done",
     );
 
-    const s = clack.spinner();
+    const s = clack.createdSpinners[0]!;
     expect(s.start).toHaveBeenCalledWith("(1/2) fetch data");
     expect(s.message).toHaveBeenCalledWith("(2/2) process data");
   });

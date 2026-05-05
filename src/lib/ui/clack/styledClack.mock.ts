@@ -11,13 +11,8 @@ export type MockSpinner = {
 
 export function makeClack() {
   const isCancel = mock<(value: unknown) => boolean>();
-  const spinnerInstance: MockSpinner = {
-    start: mock(),
-    message: mock(),
-    stop: mock(),
-    error: mock(),
-  };
-  return {
+  const createdSpinners: MockSpinner[] = [];
+  const clack = {
     log: {
       info: mock(),
       error: mock(),
@@ -32,6 +27,16 @@ export function makeClack() {
     confirm: mock(),
     password: mock(),
     isCancel: isCancel as typeof isCancel & StyledClack["isCancel"],
-    spinner: mock(() => spinnerInstance),
+    spinner: mock((): MockSpinner => {
+      const s: MockSpinner = {
+        start: mock(),
+        message: mock(),
+        stop: mock(),
+        error: mock(),
+      };
+      createdSpinners.push(s);
+      return s;
+    }),
   } satisfies StyledClack;
+  return { ...clack, createdSpinners };
 }
