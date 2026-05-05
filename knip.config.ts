@@ -3,7 +3,7 @@ import type { KnipConfig } from "knip";
 const config: KnipConfig = {
   entry: ["*.config.ts", "src/**/*.test.ts", "src/**/*.mock.ts"],
   project: ["src/**/*.ts"],
-  // temporarily ignore src/types.ts until it is in use in follow-ups
+  // TODO WIZ-10324: remove once types are consumed by follow-up commands
   ignoreFiles: ["src/types.ts"],
 };
 
