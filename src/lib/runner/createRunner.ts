@@ -15,8 +15,10 @@ export function createRunner({
   deps: RunnerDeps;
   options: RunnerOptions;
 }): Runner {
-  if (options.retries < 0) {
-    throw new Error(`retries must be >= 0, got ${options.retries}`);
+  if (!Number.isInteger(options.retries) || options.retries < 0) {
+    throw new Error(
+      `retries must be a non-negative integer, got ${options.retries}`,
+    );
   }
 
   const storage = deps.createStorage<FlowDeps>();
@@ -40,7 +42,9 @@ export function createRunner({
           stepCounts.total = 0;
 
           try {
-            const workflowInputs = { ...options.workflowInputs };
+            const workflowInputs = structuredClone(
+              options.workflowInputs ?? {},
+            );
             const flowDeps: FlowDeps = {
               inputs: workflowInputs,
               workflowInputs,

@@ -29,7 +29,16 @@ describe("createRunner — guards and edge cases", () => {
         deps: makeDeps(),
         options: { retries: -1, outputDir: "/tmp" },
       }),
-    ).toThrow("retries must be >= 0, got -1");
+    ).toThrow("retries must be a non-negative integer, got -1");
+  });
+
+  it("throws synchronously when retries is NaN", () => {
+    expect(() =>
+      createRunner({
+        deps: makeDeps(),
+        options: { retries: NaN, outputDir: "/tmp" },
+      }),
+    ).toThrow("retries must be a non-negative integer, got NaN");
   });
 
   it("reports failure (not pass) when SIGTERM fires during flow execution", async () => {
@@ -60,21 +69,25 @@ describe("createRunner — guards and edge cases", () => {
     expect(result.attempts).toBe(1);
   });
 
-  it("does not share workflowInputs reference across retry attempts", async () => {
-    const workflowInputs = { key: { nested: "value" } };
+  it("deep-clones workflowInputs so nested mutation in one attempt does not affect the next", async () => {
+    const workflowInputs = { key: { nested: "original" } };
     const runner = createRunner({
       deps: makeDeps(),
       options: { retries: 1, outputDir: "/tmp", workflowInputs },
     });
 
-    const captured: unknown[] = [];
+    const captured: { key: { nested: string } }[] = [];
     let attempts = 0;
     const flow: FlowDefinition = {
       name: "inputs-isolation",
       callback: async (deps) => {
-        captured.push(deps.workflowInputs);
+        const inputs = deps.workflowInputs as { key: { nested: string } };
+        captured.push(inputs);
         attempts++;
-        if (attempts === 1) throw new Error("retry");
+        if (attempts === 1) {
+          inputs.key.nested = "mutated";
+          throw new Error("retry");
+        }
       },
     };
 
@@ -82,7 +95,7 @@ describe("createRunner — guards and edge cases", () => {
 
     expect(captured).toHaveLength(2);
     expect(captured[0]).not.toBe(captured[1]);
-    expect(captured[0]).toEqual({ key: { nested: "value" } });
-    expect(captured[1]).toEqual({ key: { nested: "value" } });
+    // attempt 2 should see the original value, not the mutation from attempt 1
+    expect(captured[1]!.key.nested).toBe("original");
   });
 });
