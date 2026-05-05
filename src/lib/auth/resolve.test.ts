@@ -41,6 +41,7 @@ describe("resolveApiKey", () => {
     });
 
     expect(result).toBeUndefined();
+    expect(mockLoadApiKey).toHaveBeenCalledWith("/tmp/config");
   });
 
   it("returns stored key when env var is not set", async () => {
