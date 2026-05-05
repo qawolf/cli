@@ -2,8 +2,21 @@ import { mock } from "bun:test";
 
 import { type StyledClack } from "./styledClack.js";
 
+export type MockSpinner = {
+  start: ReturnType<typeof mock>;
+  message: ReturnType<typeof mock>;
+  stop: ReturnType<typeof mock>;
+  error: ReturnType<typeof mock>;
+};
+
 export function makeClack() {
   const isCancel = mock<(value: unknown) => boolean>();
+  const spinnerInstance: MockSpinner = {
+    start: mock(),
+    message: mock(),
+    stop: mock(),
+    error: mock(),
+  };
   return {
     log: {
       info: mock(),
@@ -19,6 +32,6 @@ export function makeClack() {
     confirm: mock(),
     password: mock(),
     isCancel: isCancel as typeof isCancel & StyledClack["isCancel"],
-    spinner: mock(),
+    spinner: mock(() => spinnerInstance),
   } satisfies StyledClack;
 }
