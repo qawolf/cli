@@ -16,13 +16,13 @@ bun run lint:fix                   # oxlint with auto-fix
 bun run format:check               # oxfmt check
 bun run format                     # oxfmt write
 bun run knip                       # dead-code / unused-dep detection
-bun run test                       # Vitest
-bun run test:watch                 # Vitest watch mode
+bun run test                       # bun test
+bun run test:watch                 # bun test --watch
 ```
 
 ## Testing
 
-Tests use Vitest. Run a single test file with `bun run test <path>`. Place test files next to the code they test, named `*.test.ts`.
+Tests use Bun's test runner. Run a single test file with `bun run test <path>`. Place test files next to the code they test, named `*.test.ts`.
 
 ## Project Structure
 

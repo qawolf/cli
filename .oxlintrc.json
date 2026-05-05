@@ -77,12 +77,7 @@
   "options": {
     "typeAware": true
   },
-  "ignorePatterns": [
-    "dist/",
-    "node_modules/",
-    "vitest.config.ts",
-    "knip.config.ts"
-  ],
+  "ignorePatterns": ["dist/", "node_modules/", "knip.config.ts"],
   "overrides": [
     {
       "files": ["**/*.test.ts", "**/*.mock.ts"],

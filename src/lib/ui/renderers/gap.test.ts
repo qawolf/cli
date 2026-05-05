@@ -1,17 +1,17 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 import { createGap } from "./gap.js";
 
 describe("createGap", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   describe("human mode", () => {
     it("writes newline to stderr", () => {
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const gap = createGap({ mode: "human" });
 
       gap();
@@ -22,9 +22,9 @@ describe("createGap", () => {
 
   describe("json mode", () => {
     it("does not write anything", () => {
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const gap = createGap({ mode: "json" });
 
       gap();
@@ -35,9 +35,9 @@ describe("createGap", () => {
 
   describe("agent mode", () => {
     it("writes newline to stderr", () => {
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const gap = createGap({ mode: "agent" });
 
       gap();
