@@ -1,12 +1,6 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { getIdentity } from "./platform.js";
-
-function mockFetch(impl: (...args: unknown[]) => unknown): void {
-  vi.spyOn(globalThis, "fetch").mockImplementation(
-    impl as unknown as typeof fetch,
-  );
-}
 
 function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -17,23 +11,22 @@ function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
 }
 
 describe("getIdentity", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-    vi.unstubAllEnvs();
-  });
-
   it("sends the API key as a Bearer token to /api/v0/identity", async () => {
-    vi.stubEnv("QAWOLF_API_URL", "https://test.qawolf.com");
     const team = {
       createdAt: "2024-01-01T00:00:00.000Z",
       id: "team_1",
       name: "Test Team",
     };
-    mockFetch(() => Promise.resolve(jsonResponse({ team })));
+    const mockFetch = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(jsonResponse({ team }));
 
-    await getIdentity("qawolf_mykey");
+    await getIdentity("qawolf_mykey", {
+      fetch: mockFetch,
+      baseUrl: "https://test.qawolf.com",
+    });
 
-    expect(globalThis.fetch).toHaveBeenCalledWith(
+    expect(mockFetch).toHaveBeenCalledWith(
       "https://test.qawolf.com/api/v0/identity",
       expect.objectContaining({
         headers: { Authorization: "Bearer qawolf_mykey" },
@@ -42,30 +35,36 @@ describe("getIdentity", () => {
   });
 
   it("returns ok with parsed data on success", async () => {
-    vi.stubEnv("QAWOLF_API_URL", "https://test.qawolf.com");
     const team = {
       createdAt: "2024-01-01T00:00:00.000Z",
       id: "team_1",
       name: "My Team",
     };
-    mockFetch(() => Promise.resolve(jsonResponse({ team })));
+    const mockFetch = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(jsonResponse({ team }));
 
-    const result = await getIdentity("qawolf_key");
+    const result = await getIdentity("qawolf_key", {
+      fetch: mockFetch,
+      baseUrl: "https://test.qawolf.com",
+    });
+
     expect(result).toEqual({ ok: true, data: { team } });
   });
 
   it("extracts `error` from JSON body on auth failure", async () => {
-    vi.stubEnv("QAWOLF_API_URL", "https://test.qawolf.com");
-    mockFetch(() =>
-      Promise.resolve(
-        new Response('{"error":"You are not authenticated."}', {
-          status: 401,
-          headers: { "content-type": "application/json" },
-        }),
-      ),
+    const mockFetch = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response('{"error":"You are not authenticated."}', {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      }),
     );
 
-    const result = await getIdentity("qawolf_badkey");
+    const result = await getIdentity("qawolf_badkey", {
+      fetch: mockFetch,
+      baseUrl: "https://test.qawolf.com",
+    });
+
     expect(result).toEqual({
       ok: false,
       status: 401,
@@ -74,18 +73,19 @@ describe("getIdentity", () => {
   });
 
   it("falls back to statusText when body is not JSON", async () => {
-    vi.stubEnv("QAWOLF_API_URL", "https://test.qawolf.com");
-    mockFetch(() =>
-      Promise.resolve(
-        new Response("<html>Bad Gateway</html>", {
-          status: 502,
-          statusText: "Bad Gateway",
-          headers: { "content-type": "text/html" },
-        }),
-      ),
+    const mockFetch = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response("<html>Bad Gateway</html>", {
+        status: 502,
+        statusText: "Bad Gateway",
+        headers: { "content-type": "text/html" },
+      }),
     );
 
-    const result = await getIdentity("qawolf_key");
+    const result = await getIdentity("qawolf_key", {
+      fetch: mockFetch,
+      baseUrl: "https://test.qawolf.com",
+    });
+
     expect(result).toEqual({
       ok: false,
       status: 502,
@@ -94,10 +94,15 @@ describe("getIdentity", () => {
   });
 
   it("returns error without status on network failure", async () => {
-    vi.stubEnv("QAWOLF_API_URL", "https://test.qawolf.com");
-    mockFetch(() => Promise.reject(Error("fetch failed")));
+    const mockFetch = vi
+      .fn<typeof fetch>()
+      .mockRejectedValue(Error("fetch failed"));
 
-    const result = await getIdentity("qawolf_key");
+    const result = await getIdentity("qawolf_key", {
+      fetch: mockFetch,
+      baseUrl: "https://test.qawolf.com",
+    });
+
     expect(result).toEqual({
       ok: false,
       error: "fetch failed",
@@ -105,10 +110,15 @@ describe("getIdentity", () => {
   });
 
   it("returns error when response body does not match schema", async () => {
-    vi.stubEnv("QAWOLF_API_URL", "https://test.qawolf.com");
-    mockFetch(() => Promise.resolve(jsonResponse({ unexpected: "shape" })));
+    const mockFetch = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(jsonResponse({ unexpected: "shape" }));
 
-    const result = await getIdentity("qawolf_key");
+    const result = await getIdentity("qawolf_key", {
+      fetch: mockFetch,
+      baseUrl: "https://test.qawolf.com",
+    });
+
     expect(result).toEqual({
       ok: false,
       status: 200,
@@ -116,18 +126,22 @@ describe("getIdentity", () => {
     });
   });
 
-  it("uses default API URL when QAWOLF_API_URL is not set", async () => {
-    vi.stubEnv("QAWOLF_API_URL", "");
+  it("uses deps.baseUrl in the request URL", async () => {
     const team = {
       createdAt: "2024-01-01T00:00:00.000Z",
       id: "team_1",
-      name: "Test",
+      name: "Test Team",
     };
-    mockFetch(() => Promise.resolve(jsonResponse({ team })));
+    const mockFetch = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(jsonResponse({ team }));
 
-    await getIdentity("qawolf_key");
+    await getIdentity("qawolf_key", {
+      fetch: mockFetch,
+      baseUrl: "https://app.qawolf.com",
+    });
 
-    expect(globalThis.fetch).toHaveBeenCalledWith(
+    expect(mockFetch).toHaveBeenCalledWith(
       "https://app.qawolf.com/api/v0/identity",
       expect.anything(),
     );

@@ -18,12 +18,23 @@ export type GetIdentityResult =
   | { ok: false; status: number; error: string }
   | { ok: false; error: string };
 
-export async function getIdentity(apiKey: string): Promise<GetIdentityResult> {
-  const url = `${getApiBaseUrl(process.env)}/api/v0/identity`;
+type GetIdentityDeps = {
+  fetch: typeof globalThis.fetch;
+  baseUrl: string;
+};
+
+export async function getIdentity(
+  apiKey: string,
+  deps: GetIdentityDeps = {
+    fetch: globalThis.fetch,
+    baseUrl: getApiBaseUrl(process.env),
+  },
+): Promise<GetIdentityResult> {
+  const url = `${deps.baseUrl}/api/v0/identity`;
 
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await deps.fetch(url, {
       headers: { Authorization: `Bearer ${apiKey}` },
       signal: AbortSignal.timeout(10_000),
     });

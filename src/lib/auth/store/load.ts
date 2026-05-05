@@ -8,11 +8,19 @@ import type { LoadApiKeyResult } from "~/lib/auth/types.js";
 import { ACCOUNT, CREDENTIALS_FILE, SERVICE } from "./constants.js";
 import { credentialsFileSchema } from "./types.js";
 
-export async function loadApiKey(configDir: string): Promise<LoadApiKeyResult> {
+type LoadApiKeyDeps = {
+  EntryClass: typeof Entry;
+  readFile: (path: string, encoding: BufferEncoding) => Promise<string>;
+};
+
+export async function loadApiKey(
+  configDir: string,
+  deps: LoadApiKeyDeps = { EntryClass: Entry, readFile },
+): Promise<LoadApiKeyResult> {
   const errors: { keychain?: string; file?: string } = {};
 
   try {
-    const entry = new Entry(SERVICE, ACCOUNT);
+    const entry = new deps.EntryClass(SERVICE, ACCOUNT);
     const key = entry.getPassword();
     if (key) return { found: true, key, source: "keychain" };
   } catch (err: unknown) {
@@ -20,7 +28,10 @@ export async function loadApiKey(configDir: string): Promise<LoadApiKeyResult> {
   }
 
   try {
-    const content = await readFile(join(configDir, CREDENTIALS_FILE), "utf-8");
+    const content = await deps.readFile(
+      join(configDir, CREDENTIALS_FILE),
+      "utf-8",
+    );
     const parsed = credentialsFileSchema.safeParse(JSON.parse(content));
     if (parsed.success) {
       return { found: true, key: parsed.data.apiKey, source: "file" };
