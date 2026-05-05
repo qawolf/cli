@@ -28,7 +28,7 @@ Tests use Bun's test runner. Run a single test file with `bun run test <path>`. 
 
 ```
 src/
-├── main.ts              # Entry point: program setup + command registration + parse
+├── main.ts              # Entry point (setup and registration in lib/program.ts)
 ├── commands/            # One directory per command domain
 │   ├── auth/            # whoami
 │   ├── flows/           # list, download
