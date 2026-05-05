@@ -58,6 +58,7 @@ describe("createRunner — guards and edge cases", () => {
 
     const flow: FlowDefinition = {
       name: "sigterm-during-run",
+      path: "/flows/sigterm-during-run.ts",
       callback: async () => {
         signalHandler?.();
       },
@@ -80,6 +81,7 @@ describe("createRunner — guards and edge cases", () => {
     let attempts = 0;
     const flow: FlowDefinition = {
       name: "inputs-isolation",
+      path: "/flows/inputs-isolation.ts",
       callback: async (deps) => {
         const inputs = deps.flowInputs as { key: { nested: string } };
         captured.push(inputs);
