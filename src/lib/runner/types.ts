@@ -19,6 +19,7 @@ export type FlowDeps = {
 
 export type FlowDefinition = {
   name: string;
+  path: string;
   callback: (deps: FlowDeps) => Promise<void>;
 };
 

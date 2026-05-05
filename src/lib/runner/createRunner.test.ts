@@ -31,6 +31,7 @@ describe("createRunner", () => {
     });
     const flow: FlowDefinition = {
       name: "example",
+      path: "/flows/example.ts",
       callback: async (deps) => {
         await deps.test("step 1", async () => {});
         await deps.test("step 2", async () => {});
@@ -53,6 +54,7 @@ describe("createRunner", () => {
     let attempts = 0;
     const flow: FlowDefinition = {
       name: "failing",
+      path: "/flows/failing.ts",
       callback: async () => {
         attempts++;
         throw new Error("oops");
@@ -74,6 +76,7 @@ describe("createRunner", () => {
     let attempts = 0;
     const flow: FlowDefinition = {
       name: "no-retry",
+      path: "/flows/no-retry.ts",
       callback: async () => {
         attempts++;
         throw new FailWithoutRetryError("terminal failure");
@@ -95,6 +98,7 @@ describe("createRunner", () => {
     const original = new Error("original");
     const flow: FlowDefinition = {
       name: "err-flow",
+      path: "/flows/err-flow.ts",
       callback: async () => {
         throw original;
       },
@@ -117,6 +121,7 @@ describe("createRunner", () => {
     let capturedFlowInputs: unknown;
     const flow: FlowDefinition = {
       name: "inputs-test",
+      path: "/flows/inputs-test.ts",
       callback: async (deps) => {
         capturedFlowInputs = deps.flowInputs;
       },
@@ -136,6 +141,7 @@ describe("createRunner", () => {
     const testError = new Error("test failed");
     const flow: FlowDefinition = {
       name: "step-throw",
+      path: "/flows/step-throw.ts",
       callback: async (deps) => {
         await deps.test("bad step", async () => {
           throw testError;
@@ -159,6 +165,7 @@ describe("createRunner", () => {
     let attempts = 0;
     const flow: FlowDefinition = {
       name: "reset-test",
+      path: "/flows/reset-test.ts",
       callback: async (deps) => {
         attempts++;
         await deps.test("step 1", async () => {});

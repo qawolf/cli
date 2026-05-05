@@ -32,6 +32,8 @@ export type Reporter = {
     err: Error;
     tests: TestCounts;
     durationMs: number;
+    attempt: number;
+    maxAttempts: number;
   }) => void;
   onTestStart?: (event: { label: string }) => void;
   onTestResult?: (event: {
