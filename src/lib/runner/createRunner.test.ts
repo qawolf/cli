@@ -40,7 +40,7 @@ describe("createRunner", () => {
     const result = await runner.run(flow);
 
     expect(result.passed).toBe(true);
-    expect(result.stepCounts).toEqual({ passed: 2, total: 2 });
+    expect(result.testCounts).toEqual({ passed: 2, total: 2 });
     expect(result.attempts).toBe(1);
     expect(result.error).toBeUndefined();
   });
@@ -108,29 +108,29 @@ describe("createRunner", () => {
     expect((result.error as FlowRunError).attempt).toBe(1);
   });
 
-  it("passes both inputs and workflowInputs pointing at the same cloned object", async () => {
-    const workflowInputs = { flowId: { key: "value" } };
+  it("passes both inputs and flowInputs pointing at the same cloned object", async () => {
+    const flowInputs = { flowId: { key: "value" } };
     const runner = createRunner({
       deps: makeDeps(),
-      options: { retries: 0, outputDir: "/tmp", workflowInputs },
+      options: { retries: 0, outputDir: "/tmp", flowInputs },
     });
     let capturedInputs: unknown;
-    let capturedWorkflowInputs: unknown;
+    let capturedFlowInputs: unknown;
     const flow: FlowDefinition = {
       name: "inputs-test",
       callback: async (deps) => {
         capturedInputs = deps.inputs;
-        capturedWorkflowInputs = deps.workflowInputs;
+        capturedFlowInputs = deps.flowInputs;
       },
     };
 
     await runner.run(flow);
 
-    // inputs and workflowInputs are the same object inside flowDeps
-    expect(capturedInputs).toBe(capturedWorkflowInputs);
+    // inputs and flowInputs are the same object inside flowDeps
+    expect(capturedInputs).toBe(capturedFlowInputs);
     // they are a copy of the original, not the same reference
-    expect(capturedInputs).not.toBe(workflowInputs);
-    expect(capturedInputs).toEqual(workflowInputs);
+    expect(capturedInputs).not.toBe(flowInputs);
+    expect(capturedInputs).toEqual(flowInputs);
   });
 
   it("fails the flow when a step fn throws", async () => {
@@ -151,7 +151,7 @@ describe("createRunner", () => {
     const result = await runner.run(flow);
 
     expect(result.passed).toBe(false);
-    expect(result.stepCounts).toEqual({ passed: 0, total: 1 });
+    expect(result.testCounts).toEqual({ passed: 0, total: 1 });
     expect(result.error).toBeInstanceOf(FlowRunError);
     expect((result.error as FlowRunError).cause).toBe(stepError);
   });
@@ -174,6 +174,6 @@ describe("createRunner", () => {
     const result = await runner.run(flow);
 
     expect(result.passed).toBe(true);
-    expect(result.stepCounts).toEqual({ passed: 1, total: 1 });
+    expect(result.testCounts).toEqual({ passed: 1, total: 1 });
   });
 });

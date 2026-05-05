@@ -26,7 +26,7 @@ export function createRunner({
   return {
     run: async (flowDef: FlowDefinition): Promise<FlowRunResult> => {
       const maxAttempts = options.retries + 1;
-      const stepCounts = { passed: 0, total: 0 };
+      const testCounts = { passed: 0, total: 0 };
       let lastError: FlowRunError | undefined;
       let attempt = 0;
       let aborted = false;
@@ -38,28 +38,26 @@ export function createRunner({
       try {
         while (attempt < maxAttempts && !aborted) {
           attempt++;
-          stepCounts.passed = 0;
-          stepCounts.total = 0;
+          testCounts.passed = 0;
+          testCounts.total = 0;
 
           try {
-            const workflowInputs = structuredClone(
-              options.workflowInputs ?? {},
-            );
+            const flowInputs = structuredClone(options.flowInputs ?? {});
             const flowDeps: FlowDeps = {
-              inputs: workflowInputs,
-              workflowInputs,
+              inputs: flowInputs,
+              flowInputs,
               // TODO WIZ-10421: wire setOutput when output collection lands
               setOutput: () => {},
               test: async (_name, fn) => {
-                stepCounts.total++;
+                testCounts.total++;
                 await fn();
-                stepCounts.passed++;
+                testCounts.passed++;
               },
             };
 
             await storage.run(flowDeps, () => flowDef.callback(flowDeps));
             if (aborted) break;
-            return { passed: true, stepCounts, attempts: attempt };
+            return { passed: true, testCounts, attempts: attempt };
           } catch (err) {
             lastError = new FlowRunError(flowDef.name, attempt, err);
             if (err instanceof FailWithoutRetryError) break;
@@ -68,7 +66,7 @@ export function createRunner({
 
         return {
           passed: false,
-          stepCounts,
+          testCounts,
           attempts: attempt,
           ...(lastError !== undefined && { error: lastError }),
         };

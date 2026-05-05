@@ -1,4 +1,4 @@
-import type { StepCounts } from "~/types.js";
+import type { TestCounts } from "~/types.js";
 import type { FlowRunError } from "./errors.js";
 
 export type JsonSerializable =
@@ -9,11 +9,11 @@ export type JsonSerializable =
   | JsonSerializable[]
   | { [key: string]: JsonSerializable };
 
-export type WorkflowInput = Record<string, Record<string, unknown>>;
+export type FlowInput = Record<string, Record<string, unknown>>;
 
 export type FlowDeps = {
-  inputs: WorkflowInput;
-  workflowInputs: WorkflowInput;
+  inputs: FlowInput;
+  flowInputs: FlowInput;
   setOutput: (key: string, value: JsonSerializable) => void;
   test: (name: string, fn: () => Promise<void>) => Promise<void>;
 };
@@ -54,12 +54,12 @@ export type RunnerDeps = {
 export type RunnerOptions = {
   retries: number;
   outputDir: string;
-  workflowInputs?: WorkflowInput;
+  flowInputs?: FlowInput;
 };
 
 export type FlowRunResult = {
   passed: boolean;
-  stepCounts: StepCounts;
+  testCounts: TestCounts;
   attempts: number;
   error?: FlowRunError;
 };
