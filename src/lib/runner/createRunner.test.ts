@@ -108,29 +108,24 @@ describe("createRunner", () => {
     expect((result.error as FlowRunError).attempt).toBe(1);
   });
 
-  it("passes both inputs and flowInputs pointing at the same cloned object", async () => {
+  it("exposes flowInputs from options to the flow callback as a clone", async () => {
     const flowInputs = { flowId: { key: "value" } };
     const runner = createRunner({
       deps: makeDeps(),
       options: { retries: 0, outputDir: "/tmp", flowInputs },
     });
-    let capturedInputs: unknown;
     let capturedFlowInputs: unknown;
     const flow: FlowDefinition = {
       name: "inputs-test",
       callback: async (deps) => {
-        capturedInputs = deps.inputs;
         capturedFlowInputs = deps.flowInputs;
       },
     };
 
     await runner.run(flow);
 
-    // inputs and flowInputs are the same object inside flowDeps
-    expect(capturedInputs).toBe(capturedFlowInputs);
-    // they are a copy of the original, not the same reference
-    expect(capturedInputs).not.toBe(flowInputs);
-    expect(capturedInputs).toEqual(flowInputs);
+    expect(capturedFlowInputs).not.toBe(flowInputs);
+    expect(capturedFlowInputs).toEqual(flowInputs);
   });
 
   it("fails the flow when a test fn throws", async () => {

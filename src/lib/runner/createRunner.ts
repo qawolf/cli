@@ -44,7 +44,6 @@ export function createRunner({
           try {
             const flowInputs = structuredClone(options.flowInputs ?? {});
             const flowDeps: FlowDeps = {
-              inputs: flowInputs,
               flowInputs,
               // TODO WIZ-10421: wire setOutput when output collection lands
               setOutput: () => {},

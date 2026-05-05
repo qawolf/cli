@@ -12,9 +12,6 @@ export type JsonSerializable =
 export type FlowInput = Record<string, Record<string, unknown>>;
 
 export type FlowDeps = {
-  // flowInputs is an alias for inputs — both refer to the same object.
-  // Prefer inputs; flowInputs exists for callers who want the explicit name.
-  inputs: FlowInput;
   flowInputs: FlowInput;
   setOutput: (key: string, value: JsonSerializable) => void;
   test: (name: string, fn: () => Promise<void>) => Promise<void>;
