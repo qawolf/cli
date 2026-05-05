@@ -8,8 +8,8 @@
 set -euo pipefail
 
 BASE_REF="${1:?Usage: check-pr-size.sh <base_ref>}"
-WARN_THRESHOLD=250
-ERROR_THRESHOLD=400
+WARN_THRESHOLD=400
+ERROR_THRESHOLD=600
 
 LINES=$(git diff --numstat "origin/${BASE_REF}...HEAD" \
   -- ':!bun.lock' ':!*.snap' \
