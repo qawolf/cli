@@ -24,7 +24,7 @@ function makeDeps(): RunnerDeps {
 }
 
 describe("createRunner", () => {
-  it("reports pass and counts steps when flow succeeds", async () => {
+  it("reports pass and counts tests when flow succeeds", async () => {
     const runner = createRunner({
       deps: makeDeps(),
       options: { retries: 0, outputDir: "/tmp" },
@@ -133,17 +133,17 @@ describe("createRunner", () => {
     expect(capturedInputs).toEqual(flowInputs);
   });
 
-  it("fails the flow when a step fn throws", async () => {
+  it("fails the flow when a test fn throws", async () => {
     const runner = createRunner({
       deps: makeDeps(),
       options: { retries: 0, outputDir: "/tmp" },
     });
-    const stepError = new Error("step failed");
+    const testError = new Error("test failed");
     const flow: FlowDefinition = {
       name: "step-throw",
       callback: async (deps) => {
         await deps.test("bad step", async () => {
-          throw stepError;
+          throw testError;
         });
       },
     };
@@ -153,10 +153,10 @@ describe("createRunner", () => {
     expect(result.passed).toBe(false);
     expect(result.testCounts).toEqual({ passed: 0, total: 1 });
     expect(result.error).toBeInstanceOf(FlowRunError);
-    expect((result.error as FlowRunError).cause).toBe(stepError);
+    expect((result.error as FlowRunError).cause).toBe(testError);
   });
 
-  it("resets step counters between retry attempts", async () => {
+  it("resets test counters between retry attempts", async () => {
     const runner = createRunner({
       deps: makeDeps(),
       options: { retries: 1, outputDir: "/tmp" },
