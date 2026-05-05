@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+COMMIT_MSG_FILE="$1"
+
+if grep -qi "^Co-Authored-By:" "$COMMIT_MSG_FILE"; then
+  echo "error: Co-Authored-By trailers are not allowed in commit messages."
+  echo "       Remove the Co-Authored-By line and try again."
+  exit 1
+fi

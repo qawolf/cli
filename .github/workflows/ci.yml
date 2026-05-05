@@ -27,3 +27,8 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: bash scripts/check-pr-size.sh "$BASE_REF"
+      - name: Co-authored-by check
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: bash scripts/check-co-authored.sh "$BASE_REF"
