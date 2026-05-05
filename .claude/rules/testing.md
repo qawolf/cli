@@ -28,3 +28,17 @@ expect(caughtError).toBeInstanceOf(Error);
 expect((caughtError as Error).message).toBe("expected message");
 // dependent assertions here run after the async chain has settled
 ```
+
+**`spyOn` requires `afterEach(() => mock.restore())` for cleanup.**
+
+`mock.restore()` is the bun:test equivalent of `vi.restoreAllMocks()` — it restores both `spyOn()` spies and `mock()` fakes. Any test file using `spyOn` must include this teardown:
+
+```ts
+import { afterEach, mock, spyOn } from "bun:test";
+
+afterEach(() => {
+  mock.restore();
+});
+```
+
+Without it, spy implementations leak across tests in the same file.
