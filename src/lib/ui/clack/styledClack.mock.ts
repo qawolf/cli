@@ -1,24 +1,24 @@
-import { vi } from "vitest";
+import { mock } from "bun:test";
 
 import { type StyledClack } from "./styledClack.js";
 
 export function makeClack() {
-  const isCancel = vi.fn<(value: unknown) => boolean>();
+  const isCancel = mock<(value: unknown) => boolean>();
   return {
     log: {
-      info: vi.fn(),
-      error: vi.fn(),
-      step: vi.fn(),
-      success: vi.fn(),
-      warn: vi.fn(),
+      info: mock(),
+      error: mock(),
+      step: mock(),
+      success: mock(),
+      warn: mock(),
     },
-    intro: vi.fn(),
-    note: vi.fn(),
-    outro: vi.fn(),
-    cancel: vi.fn(),
-    confirm: vi.fn(),
-    password: vi.fn(),
+    intro: mock(),
+    note: mock(),
+    outro: mock(),
+    cancel: mock(),
+    confirm: mock(),
+    password: mock(),
     isCancel: isCancel as typeof isCancel & StyledClack["isCancel"],
-    spinner: vi.fn(),
+    spinner: mock(),
   } satisfies StyledClack;
 }

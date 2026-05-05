@@ -1,21 +1,21 @@
 // oxlint-disable eslint/max-lines -- file is 241 lines; splitting tracked in WIZ-10382
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 import { createWithProgress } from "./withProgress.js";
 
 type MockSpinner = {
-  start: ReturnType<typeof vi.fn>;
-  message: ReturnType<typeof vi.fn>;
-  stop: ReturnType<typeof vi.fn>;
-  error: ReturnType<typeof vi.fn>;
+  start: ReturnType<typeof mock>;
+  message: ReturnType<typeof mock>;
+  stop: ReturnType<typeof mock>;
+  error: ReturnType<typeof mock>;
 };
 
 function createMockSpinner(): MockSpinner {
   return {
-    start: vi.fn(),
-    message: vi.fn(),
-    stop: vi.fn(),
-    error: vi.fn(),
+    start: mock(),
+    message: mock(),
+    stop: mock(),
+    error: mock(),
   };
 }
 
@@ -27,7 +27,7 @@ function createMockClack(spinner: MockSpinner): {
 
 describe("createWithProgress", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   describe("human mode", () => {
@@ -44,7 +44,7 @@ describe("createWithProgress", () => {
         "done",
       );
 
-      expect(spinner.start).toHaveBeenCalledOnce();
+      expect(spinner.start).toHaveBeenCalledTimes(1);
       expect(spinner.start).toHaveBeenCalledWith("(1/1) first step");
       expect(spinner.message).not.toHaveBeenCalled();
     });
@@ -66,7 +66,7 @@ describe("createWithProgress", () => {
         "done",
       );
 
-      expect(spinner.start).toHaveBeenCalledOnce();
+      expect(spinner.start).toHaveBeenCalledTimes(1);
       expect(spinner.message).toHaveBeenCalledTimes(2);
       expect(spinner.message).toHaveBeenNthCalledWith(1, "(2/3) second");
       expect(spinner.message).toHaveBeenNthCalledWith(2, "(3/3) third");
@@ -85,7 +85,7 @@ describe("createWithProgress", () => {
         "All done!",
       );
 
-      expect(spinner.stop).toHaveBeenCalledOnce();
+      expect(spinner.stop).toHaveBeenCalledTimes(1);
       expect(spinner.stop).toHaveBeenCalledWith("All done!");
     });
 
@@ -97,7 +97,7 @@ describe("createWithProgress", () => {
         clack: clack as never,
       });
 
-      const doneFn = vi.fn(
+      const doneFn = mock(
         (results: unknown[]) =>
           `Finished with ${String(results.length)} results`,
       );
@@ -110,7 +110,7 @@ describe("createWithProgress", () => {
         doneFn,
       );
 
-      expect(doneFn).toHaveBeenCalledOnce();
+      expect(doneFn).toHaveBeenCalledTimes(1);
       expect(doneFn).toHaveBeenCalledWith(["a", "b"]);
       expect(spinner.stop).toHaveBeenCalledWith("Finished with 2 results");
     });
@@ -143,8 +143,9 @@ describe("createWithProgress", () => {
         clack: clack as never,
       });
 
-      await expect(
-        withProgress(
+      let caughtError: unknown;
+      try {
+        await withProgress(
           [
             {
               message: "will fail",
@@ -154,11 +155,15 @@ describe("createWithProgress", () => {
             },
           ],
           "done",
-        ),
-      ).rejects.toThrow("task error");
+        );
+      } catch (e) {
+        caughtError = e;
+      }
+      expect(caughtError).toBeInstanceOf(Error);
+      expect((caughtError as Error).message).toBe("task error");
 
-      expect(spinner.start).toHaveBeenCalledOnce();
-      expect(spinner.error).toHaveBeenCalledOnce();
+      expect(spinner.start).toHaveBeenCalledTimes(1);
+      expect(spinner.error).toHaveBeenCalledTimes(1);
       expect(spinner.error).toHaveBeenCalledWith("(1/1) will fail");
       expect(spinner.stop).not.toHaveBeenCalled();
     });
@@ -186,9 +191,9 @@ describe("createWithProgress", () => {
 
   describe("json mode", () => {
     it("writes parseable JSON step and success lines to stderr", async () => {
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const spinner = createMockSpinner();
       const clack = createMockClack(spinner);
       const withProgress = createWithProgress({
@@ -214,9 +219,9 @@ describe("createWithProgress", () => {
 
   describe("agent mode", () => {
     it("writes left-aligned progress to stderr", async () => {
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const spinner = createMockSpinner();
       const clack = createMockClack(spinner);
       const withProgress = createWithProgress({

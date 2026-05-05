@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 import { makeClack } from "~/lib/ui/clack/styledClack.mock.js";
 import { createInfo } from "./info.js";
 
 describe("createInfo", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   describe("human mode", () => {
@@ -22,9 +22,9 @@ describe("createInfo", () => {
   describe("json mode", () => {
     it("writes parseable JSON to stderr", () => {
       const clack = makeClack();
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const info = createInfo({ mode: "json", clack });
 
       info("Already configured");
@@ -39,9 +39,9 @@ describe("createInfo", () => {
   describe("agent mode", () => {
     it("writes left-aligned message to stderr", () => {
       const clack = makeClack();
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const info = createInfo({ mode: "agent", clack });
 
       info("Already configured");

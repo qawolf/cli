@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, mock } from "bun:test";
 
 import { getIdentity } from "./platform.js";
 
@@ -17,12 +17,12 @@ describe("getIdentity", () => {
       id: "team_1",
       name: "Test Team",
     };
-    const mockFetch = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(jsonResponse({ team }));
+    const mockFetch = mock<typeof fetch>().mockResolvedValue(
+      jsonResponse({ team }),
+    );
 
     await getIdentity("qawolf_mykey", {
-      fetch: mockFetch,
+      fetch: mockFetch as unknown as typeof fetch,
       baseUrl: "https://test.qawolf.com",
     });
 
@@ -40,12 +40,12 @@ describe("getIdentity", () => {
       id: "team_1",
       name: "My Team",
     };
-    const mockFetch = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(jsonResponse({ team }));
+    const mockFetch = mock<typeof fetch>().mockResolvedValue(
+      jsonResponse({ team }),
+    );
 
     const result = await getIdentity("qawolf_key", {
-      fetch: mockFetch,
+      fetch: mockFetch as unknown as typeof fetch,
       baseUrl: "https://test.qawolf.com",
     });
 
@@ -53,7 +53,7 @@ describe("getIdentity", () => {
   });
 
   it("extracts `error` from JSON body on auth failure", async () => {
-    const mockFetch = vi.fn<typeof fetch>().mockResolvedValue(
+    const mockFetch = mock<typeof fetch>().mockResolvedValue(
       new Response('{"error":"You are not authenticated."}', {
         status: 401,
         headers: { "content-type": "application/json" },
@@ -61,7 +61,7 @@ describe("getIdentity", () => {
     );
 
     const result = await getIdentity("qawolf_badkey", {
-      fetch: mockFetch,
+      fetch: mockFetch as unknown as typeof fetch,
       baseUrl: "https://test.qawolf.com",
     });
 
@@ -73,7 +73,7 @@ describe("getIdentity", () => {
   });
 
   it("falls back to statusText when body is not JSON", async () => {
-    const mockFetch = vi.fn<typeof fetch>().mockResolvedValue(
+    const mockFetch = mock<typeof fetch>().mockResolvedValue(
       new Response("<html>Bad Gateway</html>", {
         status: 502,
         statusText: "Bad Gateway",
@@ -82,7 +82,7 @@ describe("getIdentity", () => {
     );
 
     const result = await getIdentity("qawolf_key", {
-      fetch: mockFetch,
+      fetch: mockFetch as unknown as typeof fetch,
       baseUrl: "https://test.qawolf.com",
     });
 
@@ -94,12 +94,12 @@ describe("getIdentity", () => {
   });
 
   it("returns error without status on network failure", async () => {
-    const mockFetch = vi
-      .fn<typeof fetch>()
-      .mockRejectedValue(Error("fetch failed"));
+    const mockFetch = mock<typeof fetch>().mockRejectedValue(
+      Error("fetch failed"),
+    );
 
     const result = await getIdentity("qawolf_key", {
-      fetch: mockFetch,
+      fetch: mockFetch as unknown as typeof fetch,
       baseUrl: "https://test.qawolf.com",
     });
 
@@ -110,12 +110,12 @@ describe("getIdentity", () => {
   });
 
   it("returns error when response body does not match schema", async () => {
-    const mockFetch = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(jsonResponse({ unexpected: "shape" }));
+    const mockFetch = mock<typeof fetch>().mockResolvedValue(
+      jsonResponse({ unexpected: "shape" }),
+    );
 
     const result = await getIdentity("qawolf_key", {
-      fetch: mockFetch,
+      fetch: mockFetch as unknown as typeof fetch,
       baseUrl: "https://test.qawolf.com",
     });
 
@@ -132,12 +132,12 @@ describe("getIdentity", () => {
       id: "team_1",
       name: "Test Team",
     };
-    const mockFetch = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(jsonResponse({ team }));
+    const mockFetch = mock<typeof fetch>().mockResolvedValue(
+      jsonResponse({ team }),
+    );
 
     await getIdentity("qawolf_key", {
-      fetch: mockFetch,
+      fetch: mockFetch as unknown as typeof fetch,
       baseUrl: "https://app.qawolf.com",
     });
 

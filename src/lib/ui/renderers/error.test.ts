@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 import { makeClack } from "~/lib/ui/clack/styledClack.mock.js";
 import { formatCIError } from "./formatters/ci.js";
@@ -6,7 +6,7 @@ import { createError } from "./error.js";
 
 describe("createError", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   describe("human mode", () => {
@@ -34,9 +34,9 @@ describe("createError", () => {
   describe("json mode", () => {
     it("writes parseable JSON to stderr", () => {
       const clack = makeClack();
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const error = createError({ mode: "json", clack });
 
       error("API error", "Invalid key.");
@@ -52,9 +52,9 @@ describe("createError", () => {
 
     it("writes parseable JSON without body to stderr", () => {
       const clack = makeClack();
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const error = createError({ mode: "json", clack });
 
       error("Network failure");
@@ -68,9 +68,9 @@ describe("createError", () => {
   describe("agent mode", () => {
     it("writes left-aligned formatted error to stderr", () => {
       const clack = makeClack();
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const error = createError({ mode: "agent", clack });
 
       error("Network failure");

@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 import { makeClack } from "~/lib/ui/clack/styledClack.mock.js";
 import { createNote } from "./note.js";
 
 describe("createNote", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   describe("human mode", () => {
@@ -34,9 +34,9 @@ describe("createNote", () => {
   describe("json mode", () => {
     it("writes parseable JSON with title to stderr", () => {
       const clack = makeClack();
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const note = createNote({ mode: "json", clack });
 
       note("API key loaded", "Authenticated");
@@ -53,9 +53,9 @@ describe("createNote", () => {
 
     it("writes parseable JSON without title to stderr", () => {
       const clack = makeClack();
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const note = createNote({ mode: "json", clack });
 
       note("Some detail");
@@ -70,9 +70,9 @@ describe("createNote", () => {
   describe("agent mode", () => {
     it("writes left-aligned title and message to stderr", () => {
       const clack = makeClack();
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const note = createNote({ mode: "agent", clack });
 
       note("API key loaded", "Authenticated");
@@ -83,9 +83,9 @@ describe("createNote", () => {
 
     it("writes left-aligned message without title to stderr", () => {
       const clack = makeClack();
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const note = createNote({ mode: "agent", clack });
 
       note("Some detail");

@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import { makeClack } from "~/lib/ui/clack/styledClack.mock.js";
 import { createConfirm } from "./confirm.js";
 
 describe("createConfirm", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   describe("human mode", () => {
@@ -45,22 +45,22 @@ describe("createConfirm", () => {
   });
 
   describe("json mode", () => {
-    it("throws because interactive input is required", async () => {
+    it("throws because interactive input is required", () => {
       const clack = makeClack();
       const confirm = createConfirm({ mode: "json", clack });
 
-      await expect(confirm("Are you sure?")).rejects.toThrow(
+      expect(confirm("Are you sure?")).rejects.toThrow(
         "This command requires an interactive terminal. confirm",
       );
     });
   });
 
   describe("agent mode", () => {
-    it("throws because interactive input is required", async () => {
+    it("throws because interactive input is required", () => {
       const clack = makeClack();
       const confirm = createConfirm({ mode: "agent", clack });
 
-      await expect(confirm("Are you sure?")).rejects.toThrow(
+      expect(confirm("Are you sure?")).rejects.toThrow(
         "This command requires an interactive terminal. confirm",
       );
     });

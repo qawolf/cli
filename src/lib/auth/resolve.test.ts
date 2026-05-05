@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, mock } from "bun:test";
 
 import type { LoadApiKeyResult } from "./types.js";
 import { resolveApiKey } from "./resolve.js";
@@ -6,7 +6,7 @@ import { resolveApiKey } from "./resolve.js";
 describe("resolveApiKey", () => {
   it("returns env var when QAWOLF_API_KEY is set", async () => {
     const mockLoadApiKey =
-      vi.fn<(configDir: string) => Promise<LoadApiKeyResult>>();
+      mock<(configDir: string) => Promise<LoadApiKeyResult>>();
 
     const result = await resolveApiKey("/tmp/config", {
       loadApiKey: mockLoadApiKey,
@@ -19,7 +19,7 @@ describe("resolveApiKey", () => {
 
   it("trims whitespace from env var", async () => {
     const mockLoadApiKey =
-      vi.fn<(configDir: string) => Promise<LoadApiKeyResult>>();
+      mock<(configDir: string) => Promise<LoadApiKeyResult>>();
 
     const result = await resolveApiKey("/tmp/config", {
       loadApiKey: mockLoadApiKey,
@@ -31,9 +31,9 @@ describe("resolveApiKey", () => {
   });
 
   it("skips whitespace-only env var", async () => {
-    const mockLoadApiKey = vi
-      .fn<(configDir: string) => Promise<LoadApiKeyResult>>()
-      .mockResolvedValue({ found: false });
+    const mockLoadApiKey = mock<
+      (configDir: string) => Promise<LoadApiKeyResult>
+    >().mockResolvedValue({ found: false });
 
     const result = await resolveApiKey("/tmp/config", {
       loadApiKey: mockLoadApiKey,
@@ -45,13 +45,13 @@ describe("resolveApiKey", () => {
   });
 
   it("returns stored key when env var is not set", async () => {
-    const mockLoadApiKey = vi
-      .fn<(configDir: string) => Promise<LoadApiKeyResult>>()
-      .mockResolvedValue({
-        found: true,
-        key: "qaw_stored",
-        source: "keychain",
-      });
+    const mockLoadApiKey = mock<
+      (configDir: string) => Promise<LoadApiKeyResult>
+    >().mockResolvedValue({
+      found: true,
+      key: "qaw_stored",
+      source: "keychain",
+    });
 
     const result = await resolveApiKey("/tmp/config", {
       loadApiKey: mockLoadApiKey,
@@ -62,9 +62,9 @@ describe("resolveApiKey", () => {
   });
 
   it("returns undefined when nothing found", async () => {
-    const mockLoadApiKey = vi
-      .fn<(configDir: string) => Promise<LoadApiKeyResult>>()
-      .mockResolvedValue({ found: false });
+    const mockLoadApiKey = mock<
+      (configDir: string) => Promise<LoadApiKeyResult>
+    >().mockResolvedValue({ found: false });
 
     const result = await resolveApiKey("/tmp/config", {
       loadApiKey: mockLoadApiKey,

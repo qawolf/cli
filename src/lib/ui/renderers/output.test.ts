@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 import { makeClack } from "~/lib/ui/clack/styledClack.mock.js";
 import { createOutput } from "./output.js";
 
 describe("createOutput", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   describe("human mode", () => {
@@ -22,9 +22,9 @@ describe("createOutput", () => {
   describe("json mode", () => {
     it("writes JSON to stdout", () => {
       const clack = makeClack();
-      const stdoutSpy = vi
-        .spyOn(process.stdout, "write")
-        .mockImplementation(() => true);
+      const stdoutSpy = spyOn(process.stdout, "write").mockImplementation(
+        () => true,
+      );
       const output = createOutput({ mode: "json", clack });
 
       const data = { id: 42, name: "test" };
@@ -37,9 +37,9 @@ describe("createOutput", () => {
   describe("agent mode", () => {
     it("writes left-aligned message to stderr", () => {
       const clack = makeClack();
-      const stderrSpy = vi
-        .spyOn(process.stderr, "write")
-        .mockImplementation(() => true);
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
       const output = createOutput({ mode: "agent", clack });
 
       output({ id: 1 }, "Operation succeeded");

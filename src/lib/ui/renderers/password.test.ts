@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import { makeClack } from "~/lib/ui/clack/styledClack.mock.js";
 import { createPassword } from "./password.js";
 
 describe("createPassword", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   describe("human mode", () => {
@@ -34,20 +34,20 @@ describe("createPassword", () => {
   });
 
   describe("json mode", () => {
-    it("throws with base message when no hint is provided", async () => {
+    it("throws with base message when no hint is provided", () => {
       const clack = makeClack();
       const password = createPassword({ mode: "json", clack });
 
-      await expect(password("Enter API key")).rejects.toThrow(
+      expect(password("Enter API key")).rejects.toThrow(
         "This command requires an interactive terminal.",
       );
     });
 
-    it("throws with hint when provided", async () => {
+    it("throws with hint when provided", () => {
       const clack = makeClack();
       const password = createPassword({ mode: "json", clack });
 
-      await expect(
+      expect(
         password("Enter API key", "Set QAWOLF_API_KEY instead."),
       ).rejects.toThrow(
         "This command requires an interactive terminal. Set QAWOLF_API_KEY instead.",
@@ -56,11 +56,11 @@ describe("createPassword", () => {
   });
 
   describe("agent mode", () => {
-    it("throws with hint when provided", async () => {
+    it("throws with hint when provided", () => {
       const clack = makeClack();
       const password = createPassword({ mode: "agent", clack });
 
-      await expect(
+      expect(
         password("Enter API key", "Set QAWOLF_API_KEY instead."),
       ).rejects.toThrow(
         "This command requires an interactive terminal. Set QAWOLF_API_KEY instead.",

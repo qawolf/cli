@@ -1,11 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, mock } from "bun:test";
 
 import type { GetIdentityResult } from "~/clients/platform.js";
 
 import { validateApiKey } from "./validate.js";
 
 function makeDeps(result: GetIdentityResult) {
-  return { getIdentity: vi.fn().mockResolvedValue(result) };
+  return { getIdentity: mock().mockResolvedValue(result) };
 }
 
 describe("validateApiKey", () => {

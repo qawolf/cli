@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, mock } from "bun:test";
 
 import type { Entry } from "@napi-rs/keyring";
 
@@ -24,7 +24,7 @@ function makeThrowingEntryClass(message: string): typeof Entry {
 describe("loadApiKey", () => {
   it("returns key from keychain when available", async () => {
     const EntryClass = makeEntryClass(() => "qaw_keychain_key");
-    const readFile = vi.fn<(p: string, e: BufferEncoding) => Promise<string>>();
+    const readFile = mock<(p: string, e: BufferEncoding) => Promise<string>>();
 
     const result = await loadApiKey("/tmp/config", { EntryClass, readFile });
 
@@ -38,9 +38,9 @@ describe("loadApiKey", () => {
 
   it("falls back to file when keychain throws", async () => {
     const EntryClass = makeThrowingEntryClass("keychain unavailable");
-    const readFile = vi
-      .fn<(p: string, e: BufferEncoding) => Promise<string>>()
-      .mockResolvedValue(JSON.stringify({ apiKey: "qaw_file_key" }));
+    const readFile = mock<
+      (p: string, e: BufferEncoding) => Promise<string>
+    >().mockResolvedValue(JSON.stringify({ apiKey: "qaw_file_key" }));
 
     const result = await loadApiKey("/tmp/config", { EntryClass, readFile });
 
@@ -53,9 +53,9 @@ describe("loadApiKey", () => {
 
   it("falls through to file when keychain returns empty string", async () => {
     const EntryClass = makeEntryClass(() => "");
-    const readFile = vi
-      .fn<(p: string, e: BufferEncoding) => Promise<string>>()
-      .mockResolvedValue(JSON.stringify({ apiKey: "qaw_file_key" }));
+    const readFile = mock<
+      (p: string, e: BufferEncoding) => Promise<string>
+    >().mockResolvedValue(JSON.stringify({ apiKey: "qaw_file_key" }));
 
     const result = await loadApiKey("/tmp/config", { EntryClass, readFile });
 
@@ -68,9 +68,9 @@ describe("loadApiKey", () => {
 
   it("returns found: false with errors from both keychain and file when both fail", async () => {
     const EntryClass = makeThrowingEntryClass("keychain locked");
-    const readFile = vi
-      .fn<(p: string, e: BufferEncoding) => Promise<string>>()
-      .mockRejectedValue(Error("ENOENT: no such file or directory"));
+    const readFile = mock<
+      (p: string, e: BufferEncoding) => Promise<string>
+    >().mockRejectedValue(Error("ENOENT: no such file or directory"));
 
     const result = await loadApiKey("/tmp/config", { EntryClass, readFile });
 
@@ -85,9 +85,9 @@ describe("loadApiKey", () => {
 
   it("returns found: false with file error when schema validation fails", async () => {
     const EntryClass = makeEntryClass(() => "");
-    const readFile = vi
-      .fn<(p: string, e: BufferEncoding) => Promise<string>>()
-      .mockResolvedValue(JSON.stringify({ wrongField: "bad-data" }));
+    const readFile = mock<
+      (p: string, e: BufferEncoding) => Promise<string>
+    >().mockResolvedValue(JSON.stringify({ wrongField: "bad-data" }));
 
     const result = await loadApiKey("/tmp/config", { EntryClass, readFile });
 
