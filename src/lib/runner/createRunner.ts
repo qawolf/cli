@@ -3,6 +3,7 @@ import type {
   FlowDefinition,
   FlowDeps,
   FlowRunResult,
+  Runner,
   RunnerDeps,
   RunnerOptions,
 } from "./types.js";
@@ -13,8 +14,9 @@ export function createRunner({
 }: {
   deps: RunnerDeps;
   options: RunnerOptions;
-}) {
+}): Runner {
   const storage = deps.createStorage<FlowDeps>();
+  const workflowInputs = options.workflowInputs ?? {};
 
   return {
     run: async (flowDef: FlowDefinition): Promise<FlowRunResult> => {
@@ -35,11 +37,10 @@ export function createRunner({
           stepCounts.total = 0;
 
           try {
-            const workflowInputs = options.workflowInputs ?? {};
-
             const flowDeps: FlowDeps = {
               inputs: workflowInputs,
               workflowInputs,
+              // TODO WIZ-10421: wire setOutput when output collection lands
               setOutput: () => {},
               test: async (_name, fn) => {
                 stepCounts.total++;

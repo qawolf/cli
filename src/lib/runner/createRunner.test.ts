@@ -130,6 +130,29 @@ describe("createRunner", () => {
     expect(capturedWorkflowInputs).toBe(workflowInputs);
   });
 
+  it("fails the flow when a step fn throws", async () => {
+    const runner = createRunner({
+      deps: makeDeps(),
+      options: { retries: 0, outputDir: "/tmp" },
+    });
+    const stepError = new Error("step failed");
+    const flow: FlowDefinition = {
+      name: "step-throw",
+      callback: async (deps) => {
+        await deps.test("bad step", async () => {
+          throw stepError;
+        });
+      },
+    };
+
+    const result = await runner.run(flow);
+
+    expect(result.passed).toBe(false);
+    expect(result.stepCounts).toEqual({ passed: 0, total: 1 });
+    expect(result.error).toBeInstanceOf(FlowRunError);
+    expect((result.error as FlowRunError).cause).toBe(stepError);
+  });
+
   it("resets step counters between retry attempts", async () => {
     const runner = createRunner({
       deps: makeDeps(),

@@ -63,3 +63,7 @@ export type FlowRunResult = {
   attempts: number;
   error?: FlowRunError;
 };
+
+export type Runner = {
+  run: (flowDef: FlowDefinition) => Promise<FlowRunResult>;
+};
