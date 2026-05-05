@@ -27,16 +27,29 @@ export type RunSummary = {
 
 export type Reporter = {
   onFlowStart?: (event: { name: string; path: string }) => void;
-  onFlowPass?: (event: { tests: TestCounts; durationMs: number }) => void;
+  onFlowPass?: (event: {
+    name: string;
+    path: string;
+    tests: TestCounts;
+    durationMs: number;
+  }) => void;
   onFlowFail?: (event: {
+    name: string;
+    path: string;
     err: Error;
     tests: TestCounts;
     durationMs: number;
     attempt: number;
     maxAttempts: number;
   }) => void;
-  onTestStart?: (event: { label: string }) => void;
+  onTestStart?: (event: {
+    flowName: string;
+    flowPath: string;
+    label: string;
+  }) => void;
   onTestResult?: (event: {
+    flowName: string;
+    flowPath: string;
     label: string;
     status: "pass" | "fail";
     durationMs: number;
