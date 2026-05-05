@@ -25,6 +25,7 @@
     "lint:fix": "oxlint --fix",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:bun": "bun test src/bunSmoke.test.ts",
     "typecheck": "tsc --noEmit",
     "prepare": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git config core.hooksPath .githooks || true",
     "uninstall:local": "npm unlink -g @qawolf/cli"

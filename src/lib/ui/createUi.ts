@@ -1,5 +1,5 @@
 import { createStyledClack } from "./clack/index.js";
-import { type OutputFlags, detectOutputMode } from "./env.js";
+import type { OutputMode } from "./env.js";
 import { createCancel } from "./renderers/cancel.js";
 import { createConfirm } from "./renderers/confirm.js";
 import { createError } from "./renderers/error.js";
@@ -17,8 +17,7 @@ import { createWarn } from "./renderers/warn.js";
 import { createWithProgress } from "./renderers/withProgress.js";
 import type { UI } from "./types.js";
 
-export function createUI(flags: OutputFlags): UI {
-  const mode = detectOutputMode(flags);
+export function createUI(mode: OutputMode): UI {
   const clack = createStyledClack();
 
   return {

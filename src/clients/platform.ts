@@ -19,7 +19,7 @@ export type GetIdentityResult =
   | { ok: false; error: string };
 
 export async function getIdentity(apiKey: string): Promise<GetIdentityResult> {
-  const url = `${getApiBaseUrl()}/api/v0/identity`;
+  const url = `${getApiBaseUrl(process.env)}/api/v0/identity`;
 
   let response: Response;
   try {
