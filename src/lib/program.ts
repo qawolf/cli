@@ -6,7 +6,7 @@ import packageJson from "../../package.json" with { type: "json" };
 export function createProgram(): Command {
   const program = new Command()
     .name("qawolf")
-    .description("Tools for agents, CI, and humans to interact with QA Wolf")
+    .description("Run QA Wolf flows locally")
     .version(packageJson.version)
     .option("--json", "Output as JSON")
     .option("--agent", "Output for agent consumption");
