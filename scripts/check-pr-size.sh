@@ -8,6 +8,9 @@
 set -euo pipefail
 
 BASE_REF="${1:?Usage: check-pr-size.sh <base_ref>}"
+# Thresholds are set to accommodate a single well-tested module at the
+# 200-line-per-file cap: one implementation file + two test files = up to
+# ~600 additions before a PR touches anything beyond its own scope.
 WARN_THRESHOLD=400
 ERROR_THRESHOLD=600
 
