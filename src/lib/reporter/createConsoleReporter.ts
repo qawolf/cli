@@ -45,8 +45,7 @@ export function createConsoleReporter(deps: ConsoleDeps): Reporter {
 
     onFlowFail({ err, tests, durationMs, attempt, maxAttempts }) {
       // err.stack starts with "Error: <message>\n at ..." so first line is always the error message
-      const errStr =
-        err instanceof Error ? (err.stack ?? String(err)) : String(err);
+      const errStr = err.stack ?? String(err);
       const [firstLine, ...restLines] = errStr.split("\n");
       const indent = "    ";
       const formatted = [

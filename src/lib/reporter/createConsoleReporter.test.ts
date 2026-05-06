@@ -160,6 +160,15 @@ describe("createConsoleReporter", () => {
     expect(out.calls.join("")).not.toContain("Retrying");
   });
 
+  it("onFlowFail falls back to String(err) when err.stack is undefined", () => {
+    const { err, r } = make();
+    const e = new Error("no stack");
+    // Force stack to be undefined
+    Object.defineProperty(e, "stack", { value: undefined });
+    r.onFlowFail?.(makeFlowFail({ err: e }));
+    expect(err.calls.join("")).toContain("Error: no stack");
+  });
+
   it("onRunComplete writes flow summary when total is greater than 1", () => {
     const { out, r } = make();
     r.onRunComplete?.({
