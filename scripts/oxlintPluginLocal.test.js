@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
 import { describe, expect, it } from "bun:test";
 import plugin from "./oxlintPluginLocal.js";
 

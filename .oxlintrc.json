@@ -91,6 +91,13 @@
       "rules": {
         "typescript/unbound-method": "off"
       }
+    },
+    {
+      "files": ["scripts/*.js"],
+      "rules": {
+        "typescript/no-unsafe-return": "off",
+        "typescript/no-unsafe-assignment": "off"
+      }
     }
   ]
 }
