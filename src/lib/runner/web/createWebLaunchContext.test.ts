@@ -65,6 +65,24 @@ describe("createWebLaunchContext", () => {
     expect(launchMock).toHaveBeenCalledWith({ headless: true, slowMo: 0 });
   });
 
+  it("should pass headless false and slowMo to browser launch when headed is true", async () => {
+    const ctx = makeContext();
+    const browser = makeBrowser(ctx);
+    const launchMock = mock(async () => browser);
+    const chromiumDep: BrowserDep = {
+      launch: launchMock,
+      launchPersistentContext: async () => ctx,
+    };
+    const wlc = createWebLaunchContext({
+      deps: makeUniformDeps(chromiumDep),
+      options: { ...BASE_OPTIONS, headed: true },
+    });
+
+    await wlc.launch();
+
+    expect(launchMock).toHaveBeenCalledWith({ headless: false, slowMo: 0 });
+  });
+
   it("should include executablePath in launch options when provided", async () => {
     const ctx = makeContext();
     const browser = makeBrowser(ctx);

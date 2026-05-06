@@ -177,4 +177,50 @@ describe("createWebLaunchContext — cleanup and persistent", () => {
     expect(closeBrowserMock).not.toHaveBeenCalled();
     expect(closeContextMock).toHaveBeenCalledTimes(1);
   });
+
+  it("should not close context or browser on second cleanup call", async () => {
+    const ctx = makeContext();
+    const closeContextMock = mock(async () => {});
+    ctx.close = closeContextMock;
+    const browser = makeBrowser(ctx);
+    const closeBrowserMock = mock(async () => {});
+    browser.close = closeBrowserMock;
+    const chromiumDep: BrowserDep = {
+      launch: async () => browser,
+      launchPersistentContext: async () => ctx,
+    };
+    const deps = {
+      chromium: chromiumDep,
+      firefox: chromiumDep,
+      webkit: chromiumDep,
+    };
+    const wlc = createWebLaunchContext({ deps, options: BASE_OPTIONS });
+
+    await wlc.launch();
+    await wlc.cleanup(true);
+    await wlc.cleanup(true);
+
+    expect(closeContextMock).toHaveBeenCalledTimes(1);
+    expect(closeBrowserMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("should set default timeout on context after persistent launch", async () => {
+    const ctx = makeContext();
+    const setDefaultTimeoutMock = mock(() => {});
+    ctx.setDefaultTimeout = setDefaultTimeoutMock;
+    const chromiumDep: BrowserDep = {
+      launch: async () => makeBrowser(ctx),
+      launchPersistentContext: async () => ctx,
+    };
+    const deps = {
+      chromium: chromiumDep,
+      firefox: chromiumDep,
+      webkit: chromiumDep,
+    };
+    const wlc = createWebLaunchContext({ deps, options: BASE_OPTIONS });
+
+    await wlc.launch({ browserContext: "persistent" });
+
+    expect(setDefaultTimeoutMock).toHaveBeenCalledWith(30_000);
+  });
 });
