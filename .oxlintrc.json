@@ -84,7 +84,8 @@
     {
       "files": ["**/*.test.ts", "**/*.mock.ts"],
       "rules": {
-        "typescript/unbound-method": "off"
+        "typescript/unbound-method": "off",
+        "eslint/max-lines": ["error", { "max": 250 }]
       }
     },
     {

@@ -44,6 +44,7 @@ function makeFlowFail(
     durationMs?: number;
     attempt?: number;
     maxAttempts?: number;
+    tests?: { passed: number; total: number };
   } = {},
 ) {
   return {
@@ -177,6 +178,29 @@ describe("createConsoleReporter", () => {
     const s = out.calls.join("");
     expect(s).toContain("flows passed");
     expect(s).toContain("tests passed");
+    expect(s).toContain("✗");
+  });
+
+  it("onRunComplete writes ✓ icon when all flows pass", () => {
+    const { out, r } = make();
+    r.onRunComplete?.({ summary: makeSummary({ flowsPassed: 2 }) });
+    expect(out.calls.join("")).toContain("✓");
+  });
+
+  it("onRunComplete includes skipped count when flowsSkipped is greater than 0", () => {
+    const { out, r } = make();
+    r.onRunComplete?.({
+      summary: makeSummary({ flowsPassed: 1, flowsSkipped: 1 }),
+    });
+    expect(out.calls.join("")).toContain("skipped");
+  });
+
+  it("onFlowFail omits test counts when total is 0", () => {
+    const { out, r } = make();
+    r.onFlowFail?.(makeFlowFail({ tests: { passed: 0, total: 0 } }));
+    const s = out.calls.join("");
+    expect(s).toContain("✗");
+    expect(s).not.toContain("0/0");
   });
 
   it("onRunComplete does not write when total is 1", () => {
