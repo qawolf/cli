@@ -13,7 +13,7 @@ CI consumers depend on consistent exit codes. The CLI commits to the following c
 
 ## Using the helper
 
-Every command path must exit through `exit(code, message?)` from `src/exit.ts`. The helper writes `message` to stderr (when provided) and calls `process.exit(code)`.
+Use `exit(code, message?)` from `src/exit.ts` to terminate command execution with a code from this spec. The helper writes `message` to stderr (when provided) and calls `process.exit(code)`. Existing command paths that still set `process.exitCode` directly will be migrated incrementally as per-command tickets land.
 
 ```ts
 import { EXIT_CODES, exit } from "~/exit.js";
