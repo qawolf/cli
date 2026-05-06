@@ -25,7 +25,7 @@ export async function checkPlaywright(
     return { name: "playwright", status: "fail", detail };
   }
 
-  const version = parseVersion(result.stdout);
+  const version = result.stdout.match(/(\d+\.\d+\.\d+)/)?.[1];
   if (!version) {
     return {
       name: "playwright",
@@ -35,9 +35,4 @@ export async function checkPlaywright(
   }
 
   return { name: "playwright", status: "pass" };
-}
-
-function parseVersion(output: string): string | undefined {
-  const match = output.match(/(\d+\.\d+\.\d+)/);
-  return match?.[1];
 }

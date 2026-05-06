@@ -1,9 +1,13 @@
-import { describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 import type { UI } from "~/lib/ui/types.js";
 
 import { renderResults } from "./render.js";
 import type { CheckResult } from "./types.js";
+
+afterEach(() => {
+  mock.restore();
+});
 
 function makeUi(mode: UI["mode"]): UI {
   return {
@@ -51,10 +55,16 @@ describe("renderResults", () => {
     expect(ui.error).toHaveBeenCalledWith("c: hard");
   });
 
-  it("skips intro in agent mode", () => {
+  it("writes one prefixed line per check to stderr in agent mode", () => {
     const ui = makeUi("agent");
+    const writes: string[] = [];
+    spyOn(process.stderr, "write").mockImplementation((data: string) => {
+      writes.push(data);
+      return true;
+    });
     renderResults(ui, results);
+    expect(writes).toEqual(["PASS a\n", "WARN b: soft\n", "FAIL c: hard\n"]);
     expect(ui.intro).not.toHaveBeenCalled();
-    expect(ui.success).toHaveBeenCalledWith("a");
+    expect(ui.success).not.toHaveBeenCalled();
   });
 });

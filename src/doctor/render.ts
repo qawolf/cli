@@ -4,27 +4,29 @@ import type { CheckResult } from "./types.js";
 
 export function renderResults(ui: UI, results: CheckResult[]): void {
   if (ui.mode === "json") {
-    ui.json({
-      checks: results,
-      ok: results.every((r) => r.status !== "fail"),
-    });
+    const ok = results.every((result) => result.status !== "fail");
+    ui.json({ checks: results, ok });
     return;
   }
 
-  if (ui.mode === "human") ui.intro("qawolf doctor");
-
-  for (const r of results) {
-    const line = r.detail ? `${r.name}: ${r.detail}` : r.name;
-    switch (r.status) {
-      case "pass":
-        ui.success(line);
-        break;
-      case "warn":
-        ui.warn(line);
-        break;
-      case "fail":
-        ui.error(line);
-        break;
+  if (ui.mode === "agent") {
+    for (const result of results) {
+      const tail = result.detail ? `: ${result.detail}` : "";
+      process.stderr.write(
+        `${result.status.toUpperCase()} ${result.name}${tail}\n`,
+      );
     }
+    return;
+  }
+
+  ui.intro("qawolf doctor");
+
+  for (const result of results) {
+    const line = result.detail
+      ? `${result.name}: ${result.detail}`
+      : result.name;
+    if (result.status === "pass") ui.success(line);
+    else if (result.status === "warn") ui.warn(line);
+    else ui.error(line);
   }
 }

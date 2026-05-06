@@ -1,3 +1,5 @@
+import { spawn } from "node:child_process";
+
 import type { CheckResult, SpawnFn } from "~/doctor/types.js";
 
 import { checkApiKey } from "./apiKey.js";
@@ -28,19 +30,19 @@ export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
   ]);
 }
 
-export const defaultSpawn: SpawnFn = async (cmd, args) => {
-  try {
-    const subprocess = Bun.spawn([cmd, ...args], {
-      stdout: "pipe",
-      stderr: "pipe",
+export const defaultSpawn: SpawnFn = (cmd, args) =>
+  new Promise((resolve) => {
+    const child = spawn(cmd, args);
+    let stdout = "";
+    let stderr = "";
+    child.stdout?.on("data", (chunk) => {
+      stdout += String(chunk);
     });
-    const [stdout, stderr, exitCode] = await Promise.all([
-      new Response(subprocess.stdout).text(),
-      new Response(subprocess.stderr).text(),
-      subprocess.exited,
-    ]);
-    return { exitCode, stdout, stderr };
-  } catch {
-    return { exitCode: -1, stdout: "", stderr: "" };
-  }
-};
+    child.stderr?.on("data", (chunk) => {
+      stderr += String(chunk);
+    });
+    child.on("error", () => resolve({ exitCode: -1, stdout, stderr }));
+    child.on("close", (code) =>
+      resolve({ exitCode: code ?? -1, stdout, stderr }),
+    );
+  });

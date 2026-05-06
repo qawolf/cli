@@ -30,13 +30,13 @@ describe("runChecks", () => {
       processVersion: "v24.0.0",
     });
 
-    expect(results.map((r) => r.name)).toEqual([
+    expect(results.map((result) => result.name)).toEqual([
       "node-version",
       "playwright",
       "api-key",
       "api-url",
       "npm-registry",
     ]);
-    expect(results.every((r) => r.status === "pass")).toBe(true);
+    expect(results.every((result) => result.status === "pass")).toBe(true);
   });
 });

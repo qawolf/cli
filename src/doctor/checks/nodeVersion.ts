@@ -8,7 +8,7 @@ type NodeVersionDeps = {
 export async function checkNodeVersion(
   deps: NodeVersionDeps,
 ): Promise<CheckResult> {
-  const minMajor = parseMinMajor(deps.enginesNode);
+  const minMajor = extractMajor(deps.enginesNode, /^>=\s*(\d+)/);
   if (minMajor === undefined) {
     return {
       name: "node-version",
@@ -17,7 +17,7 @@ export async function checkNodeVersion(
     };
   }
 
-  const actual = parseMajor(deps.processVersion);
+  const actual = extractMajor(deps.processVersion, /^v?(\d+)/);
   if (actual === undefined) {
     return {
       name: "node-version",
@@ -37,12 +37,7 @@ export async function checkNodeVersion(
   return { name: "node-version", status: "pass" };
 }
 
-function parseMinMajor(constraint: string): number | undefined {
-  const captured = constraint.trim().match(/^>=\s*(\d+)/)?.[1];
-  return captured === undefined ? undefined : Number.parseInt(captured, 10);
-}
-
-function parseMajor(version: string): number | undefined {
-  const captured = version.trim().match(/^v?(\d+)/)?.[1];
+function extractMajor(input: string, pattern: RegExp): number | undefined {
+  const captured = input.trim().match(pattern)?.[1];
   return captured === undefined ? undefined : Number.parseInt(captured, 10);
 }

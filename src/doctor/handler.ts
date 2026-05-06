@@ -16,9 +16,7 @@ export async function handleDoctor(
     enginesNode: packageJson.engines.node,
     processVersion: process.version,
   });
-
   renderResults(ctx.ui, results);
-
-  const fails = results.filter((r) => r.status === "fail");
+  const fails = results.filter((result) => result.status === "fail");
   if (fails.length > 0) return { error: `${fails.length} check(s) failed` };
 }
