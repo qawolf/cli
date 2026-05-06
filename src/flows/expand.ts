@@ -11,18 +11,17 @@ export function targetToBrowser(target: string): BrowserName | undefined {
 }
 
 const NAME_RE = /flow\s*\(\s*["']([^"'\n]+)["']/;
-const TARGET_POSITIONAL_RE =
-  /flow\s*\(\s*["'][^"'\n]*["']\s*,\s*["']([^"'\n]+)["']/;
-const TARGET_OBJECT_RE = /\btarget\s*:\s*["']([^"'\n]+)["']/;
+// Scoped to the flow() call: matches positional target (group 1) or object-arg target (group 2)
+const FLOW_TARGET_RE =
+  /flow\s*\(\s*["'][^"'\n]*["']\s*,\s*(?:["']([^"'\n]+)["']|\{[^{}]*\btarget\s*:\s*["']([^"'\n]+)["'])/;
 
 export function extractFlowMeta(source: string): {
   name: string | undefined;
   target: string | undefined;
 } {
   const name = NAME_RE.exec(source)?.[1];
-  const target =
-    TARGET_POSITIONAL_RE.exec(source)?.[1] ??
-    TARGET_OBJECT_RE.exec(source)?.[1];
+  const flowTargetMatch = FLOW_TARGET_RE.exec(source);
+  const target = flowTargetMatch?.[1] ?? flowTargetMatch?.[2];
   return { name, target };
 }
 
@@ -41,7 +40,7 @@ async function resolveGlobRoot(cwd: string): Promise<string> {
     const [first] = envDirs;
     if (envDirs.length === 1 && first) return join(qawolfPath, first.name);
   } catch {
-    // .qawolf does not exist
+    // .qawolf dir absent or unreadable
   }
   return cwd;
 }

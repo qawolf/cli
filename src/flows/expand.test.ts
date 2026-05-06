@@ -55,6 +55,14 @@ describe("extractFlowMeta", () => {
       target: undefined,
     });
   });
+
+  it("should not extract target from a property outside the flow() call", () => {
+    expect(
+      extractFlowMeta(
+        'const opts = { target: "production" }; flow("My Flow", async () => {})',
+      ),
+    ).toEqual({ name: "My Flow", target: undefined });
+  });
 });
 
 describe("peekFlowMeta", () => {
@@ -90,6 +98,7 @@ describe("peekFlowMeta", () => {
 describe("expandPatterns", () => {
   let mainTmpDir: string;
   let noQawolfTmpDir: string;
+  let multiEnvTmpDir: string;
 
   beforeAll(async () => {
     mainTmpDir = await mkdtemp(join(tmpdir(), "expand-main-"));
@@ -106,11 +115,19 @@ describe("expandPatterns", () => {
     await writeFile(join(noQawolfTmpDir, "a.flow.ts"), "// a");
     await mkdir(join(noQawolfTmpDir, "sub"));
     await writeFile(join(noQawolfTmpDir, "sub", "b.flow.ts"), "// b");
+
+    multiEnvTmpDir = await mkdtemp(join(tmpdir(), "expand-multienv-"));
+    await writeFile(join(multiEnvTmpDir, "a.flow.ts"), "// a");
+    await mkdir(join(multiEnvTmpDir, ".qawolf", "staging"), {
+      recursive: true,
+    });
+    await mkdir(join(multiEnvTmpDir, ".qawolf", "prod"), { recursive: true });
   });
 
   afterAll(async () => {
     await rm(mainTmpDir, { recursive: true });
     await rm(noQawolfTmpDir, { recursive: true });
+    await rm(multiEnvTmpDir, { recursive: true });
   });
 
   it("should return all flow files when no patterns provided and no .qawolf dir", async () => {
@@ -135,5 +152,10 @@ describe("expandPatterns", () => {
   it("should return empty array when no files match", async () => {
     const result = await expandPatterns(["*.missing.ts"], mainTmpDir);
     expect(result).toEqual([]);
+  });
+
+  it("should fall back to cwd when .qawolf has multiple env dirs", async () => {
+    const result = await expandPatterns([], multiEnvTmpDir);
+    expect(result).toContain(join(multiEnvTmpDir, "a.flow.ts"));
   });
 });
