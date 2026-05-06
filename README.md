@@ -35,6 +35,10 @@ bun run knip             # unused files, dependencies, and exports
 bun run test             # Vitest
 ```
 
+## Contributing
+
+- [Exit codes](docs/exit-codes.md) — canonical exit codes the CLI commits to and the central `exit()` helper.
+
 ## License
 
 [Apache-2.0](LICENSE)
