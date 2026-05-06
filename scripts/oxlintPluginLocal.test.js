@@ -44,52 +44,35 @@ describe("require-js-extension rule", () => {
     }
   }
 
-  it("should report ImportDeclaration without extension", () => {
-    testNode("ImportDeclaration", "./module", true);
-  });
+  it.each([
+    ["ImportDeclaration", "./module", true],
+    ["ImportDeclaration", "../shared", true],
+    ["ImportDeclaration", "~/lib/errors", true],
+    ["ExportNamedDeclaration", "./module", true],
+    ["ExportAllDeclaration", "../shared", true],
+    ["ImportDeclaration", "./module.js", false],
+    ["ImportDeclaration", "react", false],
+  ])("%s %s reports=%s", testNode);
 
-  it("should report ExportNamedDeclaration with source", () => {
-    testNode("ExportNamedDeclaration", "./module", true);
-  });
-
-  it("should report ExportAllDeclaration with source", () => {
-    testNode("ExportAllDeclaration", "../shared", true);
-  });
-
-  it("should not report with .js extension", () => {
-    testNode("ImportDeclaration", "./module.js", false);
-  });
-
-  it("should not report non-relative imports", () => {
-    testNode("ImportDeclaration", "react", false);
-  });
-
-  it("should not report ExportNamedDeclaration without source", () => {
+  it("does not report ExportNamedDeclaration without source", () => {
     const ctx = makeContext();
     const node = { type: "ExportNamedDeclaration", source: undefined };
-
     rule.create(ctx).ExportNamedDeclaration(node);
-
     expect(ctx.reported).toHaveLength(0);
   });
 
-  it("should provide working fix function", () => {
+  it("fix appends .js to the import path", () => {
     const ctx = makeContext();
     const sourceNode = { value: "./module" };
     ctx.setNodeText(sourceNode, '"./module"');
-
     const node = { type: "ImportDeclaration", source: sourceNode };
-
     rule.create(ctx).ImportDeclaration(node);
-
     expect(ctx.reported).toHaveLength(1);
-
     const fixer = {
       replaceText(_node, text) {
         return { range: [0, 100], text };
       },
     };
-
     const result = ctx.reported[0].fix(fixer);
     expect(result.text).toBe('"./module.js"');
   });
