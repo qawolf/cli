@@ -14,7 +14,7 @@
         ]
       }
     ],
-    "eslint/max-lines": ["error", { "max": 200 }],
+    "eslint/max-lines": ["error", { "max": 150 }],
     "eslint/eqeqeq": "error",
     "eslint/no-case-declarations": "error",
     "eslint/no-empty": "error",
