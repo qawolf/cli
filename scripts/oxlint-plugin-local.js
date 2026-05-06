@@ -3,29 +3,38 @@ const requireJsExtension = {
     fixable: "code",
   },
   create(context) {
+    const checkSource = (sourceNode) => {
+      const source = sourceNode.value;
+      if (
+        !source.startsWith("./") &&
+        !source.startsWith("../") &&
+        !source.startsWith("~/")
+      )
+        return;
+      // Skip imports that already have any extension (.js, .json, .css, …)
+      if (/\.[^/]+$/.test(source)) return;
+      context.report({
+        node: sourceNode,
+        message: `Relative import "${source}" must use a .js extension.`,
+        fix(fixer) {
+          const raw = context.sourceCode.getText(sourceNode);
+          const quote = raw[0];
+          return fixer.replaceText(sourceNode, `${quote}${source}.js${quote}`);
+        },
+      });
+    };
+
     return {
       ImportDeclaration(node) {
-        const source = node.source.value;
-        if (
-          !source.startsWith("./") &&
-          !source.startsWith("../") &&
-          !source.startsWith("~/")
-        )
-          return;
-        // Skip imports that already have any extension (.js, .json, .css, …)
-        if (/\.[^/]+$/.test(source)) return;
-        context.report({
-          node: node.source,
-          message: `Relative import "${source}" must use a .js extension.`,
-          fix(fixer) {
-            const raw = context.sourceCode.getText(node.source);
-            const quote = raw[0];
-            return fixer.replaceText(
-              node.source,
-              `${quote}${source}.js${quote}`,
-            );
-          },
-        });
+        checkSource(node.source);
+      },
+      ExportNamedDeclaration(node) {
+        if (!node.source) return;
+        checkSource(node.source);
+      },
+      ExportAllDeclaration(node) {
+        if (!node.source) return;
+        checkSource(node.source);
       },
     };
   },
