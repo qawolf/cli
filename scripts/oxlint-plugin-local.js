@@ -6,7 +6,12 @@ const requireJsExtension = {
     return {
       ImportDeclaration(node) {
         const source = node.source.value;
-        if (!source.startsWith("./") && !source.startsWith("../")) return;
+        if (
+          !source.startsWith("./") &&
+          !source.startsWith("../") &&
+          !source.startsWith("~/")
+        )
+          return;
         // Skip imports that already have any extension (.js, .json, .css, …)
         if (/\.[^/]+$/.test(source)) return;
         context.report({
