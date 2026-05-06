@@ -1,6 +1,8 @@
 {
   "plugins": ["eslint", "typescript", "oxc", "import", "unicorn"],
+  "jsPlugins": ["./scripts/oxlintPluginLocal.js"],
   "rules": {
+    "local/require-js-extension": "error",
     "eslint/no-restricted-imports": [
       "error",
       {
@@ -83,6 +85,13 @@
       "files": ["**/*.test.ts", "**/*.mock.ts"],
       "rules": {
         "typescript/unbound-method": "off"
+      }
+    },
+    {
+      "files": ["scripts/*.js"],
+      "rules": {
+        "typescript/no-unsafe-return": "off",
+        "typescript/no-unsafe-assignment": "off"
       }
     }
   ]
