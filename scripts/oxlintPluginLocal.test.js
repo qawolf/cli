@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
 import { describe, expect, it } from "bun:test";
-import plugin from "./oxlint-plugin-local.js";
+import plugin from "./oxlintPluginLocal.js";
 
 describe("require-js-extension rule", () => {
   const rule = plugin.rules["require-js-extension"];

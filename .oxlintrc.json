@@ -1,6 +1,6 @@
 {
   "plugins": ["eslint", "typescript", "oxc", "import", "unicorn"],
-  "jsPlugins": ["./scripts/oxlint-plugin-local.js"],
+  "jsPlugins": ["./scripts/oxlintPluginLocal.js"],
   "rules": {
     "local/require-js-extension": "error",
     "eslint/no-restricted-imports": [
@@ -83,7 +83,7 @@
     "dist/",
     "node_modules/",
     "knip.config.ts",
-    "scripts/oxlint-plugin-local.js"
+    "scripts/oxlintPluginLocal.js"
   ],
   "overrides": [
     {
