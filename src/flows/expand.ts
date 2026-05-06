@@ -51,11 +51,11 @@ export async function expandPatterns(
 ): Promise<string[]> {
   const effectivePatterns = patterns.length > 0 ? patterns : ["**/*.flow.ts"];
   const root = patterns.length > 0 ? cwd : await resolveGlobRoot(cwd);
-  const paths: string[] = [];
+  const seen = new Set<string>();
   for (const pattern of effectivePatterns) {
     for await (const file of glob(pattern, { cwd: root })) {
-      paths.push(resolve(root, file));
+      seen.add(resolve(root, file));
     }
   }
-  return paths;
+  return [...seen];
 }

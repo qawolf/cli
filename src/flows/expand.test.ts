@@ -7,7 +7,7 @@ import {
   extractFlowMeta,
   peekFlowMeta,
   targetToBrowser,
-} from "./expand";
+} from "./expand.js";
 
 describe("targetToBrowser", () => {
   it('should return "chromium" when target is "chromium"', () => {
@@ -73,7 +73,7 @@ describe("peekFlowMeta", () => {
   });
 
   afterAll(async () => {
-    await rm(tmpDir, { recursive: true });
+    await rm(tmpDir, { recursive: true, force: true });
   });
 
   it("should return parsed meta when file contains a flow() call", async () => {
@@ -125,9 +125,9 @@ describe("expandPatterns", () => {
   });
 
   afterAll(async () => {
-    await rm(mainTmpDir, { recursive: true });
-    await rm(noQawolfTmpDir, { recursive: true });
-    await rm(multiEnvTmpDir, { recursive: true });
+    await rm(mainTmpDir, { recursive: true, force: true });
+    await rm(noQawolfTmpDir, { recursive: true, force: true });
+    await rm(multiEnvTmpDir, { recursive: true, force: true });
   });
 
   it("should return all flow files when no patterns provided and no .qawolf dir", async () => {
