@@ -64,6 +64,30 @@ describe("extractFlowMeta", () => {
     ).toEqual({ name: "My Flow", target: undefined });
   });
 
+  it("should extract name and target from a multi-line positional flow() call", () => {
+    expect(
+      extractFlowMeta(
+        'flow(\n  "My Flow",\n  "chromium",\n  async () => {}\n)',
+      ),
+    ).toEqual({ name: "My Flow", target: "chromium" });
+  });
+
+  it("should extract name and target from a multi-line object-arg flow() call", () => {
+    expect(
+      extractFlowMeta(
+        'flow(\n  "My Flow",\n  { target: "webkit", launch: true },\n  async () => {}\n)',
+      ),
+    ).toEqual({ name: "My Flow", target: "webkit" });
+  });
+
+  it("should extract target when the options object spans multiple lines", () => {
+    expect(
+      extractFlowMeta(
+        'flow(\n  "My Flow",\n  {\n    target: "firefox",\n    launch: true,\n  },\n  async () => {}\n)',
+      ),
+    ).toEqual({ name: "My Flow", target: "firefox" });
+  });
+
   it("should not match flow() calls on identifiers like workflow() or myflow()", () => {
     expect(
       extractFlowMeta('workflow("My Flow", "chromium", async () => {})'),
