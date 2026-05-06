@@ -24,13 +24,14 @@ function makeDeps(): RunnerDeps {
 }
 
 describe("createRunner", () => {
-  it("reports pass and counts steps when flow succeeds", async () => {
+  it("reports pass and counts tests when flow succeeds", async () => {
     const runner = createRunner({
       deps: makeDeps(),
       options: { retries: 0, outputDir: "/tmp" },
     });
     const flow: FlowDefinition = {
       name: "example",
+      path: "/flows/example.ts",
       callback: async (deps) => {
         await deps.test("step 1", async () => {});
         await deps.test("step 2", async () => {});
@@ -40,7 +41,7 @@ describe("createRunner", () => {
     const result = await runner.run(flow);
 
     expect(result.passed).toBe(true);
-    expect(result.stepCounts).toEqual({ passed: 2, total: 2 });
+    expect(result.testCounts).toEqual({ passed: 2, total: 2 });
     expect(result.attempts).toBe(1);
     expect(result.error).toBeUndefined();
   });
@@ -53,6 +54,7 @@ describe("createRunner", () => {
     let attempts = 0;
     const flow: FlowDefinition = {
       name: "failing",
+      path: "/flows/failing.ts",
       callback: async () => {
         attempts++;
         throw new Error("oops");
@@ -74,6 +76,7 @@ describe("createRunner", () => {
     let attempts = 0;
     const flow: FlowDefinition = {
       name: "no-retry",
+      path: "/flows/no-retry.ts",
       callback: async () => {
         attempts++;
         throw new FailWithoutRetryError("terminal failure");
@@ -95,6 +98,7 @@ describe("createRunner", () => {
     const original = new Error("original");
     const flow: FlowDefinition = {
       name: "err-flow",
+      path: "/flows/err-flow.ts",
       callback: async () => {
         throw original;
       },
@@ -108,42 +112,39 @@ describe("createRunner", () => {
     expect((result.error as FlowRunError).attempt).toBe(1);
   });
 
-  it("passes both inputs and workflowInputs pointing at the same cloned object", async () => {
-    const workflowInputs = { flowId: { key: "value" } };
+  it("exposes flowInputs from options to the flow callback as a clone", async () => {
+    const flowInputs = { flowId: { key: "value" } };
     const runner = createRunner({
       deps: makeDeps(),
-      options: { retries: 0, outputDir: "/tmp", workflowInputs },
+      options: { retries: 0, outputDir: "/tmp", flowInputs },
     });
-    let capturedInputs: unknown;
-    let capturedWorkflowInputs: unknown;
+    let capturedFlowInputs: unknown;
     const flow: FlowDefinition = {
       name: "inputs-test",
+      path: "/flows/inputs-test.ts",
       callback: async (deps) => {
-        capturedInputs = deps.inputs;
-        capturedWorkflowInputs = deps.workflowInputs;
+        capturedFlowInputs = deps.flowInputs;
       },
     };
 
     await runner.run(flow);
 
-    // inputs and workflowInputs are the same object inside flowDeps
-    expect(capturedInputs).toBe(capturedWorkflowInputs);
-    // they are a copy of the original, not the same reference
-    expect(capturedInputs).not.toBe(workflowInputs);
-    expect(capturedInputs).toEqual(workflowInputs);
+    expect(capturedFlowInputs).not.toBe(flowInputs);
+    expect(capturedFlowInputs).toEqual(flowInputs);
   });
 
-  it("fails the flow when a step fn throws", async () => {
+  it("fails the flow when a test fn throws", async () => {
     const runner = createRunner({
       deps: makeDeps(),
       options: { retries: 0, outputDir: "/tmp" },
     });
-    const stepError = new Error("step failed");
+    const testError = new Error("test failed");
     const flow: FlowDefinition = {
       name: "step-throw",
+      path: "/flows/step-throw.ts",
       callback: async (deps) => {
         await deps.test("bad step", async () => {
-          throw stepError;
+          throw testError;
         });
       },
     };
@@ -151,12 +152,12 @@ describe("createRunner", () => {
     const result = await runner.run(flow);
 
     expect(result.passed).toBe(false);
-    expect(result.stepCounts).toEqual({ passed: 0, total: 1 });
+    expect(result.testCounts).toEqual({ passed: 0, total: 1 });
     expect(result.error).toBeInstanceOf(FlowRunError);
-    expect((result.error as FlowRunError).cause).toBe(stepError);
+    expect((result.error as FlowRunError).cause).toBe(testError);
   });
 
-  it("resets step counters between retry attempts", async () => {
+  it("resets test counters between retry attempts", async () => {
     const runner = createRunner({
       deps: makeDeps(),
       options: { retries: 1, outputDir: "/tmp" },
@@ -164,6 +165,7 @@ describe("createRunner", () => {
     let attempts = 0;
     const flow: FlowDefinition = {
       name: "reset-test",
+      path: "/flows/reset-test.ts",
       callback: async (deps) => {
         attempts++;
         await deps.test("step 1", async () => {});
@@ -174,6 +176,6 @@ describe("createRunner", () => {
     const result = await runner.run(flow);
 
     expect(result.passed).toBe(true);
-    expect(result.stepCounts).toEqual({ passed: 1, total: 1 });
+    expect(result.testCounts).toEqual({ passed: 1, total: 1 });
   });
 });

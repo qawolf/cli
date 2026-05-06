@@ -58,6 +58,7 @@ describe("createRunner — guards and edge cases", () => {
 
     const flow: FlowDefinition = {
       name: "sigterm-during-run",
+      path: "/flows/sigterm-during-run.ts",
       callback: async () => {
         signalHandler?.();
       },
@@ -69,19 +70,20 @@ describe("createRunner — guards and edge cases", () => {
     expect(result.attempts).toBe(1);
   });
 
-  it("deep-clones workflowInputs so nested mutation in one attempt does not affect the next", async () => {
-    const workflowInputs = { key: { nested: "original" } };
+  it("deep-clones flowInputs so nested mutation in one attempt does not affect the next", async () => {
+    const flowInputs = { key: { nested: "original" } };
     const runner = createRunner({
       deps: makeDeps(),
-      options: { retries: 1, outputDir: "/tmp", workflowInputs },
+      options: { retries: 1, outputDir: "/tmp", flowInputs },
     });
 
     const captured: { key: { nested: string } }[] = [];
     let attempts = 0;
     const flow: FlowDefinition = {
       name: "inputs-isolation",
+      path: "/flows/inputs-isolation.ts",
       callback: async (deps) => {
-        const inputs = deps.workflowInputs as { key: { nested: string } };
+        const inputs = deps.flowInputs as { key: { nested: string } };
         captured.push(inputs);
         attempts++;
         if (attempts === 1) {
