@@ -63,6 +63,16 @@ describe("extractFlowMeta", () => {
       ),
     ).toEqual({ name: "My Flow", target: undefined });
   });
+
+  it("should not match flow() calls on identifiers like workflow() or myflow()", () => {
+    expect(
+      extractFlowMeta('workflow("My Flow", "chromium", async () => {})'),
+    ).toEqual({ name: undefined, target: undefined });
+    expect(extractFlowMeta('myflow("My Flow", async () => {})')).toEqual({
+      name: undefined,
+      target: undefined,
+    });
+  });
 });
 
 describe("peekFlowMeta", () => {

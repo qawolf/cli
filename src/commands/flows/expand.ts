@@ -13,7 +13,7 @@ export function targetToBrowser(target: string): BrowserName | undefined {
 // Matches the flow name — the first string literal argument to flow():
 //   flow("My Flow", ...)
 //        ^^^^^^^^^
-const NAME_RE = /flow\s*\(\s*["']([^"'\n]+)["']/;
+const NAME_RE = /\bflow\s*\(\s*["']([^"'\n]+)["']/;
 
 // Matches the browser target, scoped to the flow() call so a `target:` property
 // elsewhere in the file (e.g. in a config object) is not captured.
@@ -29,7 +29,7 @@ const NAME_RE = /flow\s*\(\s*["']([^"'\n]+)["']/;
 //
 // Dynamic expressions (variables, template literals) produce undefined for that field.
 const FLOW_TARGET_RE =
-  /flow\s*\(\s*["'][^"'\n]*["']\s*,\s*(?:["']([^"'\n]+)["']|\{[^{}]*\btarget\s*:\s*["']([^"'\n]+)["'])/;
+  /\bflow\s*\(\s*["'][^"'\n]*["']\s*,\s*(?:["']([^"'\n]+)["']|\{[^{}]*\btarget\s*:\s*["']([^"'\n]+)["'])/;
 
 export function extractFlowMeta(source: string): {
   name: string | undefined;
