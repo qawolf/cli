@@ -4,7 +4,7 @@ type PlaywrightDeps = {
   readonly spawn: SpawnFn;
 };
 
-// TODO TECH-0000 (WIZ-10342): match against a Playwright dep pin once present.
+// TODO WIZ-10341: match against a Playwright dep pin once present.
 export async function checkPlaywright(
   deps: PlaywrightDeps,
 ): Promise<CheckResult> {
