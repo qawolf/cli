@@ -10,8 +10,24 @@ export function targetToBrowser(target: string): BrowserName | undefined {
     : undefined;
 }
 
+// Matches the flow name — the first string literal argument to flow():
+//   flow("My Flow", ...)
+//        ^^^^^^^^^
 const NAME_RE = /flow\s*\(\s*["']([^"'\n]+)["']/;
-// Scoped to the flow() call: matches positional target (group 1) or object-arg target (group 2)
+
+// Matches the browser target, scoped to the flow() call so a `target:` property
+// elsewhere in the file (e.g. in a config object) is not captured.
+// Two alternatives cover both call signatures:
+//
+//   Positional — second arg is a string literal (group 1):
+//     flow("My Flow", "chromium", async () => { ... })
+//                     ^^^^^^^^^
+//
+//   Object arg — second arg is an options object containing target (group 2):
+//     flow("My Flow", { target: "webkit", launch: true }, async () => { ... })
+//                               ^^^^^^^^
+//
+// Dynamic expressions (variables, template literals) produce undefined for that field.
 const FLOW_TARGET_RE =
   /flow\s*\(\s*["'][^"'\n]*["']\s*,\s*(?:["']([^"'\n]+)["']|\{[^{}]*\btarget\s*:\s*["']([^"'\n]+)["'])/;
 
