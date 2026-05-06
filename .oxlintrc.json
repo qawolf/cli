@@ -14,7 +14,7 @@
         ]
       }
     ],
-    "eslint/max-lines": ["error", { "max": 200 }],
+    "eslint/max-lines": ["error", { "max": 150 }],
     "eslint/eqeqeq": "error",
     "eslint/no-case-declarations": "error",
     "eslint/no-empty": "error",
@@ -84,7 +84,8 @@
     {
       "files": ["**/*.test.ts", "**/*.mock.ts"],
       "rules": {
-        "typescript/unbound-method": "off"
+        "typescript/unbound-method": "off",
+        "eslint/max-lines": ["error", { "max": 250 }]
       }
     },
     {
