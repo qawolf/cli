@@ -2,6 +2,12 @@ import { describe, expect, it } from "bun:test";
 import { createConsoleReporter } from "./createConsoleReporter.js";
 import type { RunSummary } from "./types.js";
 
+// Assertions use toContain on visible substrings rather than toBe on full
+// strings. styleText strips ANSI codes in non-TTY environments but this
+// is not guaranteed across all CI configurations, so full-string equality
+// would be fragile. Checking for visible text keeps assertions
+// color-mode-agnostic.
+
 function makeSink() {
   const calls: string[] = [];
   return { write: (str: string) => void calls.push(str), calls };
