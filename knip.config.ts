@@ -1,7 +1,12 @@
 import type { KnipConfig } from "knip";
 
 const config: KnipConfig = {
-  entry: ["*.config.ts", "src/**/*.test.ts", "src/**/*.mock.ts"],
+  entry: [
+    "*.config.ts",
+    "src/**/*.test.ts",
+    "src/**/*.mock.ts",
+    "src/**/*.fixtures.ts",
+  ],
   project: ["src/**/*.ts"],
   ignore: [
     // TODO WIZ-10324: move to its domain when the commands that use it land

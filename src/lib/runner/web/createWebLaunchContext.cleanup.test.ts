@@ -1,48 +1,15 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { createWebLaunchContext } from "./createWebLaunchContext.js";
-import type {
-  BrowserDep,
-  MinimalBrowser,
-  MinimalBrowserContext,
-  MinimalPage,
-  MinimalVideo,
-  WebLaunchOptions,
-} from "./types.js";
+import {
+  makeBrowser,
+  makeContext,
+  makeDep,
+} from "./createWebLaunchContext.fixtures.js";
+import type { BrowserDep, WebLaunchOptions } from "./types.js";
 
 afterEach(() => {
   mock.restore();
 });
-
-function makePage(video?: MinimalVideo): MinimalPage {
-  return { video: () => video };
-}
-
-function makeContext(initialPages: MinimalPage[] = []): MinimalBrowserContext {
-  return {
-    setDefaultTimeout: () => {},
-    close: async () => {},
-    pages: () => initialPages,
-    tracing: { start: async () => {}, stop: async () => {} },
-    newPage: async () => makePage(),
-  };
-}
-
-function makeBrowser(ctx: MinimalBrowserContext): MinimalBrowser {
-  return {
-    newContext: async () => ctx,
-    close: async () => {},
-  };
-}
-
-function makeDep(
-  browser: MinimalBrowser,
-  ctx: MinimalBrowserContext,
-): BrowserDep {
-  return {
-    launch: async () => browser,
-    launchPersistentContext: async () => ctx,
-  };
-}
 
 const BASE_OPTIONS: WebLaunchOptions = {
   browser: "chromium",
