@@ -1,0 +1,247 @@
+import { afterEach, describe, expect, it, mock } from "bun:test";
+import { createWebLaunchContext } from "./createWebLaunchContext.js";
+import type {
+  BrowserDep,
+  ContextSetupOptions,
+  MinimalBrowser,
+  MinimalBrowserContext,
+  MinimalPage,
+  MinimalVideo,
+  WebLaunchOptions,
+} from "./types.js";
+
+afterEach(() => {
+  mock.restore();
+});
+
+function makePage(video?: MinimalVideo): MinimalPage {
+  return { video: () => video };
+}
+
+function makeContext(initialPages: MinimalPage[] = []): MinimalBrowserContext {
+  return {
+    setDefaultTimeout: () => {},
+    close: async () => {},
+    pages: () => initialPages,
+    tracing: { start: async () => {}, stop: async () => {} },
+    newPage: async () => makePage(),
+  };
+}
+
+function makeBrowser(ctx: MinimalBrowserContext): MinimalBrowser {
+  return {
+    newContext: async () => ctx,
+    close: async () => {},
+  };
+}
+
+function makeDep(
+  browser: MinimalBrowser,
+  ctx: MinimalBrowserContext,
+): BrowserDep {
+  return {
+    launch: async () => browser,
+    launchPersistentContext: async () => ctx,
+  };
+}
+
+function makeUniformDeps(dep: BrowserDep) {
+  return { chromium: dep, firefox: dep, webkit: dep };
+}
+
+const BASE_OPTIONS: WebLaunchOptions = {
+  browser: "chromium",
+  headed: false,
+  slowMo: 0,
+  timeout: 30_000,
+  video: "off",
+  trace: "off",
+  outputDir: "/tmp/qawolf-test",
+};
+
+describe("createWebLaunchContext", () => {
+  it("should call launch on the selected browser dep", async () => {
+    const ctx = makeContext();
+    const browser = makeBrowser(ctx);
+    const launchMock = mock(async () => browser);
+    const chromiumDep: BrowserDep = {
+      launch: launchMock,
+      launchPersistentContext: async () => ctx,
+    };
+    const wlc = createWebLaunchContext({
+      deps: makeUniformDeps(chromiumDep),
+      options: BASE_OPTIONS,
+    });
+
+    await wlc.launch();
+
+    expect(launchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("should pass headless true and slowMo to browser launch when headed is false", async () => {
+    const ctx = makeContext();
+    const browser = makeBrowser(ctx);
+    const launchMock = mock(async () => browser);
+    const chromiumDep: BrowserDep = {
+      launch: launchMock,
+      launchPersistentContext: async () => ctx,
+    };
+    const wlc = createWebLaunchContext({
+      deps: makeUniformDeps(chromiumDep),
+      options: { ...BASE_OPTIONS, headed: false },
+    });
+
+    await wlc.launch();
+
+    expect(launchMock).toHaveBeenCalledWith({ headless: true, slowMo: 0 });
+  });
+
+  it("should include executablePath in launch options when provided", async () => {
+    const ctx = makeContext();
+    const browser = makeBrowser(ctx);
+    const launchMock = mock(async () => browser);
+    const chromiumDep: BrowserDep = {
+      launch: launchMock,
+      launchPersistentContext: async () => ctx,
+    };
+    const wlc = createWebLaunchContext({
+      deps: makeUniformDeps(chromiumDep),
+      options: { ...BASE_OPTIONS, executablePath: "/usr/bin/chrome" },
+    });
+
+    await wlc.launch();
+
+    expect(launchMock).toHaveBeenCalledWith(
+      expect.objectContaining({ executablePath: "/usr/bin/chrome" }),
+    );
+  });
+
+  it("should call newContext with default viewport when video is off", async () => {
+    const ctx = makeContext();
+    const newContextMock = mock(async (_opts: ContextSetupOptions) => ctx);
+    const browser: MinimalBrowser = {
+      newContext: newContextMock,
+      close: async () => {},
+    };
+    const launchMock = mock(async () => browser);
+    const chromiumDep: BrowserDep = {
+      launch: launchMock,
+      launchPersistentContext: async () => ctx,
+    };
+    const wlc = createWebLaunchContext({
+      deps: makeUniformDeps(chromiumDep),
+      options: { ...BASE_OPTIONS, video: "off" },
+    });
+
+    await wlc.launch();
+
+    expect(newContextMock).toHaveBeenCalledWith({
+      viewport: { width: 1280, height: 720 },
+      screen: { width: 1280, height: 720 },
+    });
+  });
+
+  it("should pass recordVideo dir and size to newContext when video is on", async () => {
+    const ctx = makeContext();
+    const newContextMock = mock(async (_opts: ContextSetupOptions) => ctx);
+    const browser: MinimalBrowser = {
+      newContext: newContextMock,
+      close: async () => {},
+    };
+    const launchMock = mock(async () => browser);
+    const chromiumDep: BrowserDep = {
+      launch: launchMock,
+      launchPersistentContext: async () => ctx,
+    };
+    const wlc = createWebLaunchContext({
+      deps: makeUniformDeps(chromiumDep),
+      options: { ...BASE_OPTIONS, video: "on" },
+    });
+
+    await wlc.launch();
+
+    const opts = newContextMock.mock.calls[0]?.[0];
+    expect(opts?.recordVideo?.dir).toContain("videos");
+    expect(opts?.recordVideo?.size).toEqual({ width: 1280, height: 720 });
+  });
+
+  it("should not include recordVideo when video is off", async () => {
+    const ctx = makeContext();
+    const newContextMock = mock(async (_opts: ContextSetupOptions) => ctx);
+    const browser: MinimalBrowser = {
+      newContext: newContextMock,
+      close: async () => {},
+    };
+    const launchMock = mock(async () => browser);
+    const chromiumDep: BrowserDep = {
+      launch: launchMock,
+      launchPersistentContext: async () => ctx,
+    };
+    const wlc = createWebLaunchContext({
+      deps: makeUniformDeps(chromiumDep),
+      options: { ...BASE_OPTIONS, video: "off" },
+    });
+
+    await wlc.launch();
+
+    const arg = newContextMock.mock.calls[0]?.[0] ?? {};
+    expect(arg).not.toHaveProperty("recordVideo");
+  });
+
+  it("should set default timeout on context after anonymous launch", async () => {
+    const ctx = makeContext();
+    const setDefaultTimeoutMock = mock((_ms: number) => {});
+    ctx.setDefaultTimeout = setDefaultTimeoutMock;
+    const browser = makeBrowser(ctx);
+    const chromiumDep: BrowserDep = {
+      launch: async () => browser,
+      launchPersistentContext: async () => ctx,
+    };
+    const wlc = createWebLaunchContext({
+      deps: makeUniformDeps(chromiumDep),
+      options: BASE_OPTIONS,
+    });
+
+    await wlc.launch();
+
+    expect(setDefaultTimeoutMock).toHaveBeenCalledWith(30_000);
+  });
+
+  it("should return pages from all open contexts", async () => {
+    const page = makePage();
+    const ctx = makeContext([page]);
+    const browser = makeBrowser(ctx);
+    const wlc = createWebLaunchContext({
+      deps: makeUniformDeps(makeDep(browser, ctx)),
+      options: BASE_OPTIONS,
+    });
+
+    await wlc.launch();
+    const result = wlc.pages();
+
+    expect(result).toContain(page);
+  });
+
+  it("should close context and browser on cleanup", async () => {
+    const ctx = makeContext();
+    const closeContextMock = mock(async () => {});
+    ctx.close = closeContextMock;
+    const browser = makeBrowser(ctx);
+    const closeBrowserMock = mock(async () => {});
+    browser.close = closeBrowserMock;
+    const chromiumDep: BrowserDep = {
+      launch: async () => browser,
+      launchPersistentContext: async () => ctx,
+    };
+    const wlc = createWebLaunchContext({
+      deps: makeUniformDeps(chromiumDep),
+      options: BASE_OPTIONS,
+    });
+
+    await wlc.launch();
+    await wlc.cleanup(true);
+
+    expect(closeContextMock).toHaveBeenCalledTimes(1);
+    expect(closeBrowserMock).toHaveBeenCalledTimes(1);
+  });
+});
