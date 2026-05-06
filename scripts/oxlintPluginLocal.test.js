@@ -37,7 +37,7 @@ describe("require-js-extension rule", () => {
     if (shouldReport) {
       expect(ctx.reported).toHaveLength(1);
       expect(ctx.reported[0].message).toContain(
-        `Relative import "${sourceValue}" must use a .js extension.`,
+        `Import "${sourceValue}" is missing an extension — add .js`,
       );
     } else {
       expect(ctx.reported).toHaveLength(0);

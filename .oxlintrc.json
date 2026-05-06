@@ -79,12 +79,7 @@
   "options": {
     "typeAware": true
   },
-  "ignorePatterns": [
-    "dist/",
-    "node_modules/",
-    "knip.config.ts",
-    "scripts/oxlintPluginLocal.js"
-  ],
+  "ignorePatterns": ["dist/", "node_modules/", "knip.config.ts"],
   "overrides": [
     {
       "files": ["**/*.test.ts", "**/*.mock.ts"],

@@ -6,16 +6,17 @@ const requireJsExtension = {
     const checkSource = (sourceNode) => {
       const source = sourceNode.value;
       if (
-        !source.startsWith("./") &&
-        !source.startsWith("../") &&
-        !source.startsWith("~/")
+        typeof source !== "string" ||
+        (!source.startsWith("./") &&
+          !source.startsWith("../") &&
+          !source.startsWith("~/"))
       )
         return;
       // Skip imports that already have any extension (.js, .json, .css, …)
       if (/\.[^/]+$/.test(source)) return;
       context.report({
         node: sourceNode,
-        message: `Relative import "${source}" must use a .js extension.`,
+        message: `Import "${source}" is missing an extension — add .js`,
         fix(fixer) {
           const raw = context.sourceCode.getText(sourceNode);
           const quote = raw[0];
