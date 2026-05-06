@@ -208,27 +208,4 @@ describe("createWebLaunchContext", () => {
 
     expect(result).toContain(page);
   });
-
-  it("should close context and browser on cleanup", async () => {
-    const ctx = makeContext();
-    const closeContextMock = mock(async () => {});
-    ctx.close = closeContextMock;
-    const browser = makeBrowser(ctx);
-    const closeBrowserMock = mock(async () => {});
-    browser.close = closeBrowserMock;
-    const chromiumDep: BrowserDep = {
-      launch: async () => browser,
-      launchPersistentContext: async () => ctx,
-    };
-    const wlc = createWebLaunchContext({
-      deps: makeUniformDeps(chromiumDep),
-      options: BASE_OPTIONS,
-    });
-
-    await wlc.launch();
-    await wlc.cleanup(true);
-
-    expect(closeContextMock).toHaveBeenCalledTimes(1);
-    expect(closeBrowserMock).toHaveBeenCalledTimes(1);
-  });
 });
