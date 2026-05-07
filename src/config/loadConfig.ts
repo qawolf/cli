@@ -14,7 +14,8 @@ export type LoadConfigDeps = {
 
 const defaultLoadConfigDeps: LoadConfigDeps = {
   cwd: () => process.cwd(),
-  importConfig: (path) => import(pathToFileURL(path).href) as Promise<unknown>,
+  importConfig: async (path): Promise<unknown> =>
+    import(pathToFileURL(path).href),
 };
 
 export async function loadConfig(
@@ -53,15 +54,15 @@ function extractDefaultExport(moduleNamespace: unknown): unknown {
     moduleNamespace !== null &&
     "default" in moduleNamespace
   ) {
-    return (moduleNamespace as { default: unknown }).default;
+    return moduleNamespace.default;
   }
   return moduleNamespace;
 }
 
 function isModuleNotFoundError(err: unknown): boolean {
   if (err === null || typeof err !== "object") return false;
-  const code = (err as { code?: unknown }).code;
-  return code === "ERR_MODULE_NOT_FOUND" || code === "MODULE_NOT_FOUND";
+  if (!("code" in err)) return false;
+  return err.code === "ERR_MODULE_NOT_FOUND" || err.code === "MODULE_NOT_FOUND";
 }
 
 function formatConfigError(
@@ -95,7 +96,8 @@ function readPath(input: unknown, path: readonly PropertyKey[]): unknown {
   let current: unknown = input;
   for (const key of path) {
     if (current === null || typeof current !== "object") return undefined;
-    current = (current as Record<PropertyKey, unknown>)[key];
+    if (!(key in current)) return undefined;
+    current = Reflect.get(current, key);
   }
   return current;
 }
