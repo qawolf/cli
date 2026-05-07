@@ -1,4 +1,4 @@
-import { FailWithoutRetryError, FlowRunError } from "./errors.js";
+import { FlowRunError } from "./errors.js";
 import type {
   FlowDefinition,
   FlowDeps,
@@ -59,7 +59,12 @@ export function createRunner({
             return { passed: true, testCounts, attempts: attempt };
           } catch (err) {
             lastError = new FlowRunError(flowDef.name, attempt, err);
-            if (err instanceof FailWithoutRetryError) break;
+            if (
+              err instanceof Error &&
+              (err.name === "FailWithoutRetryError" ||
+                err.constructor.name === "FailWithoutRetryError")
+            )
+              break;
           }
         }
 
