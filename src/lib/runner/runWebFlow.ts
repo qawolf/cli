@@ -40,8 +40,10 @@ export async function runWebFlow({
   flowPath: string;
 }): Promise<FlowRunResult> {
   const mod = (await import(flowPath)) as Record<string, unknown>;
-  const exported = (mod["default"] ??
-    Object.values(mod)[0]) as WebFlowApiReturnValue;
+  const exported = mod["default"] as WebFlowApiReturnValue | undefined;
+  if (exported === undefined) {
+    throw new Error(`No default export found in "${flowPath}"`);
+  }
 
   const isLegacy = typeof exported === "function";
   const flowName = isLegacy
