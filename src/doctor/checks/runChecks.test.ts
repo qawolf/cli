@@ -68,7 +68,11 @@ describe("runChecks", () => {
       enginesNode: ">=24",
       processVersion: "v24.0.0",
       flowFiles: Object.keys(sources),
-      readFile: (path) => Promise.resolve(sources[path] ?? ""),
+      readFile: (path) => {
+        const source = sources[path];
+        if (source === undefined) throw new Error(`unexpected read: ${path}`);
+        return Promise.resolve(source);
+      },
       cwd: "/repo",
     });
 
