@@ -62,11 +62,11 @@ function formatIssue(issue: z.core.$ZodIssue, input: unknown): string {
   const value = readPath(input, issue.path);
 
   if (issue.code === "invalid_type") {
-    return `${path}: expected ${issue.expected}, got ${describeType(value)}`;
+    return `${path}: expected ${issue.expected}, got ${describeValue(value)}`;
   }
   if (issue.code === "invalid_value") {
-    const allowed = issue.values.map(formatLiteral).join(" | ");
-    return `${path}: must be ${allowed} (got ${formatLiteral(value)})`;
+    const allowed = issue.values.map(describeValue).join(" | ");
+    return `${path}: must be ${allowed} (got ${describeValue(value)})`;
   }
   if (issue.code === "unrecognized_keys") {
     return `unknown key(s): ${issue.keys.join(", ")}`;
@@ -84,13 +84,24 @@ function readPath(input: unknown, path: readonly PropertyKey[]): unknown {
   return current;
 }
 
-function describeType(input: unknown): string {
-  if (input === null) return "null";
-  if (Array.isArray(input)) return "array";
-  return typeof input;
-}
-
-function formatLiteral(value: unknown): string {
-  if (typeof value === "string") return JSON.stringify(value);
-  return String(value);
+// Render a value for inclusion in error messages: primitives are shown
+// directly (with strings truncated at 60 chars); objects and arrays fall back
+// to a type label to avoid leaking large structures or secrets.
+function describeValue(value: unknown): string {
+  if (value === null) return "null";
+  if (value === undefined) return "undefined";
+  if (Array.isArray(value)) return "array";
+  if (typeof value === "object") return "object";
+  if (typeof value === "string") {
+    const truncated = value.length > 60 ? `${value.slice(0, 60)}...` : value;
+    return JSON.stringify(truncated);
+  }
+  if (
+    typeof value === "number" ||
+    typeof value === "bigint" ||
+    typeof value === "boolean"
+  ) {
+    return String(value);
+  }
+  return typeof value;
 }

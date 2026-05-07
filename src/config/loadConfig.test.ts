@@ -74,7 +74,20 @@ describe("loadConfig", () => {
 
   it("rejects timeout: '60s' with a message naming timeout and expecting number", async () => {
     expect(loadConfig(withConfig({ timeout: "60s" }))).rejects.toThrow(
-      /timeout: expected number, got string/,
+      /timeout: expected number, got "60s"/,
+    );
+  });
+
+  it("falls back to a type label when the offending value is an object", async () => {
+    expect(
+      loadConfig(withConfig({ outputDir: { nested: "x" } })),
+    ).rejects.toThrow(/outputDir: expected string, got object/);
+  });
+
+  it("truncates long string values in error messages", async () => {
+    const long = "a".repeat(200);
+    expect(loadConfig(withConfig({ timeout: long }))).rejects.toThrow(
+      /timeout: expected number, got "a{60}\.\.\."/,
     );
   });
 
