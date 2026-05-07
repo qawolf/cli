@@ -15,6 +15,8 @@ const config: KnipConfig = {
     "src/lib/runner/*.ts",
     // TODO WIZ-10326: remove once Reporter is consumed by the console reporter
     "src/lib/reporter/*.ts",
+    // TODO WIZ-10358: remove once flows pull consumes the env-vars schema
+    "src/apex/types.ts",
   ],
 };
 
