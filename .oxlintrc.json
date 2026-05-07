@@ -82,7 +82,7 @@
   "ignorePatterns": ["dist/", "node_modules/", "knip.config.ts"],
   "overrides": [
     {
-      "files": ["**/*.test.ts", "**/*.mock.ts"],
+      "files": ["**/*.test.ts", "**/*.mock.ts", "**/*.fixtures.ts"],
       "rules": {
         "typescript/unbound-method": "off",
         "eslint/max-lines": ["error", { "max": 250 }]
