@@ -118,4 +118,22 @@ describe("checkFileAssets", () => {
     });
     expect(result?.detail).toContain("/repo/flows/login.flow.ts");
   });
+
+  it("warns instead of throwing when a file is unreadable", async () => {
+    const results = await checkFileAssets({
+      files: ["/repo/flows/locked.flow.ts", "/repo/flows/clean.flow.ts"],
+      readFile: async (path) => {
+        if (path === "/repo/flows/locked.flow.ts") {
+          throw new Error("EACCES: permission denied");
+        }
+        return 'flow("Clean", async () => {})';
+      },
+      cwd: "/repo",
+    });
+    expect(results).toHaveLength(1);
+    expect(results[0]?.status).toBe("warn");
+    expect(results[0]?.detail).toContain("flows/locked.flow.ts");
+    expect(results[0]?.detail).toContain("could not be read");
+    expect(results[0]?.detail).toContain("EACCES");
+  });
 });
