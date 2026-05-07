@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -9,11 +10,13 @@ const CONFIG_FILENAME = "qawolf.config.ts";
 
 export type LoadConfigDeps = {
   cwd: () => string;
+  fileExists: (path: string) => boolean;
   importConfig: (path: string) => Promise<unknown>;
 };
 
 const defaultLoadConfigDeps: LoadConfigDeps = {
   cwd: () => process.cwd(),
+  fileExists: existsSync,
   importConfig: async (path): Promise<unknown> =>
     import(pathToFileURL(path).href),
 };
@@ -22,11 +25,9 @@ export async function loadConfig(
   deps: LoadConfigDeps = defaultLoadConfigDeps,
 ): Promise<QawolfConfig> {
   const configPath = resolve(deps.cwd(), CONFIG_FILENAME);
-  const moduleNamespace = await importOrUndefinedIfMissing(
-    deps.importConfig,
-    configPath,
-  );
-  const userConfig = extractDefaultExport(moduleNamespace);
+  const userConfig = deps.fileExists(configPath)
+    ? extractDefaultExport(await deps.importConfig(configPath))
+    : {};
 
   const result = qawolfConfigSchema.safeParse(userConfig);
   if (!result.success) {
@@ -35,20 +36,7 @@ export async function loadConfig(
   return result.data;
 }
 
-async function importOrUndefinedIfMissing(
-  importConfig: LoadConfigDeps["importConfig"],
-  path: string,
-): Promise<unknown> {
-  try {
-    return await importConfig(path);
-  } catch (err: unknown) {
-    if (isModuleNotFoundError(err)) return undefined;
-    throw err;
-  }
-}
-
 function extractDefaultExport(moduleNamespace: unknown): unknown {
-  if (moduleNamespace === undefined) return {};
   if (
     typeof moduleNamespace === "object" &&
     moduleNamespace !== null &&
@@ -57,12 +45,6 @@ function extractDefaultExport(moduleNamespace: unknown): unknown {
     return moduleNamespace.default;
   }
   return moduleNamespace;
-}
-
-function isModuleNotFoundError(err: unknown): boolean {
-  if (err === null || typeof err !== "object") return false;
-  if (!("code" in err)) return false;
-  return err.code === "ERR_MODULE_NOT_FOUND" || err.code === "MODULE_NOT_FOUND";
 }
 
 function formatConfigError(

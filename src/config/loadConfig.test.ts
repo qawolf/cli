@@ -8,6 +8,7 @@ const CONFIG_PATH = "/fake/cwd/qawolf.config.ts";
 function withConfig(value: unknown): LoadConfigDeps {
   return {
     cwd: () => CWD,
+    fileExists: () => true,
     importConfig: async (path) => {
       expect(path).toBe(CONFIG_PATH);
       return value === undefined ? undefined : { default: value };
@@ -18,7 +19,10 @@ function withConfig(value: unknown): LoadConfigDeps {
 function missingConfig(): LoadConfigDeps {
   return {
     cwd: () => CWD,
-    importConfig: async () => undefined,
+    fileExists: () => false,
+    importConfig: async () => {
+      throw new Error("importConfig should not be called when file is missing");
+    },
   };
 }
 
@@ -106,32 +110,36 @@ describe("loadConfig", () => {
     );
   });
 
-  it("treats bun's ResolveMessage (not instanceof Error) as missing config", async () => {
-    // Mirrors bun's real ResolveMessage: typeof "object", has `code`, NOT instanceof Error.
-    class FakeResolveMessage {
-      code = "ERR_MODULE_NOT_FOUND";
-      message = "Cannot find module";
-    }
-    const config = await loadConfig({
-      cwd: () => CWD,
-      importConfig: async () => {
-        // The whole point: bun throws a non-Error, and we must still handle it.
-        // oxlint-disable-next-line typescript-eslint/only-throw-error
-        throw new FakeResolveMessage();
-      },
-    });
-    expect(config.outputDir).toBe(".qawolf");
-  });
-
-  it("propagates non-ENOENT import errors", async () => {
-    const boom = new Error("syntax error in user config");
+  it("propagates errors from importing a present-but-broken config", async () => {
+    // Regression: previously isModuleNotFoundError swallowed ANY ERR_MODULE_NOT_FOUND,
+    // so a config that exists but imports something missing was silently treated as
+    // "config missing" and replaced with defaults. After gating on fileExists, the
+    // error from inside the user's config must propagate.
+    const innerImportError = Object.assign(
+      new Error("Cannot find module './does-not-exist.js'"),
+      { code: "ERR_MODULE_NOT_FOUND" },
+    );
     expect(
       loadConfig({
         cwd: () => CWD,
+        fileExists: () => true,
         importConfig: async () => {
-          throw boom;
+          throw innerImportError;
         },
       }),
-    ).rejects.toThrow("syntax error in user config");
+    ).rejects.toThrow("Cannot find module './does-not-exist.js'");
+  });
+
+  it("does not call importConfig when the file is missing", async () => {
+    let importCalls = 0;
+    await loadConfig({
+      cwd: () => CWD,
+      fileExists: () => false,
+      importConfig: async () => {
+        importCalls++;
+        return undefined;
+      },
+    });
+    expect(importCalls).toBe(0);
   });
 });
