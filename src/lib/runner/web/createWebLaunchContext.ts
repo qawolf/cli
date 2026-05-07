@@ -22,6 +22,7 @@ export function createWebLaunchContext({
 }): WebLaunchContext {
   const openBrowsers: MinimalBrowser[] = [];
   const openContexts: MinimalBrowserContext[] = [];
+  let cleanedUp = false;
 
   const browserMap: Record<BrowserName, typeof deps.chromium> = {
     chromium: deps.chromium,
@@ -76,7 +77,15 @@ export function createWebLaunchContext({
   const pages = (): MinimalPage[] => openContexts.flatMap((ctx) => ctx.pages());
 
   const cleanup = async (_passed: boolean): Promise<CleanupResult> => {
-    throw new Error("not yet implemented");
+    if (cleanedUp) return { videoPaths: [], tracePaths: [] };
+    cleanedUp = true;
+
+    await Promise.allSettled([
+      ...openContexts.map((c) => c.close()),
+      ...openBrowsers.map((b) => b.close()),
+    ]);
+
+    return { videoPaths: [], tracePaths: [] };
   };
 
   return { launch, pages, cleanup };
