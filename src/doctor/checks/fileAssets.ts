@@ -3,10 +3,41 @@ import { relative } from "node:path";
 import type { CheckResult } from "~/doctor/types.js";
 import { errorMessage } from "~/lib/errors.js";
 
-const fileAssetVarRe = /\bQAWOLF_\w+_DIR\b/g;
+type FileAssetCategory = "file-asset" | "mobile-input";
 
-export const fileAssetsWarnReason =
-  "file assets aren't pulled in v0.1; web flows depending on them can't run locally; mobile flows should provide a local path via env var";
+const fileAssetVarPatterns: readonly {
+  readonly pattern: string;
+  readonly category: FileAssetCategory;
+}[] = [
+  { pattern: "TEAM_STORAGE_DIR", category: "file-asset" },
+  { pattern: "QAWOLF_*_DIR", category: "file-asset" },
+  { pattern: "RUN_*_DIR", category: "mobile-input" },
+  { pattern: "RUN_INPUT_PATH", category: "mobile-input" },
+];
+
+const expandPattern = (pattern: string): string =>
+  pattern.replace(/\*/g, "\\w+");
+
+const fileAssetVarRe = new RegExp(
+  `\\b(?:${fileAssetVarPatterns.map(({ pattern }) => expandPattern(pattern)).join("|")})\\b`,
+  "g",
+);
+
+const compiledByCategory = fileAssetVarPatterns.map(
+  ({ pattern, category }) => ({
+    re: new RegExp(`^${expandPattern(pattern)}$`),
+    category,
+  }),
+);
+
+export const fileAssetsWarnReasons: Readonly<
+  Record<FileAssetCategory, string>
+> = {
+  "file-asset":
+    "file assets aren't pulled in v0.1; this flow can't run locally",
+  "mobile-input":
+    "mobile build inputs aren't mounted locally; provide the APK path via a local env var",
+};
 
 type ReadFileFn = (path: string) => Promise<string>;
 
@@ -28,6 +59,12 @@ export function scanFileAssetReferences(source: string): string[] {
   return [...new Set(source.match(fileAssetVarRe) ?? [])];
 }
 
+function categorize(varName: string): FileAssetCategory {
+  const hit = compiledByCategory.find(({ re }) => re.test(varName));
+  if (!hit) throw new Error(`uncategorized file-asset var: ${varName}`);
+  return hit.category;
+}
+
 async function scanOne(
   file: string,
   readFile: ReadFileFn,
@@ -41,6 +78,19 @@ async function scanOne(
   } catch (err) {
     return { kind: "unreadable", file, message: errorMessage(err) };
   }
+}
+
+function groupByCategory(
+  vars: readonly string[],
+): Map<FileAssetCategory, string[]> {
+  const groups = new Map<FileAssetCategory, string[]>();
+  for (const varName of vars) {
+    const category = categorize(varName);
+    const existing = groups.get(category);
+    if (existing) existing.push(varName);
+    else groups.set(category, [varName]);
+  }
+  return groups;
 }
 
 export async function checkFileAssets(
@@ -61,12 +111,12 @@ export async function checkFileAssets(
       ];
     }
     if (outcome.vars.length === 0) return [];
-    return [
-      {
+    return [...groupByCategory(outcome.vars)].map(
+      ([category, vars]): CheckResult => ({
         name: "file-assets",
         status: "warn",
-        detail: `${display} references ${outcome.vars.join(", ")} — ${fileAssetsWarnReason}`,
-      },
-    ];
+        detail: `${display} references ${vars.join(", ")} — ${fileAssetsWarnReasons[category]}`,
+      }),
+    );
   });
 }

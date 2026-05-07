@@ -2,20 +2,15 @@ import { describe, expect, it } from "bun:test";
 
 import {
   checkFileAssets,
-  fileAssetsWarnReason,
+  fileAssetsWarnReasons,
   scanFileAssetReferences,
 } from "./fileAssets.js";
 
 describe("scanFileAssetReferences", () => {
-  it("matches a process.env reference", () => {
+  it("matches process.env references (named or destructured)", () => {
     expect(
-      scanFileAssetReferences(
-        "const dir = process.env.QAWOLF_SCREENSHOTS_DIR;",
-      ),
+      scanFileAssetReferences("process.env.QAWOLF_SCREENSHOTS_DIR;"),
     ).toEqual(["QAWOLF_SCREENSHOTS_DIR"]);
-  });
-
-  it("matches a destructured env reference", () => {
     expect(
       scanFileAssetReferences("const { QAWOLF_DOWNLOADS_DIR } = process.env;"),
     ).toEqual(["QAWOLF_DOWNLOADS_DIR"]);
@@ -49,6 +44,28 @@ describe("scanFileAssetReferences", () => {
     expect(
       scanFileAssetReferences("// see QAWOLF_SCREENSHOTS_DIR for details"),
     ).toEqual(["QAWOLF_SCREENSHOTS_DIR"]);
+  });
+
+  it("matches exact-name patterns (TEAM_STORAGE_DIR, RUN_INPUT_PATH)", () => {
+    expect(
+      scanFileAssetReferences(
+        "process.env.TEAM_STORAGE_DIR; process.env.RUN_INPUT_PATH;",
+      ).sort(),
+    ).toEqual(["RUN_INPUT_PATH", "TEAM_STORAGE_DIR"]);
+  });
+
+  it("matches the RUN_*_DIR prefix family", () => {
+    expect(
+      scanFileAssetReferences(
+        "process.env.RUN_INPUTS_EXECUTABLES_DIR; process.env.RUN_OUTPUTS_DIR;",
+      ).sort(),
+    ).toEqual(["RUN_INPUTS_EXECUTABLES_DIR", "RUN_OUTPUTS_DIR"]);
+  });
+
+  it("does not match TEAM_STORAGE on its own (no _DIR suffix)", () => {
+    expect(
+      scanFileAssetReferences("process.env.TEAM_STORAGE; process.env.RUN_DIR;"),
+    ).toEqual([]);
   });
 });
 
@@ -94,7 +111,47 @@ describe("checkFileAssets", () => {
     expect(result?.detail).toContain("flows/upload.flow.ts");
     expect(result?.detail).toContain("QAWOLF_SCREENSHOTS_DIR");
     expect(result?.detail).toContain("QAWOLF_DOWNLOADS_DIR");
-    expect(result?.detail).toContain(fileAssetsWarnReason);
+    expect(result?.detail).toContain(fileAssetsWarnReasons["file-asset"]);
+  });
+
+  it("emits separate warns per category when a file mixes web and mobile vars", async () => {
+    const results = await checkFileAssets({
+      files: ["/repo/flows/mixed.flow.ts"],
+      readFile: readerFor({
+        "/repo/flows/mixed.flow.ts": `
+          process.env.QAWOLF_SCREENSHOTS_DIR;
+          process.env.RUN_INPUTS_EXECUTABLES_DIR;
+        `,
+      }),
+      cwd: "/repo",
+    });
+    expect(results).toHaveLength(2);
+    const fileAsset = results.find((r) =>
+      r.detail?.includes(fileAssetsWarnReasons["file-asset"]),
+    );
+    const mobileInput = results.find((r) =>
+      r.detail?.includes(fileAssetsWarnReasons["mobile-input"]),
+    );
+    expect(fileAsset?.detail).toContain("QAWOLF_SCREENSHOTS_DIR");
+    expect(fileAsset?.detail).not.toContain("RUN_INPUTS_EXECUTABLES_DIR");
+    expect(mobileInput?.detail).toContain("RUN_INPUTS_EXECUTABLES_DIR");
+    expect(mobileInput?.detail).not.toContain("QAWOLF_SCREENSHOTS_DIR");
+  });
+
+  it("uses the mobile-input reason for RUN_*_DIR and RUN_INPUT_PATH", async () => {
+    const results = await checkFileAssets({
+      files: ["/repo/dir.flow.ts", "/repo/path.flow.ts"],
+      readFile: readerFor({
+        "/repo/dir.flow.ts": "process.env.RUN_INPUTS_EXECUTABLES_DIR;",
+        "/repo/path.flow.ts": "process.env.RUN_INPUT_PATH;",
+      }),
+      cwd: "/repo",
+    });
+    expect(results).toHaveLength(2);
+    for (const result of results) {
+      expect(result.detail).toContain(fileAssetsWarnReasons["mobile-input"]);
+      expect(result.detail).not.toContain(fileAssetsWarnReasons["file-asset"]);
+    }
   });
 
   it("displays paths relative to cwd when possible", async () => {
