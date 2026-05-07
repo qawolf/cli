@@ -43,7 +43,6 @@ const BASE_OPTIONS: RunWebFlowOptions = {
   headed: false,
   slowMo: 0,
   video: "off",
-  trace: "off",
   timeout: 30_000,
 };
 
@@ -137,5 +136,35 @@ describe("runWebFlow", () => {
     const cause = (result.error as Error & { cause?: unknown })?.cause;
     expect(cause).toBeInstanceOf(Error);
     expect((cause as Error).message).toContain("not supported");
+  });
+
+  it("should not retry when the failWithoutRetry dep is called", async () => {
+    const result = await runWebFlow({
+      deps: makeWebDeps(),
+      options: { ...BASE_OPTIONS, retries: 2 },
+      flowPath: fixturePath("failViaStub"),
+    });
+
+    expect(result.passed).toBe(false);
+    expect(result.attempts).toBe(1);
+  });
+
+  it("should close all open contexts and browsers when the flow throws", async () => {
+    const ctx = makeContext([makePage()]);
+    const closeMock = mock(async () => {});
+    ctx.close = closeMock;
+    const browser = makeBrowser(ctx);
+    const browserCloseMock = mock(async () => {});
+    browser.close = browserCloseMock;
+    const deps = makeWebDeps(makeUniformDeps(makeDep(browser, ctx)));
+
+    await runWebFlow({
+      deps,
+      options: BASE_OPTIONS,
+      flowPath: fixturePath("failAfterLaunch"),
+    });
+
+    expect(closeMock).toHaveBeenCalled();
+    expect(browserCloseMock).toHaveBeenCalled();
   });
 });

@@ -26,8 +26,9 @@ import {
 } from "./runWebFlowUtils.js";
 
 export type RunWebFlowDeps = RunnerDeps & WebLaunchDeps;
+// trace is not yet implemented
 export type RunWebFlowOptions = RunnerOptions &
-  Omit<WebLaunchOptions, "browser">;
+  Omit<WebLaunchOptions, "browser" | "trace">;
 
 export async function runWebFlow({
   deps,
