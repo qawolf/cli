@@ -19,7 +19,7 @@ afterEach(() => {
 
 describe("installBrowsers", () => {
   it("spawns playwright cli with install <browser> on darwin (no --with-deps)", async () => {
-    const { ui, deps, ctx } = setup("chromium");
+    const { ui, deps, ctx } = setup("Web - Chrome");
 
     const result = await installBrowsers(ctx, undefined, deps);
 
@@ -39,9 +39,9 @@ describe("installBrowsers", () => {
     const deps = makeDeps({
       files: ["/a", "/b", "/c"],
       metaByFile: {
-        "/a": { target: "firefox" },
-        "/b": { target: "webkit" },
-        "/c": { target: "chromium" },
+        "/a": { target: "Web - Firefox" },
+        "/b": { target: "Web - Safari" },
+        "/c": { target: "Web - Chrome" },
       },
       spawn: spawnSequence(ok, ok, ok),
     });
@@ -61,9 +61,9 @@ describe("installBrowsers", () => {
     const deps = makeDeps({
       files: ["/a", "/b", "/c"],
       metaByFile: {
-        "/a": { target: "chromium" },
-        "/b": { target: "chromium" },
-        "/c": { target: "chromium" },
+        "/a": { target: "Web - Chrome" },
+        "/b": { target: "Web - Chrome" },
+        "/c": { target: "Web - Chrome" },
       },
     });
 
@@ -73,13 +73,14 @@ describe("installBrowsers", () => {
     expect(ui.success).toHaveBeenCalledWith("Installed 1 browser.");
   });
 
-  it("silently skips flows whose target is not a known browser", async () => {
+  it("silently skips flows whose target is not a Playwright-driven web browser", async () => {
     const ui = makeFakeUI();
     const deps = makeDeps({
-      files: ["/a", "/b"],
+      files: ["/a", "/b", "/c"],
       metaByFile: {
-        "/a": { target: "Web - Chrome" },
-        "/b": { target: "android" },
+        "/a": { target: "Basic" },
+        "/b": { target: "Electron" },
+        "/c": { target: "Android - Pixel" },
       },
     });
 
@@ -106,7 +107,7 @@ describe("installBrowsers", () => {
   });
 
   it("passes --with-deps before the browser name on Linux", async () => {
-    const { deps, ctx } = setup("chromium", { platform: "linux" });
+    const { deps, ctx } = setup("Web - Chrome", { platform: "linux" });
 
     await installBrowsers(ctx, undefined, deps);
 
@@ -123,8 +124,8 @@ describe("installBrowsers", () => {
     const deps = makeDeps({
       files: ["/a", "/b"],
       metaByFile: {
-        "/a": { target: "chromium" },
-        "/b": { target: "firefox" },
+        "/a": { target: "Web - Chrome" },
+        "/b": { target: "Web - Firefox" },
       },
       spawn: spawnSequence(ok, {
         exitCode: 1,
@@ -143,7 +144,7 @@ describe("installBrowsers", () => {
   });
 
   it("returns error when spawn returns exitCode -1 (process failed to launch)", async () => {
-    const { deps, ctx, ui } = setup("chromium", {
+    const { deps, ctx, ui } = setup("Web - Chrome", {
       spawn: spawnSequence({ exitCode: -1, stdout: "", stderr: "" }),
     });
 
@@ -156,13 +157,13 @@ describe("installBrowsers", () => {
   });
 
   it("forwards the pattern argument to expandPatterns (string → single-element array; undefined → empty array)", async () => {
-    const a = setup("chromium");
+    const a = setup("Web - Chrome");
     await installBrowsers(a.ctx, "flows/login.flow.ts", a.deps);
     expect(a.deps.expandPatterns).toHaveBeenCalledWith(
       ["flows/login.flow.ts"],
       "/proj",
     );
-    const b = setup("chromium");
+    const b = setup("Web - Chrome");
     await installBrowsers(b.ctx, undefined, b.deps);
     expect(b.deps.expandPatterns).toHaveBeenCalledWith([], "/proj");
   });
