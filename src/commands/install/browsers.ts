@@ -103,9 +103,10 @@ function resolvePlaywrightCli(): string {
         ? pkg.bin
         : (pkg.bin?.["playwright"] ?? "cli.js");
     return join(dirname(pkgPath), binEntry);
-  } catch {
+  } catch (err) {
     throw new Error(
       "Could not find Playwright. It should ship with the qawolf CLI — try reinstalling the CLI.",
+      { cause: err },
     );
   }
 }
