@@ -53,7 +53,7 @@ export function createWithProgress({
 
         try {
           for (const [i, step] of steps.entries()) {
-            currentLabel = `(${String(i + 1)}/${String(total)}) ${step.message}`;
+            currentLabel = `[${String(i + 1)}/${String(total)}] ${step.message}`;
             if (i === 0) {
               s.start(currentLabel);
             } else {
@@ -71,8 +71,11 @@ export function createWithProgress({
         }
       }
       case "agent": {
-        for (const step of steps) {
-          writeStderrLine(step.message);
+        const total = steps.length;
+        for (const [i, step] of steps.entries()) {
+          writeStderrLine(
+            `[${String(i + 1)}/${String(total)}] ${step.message}`,
+          );
           results.push(await step.task());
         }
 
@@ -81,8 +84,14 @@ export function createWithProgress({
         return typed;
       }
       case "json": {
-        for (const step of steps) {
-          writeJsonDiagnostic({ type: "step", message: step.message });
+        const total = steps.length;
+        for (const [i, step] of steps.entries()) {
+          writeJsonDiagnostic({
+            type: "step",
+            message: step.message,
+            step: i + 1,
+            total,
+          });
           results.push(await step.task());
         }
 

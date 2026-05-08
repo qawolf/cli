@@ -15,7 +15,7 @@ export type UI = {
   confirm(message: string): Promise<PromptResult<boolean>>;
   password(message: string, hint?: string): Promise<PromptResult<string>>;
   withProgress: WithProgressFn;
-  step(message: string): void;
+  step(message: string, progress?: { current: number; total: number }): void;
   success(message: string): void;
   warn(message: string): void;
   cancel(message: string): void;

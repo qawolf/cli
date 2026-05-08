@@ -22,7 +22,12 @@ describe("createWithProgress — json mode", () => {
 
     expect(results).toEqual(["ok"]);
     expect(stderrSpy).toHaveBeenCalledWith(
-      JSON.stringify({ type: "step", message: "verifying" }) + "\n",
+      JSON.stringify({
+        type: "step",
+        message: "verifying",
+        step: 1,
+        total: 1,
+      }) + "\n",
     );
     expect(stderrSpy).toHaveBeenCalledWith(
       JSON.stringify({ type: "success", message: "done" }) + "\n",

@@ -17,6 +17,15 @@ describe("createStep", () => {
 
       expect(clack.log.step).toHaveBeenCalledWith("Fetching data");
     });
+
+    it("prefixes [current/total] when progress is supplied", () => {
+      const clack = makeClack();
+      const step = createStep({ mode: "human", clack });
+
+      step("Installing Chromium", { current: 1, total: 3 });
+
+      expect(clack.log.step).toHaveBeenCalledWith("[1/3] Installing Chromium");
+    });
   });
 
   describe("json mode", () => {
@@ -34,6 +43,25 @@ describe("createStep", () => {
       );
       expect(clack.log.step).not.toHaveBeenCalled();
     });
+
+    it("includes step and total as structured fields when progress is supplied", () => {
+      const clack = makeClack();
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
+      const step = createStep({ mode: "json", clack });
+
+      step("Installing Chromium", { current: 1, total: 3 });
+
+      expect(stderrSpy).toHaveBeenCalledWith(
+        JSON.stringify({
+          type: "step",
+          message: "Installing Chromium",
+          step: 1,
+          total: 3,
+        }) + "\n",
+      );
+    });
   });
 
   describe("agent mode", () => {
@@ -48,6 +76,18 @@ describe("createStep", () => {
 
       expect(stderrSpy).toHaveBeenCalledWith("Fetching data\n");
       expect(clack.log.step).not.toHaveBeenCalled();
+    });
+
+    it("prefixes [current/total] when progress is supplied", () => {
+      const clack = makeClack();
+      const stderrSpy = spyOn(process.stderr, "write").mockImplementation(
+        () => true,
+      );
+      const step = createStep({ mode: "agent", clack });
+
+      step("Installing Chromium", { current: 1, total: 3 });
+
+      expect(stderrSpy).toHaveBeenCalledWith("[1/3] Installing Chromium\n");
     });
   });
 });
