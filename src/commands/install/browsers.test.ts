@@ -14,8 +14,9 @@ const FAKE_NODE = "/fake/node";
 const FAKE_CLI = "/fake/playwright/cli.js";
 
 const ok: SpawnResult = { exitCode: 0, stdout: "", stderr: "" };
-
-function spawnReturning(...results: SpawnResult[]): SpawnFn {
+function spawnSequence(...results: SpawnResult[]): SpawnFn {
+  if (!results.length)
+    throw new Error("spawnSequence requires at least one result");
   let i = 0;
   return mock<SpawnFn>(() =>
     Promise.resolve(results[i++] ?? results[results.length - 1]!),
@@ -67,7 +68,7 @@ function makeDeps(overrides: DepsOverrides): InstallBrowsersDeps {
   const metaByFile = overrides.metaByFile ?? {};
   return {
     cwd: "/proj",
-    spawn: overrides.spawn ?? spawnReturning(ok),
+    spawn: overrides.spawn ?? spawnSequence(ok),
     platform: overrides.platform ?? "darwin",
     expandPatterns: mock<InstallBrowsersDeps["expandPatterns"]>(() =>
       Promise.resolve([...files]),
@@ -95,9 +96,7 @@ function setup(
   });
   return { ui, deps, ctx: makeCtx(ui) };
 }
-
 const callsOf = (s: SpawnFn) => (s as ReturnType<typeof mock>).mock.calls;
-
 describe("installBrowsers", () => {
   it("spawns playwright cli with install <browser> on darwin (no --with-deps)", async () => {
     const { ui, deps, ctx } = setup("chromium");
@@ -124,7 +123,7 @@ describe("installBrowsers", () => {
         "/b": { target: "webkit" },
         "/c": { target: "chromium" },
       },
-      spawn: spawnReturning(ok, ok, ok),
+      spawn: spawnSequence(ok, ok, ok),
     });
 
     await installBrowsers(makeCtx(ui), undefined, deps);
@@ -207,7 +206,7 @@ describe("installBrowsers", () => {
         "/a": { target: "chromium" },
         "/b": { target: "firefox" },
       },
-      spawn: spawnReturning(ok, {
+      spawn: spawnSequence(ok, {
         exitCode: 1,
         stdout: "",
         stderr: "boom\nmore lines\n",
@@ -225,7 +224,7 @@ describe("installBrowsers", () => {
 
   it("returns error when spawn returns exitCode -1 (process failed to launch)", async () => {
     const { deps, ctx, ui } = setup("chromium", {
-      spawn: spawnReturning({ exitCode: -1, stdout: "", stderr: "" }),
+      spawn: spawnSequence({ exitCode: -1, stdout: "", stderr: "" }),
     });
 
     const result = await installBrowsers(ctx, undefined, deps);
