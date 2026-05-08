@@ -52,6 +52,14 @@ describe("createProgram", () => {
     expect((err as CommanderError).code).toBe("commander.unknownCommand");
   });
 
+  it("registers the install browsers subcommand", () => {
+    const program = createProgram();
+    const install = program.commands.find((c) => c.name() === "install");
+    expect(install).toBeDefined();
+    const browsers = install?.commands.find((c) => c.name() === "browsers");
+    expect(browsers).toBeDefined();
+  });
+
   it("throws on unknown option", () => {
     let err: unknown;
     try {
