@@ -45,19 +45,28 @@ export async function installBrowsers(
     }
   }
 
-  ctx.ui.success(`Installed ${browsers.length} browser(s).`);
+  const summary =
+    browsers.length === 1
+      ? "Installed 1 browser."
+      : `Installed ${browsers.length} browsers.`;
+  ctx.ui.success(summary);
 }
+
+const BATCH_SIZE = 32;
 
 async function collectBrowsers(
   files: readonly string[],
   peekFlowMeta: typeof defaultPeekFlowMeta,
 ): Promise<BrowserName[]> {
   const seen = new Set<BrowserName>();
-  for (const file of files) {
-    const meta = await peekFlowMeta(file);
-    if (!meta.target) continue;
-    const browser = targetToBrowser(meta.target);
-    if (browser) seen.add(browser);
+  for (let i = 0; i < files.length; i += BATCH_SIZE) {
+    const batch = files.slice(i, i + BATCH_SIZE);
+    const metas = await Promise.all(batch.map(peekFlowMeta));
+    for (const meta of metas) {
+      if (!meta.target) continue;
+      const browser = targetToBrowser(meta.target);
+      if (browser) seen.add(browser);
+    }
   }
   return [...seen].sort();
 }
@@ -83,16 +92,22 @@ function formatError(browser: BrowserName, result: SpawnResult): string {
 }
 
 function resolvePlaywrightCli(): string {
-  const require_ = createRequire(import.meta.url);
-  const pkgPath = require_.resolve("playwright/package.json");
-  const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as {
-    bin?: string | Record<string, string>;
-  };
-  const binEntry =
-    typeof pkg.bin === "string"
-      ? pkg.bin
-      : (pkg.bin?.["playwright"] ?? "cli.js");
-  return join(dirname(pkgPath), binEntry);
+  try {
+    const require_ = createRequire(import.meta.url);
+    const pkgPath = require_.resolve("playwright/package.json");
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as {
+      bin?: string | Record<string, string>;
+    };
+    const binEntry =
+      typeof pkg.bin === "string"
+        ? pkg.bin
+        : (pkg.bin?.["playwright"] ?? "cli.js");
+    return join(dirname(pkgPath), binEntry);
+  } catch {
+    throw new Error(
+      "Could not find Playwright. It should ship with the qawolf CLI — try reinstalling the CLI.",
+    );
+  }
 }
 
 export async function handleInstallBrowsers(

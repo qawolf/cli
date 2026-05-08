@@ -112,7 +112,7 @@ describe("installBrowsers", () => {
       "chromium",
     ]);
     expect(ui.info).toHaveBeenCalledWith("Installing chromium...");
-    expect(ui.success).toHaveBeenCalledWith("Installed 1 browser(s).");
+    expect(ui.success).toHaveBeenCalledWith("Installed 1 browser.");
   });
 
   it("spawns install for each unique browser sorted alphabetically", async () => {
@@ -134,7 +134,7 @@ describe("installBrowsers", () => {
       [FAKE_NODE, [FAKE_CLI, "install", "firefox"]],
       [FAKE_NODE, [FAKE_CLI, "install", "webkit"]],
     ]);
-    expect(ui.success).toHaveBeenCalledWith("Installed 3 browser(s).");
+    expect(ui.success).toHaveBeenCalledWith("Installed 3 browsers.");
   });
 
   it("invokes each browser only once when multiple flows share a target", async () => {
@@ -151,7 +151,7 @@ describe("installBrowsers", () => {
     await installBrowsers(makeCtx(ui), undefined, deps);
 
     expect(deps.spawn).toHaveBeenCalledTimes(1);
-    expect(ui.success).toHaveBeenCalledWith("Installed 1 browser(s).");
+    expect(ui.success).toHaveBeenCalledWith("Installed 1 browser.");
   });
 
   it("silently skips flows whose target is not a known browser", async () => {
