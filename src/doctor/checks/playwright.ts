@@ -2,19 +2,23 @@ import type { CheckResult, SpawnFn } from "~/doctor/types.js";
 
 type PlaywrightDeps = {
   readonly spawn: SpawnFn;
+  readonly execPath: string;
+  readonly playwrightCliPath: string;
 };
 
-// TODO WIZ-10341: match against a Playwright dep pin once present.
 export async function checkPlaywright(
   deps: PlaywrightDeps,
 ): Promise<CheckResult> {
-  const result = await deps.spawn("playwright", ["--version"]);
+  const result = await deps.spawn(deps.execPath, [
+    deps.playwrightCliPath,
+    "--version",
+  ]);
 
   if (result.exitCode < 0) {
     return {
       name: "playwright",
       status: "fail",
-      detail: "playwright is not installed or not on PATH",
+      detail: "Could not launch Playwright. Try reinstalling the qawolf CLI.",
     };
   }
 

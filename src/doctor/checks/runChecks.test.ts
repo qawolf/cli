@@ -31,6 +31,8 @@ describe("runChecks", () => {
       flowFiles: [],
       readFile: () => Promise.resolve(""),
       cwd: "/repo",
+      execPath: "/fake/node",
+      playwrightCliPath: "/fake/playwright/cli.js",
     });
 
     expect(results.map((result) => result.name)).toEqual([
@@ -74,6 +76,8 @@ describe("runChecks", () => {
         return Promise.resolve(source);
       },
       cwd: "/repo",
+      execPath: "/fake/node",
+      playwrightCliPath: "/fake/playwright/cli.js",
     });
 
     const warns = results.filter((r) => r.name === "file-assets");

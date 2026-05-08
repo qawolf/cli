@@ -19,6 +19,8 @@ type CheckDeps = {
   readonly flowFiles: readonly string[];
   readonly readFile: (path: string) => Promise<string>;
   readonly cwd: string;
+  readonly execPath: string;
+  readonly playwrightCliPath: string;
 };
 
 export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
@@ -28,7 +30,11 @@ export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
         processVersion: deps.processVersion,
         enginesNode: deps.enginesNode,
       }),
-      checkPlaywright({ spawn: deps.spawn }),
+      checkPlaywright({
+        spawn: deps.spawn,
+        execPath: deps.execPath,
+        playwrightCliPath: deps.playwrightCliPath,
+      }),
       checkApiKey({ env: deps.env }),
       checkApiUrl({ fetch: deps.fetch, apiBaseUrl: deps.apiBaseUrl }),
       checkNpmRegistry({ spawn: deps.spawn }),
