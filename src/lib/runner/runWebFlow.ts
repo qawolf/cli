@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import type {
   WebFlowApiReturnValue,
   WebFlowDefinition,
@@ -39,7 +40,10 @@ export async function runWebFlow({
   options: RunWebFlowOptions;
   flowPath: string;
 }): Promise<FlowRunResult> {
-  const mod = (await import(flowPath)) as Record<string, unknown>;
+  const mod = (await import(pathToFileURL(flowPath).href)) as Record<
+    string,
+    unknown
+  >;
   const exported = mod["default"] as WebFlowApiReturnValue | undefined;
   if (exported === undefined) {
     throw new Error(`No default export found in "${flowPath}"`);
@@ -106,27 +110,26 @@ export async function runWebFlow({
     return { browser, browserType: browserName, context };
   };
 
-  const webDeps = {
-    ...Object.fromEntries(
-      UNSUPPORTED_WEB_DEP_NAMES.map((name) => [name, notSupported(name)]),
-    ),
-    launch,
-    launchWithGpu: launch,
-    isGpuAvailable: () => false,
-    inputs: options.flowInputs ?? {},
-    workflowInputs: options.flowInputs ?? {},
-    setOutput: () => {},
-    failWithoutRetry: () => {
-      const err = new Error("failWithoutRetry");
-      err.name = "FailWithoutRetryError";
-      throw err;
-    },
-  };
-
   const flowDef: FlowDefinition = {
     name: flowName,
     path: flowPath,
-    callback: async (_flowDeps: FlowDeps) => {
+    callback: async (flowDeps: FlowDeps) => {
+      const webDeps = {
+        ...Object.fromEntries(
+          UNSUPPORTED_WEB_DEP_NAMES.map((name) => [name, notSupported(name)]),
+        ),
+        launch,
+        launchWithGpu: launch,
+        isGpuAvailable: () => false,
+        inputs: flowDeps.flowInputs,
+        workflowInputs: flowDeps.flowInputs,
+        setOutput: flowDeps.setOutput,
+        failWithoutRetry: () => {
+          const err = new Error("failWithoutRetry");
+          err.name = "FailWithoutRetryError";
+          throw err;
+        },
+      };
       await runFn(webDeps as unknown as Parameters<typeof runFn>[0]);
     },
   };
