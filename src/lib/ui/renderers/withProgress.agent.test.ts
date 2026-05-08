@@ -24,8 +24,8 @@ describe("createWithProgress — agent mode", () => {
     );
 
     expect(results).toEqual(["ok", "saved"]);
-    expect(stderrSpy).toHaveBeenCalledWith("verifying\n");
-    expect(stderrSpy).toHaveBeenCalledWith("storing\n");
+    expect(stderrSpy).toHaveBeenCalledWith("[1/2] verifying\n");
+    expect(stderrSpy).toHaveBeenCalledWith("[2/2] storing\n");
     expect(stderrSpy).toHaveBeenCalledWith("All done!\n");
     expect(clack.spinner).not.toHaveBeenCalled();
   });
