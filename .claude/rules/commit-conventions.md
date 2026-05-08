@@ -7,7 +7,7 @@ Use conventional commit format: `type(scope): description`
 
 **Types:** feat, fix, build, chore, docs, refactor, test
 
-**Scopes:** scaffold, auth, flows, runs, diff, pr, config, cli, lib, clients
+**Scopes:** scaffold, auth, flows, runs, diff, pr, config, cli, lib, clients, runner
 
 **Examples from this repo:**
 
