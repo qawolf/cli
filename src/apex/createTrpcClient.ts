@@ -96,12 +96,16 @@ async function send<T>(
     return { ok: false, error: { cause: toError(error), kind: "parse" } };
   }
 
-  const data = unwrap(body);
-  const parsed = schema.safeParse(data);
-  if (!parsed.success) {
-    return { ok: false, error: { cause: parsed.error, kind: "parse" } };
+  try {
+    const data = unwrap(body);
+    const parsed = schema.safeParse(data);
+    if (!parsed.success) {
+      return { ok: false, error: { cause: parsed.error, kind: "parse" } };
+    }
+    return { ok: true, data: parsed.data };
+  } catch (error: unknown) {
+    return { ok: false, error: { cause: toError(error), kind: "parse" } };
   }
-  return { ok: true, data: parsed.data };
 }
 
 function unwrap(body: unknown): unknown {

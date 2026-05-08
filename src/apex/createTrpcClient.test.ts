@@ -147,6 +147,26 @@ describe("createTrpcClient.query", () => {
     if (!result.ok) expect(result.error.kind).toBe("parse");
   });
 
+  it("returns parse error when superjson.deserialize throws on malformed envelope", async () => {
+    const malformed = {
+      result: {
+        data: {
+          json: { value: "string" },
+          meta: { values: { value: ["not-a-real-type-tag"] } },
+        },
+      },
+    };
+    const client = createTrpcClient(apiKey, {
+      baseUrl,
+      fetch: asFetch(createFetchMock(jsonResponse(malformed))),
+    });
+
+    const result = await client.query(path, {}, z.unknown());
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.kind).toBe("parse");
+  });
+
   it("returns parse error when response shape does not match schema", async () => {
     const client = createTrpcClient(apiKey, {
       baseUrl,
