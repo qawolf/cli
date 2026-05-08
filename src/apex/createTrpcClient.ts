@@ -1,6 +1,8 @@
 import superjson, { type SuperJSONResult } from "superjson";
 import type { z } from "zod";
 
+import { getApiBaseUrl } from "~/lib/config.js";
+
 export type WireError =
   | { kind: "http"; status: number; body: string }
   | { kind: "network"; cause: Error }
@@ -30,7 +32,13 @@ export type TrpcClient = {
 
 const timeoutMs = 10_000;
 
-export function createTrpcClient(apiKey: string, deps: Deps): TrpcClient {
+export function createTrpcClient(
+  apiKey: string,
+  deps: Deps = {
+    baseUrl: getApiBaseUrl(process.env),
+    fetch: globalThis.fetch,
+  },
+): TrpcClient {
   const authHeader = { Authorization: `Bearer ${apiKey}` };
 
   return {
