@@ -3,6 +3,8 @@
 // locally-modified `.qawolf/<env>/` files. Both consumers should expose a
 // `--yes` CLI flag and pass it through as the `yes` option here.
 
+import { isInteractive } from "~/lib/ui/env.js";
+
 type Listener = (chunk: Buffer | string) => void;
 type EndListener = () => void;
 
@@ -23,6 +25,7 @@ type Stdout = {
 type ConfirmDeps = {
   readonly stdin?: Stdin;
   readonly stdout?: Stdout;
+  readonly env?: Record<string, string | undefined>;
 };
 
 type ConfirmOptions = {
@@ -31,10 +34,15 @@ type ConfirmOptions = {
 
 export async function confirm(
   message: string,
-  { yes, stdin = process.stdin, stdout = process.stdout }: ConfirmOptions,
+  {
+    yes,
+    stdin = process.stdin,
+    stdout = process.stdout,
+    env = process.env,
+  }: ConfirmOptions,
 ): Promise<boolean> {
   if (yes) return true;
-  if (stdin.isTTY !== true) return false;
+  if (!isInteractive({ stdinIsTTY: stdin.isTTY ?? false, env })) return false;
 
   stdout.write(`${message} [y/N] `);
 
@@ -46,7 +54,10 @@ export async function confirm(
       resolve(value);
     };
     const onData: Listener = (chunk) => {
-      const input = chunk.toString().trim().toLowerCase();
+      const text = chunk.toString();
+      const newlineIdx = text.indexOf("\n");
+      const firstLine = newlineIdx >= 0 ? text.slice(0, newlineIdx) : text;
+      const input = firstLine.trim().toLowerCase();
       settle(input === "y" || input === "yes");
     };
     const onEnd: EndListener = () => settle(false);
