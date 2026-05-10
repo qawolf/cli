@@ -1,6 +1,10 @@
 import { mock } from "bun:test";
 
 import type { CommandContext } from "~/lib/context.js";
+import type { Reporter } from "~/lib/reporter/types.js";
+import type { FlowRunError } from "~/lib/runner/errors.js";
+import type { RunWebFlowDeps } from "~/lib/runner/runWebFlow.js";
+import type { FlowRunResult } from "~/lib/runner/types.js";
 import type { UI } from "~/lib/ui/index.js";
 
 import type { FlowsRunDeps, FlowsRunFlags } from "./runInternals.js";
@@ -40,6 +44,22 @@ export const makeCtx = (ui: UI = makeFakeUI()): CommandContext => ({
   apiBaseUrl: "https://example.invalid",
 });
 
+export function makeReporter(): Reporter {
+  return {
+    onFlowStart: mock(() => {}),
+    onFlowPass: mock(() => {}),
+    onFlowFail: mock(() => {}),
+    onTestStart: mock(() => {}),
+    onTestResult: mock(() => {}),
+    onScreenshot: mock(() => {}),
+    onRunComplete: mock(() => {}),
+  };
+}
+
+export function makeFakeRunWebFlowDeps(): RunWebFlowDeps {
+  return {} as RunWebFlowDeps;
+}
+
 export function defaultFlags(): FlowsRunFlags {
   return {
     retries: 0,
@@ -56,11 +76,18 @@ type DepsOverrides = {
   files?: readonly string[];
   metaByFile?: Record<string, { name?: string; target?: string }>;
   installError?: Error;
+  runResults?: FlowRunResult[];
+  nowSequence?: readonly number[];
+  reporter?: Reporter;
 };
 
 export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
   const files = overrides.files ?? [];
   const metaByFile = overrides.metaByFile ?? {};
+  const runResults = overrides.runResults ?? [];
+  let runIdx = 0;
+  const nowSeq = overrides.nowSequence ?? [0];
+  let nowIdx = 0;
   return {
     cwd: FAKE_CWD,
     expandPatterns: mock<FlowsRunDeps["expandPatterns"]>(() =>
@@ -77,5 +104,41 @@ export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
         ? Promise.reject(overrides.installError)
         : Promise.resolve(),
     ),
+    runWebFlow: mock<FlowsRunDeps["runWebFlow"]>(() =>
+      Promise.resolve(
+        runResults[runIdx++] ?? runResults[runResults.length - 1]!,
+      ),
+    ),
+    runWebFlowDeps: makeFakeRunWebFlowDeps(),
+    reporter: overrides.reporter ?? makeReporter(),
+    now: mock<() => number>(
+      () => nowSeq[Math.min(nowIdx++, nowSeq.length - 1)]!,
+    ),
   };
 }
+
+export function passResult(
+  testCounts: { passed: number; total: number } = { passed: 1, total: 1 },
+): FlowRunResult {
+  return { passed: true, testCounts, attempts: 1 };
+}
+
+export function failResult(
+  cause: Error = new Error("flow failed"),
+  testCounts: { passed: number; total: number } = { passed: 0, total: 1 },
+): FlowRunResult {
+  return {
+    passed: false,
+    testCounts,
+    attempts: 1,
+    error: Object.assign(new Error("Flow failed on attempt 1"), {
+      flowName: "test",
+      attempt: 1,
+      cause,
+    }) as unknown as FlowRunError,
+  };
+}
+
+export const callsOf = <T extends (...args: never) => unknown>(
+  fn: T,
+): unknown[][] => (fn as unknown as ReturnType<typeof mock>).mock.calls;

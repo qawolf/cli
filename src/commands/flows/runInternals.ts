@@ -5,6 +5,14 @@ import type {
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/commands/flows/expand.js";
 import type { CommandContext } from "~/lib/context.js";
+import type { Reporter } from "~/lib/reporter/types.js";
+import { FlowRunError } from "~/lib/runner/errors.js";
+import type {
+  RunWebFlowDeps,
+  RunWebFlowOptions,
+  runWebFlow as defaultRunWebFlow,
+} from "~/lib/runner/runWebFlow.js";
+import type { FlowRunResult } from "~/lib/runner/types.js";
 import type { BrowserName, TraceMode, VideoMode } from "~/types.js";
 
 export type FlowsRunFlags = {
@@ -25,6 +33,10 @@ export type FlowsRunDeps = {
     ctx: CommandContext,
     browsers: BrowserName[],
   ) => Promise<void>;
+  readonly runWebFlow: typeof defaultRunWebFlow;
+  readonly runWebFlowDeps: RunWebFlowDeps;
+  readonly reporter: Reporter;
+  readonly now: () => number;
 };
 
 export type ResolvedFlow = {
@@ -72,4 +84,29 @@ export function parseEnum<T extends string>(
     }
     return value as T;
   };
+}
+
+export async function dispatchFlow(
+  flow: ResolvedFlow,
+  options: RunWebFlowOptions,
+  deps: FlowsRunDeps,
+): Promise<{ run: FlowRunResult; durationMs: number }> {
+  deps.reporter.onFlowStart?.({ name: flow.name, path: flow.file });
+  const flowStart = deps.now();
+  let run: FlowRunResult;
+  try {
+    run = await deps.runWebFlow({
+      deps: deps.runWebFlowDeps,
+      options,
+      flowPath: flow.file,
+    });
+  } catch (err) {
+    run = {
+      passed: false,
+      testCounts: { passed: 0, total: 0 },
+      attempts: 1,
+      error: new FlowRunError(flow.name, 1, err),
+    };
+  }
+  return { run, durationMs: deps.now() - flowStart };
 }
