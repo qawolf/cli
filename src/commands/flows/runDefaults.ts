@@ -5,7 +5,8 @@ import {
 import { handleInstallBrowsers as defaultInstallBrowsers } from "~/commands/install/browsers.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 
-import { type FlowsRunFlags, flowsRun } from "./run.js";
+import { flowsRun } from "./run.js";
+import type { FlowsRunFlags } from "./runInternals.js";
 
 export async function handleFlowsRun(
   ctx: CommandContext,

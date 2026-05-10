@@ -1,3 +1,5 @@
+import { InvalidArgumentError } from "commander";
+
 import type {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
@@ -36,4 +38,38 @@ export function unsupportedTargetMessage(target: string): string {
     return "Android targets aren't yet implemented in v0.1; tracked in WIZ-10446.";
   }
   return `${target} targets aren't supported in v0.1. Run them on app.qawolf.com or wait for v0.2.`;
+}
+
+// Strict integer parser. `String(n) !== value` rejects `"+3"` and leading zeros
+// like `"03"` — same convention as most CLI tooling. The optional `min` bound
+// surfaces domain errors (negative retries, zero workers, etc.) at parse time
+// rather than letting them fail deeper in the runner.
+export function parseInteger(
+  name: string,
+  options: { min?: number } = {},
+): (value: string) => number {
+  return (value) => {
+    const n = Number.parseInt(value, 10);
+    if (!Number.isFinite(n) || String(n) !== value) {
+      throw new InvalidArgumentError(`${name} must be an integer`);
+    }
+    if (options.min !== undefined && n < options.min) {
+      throw new InvalidArgumentError(`${name} must be >= ${options.min}`);
+    }
+    return n;
+  };
+}
+
+export function parseEnum<T extends string>(
+  name: string,
+  values: readonly T[],
+): (value: string) => T {
+  return (value) => {
+    if (!(values as readonly string[]).includes(value)) {
+      throw new InvalidArgumentError(
+        `${name} must be one of: ${values.join(", ")}`,
+      );
+    }
+    return value as T;
+  };
 }

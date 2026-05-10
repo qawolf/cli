@@ -129,7 +129,7 @@ describe("flowsRun pre-flight", () => {
     expect(result).toBeUndefined();
     expect(deps.installBrowsers).toHaveBeenCalledTimes(1);
     expect(ui.info).toHaveBeenCalledWith(
-      "Pre-flight complete: 2 web flow(s) ready to run.",
+      "Pre-flight complete: 2 web flow(s) detected. (Dispatch lands in a follow-up PR.)",
     );
   });
 });

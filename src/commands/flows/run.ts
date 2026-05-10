@@ -10,8 +10,6 @@ import {
   unsupportedTargetMessage,
 } from "./runInternals.js";
 
-export type { FlowsRunFlags } from "./runInternals.js";
-
 export async function flowsRun(
   ctx: CommandContext,
   pattern: string | undefined,
@@ -54,7 +52,10 @@ export async function flowsRun(
     return installResult;
   }
 
-  // Dispatch lands in a follow-up PR. Pre-flight verified targets and
-  // installed browsers; report what was prepared.
-  ctx.ui.info(`Pre-flight complete: ${flows.length} web flow(s) ready to run.`);
+  // Dispatch is implemented in a follow-up PR. This PR ships only the
+  // pre-flight (validation + install). Report what was prepared so the user
+  // sees a complete (if partial) action.
+  ctx.ui.info(
+    `Pre-flight complete: ${flows.length} web flow(s) detected. (Dispatch lands in a follow-up PR.)`,
+  );
 }

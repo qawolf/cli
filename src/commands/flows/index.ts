@@ -1,37 +1,15 @@
-import { type Command, InvalidArgumentError } from "commander";
+import type { Command } from "commander";
 
 import { withContext } from "~/lib/context.js";
 import type { TraceMode, VideoMode } from "~/types.js";
 
 import { handleFlowsRun } from "./runDefaults.js";
-import type { FlowsRunFlags } from "./runInternals.js";
+import { type FlowsRunFlags, parseEnum, parseInteger } from "./runInternals.js";
 
 const VIDEO_MODES = ["on", "off", "retain-on-failure"] as const;
 const TRACE_MODES = ["on", "off", "retain-on-failure"] as const;
-
-function parseInteger(name: string): (value: string) => number {
-  return (value) => {
-    const n = Number.parseInt(value, 10);
-    if (!Number.isFinite(n) || String(n) !== value) {
-      throw new InvalidArgumentError(`${name} must be an integer`);
-    }
-    return n;
-  };
-}
-
-function parseEnum<T extends string>(
-  name: string,
-  values: readonly T[],
-): (value: string) => T {
-  return (value) => {
-    if (!(values as readonly string[]).includes(value)) {
-      throw new InvalidArgumentError(
-        `${name} must be one of: ${values.join(", ")}`,
-      );
-    }
-    return value as T;
-  };
-}
+const VIDEO_DEFAULT: VideoMode = "off";
+const TRACE_DEFAULT: TraceMode = "off";
 
 export function registerFlowsCommand(program: Command): void {
   const flows = program
@@ -44,33 +22,33 @@ export function registerFlowsCommand(program: Command): void {
     .option(
       "--retries <n>",
       "Number of retries on failure",
-      parseInteger("--retries"),
+      parseInteger("--retries", { min: 0 }),
       0,
     )
     .option("--bail", "Stop on first failure", false)
     .option(
       "--workers <n>",
       "Number of parallel workers (v0.1 cap: 1)",
-      parseInteger("--workers"),
+      parseInteger("--workers", { min: 1 }),
       1,
     )
     .option(
       "--timeout <ms>",
       "Per-flow timeout in milliseconds",
-      parseInteger("--timeout"),
+      parseInteger("--timeout", { min: 0 }),
       30_000,
     )
     .option(
       "--video <mode>",
       "Video mode: on | off | retain-on-failure",
       parseEnum<VideoMode>("--video", VIDEO_MODES),
-      "off" as VideoMode,
+      VIDEO_DEFAULT,
     )
     .option(
       "--trace <mode>",
       "Trace mode: on | off | retain-on-failure (accepted; not yet wired to runner)",
       parseEnum<TraceMode>("--trace", TRACE_MODES),
-      "off" as TraceMode,
+      TRACE_DEFAULT,
     )
     .option(
       "--output-dir <path>",
