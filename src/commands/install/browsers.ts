@@ -9,7 +9,7 @@ import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { resolvePlaywrightCli } from "~/lib/playwright.js";
 import type { BrowserName } from "~/types.js";
 
-export type InstallBrowserListDeps = {
+type InstallBrowserListDeps = {
   readonly spawn: SpawnFn;
   readonly platform: NodeJS.Platform;
   readonly execPath: string;
