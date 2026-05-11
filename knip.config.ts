@@ -9,6 +9,9 @@ const config: KnipConfig = {
   ],
   project: ["src/**/*.ts"],
   ignoreDependencies: [
+    // Resolved at runtime via createRequire in src/commands/flows/runDefaults.ts;
+    // knip cannot see the dynamic resolution.
+    "playwright",
     // TODO WIZ-10341 follow-up: consumed once the web-flow runner imports it.
     "@playwright/test",
   ],
