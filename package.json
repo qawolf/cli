@@ -12,7 +12,7 @@
   ],
   "type": "module",
   "scripts": {
-    "build": "bun build ./src/main.ts --outfile dist/cli.js --target node --external @napi-rs/keyring",
+    "build": "bun build ./src/main.ts --outfile dist/cli.js --target node --external @napi-rs/keyring --external playwright --external playwright-core",
     "postbuild": "./scripts/postbuild.sh",
     "build:binary": "bun build --compile --bytecode ./src/main.ts --outfile dist/qawolf",
     "dev": "bun run src/main.ts",

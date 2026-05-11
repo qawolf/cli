@@ -2,12 +2,15 @@ import path from "node:path";
 
 import { targetToBrowser } from "~/commands/flows/expand.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
+import type { RunSummary } from "~/lib/reporter/types.js";
+import type { RunWebFlowOptions } from "~/lib/runner/runWebFlow.js";
 import type { BrowserName } from "~/types.js";
 
 import {
   type FlowsRunDeps,
   type FlowsRunFlags,
   type ResolvedFlow,
+  dispatchFlow,
   unsupportedTargetMessage,
 } from "./runInternals.js";
 
@@ -54,15 +57,80 @@ export async function flowsRun(
     return;
   }
 
+  // TODO WIZ-10505: browser here comes from the flow's `target` field (static
+  // metadata), but the browser actually launched at runtime is chosen by
+  // deps.launch() inside the flow body. If they disagree, Playwright fails
+  // with an opaque "browser not installed" error. Detect and report the mismatch.
   const browsers = [
     ...new Set<BrowserName>(flows.map((f) => f.browser)),
   ].sort();
   await deps.installBrowsers(ctx, browsers);
 
-  // Dispatch is implemented in a follow-up PR. This PR ships only the
-  // pre-flight (validation + install). Report what was prepared so the user
-  // sees a complete (if partial) action.
-  ctx.ui.info(
-    `Pre-flight complete: ${flows.length} web flow(s) detected. (Dispatch lands in a follow-up PR.)`,
-  );
+  const counts = {
+    flowsPassed: 0,
+    flowsFailed: 0,
+    flowsSkipped: 0,
+    testsPassed: 0,
+    testsTotal: 0,
+  };
+  const startTime = deps.now();
+  // RunWebFlowOptions omits `browser` — the flow's launch() callback picks it.
+  const options: RunWebFlowOptions = {
+    retries: flags.retries,
+    outputDir: flags.outputDir,
+    headed: false,
+    slowMo: 0,
+    video: flags.video,
+    timeout: flags.timeout,
+  };
+  let bailed = false;
+
+  for (const flow of flows) {
+    if (bailed) {
+      counts.flowsSkipped++;
+      continue;
+    }
+    const { run, durationMs } = await dispatchFlow(flow, options, deps);
+    counts.testsPassed += run.testCounts.passed;
+    counts.testsTotal += run.testCounts.total;
+    if (run.passed) {
+      counts.flowsPassed++;
+      deps.reporter.onFlowPass?.({
+        name: flow.name,
+        path: flow.file,
+        tests: run.testCounts,
+        durationMs,
+      });
+    } else {
+      counts.flowsFailed++;
+      deps.reporter.onFlowFail?.({
+        name: flow.name,
+        path: flow.file,
+        err: run.error ?? new Error("Flow failed"),
+        tests: run.testCounts,
+        durationMs,
+        attempt: run.attempts,
+        maxAttempts: flags.retries + 1,
+      });
+      if (flags.bail) bailed = true;
+    }
+  }
+
+  const summary: RunSummary = {
+    ...counts,
+    durationMs: deps.now() - startTime,
+    meta: {
+      browsers: [...new Set(flows.map((f) => f.browser))],
+      workers: flags.workers,
+      headed: false,
+      video: flags.video,
+      trace: flags.trace,
+      har: "off",
+    },
+  };
+  deps.reporter.onRunComplete?.({ summary });
+
+  if (counts.flowsFailed > 0) {
+    return { error: `${counts.flowsFailed} flow(s) failed` };
+  }
 }

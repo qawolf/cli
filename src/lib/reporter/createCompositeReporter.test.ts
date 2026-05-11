@@ -31,7 +31,7 @@ const runCompleteEvent = {
     testsTotal: 1,
     durationMs: 500,
     meta: {
-      browser: "chromium" as const,
+      browsers: ["chromium" as const],
       workers: 1,
       headed: false,
       video: "off" as const,

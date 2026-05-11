@@ -111,26 +111,4 @@ describe("flowsRun pre-flight", () => {
       flowsRun(makeCtx(), undefined, defaultFlags(), deps),
     ).rejects.toThrow("playwright install chromium failed: boom");
   });
-
-  it("prints pre-flight summary when web flows match and install succeeds", async () => {
-    const ui = makeFakeUI();
-    const deps = makeDeps({
-      files: ["/a.flow.ts", "/b.flow.ts"],
-      metaByFile: {
-        "/a.flow.ts": { target: "Web - Chrome" },
-        "/b.flow.ts": { target: "Web - Firefox" },
-      },
-    });
-
-    const result = await flowsRun(makeCtx(ui), undefined, defaultFlags(), deps);
-
-    expect(result).toBeUndefined();
-    expect(deps.installBrowsers).toHaveBeenCalledWith(expect.anything(), [
-      "chromium",
-      "firefox",
-    ]);
-    expect(ui.info).toHaveBeenCalledWith(
-      "Pre-flight complete: 2 web flow(s) detected. (Dispatch lands in a follow-up PR.)",
-    );
-  });
 });
