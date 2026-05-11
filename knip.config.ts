@@ -9,7 +9,7 @@ const config: KnipConfig = {
   ],
   project: ["src/**/*.ts"],
   ignoreDependencies: [
-    // Resolved at runtime via createRequire in src/commands/install/browsers.ts;
+    // Resolved at runtime via createRequire in src/lib/playwright.ts;
     // knip cannot see the dynamic resolution.
     "playwright",
     // TODO WIZ-10341 follow-up: consumed once the web-flow runner imports it.
