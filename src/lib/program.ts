@@ -1,6 +1,7 @@
 import { Command } from "commander";
 
 import { registerAuthCommand } from "../commands/auth/index.js";
+import { registerInstallCommand } from "../commands/install/index.js";
 import { registerDoctorCommand } from "../doctor/index.js";
 import { EXIT_CODES, exit } from "~/exit.js";
 import packageJson from "../../package.json" with { type: "json" };
@@ -18,6 +19,7 @@ export function createProgram(): Command {
 
   registerAuthCommand(program);
   registerDoctorCommand(program);
+  registerInstallCommand(program);
 
   return program;
 }

@@ -1,5 +1,3 @@
-import { spawn } from "node:child_process";
-
 import type { CheckResult, SpawnFn } from "~/doctor/types.js";
 
 import { checkApiKey } from "./apiKey.js";
@@ -19,6 +17,8 @@ type CheckDeps = {
   readonly flowFiles: readonly string[];
   readonly readFile: (path: string) => Promise<string>;
   readonly cwd: string;
+  readonly execPath: string;
+  readonly playwrightCliPath: string | undefined;
 };
 
 export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
@@ -28,7 +28,11 @@ export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
         processVersion: deps.processVersion,
         enginesNode: deps.enginesNode,
       }),
-      checkPlaywright({ spawn: deps.spawn }),
+      checkPlaywright({
+        spawn: deps.spawn,
+        execPath: deps.execPath,
+        playwrightCliPath: deps.playwrightCliPath,
+      }),
       checkApiKey({ env: deps.env }),
       checkApiUrl({ fetch: deps.fetch, apiBaseUrl: deps.apiBaseUrl }),
       checkNpmRegistry({ spawn: deps.spawn }),
@@ -40,20 +44,3 @@ export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
     ]);
   return [nodeVer, playwright, apiKey, apiUrl, npmRegistry, ...fileAssets];
 }
-
-export const defaultSpawn: SpawnFn = (cmd, args) =>
-  new Promise((resolve) => {
-    const child = spawn(cmd, args);
-    let stdout = "";
-    let stderr = "";
-    child.stdout?.on("data", (chunk) => {
-      stdout += String(chunk);
-    });
-    child.stderr?.on("data", (chunk) => {
-      stderr += String(chunk);
-    });
-    child.on("error", () => resolve({ exitCode: -1, stdout, stderr }));
-    child.on("close", (code) =>
-      resolve({ exitCode: code ?? -1, stdout, stderr }),
-    );
-  });

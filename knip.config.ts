@@ -8,6 +8,13 @@ const config: KnipConfig = {
     "src/**/*.fixtures.ts",
   ],
   project: ["src/**/*.ts"],
+  ignoreDependencies: [
+    // Resolved at runtime via createRequire in src/lib/playwright.ts;
+    // knip cannot see the dynamic resolution.
+    "playwright",
+    // TODO WIZ-10341 follow-up: consumed once the web-flow runner imports it.
+    "@playwright/test",
+  ],
   ignore: [
     // TODO WIZ-10324: move to its domain when the commands that use it land
     "src/types.ts",
