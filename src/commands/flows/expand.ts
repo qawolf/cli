@@ -18,7 +18,7 @@ const BROWSER_NAME_TO_PLAYWRIGHT: Record<
 type ParseExecutionTargetArg = Parameters<typeof parseExecutionTarget>[0];
 
 export function targetToBrowser(target: string): BrowserName | undefined {
-  let parsed;
+  let parsed: ReturnType<typeof parseExecutionTarget>;
   try {
     parsed = parseExecutionTarget(target as ParseExecutionTargetArg);
   } catch {
