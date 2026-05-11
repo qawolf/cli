@@ -22,6 +22,20 @@ const checkDeps = (spawn: SpawnFn) => ({
 });
 
 describe("checkPlaywright", () => {
+  it("fails immediately when playwrightCliPath is null (resolution failure)", async () => {
+    const spawn = mock<SpawnFn>(() =>
+      Promise.resolve({ exitCode: 0, stdout: "", stderr: "" }),
+    );
+    const r = await checkPlaywright({
+      spawn,
+      execPath: FAKE_NODE,
+      playwrightCliPath: undefined,
+    });
+    expect(r.status).toBe("fail");
+    expect(r.detail).toContain("Could not find");
+    expect(spawn).not.toHaveBeenCalled();
+  });
+
   it("passes when --version exits 0 with a parseable version", async () => {
     const spawn = spawnReturning({
       exitCode: 0,

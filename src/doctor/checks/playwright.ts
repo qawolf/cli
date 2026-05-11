@@ -3,12 +3,21 @@ import type { CheckResult, SpawnFn } from "~/doctor/types.js";
 type PlaywrightDeps = {
   readonly spawn: SpawnFn;
   readonly execPath: string;
-  readonly playwrightCliPath: string;
+  readonly playwrightCliPath: string | undefined;
 };
 
 export async function checkPlaywright(
   deps: PlaywrightDeps,
 ): Promise<CheckResult> {
+  if (deps.playwrightCliPath === undefined) {
+    return {
+      name: "playwright",
+      status: "fail",
+      detail:
+        "Could not find Playwright. It should ship with the qawolf CLI — try reinstalling the CLI.",
+    };
+  }
+
   const result = await deps.spawn(deps.execPath, [
     deps.playwrightCliPath,
     "--version",

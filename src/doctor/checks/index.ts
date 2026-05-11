@@ -20,7 +20,7 @@ type CheckDeps = {
   readonly readFile: (path: string) => Promise<string>;
   readonly cwd: string;
   readonly execPath: string;
-  readonly playwrightCliPath: string;
+  readonly playwrightCliPath: string | undefined;
 };
 
 export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {

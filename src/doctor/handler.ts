@@ -14,6 +14,12 @@ export async function handleDoctor(
 ): Promise<CommandResult> {
   const cwd = process.cwd();
   const flowFiles = await expandPatterns([], cwd);
+  let playwrightCliPath: string | undefined;
+  try {
+    playwrightCliPath = resolvePlaywrightCli();
+  } catch {
+    playwrightCliPath = undefined;
+  }
   const results = await runChecks({
     env: process.env,
     fetch: globalThis.fetch,
@@ -25,7 +31,7 @@ export async function handleDoctor(
     readFile: (path) => readFile(path, "utf-8"),
     cwd,
     execPath: process.execPath,
-    playwrightCliPath: resolvePlaywrightCli(),
+    playwrightCliPath,
   });
   renderResults(ctx.ui, results);
   const fails = results.filter((result) => result.status === "fail");
