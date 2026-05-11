@@ -11,7 +11,7 @@ afterEach(() => {
   mock.restore();
 });
 
-const BASE_OPTIONS: WebLaunchOptions = {
+const baseOptions: WebLaunchOptions = {
   browser: "chromium",
   headed: false,
   slowMo: 0,
@@ -31,7 +31,7 @@ describe("createWebLaunchContext — cleanup and persistent", () => {
       firefox: chromiumDep,
       webkit: chromiumDep,
     };
-    const wlc = createWebLaunchContext({ deps, options: BASE_OPTIONS });
+    const wlc = createWebLaunchContext({ deps, options: baseOptions });
 
     await wlc.launch();
     const result = await wlc.cleanup(true);
@@ -55,7 +55,7 @@ describe("createWebLaunchContext — cleanup and persistent", () => {
     };
     const wlc = createWebLaunchContext({
       deps,
-      options: { ...BASE_OPTIONS, browser: "firefox" as const },
+      options: { ...baseOptions, browser: "firefox" as const },
     });
 
     await wlc.launch();
@@ -76,7 +76,7 @@ describe("createWebLaunchContext — cleanup and persistent", () => {
       firefox: chromiumDep,
       webkit: chromiumDep,
     };
-    const wlc = createWebLaunchContext({ deps, options: BASE_OPTIONS });
+    const wlc = createWebLaunchContext({ deps, options: baseOptions });
 
     await wlc.launch({ browserContext: "persistent" });
 
@@ -96,7 +96,7 @@ describe("createWebLaunchContext — cleanup and persistent", () => {
       firefox: chromiumDep,
       webkit: chromiumDep,
     };
-    const wlc = createWebLaunchContext({ deps, options: BASE_OPTIONS });
+    const wlc = createWebLaunchContext({ deps, options: baseOptions });
 
     await wlc.launch({
       browserContext: "persistent",
@@ -124,7 +124,7 @@ describe("createWebLaunchContext — cleanup and persistent", () => {
       firefox: chromiumDep,
       webkit: chromiumDep,
     };
-    const wlc = createWebLaunchContext({ deps, options: BASE_OPTIONS });
+    const wlc = createWebLaunchContext({ deps, options: baseOptions });
 
     await wlc.launch({ browserContext: "persistent" });
 
@@ -146,7 +146,7 @@ describe("createWebLaunchContext — cleanup and persistent", () => {
       firefox: chromiumDep,
       webkit: chromiumDep,
     };
-    const wlc = createWebLaunchContext({ deps, options: BASE_OPTIONS });
+    const wlc = createWebLaunchContext({ deps, options: baseOptions });
 
     await wlc.launch({ browserContext: "persistent" });
 
@@ -169,7 +169,7 @@ describe("createWebLaunchContext — cleanup and persistent", () => {
       firefox: chromiumDep,
       webkit: chromiumDep,
     };
-    const wlc = createWebLaunchContext({ deps, options: BASE_OPTIONS });
+    const wlc = createWebLaunchContext({ deps, options: baseOptions });
 
     await wlc.launch({ browserContext: "persistent" });
     await wlc.cleanup(true);
@@ -194,7 +194,7 @@ describe("createWebLaunchContext — cleanup and persistent", () => {
       firefox: chromiumDep,
       webkit: chromiumDep,
     };
-    const wlc = createWebLaunchContext({ deps, options: BASE_OPTIONS });
+    const wlc = createWebLaunchContext({ deps, options: baseOptions });
 
     await wlc.launch();
     await wlc.cleanup(true);
@@ -217,7 +217,7 @@ describe("createWebLaunchContext — cleanup and persistent", () => {
       firefox: chromiumDep,
       webkit: chromiumDep,
     };
-    const wlc = createWebLaunchContext({ deps, options: BASE_OPTIONS });
+    const wlc = createWebLaunchContext({ deps, options: baseOptions });
 
     await wlc.launch({ browserContext: "persistent" });
 

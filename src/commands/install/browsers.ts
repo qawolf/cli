@@ -64,15 +64,15 @@ export async function installBrowsers(
   await installBrowserList(ctx, browsers, deps);
 }
 
-const BATCH_SIZE = 32;
+const batchSize = 32;
 
 async function collectBrowsers(
   files: readonly string[],
   peekFlowMeta: typeof defaultPeekFlowMeta,
 ): Promise<BrowserName[]> {
   const seen = new Set<BrowserName>();
-  for (let i = 0; i < files.length; i += BATCH_SIZE) {
-    const batch = files.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < files.length; i += batchSize) {
+    const batch = files.slice(i, i + batchSize);
     const metas = await Promise.all(batch.map(peekFlowMeta));
     for (const meta of metas) {
       if (!meta.target) continue;

@@ -11,7 +11,7 @@ import {
   unsupportedTargetMessage,
 } from "./runInternals.js";
 
-const BATCH_SIZE = 32;
+const batchSize = 32;
 
 export async function flowsRun(
   ctx: CommandContext,
@@ -29,8 +29,8 @@ export async function flowsRun(
   const files = await deps.expandPatterns(patterns, deps.cwd);
 
   const flows: ResolvedFlow[] = [];
-  for (let i = 0; i < files.length; i += BATCH_SIZE) {
-    const batch = files.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < files.length; i += batchSize) {
+    const batch = files.slice(i, i + batchSize);
     const metas = await Promise.all(batch.map((f) => deps.peekFlowMeta(f)));
     for (const [j, meta] of metas.entries()) {
       const file = batch[j]!;

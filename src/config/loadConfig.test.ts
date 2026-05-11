@@ -2,15 +2,15 @@ import { describe, expect, it } from "bun:test";
 
 import { loadConfig, type LoadConfigDeps } from "./loadConfig.js";
 
-const CWD = "/fake/cwd";
-const CONFIG_PATH = "/fake/cwd/qawolf.config.ts";
+const cwd = "/fake/cwd";
+const configPath = "/fake/cwd/qawolf.config.ts";
 
 function withConfig(value: unknown): LoadConfigDeps {
   return {
-    cwd: () => CWD,
+    cwd: () => cwd,
     fileExists: () => true,
     importConfig: async (path) => {
-      expect(path).toBe(CONFIG_PATH);
+      expect(path).toBe(configPath);
       return value === undefined ? undefined : { default: value };
     },
   };
@@ -18,7 +18,7 @@ function withConfig(value: unknown): LoadConfigDeps {
 
 function missingConfig(): LoadConfigDeps {
   return {
-    cwd: () => CWD,
+    cwd: () => cwd,
     fileExists: () => false,
     importConfig: async () => {
       throw new Error("importConfig should not be called when file is missing");
@@ -134,7 +134,7 @@ describe("loadConfig", () => {
     );
     expect(
       loadConfig({
-        cwd: () => CWD,
+        cwd: () => cwd,
         fileExists: () => true,
         importConfig: async () => {
           throw innerImportError;
@@ -146,7 +146,7 @@ describe("loadConfig", () => {
   it("does not call importConfig when the file is missing", async () => {
     let importCalls = 0;
     await loadConfig({
-      cwd: () => CWD,
+      cwd: () => cwd,
       fileExists: () => false,
       importConfig: async () => {
         importCalls++;

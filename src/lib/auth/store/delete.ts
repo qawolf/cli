@@ -3,12 +3,12 @@ import { join } from "node:path";
 
 import { Entry } from "@napi-rs/keyring";
 
-import { ACCOUNT, CREDENTIALS_FILE, SERVICE } from "./constants.js";
+import { account, credentialsFile, service } from "./constants.js";
 import type { DeleteApiKeyResult } from "./types.js";
 
 function deleteFromKeychain(): DeleteApiKeyResult["keychain"] {
   try {
-    new Entry(SERVICE, ACCOUNT).deletePassword();
+    new Entry(service, account).deletePassword();
     return "deleted";
   } catch {
     return "unavailable";
@@ -19,7 +19,7 @@ async function deleteFromFile(
   configDir: string,
 ): Promise<DeleteApiKeyResult["file"]> {
   try {
-    await unlink(join(configDir, CREDENTIALS_FILE));
+    await unlink(join(configDir, credentialsFile));
     return "deleted";
   } catch {
     return "not-found";

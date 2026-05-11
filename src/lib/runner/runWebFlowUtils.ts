@@ -13,7 +13,7 @@ export function notSupported(name: string): () => never {
   };
 }
 
-export const UNSUPPORTED_WEB_DEP_NAMES = [
+export const unsupportedWebDepNames = [
   "launchElectron",
   "getInbox",
   "getOTP",

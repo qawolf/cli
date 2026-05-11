@@ -23,7 +23,7 @@ import type {
 import {
   normalizeBrowserName,
   notSupported,
-  UNSUPPORTED_WEB_DEP_NAMES,
+  unsupportedWebDepNames,
 } from "./runWebFlowUtils.js";
 
 export type RunWebFlowDeps = RunnerDeps & WebLaunchDeps;
@@ -116,7 +116,7 @@ export async function runWebFlow({
     callback: async (flowDeps: FlowDeps) => {
       const webDeps = {
         ...Object.fromEntries(
-          UNSUPPORTED_WEB_DEP_NAMES.map((name) => [name, notSupported(name)]),
+          unsupportedWebDepNames.map((name) => [name, notSupported(name)]),
         ),
         launch,
         launchWithGpu: launch,

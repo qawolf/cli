@@ -3,7 +3,7 @@ import { glob, readFile, readdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { BrowserName } from "~/types.js";
 
-const BROWSER_NAME_TO_PLAYWRIGHT: Record<
+const browserNameToPlaywright: Record<
   "chrome" | "firefox" | "safari",
   BrowserName
 > = {
@@ -30,7 +30,7 @@ export function targetToBrowser(target: string): BrowserName | undefined {
   if (!("defaultBrowser" in meta) && !("browser" in meta)) return undefined; // Electron
   try {
     const info = getWebBrowserInfo(meta);
-    return BROWSER_NAME_TO_PLAYWRIGHT[info.name];
+    return browserNameToPlaywright[info.name];
   } catch {
     return undefined;
   }
@@ -39,7 +39,7 @@ export function targetToBrowser(target: string): BrowserName | undefined {
 // Matches the flow name — the first string literal argument to flow():
 //   flow("My Flow", ...)
 //        ^^^^^^^^^
-const NAME_RE = /\bflow\s*\(\s*["']([^"'\n]+)["']/;
+const nameRe = /\bflow\s*\(\s*["']([^"'\n]+)["']/;
 
 // Matches the browser target, scoped to the flow() call so a `target:` property
 // elsewhere in the file (e.g. in a config object) is not captured.
@@ -54,15 +54,15 @@ const NAME_RE = /\bflow\s*\(\s*["']([^"'\n]+)["']/;
 //                               ^^^^^^^^
 //
 // Dynamic expressions (variables, template literals) produce undefined for that field.
-const FLOW_TARGET_RE =
+const flowTargetRe =
   /\bflow\s*\(\s*["'][^"'\n]*["']\s*,\s*(?:["']([^"'\n]+)["']|\{[^{}]*\btarget\s*:\s*["']([^"'\n]+)["'])/;
 
 export function extractFlowMeta(source: string): {
   name: string | undefined;
   target: string | undefined;
 } {
-  const name = NAME_RE.exec(source)?.[1];
-  const flowTargetMatch = FLOW_TARGET_RE.exec(source);
+  const name = nameRe.exec(source)?.[1];
+  const flowTargetMatch = flowTargetRe.exec(source);
   const target = flowTargetMatch?.[1] ?? flowTargetMatch?.[2];
   return { name, target };
 }

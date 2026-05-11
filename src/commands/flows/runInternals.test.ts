@@ -33,17 +33,17 @@ describe("parseInteger", () => {
 });
 
 describe("parseEnum", () => {
-  const MODES = ["on", "off", "retain-on-failure"] as const;
+  const modes = ["on", "off", "retain-on-failure"] as const;
 
   it.each([["on"], ["off"], ["retain-on-failure"]] as const)(
     "returns %p when value matches a known mode",
     (value) => {
-      expect(parseEnum("--video", MODES)(value)).toBe(value);
+      expect(parseEnum("--video", modes)(value)).toBe(value);
     },
   );
 
   it("rejects unknown values with the allowed list", () => {
-    expect(() => parseEnum("--video", MODES)("maybe")).toThrow(
+    expect(() => parseEnum("--video", modes)("maybe")).toThrow(
       /--video must be one of: on, off, retain-on-failure/,
     );
   });

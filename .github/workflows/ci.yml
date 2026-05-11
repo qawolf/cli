@@ -16,6 +16,7 @@ jobs:
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
+      - run: bash scripts/check-naming.sh
       - run: bun run typecheck
       - run: bun run lint --max-warnings 0
       - run: bun run format:check

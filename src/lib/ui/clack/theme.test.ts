@@ -2,19 +2,19 @@ import { describe, expect, it } from "bun:test";
 
 import { styledTitle } from "./theme.js";
 
-const QA_WOLF_BLUE_BG = "\x1b[48;2;59;59;239m";
-const WHITE_BOLD = "\x1b[97;1m";
-const RESET = "\x1b[0m";
+const qaWolfBlueBg = "\x1b[48;2;59;59;239m";
+const whiteBold = "\x1b[97;1m";
+const reset = "\x1b[0m";
 
 describe("styledTitle", () => {
   it("contains ANSI blue background escape", () => {
     const result = styledTitle("QA Wolf");
-    expect(result).toContain(QA_WOLF_BLUE_BG);
+    expect(result).toContain(qaWolfBlueBg);
   });
 
   it("contains bold white escape", () => {
     const result = styledTitle("QA Wolf");
-    expect(result).toContain(WHITE_BOLD);
+    expect(result).toContain(whiteBold);
   });
 
   it("wraps title with spaces", () => {
@@ -24,11 +24,11 @@ describe("styledTitle", () => {
 
   it("ends with reset sequence", () => {
     const result = styledTitle("QA Wolf");
-    expect(result.endsWith(RESET)).toBe(true);
+    expect(result.endsWith(reset)).toBe(true);
   });
 
   it("empty title still produces correct structure", () => {
     const result = styledTitle("");
-    expect(result).toBe(`${QA_WOLF_BLUE_BG}${WHITE_BOLD}  ${RESET}`);
+    expect(result).toBe(`${qaWolfBlueBg}${whiteBold}  ${reset}`);
   });
 });

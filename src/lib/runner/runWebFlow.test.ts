@@ -37,7 +37,7 @@ function makeWebDeps(webLaunchDeps?: WebLaunchDeps): RunWebFlowDeps {
   };
 }
 
-const BASE_OPTIONS: RunWebFlowOptions = {
+const baseOptions: RunWebFlowOptions = {
   retries: 0,
   outputDir: "/tmp/qawolf-test",
   headed: false,
@@ -54,7 +54,7 @@ describe("runWebFlow", () => {
   it("should return passed: true when the flow succeeds", async () => {
     const result = await runWebFlow({
       deps: makeWebDeps(),
-      options: BASE_OPTIONS,
+      options: baseOptions,
       flowPath: fixturePath("pass"),
     });
 
@@ -65,7 +65,7 @@ describe("runWebFlow", () => {
   it("should return passed: false when the flow throws", async () => {
     const result = await runWebFlow({
       deps: makeWebDeps(),
-      options: BASE_OPTIONS,
+      options: baseOptions,
       flowPath: fixturePath("fail"),
     });
 
@@ -85,7 +85,7 @@ describe("runWebFlow", () => {
 
     await runWebFlow({
       deps,
-      options: BASE_OPTIONS,
+      options: baseOptions,
       flowPath: fixturePath("launch"),
     });
 
@@ -106,7 +106,7 @@ describe("runWebFlow", () => {
 
     await runWebFlow({
       deps,
-      options: BASE_OPTIONS,
+      options: baseOptions,
       flowPath: fixturePath("launch"),
     });
 
@@ -117,7 +117,7 @@ describe("runWebFlow", () => {
   it("should not retry when failWithoutRetry is called", async () => {
     const result = await runWebFlow({
       deps: makeWebDeps(),
-      options: { ...BASE_OPTIONS, retries: 2 },
+      options: { ...baseOptions, retries: 2 },
       flowPath: fixturePath("failNoRetry"),
     });
 
@@ -128,7 +128,7 @@ describe("runWebFlow", () => {
   it("should fail the flow when an unsupported dependency is called", async () => {
     const result = await runWebFlow({
       deps: makeWebDeps(),
-      options: BASE_OPTIONS,
+      options: baseOptions,
       flowPath: fixturePath("getInbox"),
     });
 
@@ -141,7 +141,7 @@ describe("runWebFlow", () => {
   it("should not retry when the failWithoutRetry dep is called", async () => {
     const result = await runWebFlow({
       deps: makeWebDeps(),
-      options: { ...BASE_OPTIONS, retries: 2 },
+      options: { ...baseOptions, retries: 2 },
       flowPath: fixturePath("failViaStub"),
     });
 
@@ -154,7 +154,7 @@ describe("runWebFlow", () => {
     try {
       await runWebFlow({
         deps: makeWebDeps(),
-        options: BASE_OPTIONS,
+        options: baseOptions,
         flowPath: fixturePath("noDefault"),
       });
     } catch (e) {
@@ -175,7 +175,7 @@ describe("runWebFlow", () => {
 
     await runWebFlow({
       deps,
-      options: BASE_OPTIONS,
+      options: baseOptions,
       flowPath: fixturePath("failAfterLaunch"),
     });
 
