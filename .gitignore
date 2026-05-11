@@ -29,3 +29,7 @@ bun.lockb
 
 # QA Wolf CLI output
 .qawolf/
+
+# Agents
+.claude/*
+!claude/rules/
