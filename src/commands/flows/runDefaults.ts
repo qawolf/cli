@@ -1,8 +1,9 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { spawn as nodeSpawn } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 
-import { chromium, firefox, webkit } from "playwright";
+import type * as Playwright from "playwright";
 
 import {
   expandPatterns as defaultExpandPatterns,
@@ -22,10 +23,17 @@ import { flowsRun } from "./run.js";
 import type { FlowsRunFlags } from "./runInternals.js";
 
 function defaultRunWebFlowDeps(): RunWebFlowDeps {
+  // Resolved via createRequire so bun's --compile bundler does not trace the
+  // import statically. playwright-core has optional deps (electron,
+  // chromium-bidi) that are not installed and would break the binary build.
+  // At runtime the binary resolves playwright from the project's node_modules.
   // Playwright's BrowserType is structurally close to BrowserDep but its
   // newContext() returns Page[].video() = Video | null while MinimalPage
   // expects MinimalVideo | undefined. Runtime values are interchangeable
   // (the runner only reads .path() / .delete() on the video).
+  const { chromium, firefox, webkit } = createRequire(import.meta.url)(
+    "playwright",
+  ) as typeof Playwright;
   return {
     chromium: chromium as unknown as RunWebFlowDeps["chromium"],
     firefox: firefox as unknown as RunWebFlowDeps["firefox"],
