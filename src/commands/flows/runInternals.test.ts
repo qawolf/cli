@@ -9,7 +9,7 @@ describe("parseInteger", () => {
     expect(parseInteger("--retries")("0")).toBe(0);
   });
 
-  it.each(["abc", "1.5", "", "+3", "03", "1e3"])(
+  it.each(["abc", "1.5", "", "+3", "03", "1e3", "-0"])(
     "rejects non-integer input %p",
     (value) => {
       expect(() => parseInteger("--retries")(value)).toThrow(

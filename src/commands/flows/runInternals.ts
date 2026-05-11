@@ -40,10 +40,10 @@ export function unsupportedTargetMessage(target: string): string {
   return `${target} targets aren't supported in v0.1. Run them on app.qawolf.com or wait for v0.2.`;
 }
 
-// Strict integer parser. `String(n) !== value` rejects `"+3"` and leading zeros
-// like `"03"` — same convention as most CLI tooling. The optional `min` bound
-// surfaces domain errors (negative retries, zero workers, etc.) at parse time
-// rather than letting them fail deeper in the runner.
+// Strict integer parser. `String(n) !== value` rejects `"+3"`, leading zeros
+// like `"03"`, and the JS oddity `"-0"` (String(-0) === "0") — same convention
+// as most CLI tooling. The optional `min` bound surfaces domain errors
+// (negative retries, zero workers, etc.) at parse time rather than deeper.
 export function parseInteger(
   name: string,
   options: { min?: number } = {},
