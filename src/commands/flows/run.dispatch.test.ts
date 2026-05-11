@@ -50,7 +50,7 @@ describe("flowsRun dispatch", () => {
         testsTotal: 2,
         durationMs: 200,
         meta: {
-          browser: "chromium",
+          browsers: ["chromium"],
           workers: 1,
           headed: false,
           video: "off",

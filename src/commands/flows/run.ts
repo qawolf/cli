@@ -57,6 +57,10 @@ export async function flowsRun(
     return;
   }
 
+  // TODO WIZ-10505: browser here comes from the flow's `target` field (static
+  // metadata), but the browser actually launched at runtime is chosen by
+  // deps.launch() inside the flow body. If they disagree, Playwright fails
+  // with an opaque "browser not installed" error. Detect and report the mismatch.
   const browsers = [
     ...new Set<BrowserName>(flows.map((f) => f.browser)),
   ].sort();
@@ -116,7 +120,7 @@ export async function flowsRun(
     ...counts,
     durationMs: deps.now() - startTime,
     meta: {
-      browser: flows[0]!.browser,
+      browsers: [...new Set(flows.map((f) => f.browser))],
       workers: flags.workers,
       headed: false,
       video: flags.video,
