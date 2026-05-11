@@ -1,13 +1,39 @@
+import { getWebBrowserInfo, parseExecutionTarget } from "@qawolf/flow-targets";
 import { glob, readFile, readdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { BrowserName } from "~/types.js";
 
-const BROWSERS: BrowserName[] = ["chromium", "firefox", "webkit"];
+const BROWSER_NAME_TO_PLAYWRIGHT: Record<
+  "chrome" | "firefox" | "safari",
+  BrowserName
+> = {
+  chrome: "chromium",
+  firefox: "firefox",
+  safari: "webkit",
+};
+
+// `parseExecutionTarget`'s parameter is the strict preset-literal union, but it
+// validates `unknown` at runtime via Zod and throws on invalid input. Cast so we
+// can hand it any string and rely on the try/catch to handle non-targets.
+type ParseExecutionTargetArg = Parameters<typeof parseExecutionTarget>[0];
 
 export function targetToBrowser(target: string): BrowserName | undefined {
-  return BROWSERS.includes(target as BrowserName)
-    ? (target as BrowserName)
-    : undefined;
+  let parsed;
+  try {
+    parsed = parseExecutionTarget(target as ParseExecutionTargetArg);
+  } catch {
+    return undefined;
+  }
+  if (parsed.platform !== "web") return undefined;
+  const meta = parsed.meta;
+  if (typeof meta === "string") return undefined; // "legacy" form
+  if (!("defaultBrowser" in meta) && !("browser" in meta)) return undefined; // Electron
+  try {
+    const info = getWebBrowserInfo(meta);
+    return BROWSER_NAME_TO_PLAYWRIGHT[info.name];
+  } catch {
+    return undefined;
+  }
 }
 
 // Matches the flow name — the first string literal argument to flow():
