@@ -36,6 +36,7 @@
     "commander": "14.0.3",
     "env-paths": "4.0.0",
     "superjson": "2.2.6",
+    "tar": "7.5.15",
     "zod": "4.4.2"
   },
   "devDependencies": {
