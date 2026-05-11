@@ -49,6 +49,12 @@ describe("mintTempPath", () => {
     const minted = mintTempPath(join(workDir, "envA"), "old", registry);
     expect(minted).toMatch(/\.old-[a-f0-9]{16}$/);
   });
+
+  it("rejects a relative destAbs at mint time", () => {
+    expect(() => mintTempPath("relative/path", "pull", registry)).toThrow(
+      /not absolute/i,
+    );
+  });
 });
 
 describe("removeTempDir", () => {
@@ -79,15 +85,15 @@ describe("removeTempDir", () => {
     ).rejects.toThrow();
   });
 
-  it("rejects the filesystem root", async () => {
+  it("rejects the filesystem root (no sentinel)", async () => {
     expect(removeTempDir(sep, registry)).rejects.toThrow();
   });
 
-  it("rejects the user's home directory", async () => {
+  it("rejects the user's home directory (no sentinel)", async () => {
     expect(removeTempDir(homedir(), registry)).rejects.toThrow();
   });
 
-  it("rejects the current working directory", async () => {
+  it("rejects the current working directory (no sentinel)", async () => {
     expect(removeTempDir(process.cwd(), registry)).rejects.toThrow();
   });
 

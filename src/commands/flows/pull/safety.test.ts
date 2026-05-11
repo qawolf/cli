@@ -64,15 +64,12 @@ describe("detectLocalModifications", () => {
 });
 
 describe("promptOverwriteIfModified", () => {
-  type Call = { message: string; yes: boolean };
+  type Call = { message: string };
 
   function makeFakeConfirm(returns: boolean) {
     const calls: Call[] = [];
-    const fn = async (
-      message: string,
-      opts: { yes: boolean },
-    ): Promise<boolean> => {
-      calls.push({ message, yes: opts.yes });
+    const fn = async (message: string): Promise<boolean> => {
+      calls.push({ message });
       return returns;
     };
     return { fn, calls };
@@ -156,7 +153,6 @@ describe("promptOverwriteIfModified", () => {
 
     expect(result).toBe("proceed");
     expect(confirm.calls).toHaveLength(1);
-    expect(confirm.calls[0]?.yes).toBe(false);
     expect(confirm.calls[0]?.message).toContain("a.flow.ts");
   });
 

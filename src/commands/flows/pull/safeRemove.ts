@@ -1,7 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { rm } from "node:fs/promises";
-import { homedir } from "node:os";
-import { dirname, isAbsolute } from "node:path";
+import { isAbsolute } from "node:path";
 
 type TempPathKind = "pull" | "old";
 
@@ -20,6 +19,9 @@ export function mintTempPath(
   kind: TempPathKind,
   registry: TempPathRegistry,
 ): string {
+  if (!isAbsolute(destAbs)) {
+    throw new Error(`mintTempPath: destAbs is not absolute (${destAbs})`);
+  }
   const suffix = randomBytes(8).toString("hex");
   const path = `${destAbs}.${kind}-${suffix}`;
   registry.minted.add(path);
@@ -35,13 +37,6 @@ export async function removeTempDir(
   }
   if (!sentinelPattern.test(absPath)) {
     throw new Error(`removeTempDir refused: missing sentinel (${absPath})`);
-  }
-  if (
-    absPath === homedir() ||
-    absPath === process.cwd() ||
-    dirname(absPath) === absPath
-  ) {
-    throw new Error(`removeTempDir refused: protected path (${absPath})`);
   }
   if (!registry.minted.has(absPath)) {
     throw new Error(`removeTempDir refused: not minted in this registry`);

@@ -1,4 +1,3 @@
-import { stat } from "node:fs/promises";
 import { join } from "node:path";
 
 import { type Manifest, hashFile } from "./manifest.js";
@@ -15,11 +14,16 @@ export async function detectLocalModifications(
   const mods: LocalMod[] = [];
   for (const entry of manifest.files) {
     const abs = join(envDir, entry.path);
-    if (!(await fileExists(abs))) {
-      mods.push({ path: entry.path, reason: "missing-from-disk" });
-      continue;
+    let actual: string;
+    try {
+      actual = await hashFile(abs);
+    } catch (err: unknown) {
+      if (isNoEntError(err)) {
+        mods.push({ path: entry.path, reason: "missing-from-disk" });
+        continue;
+      }
+      throw err;
     }
-    const actual = await hashFile(abs);
     if (actual !== entry.sha256) {
       mods.push({ path: entry.path, reason: "modified" });
     }
@@ -32,13 +36,15 @@ type PromptArgs = {
   manifest: Manifest;
   yes: boolean;
   log: (message: string) => void;
-  confirm: (message: string, opts: { yes: boolean }) => Promise<boolean>;
+  confirm: (message: string) => Promise<boolean>;
 };
 
 export async function promptOverwriteIfModified(
   args: PromptArgs,
 ): Promise<"proceed" | "abort"> {
   const mods = await detectLocalModifications(args.envDir, args.manifest);
+  // Don't prompt on "missing-from-disk": a pull restoring a deleted file
+  // is the user-evident intent and doesn't need confirmation.
   const modified = mods.filter((m) => m.reason === "modified");
   if (modified.length === 0) return "proceed";
 
@@ -50,17 +56,15 @@ export async function promptOverwriteIfModified(
     return "proceed";
   }
 
-  const accepted = await args.confirm(`${summary}\nContinue?`, {
-    yes: false,
-  });
+  const accepted = await args.confirm(`${summary}\nContinue?`);
   return accepted ? "proceed" : "abort";
 }
 
-async function fileExists(p: string): Promise<boolean> {
-  try {
-    await stat(p);
-    return true;
-  } catch {
-    return false;
-  }
+function isNoEntError(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code: unknown }).code === "ENOENT"
+  );
 }
