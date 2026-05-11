@@ -9,6 +9,8 @@ export function validateEntryPath(name: string, destResolved: string): string {
   ) {
     throw new Error(`path traversal: absolute entry path (${name})`);
   }
+  // Tar entry paths use `/` per ustar convention; normalize as POSIX so the
+  // `../` check below works regardless of host OS.
   const normalized = posix.normalize(name);
   if (normalized === ".." || normalized.startsWith("../")) {
     throw new Error(`path traversal: entry escapes destination (${name})`);
