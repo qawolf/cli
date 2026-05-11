@@ -3,7 +3,7 @@ import {
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/commands/flows/expand.js";
 import { installBrowserList } from "~/commands/install/browsers.js";
-import { defaultSpawn } from "~/doctor/checks/index.js";
+import { defaultSpawn } from "~/lib/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { resolvePlaywrightCli } from "~/lib/playwright.js";
 
