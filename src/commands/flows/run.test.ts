@@ -107,17 +107,9 @@ describe("flowsRun pre-flight", () => {
       installError: new Error("playwright install chromium failed: boom"),
     });
 
-    let caughtError: unknown;
-    try {
-      await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
-    } catch (e) {
-      caughtError = e;
-    }
-
-    expect(caughtError).toBeInstanceOf(Error);
-    expect((caughtError as Error).message).toBe(
-      "playwright install chromium failed: boom",
-    );
+    expect(
+      flowsRun(makeCtx(), undefined, defaultFlags(), deps),
+    ).rejects.toThrow("playwright install chromium failed: boom");
   });
 
   it("prints pre-flight summary when web flows match and install succeeds", async () => {

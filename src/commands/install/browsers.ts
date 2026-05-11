@@ -9,23 +9,23 @@ import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { resolvePlaywrightCli } from "~/lib/playwright.js";
 import type { BrowserName } from "~/types.js";
 
-type InstallBrowserListDeps = {
+export type InstallBrowsersDeps = {
+  readonly cwd: string;
   readonly spawn: SpawnFn;
   readonly platform: NodeJS.Platform;
-  readonly execPath: string;
-  readonly playwrightCliPath: string;
-};
-
-export type InstallBrowsersDeps = InstallBrowserListDeps & {
-  readonly cwd: string;
   readonly expandPatterns: typeof defaultExpandPatterns;
   readonly peekFlowMeta: typeof defaultPeekFlowMeta;
+  readonly execPath: string;
+  readonly playwrightCliPath: string;
 };
 
 export async function installBrowserList(
   ctx: CommandContext,
   browsers: BrowserName[],
-  deps: InstallBrowserListDeps,
+  deps: Pick<
+    InstallBrowsersDeps,
+    "spawn" | "platform" | "execPath" | "playwrightCliPath"
+  >,
 ): Promise<void> {
   const done =
     browsers.length === 1
