@@ -5,7 +5,7 @@ import type { UI } from "~/lib/ui/index.js";
 
 import type { FlowsRunDeps, FlowsRunFlags } from "./runInternals.js";
 
-export const FAKE_CWD = "/proj";
+export const fakeCwd = "/proj";
 
 // Note: this duplicates `makeFakeUI` from `src/commands/install/browsers.fixtures.ts`.
 // Lift to a shared `~/lib/test/ui.ts` (or similar) when a third file needs it.
@@ -62,7 +62,7 @@ export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
   const files = overrides.files ?? [];
   const metaByFile = overrides.metaByFile ?? {};
   return {
-    cwd: FAKE_CWD,
+    cwd: fakeCwd,
     expandPatterns: mock<FlowsRunDeps["expandPatterns"]>(() =>
       Promise.resolve([...files]),
     ),

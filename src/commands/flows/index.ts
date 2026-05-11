@@ -6,10 +6,10 @@ import type { TraceMode, VideoMode } from "~/types.js";
 import { handleFlowsRun } from "./runDefaults.js";
 import { type FlowsRunFlags, parseEnum, parseInteger } from "./runInternals.js";
 
-const VIDEO_MODES = ["on", "off", "retain-on-failure"] as const;
-const TRACE_MODES = ["on", "off", "retain-on-failure"] as const;
-const VIDEO_DEFAULT: VideoMode = "off";
-const TRACE_DEFAULT: TraceMode = "off";
+const videoModes = ["on", "off", "retain-on-failure"] as const;
+const traceModes = ["on", "off", "retain-on-failure"] as const;
+const videoDefault: VideoMode = "off";
+const traceDefault: TraceMode = "off";
 
 export function registerFlowsCommand(program: Command): void {
   const flows = program
@@ -41,14 +41,14 @@ export function registerFlowsCommand(program: Command): void {
     .option(
       "--video <mode>",
       "Video mode: on | off | retain-on-failure",
-      parseEnum<VideoMode>("--video", VIDEO_MODES),
-      VIDEO_DEFAULT,
+      parseEnum<VideoMode>("--video", videoModes),
+      videoDefault,
     )
     .option(
       "--trace <mode>",
       "Trace mode: on | off | retain-on-failure (accepted; not yet wired to runner)",
-      parseEnum<TraceMode>("--trace", TRACE_MODES),
-      TRACE_DEFAULT,
+      parseEnum<TraceMode>("--trace", traceModes),
+      traceDefault,
     )
     .option(
       "--output-dir <path>",

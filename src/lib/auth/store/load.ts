@@ -5,7 +5,7 @@ import { Entry } from "@napi-rs/keyring";
 
 import { errorMessage } from "~/lib/errors.js";
 import type { LoadApiKeyResult } from "~/lib/auth/types.js";
-import { ACCOUNT, CREDENTIALS_FILE, SERVICE } from "./constants.js";
+import { account, credentialsFile, service } from "./constants.js";
 import { credentialsFileSchema } from "./types.js";
 
 type LoadApiKeyDeps = {
@@ -20,7 +20,7 @@ export async function loadApiKey(
   const errors: { keychain?: string; file?: string } = {};
 
   try {
-    const entry = new deps.EntryClass(SERVICE, ACCOUNT);
+    const entry = new deps.EntryClass(service, account);
     const key = entry.getPassword();
     if (key) return { found: true, key, source: "keychain" };
   } catch (err: unknown) {
@@ -29,7 +29,7 @@ export async function loadApiKey(
 
   try {
     const content = await deps.readFile(
-      join(configDir, CREDENTIALS_FILE),
+      join(configDir, credentialsFile),
       "utf-8",
     );
     const parsed = credentialsFileSchema.safeParse(JSON.parse(content));

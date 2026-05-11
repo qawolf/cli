@@ -6,8 +6,8 @@ import type { UI } from "~/lib/ui/index.js";
 
 import type { InstallBrowsersDeps } from "./browsers.js";
 
-export const FAKE_NODE = "/fake/node";
-export const FAKE_CLI = "/fake/playwright/cli.js";
+export const fakeNode = "/fake/node";
+export const fakeCli = "/fake/playwright/cli.js";
 
 export const ok: SpawnResult = { exitCode: 0, stdout: "", stderr: "" };
 
@@ -82,8 +82,8 @@ export function makeDeps(overrides: DepsOverrides): InstallBrowsersDeps {
         target: metaByFile[file]?.target,
       }),
     ),
-    execPath: FAKE_NODE,
-    playwrightCliPath: FAKE_CLI,
+    execPath: fakeNode,
+    playwrightCliPath: fakeCli,
   };
 }
 

@@ -6,7 +6,7 @@ import type { z } from "zod";
 
 import { qawolfConfigSchema, type QawolfConfig } from "./schema.js";
 
-const CONFIG_FILENAME = "qawolf.config.ts";
+const configFilename = "qawolf.config.ts";
 
 export type LoadConfigDeps = {
   cwd: () => string;
@@ -24,7 +24,7 @@ const defaultLoadConfigDeps: LoadConfigDeps = {
 export async function loadConfig(
   deps: LoadConfigDeps = defaultLoadConfigDeps,
 ): Promise<QawolfConfig> {
-  const configPath = resolve(deps.cwd(), CONFIG_FILENAME);
+  const configPath = resolve(deps.cwd(), configFilename);
   const userConfig = deps.fileExists(configPath)
     ? extractDefaultExport(await deps.importConfig(configPath))
     : {};
@@ -54,7 +54,7 @@ function formatConfigError(
   const lines = issues
     .map((issue) => formatIssue(issue, input))
     .map((line) => `  - ${line}`);
-  return `Invalid ${CONFIG_FILENAME}:\n${lines.join("\n")}`;
+  return `Invalid ${configFilename}:\n${lines.join("\n")}`;
 }
 
 function formatIssue(issue: z.core.$ZodIssue, input: unknown): string {

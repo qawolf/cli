@@ -4,7 +4,7 @@ import { registerAuthCommand } from "../commands/auth/index.js";
 import { registerFlowsCommand } from "../commands/flows/index.js";
 import { registerInstallCommand } from "../commands/install/index.js";
 import { registerDoctorCommand } from "../doctor/index.js";
-import { EXIT_CODES, exit } from "~/exit.js";
+import { exitCodes, exit } from "~/exit.js";
 import packageJson from "../../package.json" with { type: "json" };
 
 export function createProgram(): Command {
@@ -15,7 +15,7 @@ export function createProgram(): Command {
     .option("--json", "Output as JSON")
     .option("--agent", "Output for agent consumption")
     .exitOverride((err) => {
-      exit(err.exitCode === 0 ? EXIT_CODES.success : EXIT_CODES.invalidArgs);
+      exit(err.exitCode === 0 ? exitCodes.success : exitCodes.invalidArgs);
     });
 
   registerAuthCommand(program);

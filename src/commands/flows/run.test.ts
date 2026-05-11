@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import {
-  FAKE_CWD,
+  fakeCwd,
   defaultFlags,
   makeCtx,
   makeDeps,
@@ -38,7 +38,7 @@ describe("flowsRun pre-flight", () => {
 
     expect(deps.expandPatterns).toHaveBeenCalledWith(
       ["src/auth/*.flow.ts"],
-      FAKE_CWD,
+      fakeCwd,
     );
   });
 
@@ -47,7 +47,7 @@ describe("flowsRun pre-flight", () => {
 
     await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
 
-    expect(deps.expandPatterns).toHaveBeenCalledWith([], FAKE_CWD);
+    expect(deps.expandPatterns).toHaveBeenCalledWith([], fakeCwd);
   });
 
   it("prints 'No flows matched.' and exits 0 when expandPatterns returns empty", async () => {

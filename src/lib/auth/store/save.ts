@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { Entry } from "@napi-rs/keyring";
 
 import { errorMessage } from "~/lib/errors.js";
-import { ACCOUNT, CREDENTIALS_FILE, SERVICE } from "./constants.js";
+import { account, credentialsFile, service } from "./constants.js";
 import type { CredentialsFile, SaveApiKeyResult } from "./types.js";
 
 async function saveToFile(configDir: string, key: string): Promise<void> {
@@ -13,7 +13,7 @@ async function saveToFile(configDir: string, key: string): Promise<void> {
   await mkdir(configDir, { recursive: true, mode: 0o700 });
   // rw------- (owner read/write only)
   await writeFile(
-    join(configDir, CREDENTIALS_FILE),
+    join(configDir, credentialsFile),
     JSON.stringify(payload, undefined, 2),
     { mode: 0o600 },
   );
@@ -24,7 +24,7 @@ export async function saveApiKey(
   key: string,
 ): Promise<SaveApiKeyResult> {
   try {
-    const entry = new Entry(SERVICE, ACCOUNT);
+    const entry = new Entry(service, account);
     entry.setPassword(key);
     return { stored: "keychain" };
   } catch (err: unknown) {

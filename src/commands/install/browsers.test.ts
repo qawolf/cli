@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import { installBrowsers } from "./browsers.js";
 import {
-  FAKE_CLI,
-  FAKE_NODE,
+  fakeCli,
+  fakeNode,
   callsOf,
   makeDeps,
   makeFakeUI,
@@ -25,8 +25,8 @@ describe("installBrowsers", () => {
 
     expect(result).toBeUndefined();
     expect(deps.spawn).toHaveBeenCalledTimes(1);
-    expect(deps.spawn).toHaveBeenCalledWith(FAKE_NODE, [
-      FAKE_CLI,
+    expect(deps.spawn).toHaveBeenCalledWith(fakeNode, [
+      fakeCli,
       "install",
       "chromium",
     ]);
@@ -51,9 +51,9 @@ describe("installBrowsers", () => {
     await installBrowsers(makeCtx(ui), undefined, deps);
 
     expect(callsOf(deps.spawn)).toEqual([
-      [FAKE_NODE, [FAKE_CLI, "install", "chromium"]],
-      [FAKE_NODE, [FAKE_CLI, "install", "firefox"]],
-      [FAKE_NODE, [FAKE_CLI, "install", "webkit"]],
+      [fakeNode, [fakeCli, "install", "chromium"]],
+      [fakeNode, [fakeCli, "install", "firefox"]],
+      [fakeNode, [fakeCli, "install", "webkit"]],
     ]);
     expect(ui.withProgress).toHaveBeenCalledWith(
       expect.anything(),
@@ -119,8 +119,8 @@ describe("installBrowsers", () => {
 
     await installBrowsers(ctx, undefined, deps);
 
-    expect(deps.spawn).toHaveBeenCalledWith(FAKE_NODE, [
-      FAKE_CLI,
+    expect(deps.spawn).toHaveBeenCalledWith(fakeNode, [
+      fakeCli,
       "install",
       "--with-deps",
       "chromium",
