@@ -1,6 +1,7 @@
 import { Command } from "commander";
 
 import { registerAuthCommand } from "../commands/auth/index.js";
+import { registerFlowsCommand } from "../commands/flows/index.js";
 import { registerInstallCommand } from "../commands/install/index.js";
 import { registerDoctorCommand } from "../doctor/index.js";
 import { EXIT_CODES, exit } from "~/exit.js";
@@ -20,6 +21,7 @@ export function createProgram(): Command {
   registerAuthCommand(program);
   registerDoctorCommand(program);
   registerInstallCommand(program);
+  registerFlowsCommand(program);
 
   return program;
 }

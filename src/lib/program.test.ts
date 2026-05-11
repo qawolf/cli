@@ -60,6 +60,14 @@ describe("createProgram", () => {
     expect(browsers).toBeDefined();
   });
 
+  it("registers the flows run subcommand", () => {
+    const program = createProgram();
+    const flows = program.commands.find((c) => c.name() === "flows");
+    expect(flows).toBeDefined();
+    const run = flows?.commands.find((c) => c.name() === "run");
+    expect(run).toBeDefined();
+  });
+
   it("throws on unknown option", () => {
     let err: unknown;
     try {

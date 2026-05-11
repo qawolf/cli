@@ -21,6 +21,8 @@ export type CommandContext = {
 
 type CommandError = {
   readonly error: string;
+  /** Defaults to 1. Set explicitly (e.g. 2 for invalid-args) when a command needs a non-default code. */
+  readonly exitCode?: number;
 };
 
 export type CommandResult = CommandError | void;
@@ -49,7 +51,9 @@ export function withContext(
         }),
         apiBaseUrl: getApiBaseUrl(env),
       });
-      if (result !== undefined) process.exitCode = 1;
+      if (result !== undefined) {
+        process.exitCode = result.exitCode ?? 1;
+      }
     } catch (err: unknown) {
       ui.error(errorMessage(err));
       process.exitCode = 1;
