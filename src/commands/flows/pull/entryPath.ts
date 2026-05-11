@@ -1,4 +1,4 @@
-import { isAbsolute, posix, resolve, sep } from "node:path";
+import { isAbsolute, posix, relative, resolve } from "node:path";
 
 export function validateEntryPath(name: string, destResolved: string): string {
   if (!name) throw new Error("empty entry name");
@@ -14,7 +14,11 @@ export function validateEntryPath(name: string, destResolved: string): string {
     throw new Error(`path traversal: entry escapes destination (${name})`);
   }
   const target = resolve(destResolved, name);
-  if (target !== destResolved && !target.startsWith(destResolved + sep)) {
+  const rel = relative(destResolved, target);
+  // `rel` is "" when target === destResolved, starts with ".." when target
+  // escapes destResolved, or is absolute when they're on different drives
+  // (Windows). Anything else means target is safely inside destResolved.
+  if (rel.startsWith("..") || isAbsolute(rel)) {
     throw new Error(
       `path traversal: entry resolves outside destination (${name})`,
     );

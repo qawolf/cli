@@ -1,5 +1,5 @@
 import { createReadStream, mkdirSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { createGunzip } from "node:zlib";
 import { Parser, type ReadEntry } from "tar";
@@ -14,6 +14,14 @@ type ExtractOptions = {
   readonly maxTotalBytes?: number;
 };
 
+/**
+ * Extract a gzipped tar archive into `destDir`.
+ *
+ * Precondition: `destDir` must be a freshly created empty directory.
+ * Pre-existing symlinks beneath `destDir` would let archive entries escape
+ * the destination via symlink traversal; callers must guarantee no such
+ * symlinks exist before invoking (e.g. by using a freshly-minted temp dir).
+ */
 export async function extractTarGz(
   tgzPath: string,
   destDir: string,
@@ -21,7 +29,7 @@ export async function extractTarGz(
 ): Promise<void> {
   const maxEntryBytes = opts.maxEntryBytes ?? defaultMaxEntryBytes;
   const maxTotalBytes = opts.maxTotalBytes ?? defaultMaxTotalBytes;
-  mkdirSync(destDir, { recursive: true });
+  await mkdir(destDir, { recursive: true });
   const destResolved = resolve(destDir);
 
   return new Promise<void>((resolveOuter, rejectOuter) => {
@@ -93,7 +101,7 @@ async function handleEntry(args: HandleArgs): Promise<void> {
     throw new Error(`symlink entry rejected: ${entry.path}`);
   }
   if (entry.type === "Directory") {
-    mkdirSync(target, { recursive: true });
+    await mkdir(target, { recursive: true });
     entry.resume();
     return;
   }
@@ -111,12 +119,15 @@ async function handleEntry(args: HandleArgs): Promise<void> {
   }
   args.addTotal(size);
 
-  // Pre-create the parent dir synchronously before consuming entry data;
-  // mkdir-after-end races with the next entry's directory creation under load.
+  // mkdirSync (not async) to keep entry-consumer attachment synchronous.
+  // Switching to `await mkdir(...)` lets the parser stream advance before we
+  // attach the data handler, dropping entry bytes.
   mkdirSync(dirname(target), { recursive: true });
 
-  // Buffer entry data into memory then write atomically. Flow files are
-  // small (KB) so the memory cost is bounded by maxEntryBytes.
+  // Buffer entry data into memory, then write the file. Atomicity for the
+  // bundle as a whole comes from stageBundle's rename-into-place swap, not
+  // from this per-entry write. Flow files are small (KB) so the memory cost
+  // is bounded by maxEntryBytes.
   const chunks: Buffer[] = [];
   await new Promise<void>((res, rej) => {
     entry.on("data", (chunk: Buffer) => chunks.push(chunk));
