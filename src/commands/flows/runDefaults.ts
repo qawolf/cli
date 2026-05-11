@@ -3,8 +3,6 @@ import { spawn as nodeSpawn } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 
-import type * as Playwright from "playwright";
-
 import {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
@@ -33,11 +31,11 @@ function defaultRunWebFlowDeps(): RunWebFlowDeps {
   // (the runner only reads .path() / .delete() on the video).
   const { chromium, firefox, webkit } = createRequire(import.meta.url)(
     "playwright",
-  ) as typeof Playwright;
+  ) as Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
   return {
-    chromium: chromium as unknown as RunWebFlowDeps["chromium"],
-    firefox: firefox as unknown as RunWebFlowDeps["firefox"],
-    webkit: webkit as unknown as RunWebFlowDeps["webkit"],
+    chromium,
+    firefox,
+    webkit,
     fs: {
       mkdir: async (p, opts) => {
         await mkdir(p, opts);
