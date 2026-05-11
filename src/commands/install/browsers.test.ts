@@ -30,8 +30,10 @@ describe("installBrowsers", () => {
       "install",
       "chromium",
     ]);
-    expect(ui.info).toHaveBeenCalledWith("Installing chromium...");
-    expect(ui.success).toHaveBeenCalledWith("Installed 1 browser.");
+    expect(ui.withProgress).toHaveBeenCalledWith(
+      expect.anything(),
+      "Installed 1 browser.",
+    );
   });
 
   it("spawns install for each unique browser sorted alphabetically", async () => {
@@ -53,7 +55,10 @@ describe("installBrowsers", () => {
       [FAKE_NODE, [FAKE_CLI, "install", "firefox"]],
       [FAKE_NODE, [FAKE_CLI, "install", "webkit"]],
     ]);
-    expect(ui.success).toHaveBeenCalledWith("Installed 3 browsers.");
+    expect(ui.withProgress).toHaveBeenCalledWith(
+      expect.anything(),
+      "Installed 3 browsers.",
+    );
   });
 
   it("invokes each browser only once when multiple flows share a target", async () => {
@@ -70,7 +75,10 @@ describe("installBrowsers", () => {
     await installBrowsers(makeCtx(ui), undefined, deps);
 
     expect(deps.spawn).toHaveBeenCalledTimes(1);
-    expect(ui.success).toHaveBeenCalledWith("Installed 1 browser.");
+    expect(ui.withProgress).toHaveBeenCalledWith(
+      expect.anything(),
+      "Installed 1 browser.",
+    );
   });
 
   it("silently skips flows whose target is not a Playwright-driven web browser", async () => {
@@ -119,7 +127,7 @@ describe("installBrowsers", () => {
     ]);
   });
 
-  it("returns error and stops on first non-zero exit", async () => {
+  it("throws and stops on first non-zero exit", async () => {
     const ui = makeFakeUI();
     const deps = makeDeps({
       files: ["/a", "/b"],
@@ -134,26 +142,37 @@ describe("installBrowsers", () => {
       }),
     });
 
-    const result = await installBrowsers(makeCtx(ui), undefined, deps);
+    let caughtError: unknown;
+    try {
+      await installBrowsers(makeCtx(ui), undefined, deps);
+    } catch (e) {
+      caughtError = e;
+    }
 
     expect(callsOf(deps.spawn).length).toBe(2);
-    expect(result).toEqual({
-      error: "playwright install firefox failed: boom",
-    });
-    expect(ui.success).not.toHaveBeenCalled();
+    expect(caughtError).toBeInstanceOf(Error);
+    expect((caughtError as Error).message).toBe(
+      "playwright install firefox failed: boom",
+    );
+    expect(ui.withProgress).toHaveBeenCalledTimes(1);
   });
 
-  it("returns error when spawn returns exitCode -1 (process failed to launch)", async () => {
-    const { deps, ctx, ui } = setup("Web - Chrome", {
+  it("throws when spawn returns exitCode -1 (process failed to launch)", async () => {
+    const { deps, ctx } = setup("Web - Chrome", {
       spawn: spawnSequence({ exitCode: -1, stdout: "", stderr: "" }),
     });
 
-    const result = await installBrowsers(ctx, undefined, deps);
+    let caughtError: unknown;
+    try {
+      await installBrowsers(ctx, undefined, deps);
+    } catch (e) {
+      caughtError = e;
+    }
 
-    expect(result).toEqual({
-      error: "playwright install chromium failed: process failed to launch",
-    });
-    expect(ui.success).not.toHaveBeenCalled();
+    expect(caughtError).toBeInstanceOf(Error);
+    expect((caughtError as Error).message).toBe(
+      "playwright install chromium failed: process failed to launch",
+    );
   });
 
   it("forwards the pattern argument to expandPatterns (string → single-element array; undefined → empty array)", async () => {

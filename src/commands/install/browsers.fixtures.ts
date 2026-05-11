@@ -29,8 +29,14 @@ export function makeFakeUI(): UI {
     outro: mock(() => {}),
     confirm: mock(() => Promise.resolve({ ok: false } as const)),
     password: mock(() => Promise.resolve({ ok: false } as const)),
-    withProgress: mock(() =>
-      Promise.resolve([]),
+    withProgress: mock(
+      async (steps: { message: string; task: () => Promise<unknown> }[]) => {
+        const results: unknown[] = [];
+        for (const step of steps) {
+          results.push(await step.task());
+        }
+        return results;
+      },
     ) as unknown as UI["withProgress"],
     step: mock(() => {}),
     success: mock(() => {}),

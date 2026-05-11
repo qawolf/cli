@@ -33,20 +33,24 @@ export async function installBrowsers(
     return;
   }
 
-  for (const browser of browsers) {
-    ctx.ui.info(`Installing ${browser}...`);
-    const args = buildArgs(deps.playwrightCliPath, browser, deps.platform);
-    const result = await deps.spawn(deps.execPath, args);
-    if (result.exitCode !== 0) {
-      return { error: formatError(browser, result) };
-    }
-  }
-
-  const summary =
+  const done =
     browsers.length === 1
       ? "Installed 1 browser."
       : `Installed ${browsers.length} browsers.`;
-  ctx.ui.success(summary);
+
+  await ctx.ui.withProgress(
+    browsers.map((browser) => ({
+      message: `Install ${browser}`,
+      task: async () => {
+        const args = buildArgs(deps.playwrightCliPath, browser, deps.platform);
+        const result = await deps.spawn(deps.execPath, args);
+        if (result.exitCode !== 0) {
+          throw new Error(formatError(browser, result));
+        }
+      },
+    })),
+    done,
+  );
 }
 
 const BATCH_SIZE = 32;
