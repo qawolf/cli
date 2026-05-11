@@ -158,4 +158,11 @@ describe("buildManifest", () => {
     const m = await buildManifest(baseArgs());
     expect(m.bundleFlowsVersion).toBeUndefined();
   });
+
+  it("returns bundleFlowsVersion as undefined when package.json is malformed JSON", async () => {
+    await writeFile(join(workDir, "a.flow.ts"), "// a", "utf8");
+    await writeFile(join(workDir, "package.json"), "{not valid json", "utf8");
+    const m = await buildManifest(baseArgs());
+    expect(m.bundleFlowsVersion).toBeUndefined();
+  });
 });

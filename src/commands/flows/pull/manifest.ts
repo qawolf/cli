@@ -41,7 +41,9 @@ export async function readManifest(
     raw = await readFile(join(envDir, manifestFilename), "utf8");
   } catch (err: unknown) {
     if (isNoEntError(err)) return "missing";
-    return "malformed";
+    // EACCES / EISDIR / other I/O errors aren't the same as "missing" or
+    // "malformed"; rethrow so the caller can surface the real cause.
+    throw err;
   }
 
   let parsed: unknown;

@@ -67,7 +67,13 @@ async function readBundleFlowsVersion(
   } catch {
     return undefined;
   }
-  const result = packageJsonSchema.safeParse(JSON.parse(raw));
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return undefined;
+  }
+  const result = packageJsonSchema.safeParse(parsed);
   if (!result.success) return undefined;
   return (
     result.data.dependencies?.["@qawolf/flows"] ??
