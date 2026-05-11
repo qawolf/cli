@@ -2,6 +2,7 @@ import path from "node:path";
 
 import { targetToBrowser } from "~/commands/flows/expand.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
+import type { BrowserName } from "~/types.js";
 
 import {
   type FlowsRunDeps,
@@ -9,6 +10,8 @@ import {
   type ResolvedFlow,
   unsupportedTargetMessage,
 } from "./runInternals.js";
+
+const BATCH_SIZE = 32;
 
 export async function flowsRun(
   ctx: CommandContext,
@@ -26,20 +29,24 @@ export async function flowsRun(
   const files = await deps.expandPatterns(patterns, deps.cwd);
 
   const flows: ResolvedFlow[] = [];
-  for (const file of files) {
-    const meta = await deps.peekFlowMeta(file);
-    if (!meta.target) continue;
-    const browser = targetToBrowser(meta.target);
-    if (!browser) {
-      const message = unsupportedTargetMessage(meta.target);
-      ctx.ui.error(message);
-      return { error: message, exitCode: 2 };
+  for (let i = 0; i < files.length; i += BATCH_SIZE) {
+    const batch = files.slice(i, i + BATCH_SIZE);
+    const metas = await Promise.all(batch.map((f) => deps.peekFlowMeta(f)));
+    for (const [j, meta] of metas.entries()) {
+      const file = batch[j]!;
+      if (!meta.target) continue;
+      const browser = targetToBrowser(meta.target);
+      if (!browser) {
+        const message = unsupportedTargetMessage(meta.target);
+        ctx.ui.error(message);
+        return { error: message, exitCode: 2 };
+      }
+      flows.push({
+        file,
+        name: meta.name ?? path.basename(file, ".flow.ts"),
+        browser,
+      });
     }
-    flows.push({
-      file,
-      name: meta.name ?? path.basename(file, ".flow.ts"),
-      browser,
-    });
   }
 
   if (flows.length === 0) {
@@ -47,10 +54,10 @@ export async function flowsRun(
     return;
   }
 
-  const installResult = await deps.installBrowsers(ctx, pattern);
-  if (installResult && "error" in installResult) {
-    return installResult;
-  }
+  const browsers = [
+    ...new Set<BrowserName>(flows.map((f) => f.browser)),
+  ].sort();
+  await deps.installBrowsers(ctx, browsers);
 
   // Dispatch is implemented in a follow-up PR. This PR ships only the
   // pre-flight (validation + install). Report what was prepared so the user

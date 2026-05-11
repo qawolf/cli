@@ -4,7 +4,7 @@ import type {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/commands/flows/expand.js";
-import type { CommandContext, CommandResult } from "~/lib/context.js";
+import type { CommandContext } from "~/lib/context.js";
 import type { BrowserName, TraceMode, VideoMode } from "~/types.js";
 
 export type FlowsRunFlags = {
@@ -23,8 +23,8 @@ export type FlowsRunDeps = {
   readonly peekFlowMeta: typeof defaultPeekFlowMeta;
   readonly installBrowsers: (
     ctx: CommandContext,
-    pattern: string | undefined,
-  ) => Promise<CommandResult>;
+    browsers: BrowserName[],
+  ) => Promise<void>;
 };
 
 export type ResolvedFlow = {

@@ -100,18 +100,24 @@ describe("flowsRun pre-flight", () => {
     },
   );
 
-  it("returns install error when installBrowsers fails", async () => {
+  it("throws when installBrowsers fails", async () => {
     const deps = makeDeps({
       files: ["/a"],
       metaByFile: { "/a": { target: "Web - Chrome" } },
-      installResult: { error: "playwright install chromium failed: boom" },
+      installError: new Error("playwright install chromium failed: boom"),
     });
 
-    const result = await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
+    let caughtError: unknown;
+    try {
+      await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
+    } catch (e) {
+      caughtError = e;
+    }
 
-    expect(result).toEqual({
-      error: "playwright install chromium failed: boom",
-    });
+    expect(caughtError).toBeInstanceOf(Error);
+    expect((caughtError as Error).message).toBe(
+      "playwright install chromium failed: boom",
+    );
   });
 
   it("prints pre-flight summary when web flows match and install succeeds", async () => {
@@ -127,7 +133,10 @@ describe("flowsRun pre-flight", () => {
     const result = await flowsRun(makeCtx(ui), undefined, defaultFlags(), deps);
 
     expect(result).toBeUndefined();
-    expect(deps.installBrowsers).toHaveBeenCalledTimes(1);
+    expect(deps.installBrowsers).toHaveBeenCalledWith(expect.anything(), [
+      "chromium",
+      "firefox",
+    ]);
     expect(ui.info).toHaveBeenCalledWith(
       "Pre-flight complete: 2 web flow(s) detected. (Dispatch lands in a follow-up PR.)",
     );

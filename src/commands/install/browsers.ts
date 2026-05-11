@@ -9,30 +9,24 @@ import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { resolvePlaywrightCli } from "~/lib/playwright.js";
 import type { BrowserName } from "~/types.js";
 
-export type InstallBrowsersDeps = {
-  readonly cwd: string;
+export type InstallBrowserListDeps = {
   readonly spawn: SpawnFn;
   readonly platform: NodeJS.Platform;
-  readonly expandPatterns: typeof defaultExpandPatterns;
-  readonly peekFlowMeta: typeof defaultPeekFlowMeta;
   readonly execPath: string;
   readonly playwrightCliPath: string;
 };
 
-export async function installBrowsers(
+export type InstallBrowsersDeps = InstallBrowserListDeps & {
+  readonly cwd: string;
+  readonly expandPatterns: typeof defaultExpandPatterns;
+  readonly peekFlowMeta: typeof defaultPeekFlowMeta;
+};
+
+export async function installBrowserList(
   ctx: CommandContext,
-  pattern: string | undefined,
-  deps: InstallBrowsersDeps,
-): Promise<CommandResult> {
-  const patterns = pattern ? [pattern] : [];
-  const files = await deps.expandPatterns(patterns, deps.cwd);
-
-  const browsers = await collectBrowsers(files, deps.peekFlowMeta);
-  if (browsers.length === 0) {
-    ctx.ui.info("No web flows requiring browser installation were found.");
-    return;
-  }
-
+  browsers: BrowserName[],
+  deps: InstallBrowserListDeps,
+): Promise<void> {
   const done =
     browsers.length === 1
       ? "Installed 1 browser."
@@ -51,6 +45,23 @@ export async function installBrowsers(
     })),
     done,
   );
+}
+
+export async function installBrowsers(
+  ctx: CommandContext,
+  pattern: string | undefined,
+  deps: InstallBrowsersDeps,
+): Promise<CommandResult> {
+  const patterns = pattern ? [pattern] : [];
+  const files = await deps.expandPatterns(patterns, deps.cwd);
+
+  const browsers = await collectBrowsers(files, deps.peekFlowMeta);
+  if (browsers.length === 0) {
+    ctx.ui.info("No web flows requiring browser installation were found.");
+    return;
+  }
+
+  await installBrowserList(ctx, browsers, deps);
 }
 
 const BATCH_SIZE = 32;

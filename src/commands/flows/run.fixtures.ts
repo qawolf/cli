@@ -1,6 +1,6 @@
 import { mock } from "bun:test";
 
-import type { CommandContext, CommandResult } from "~/lib/context.js";
+import type { CommandContext } from "~/lib/context.js";
 import type { UI } from "~/lib/ui/index.js";
 
 import type { FlowsRunDeps, FlowsRunFlags } from "./runInternals.js";
@@ -55,7 +55,7 @@ export function defaultFlags(): FlowsRunFlags {
 type DepsOverrides = {
   files?: readonly string[];
   metaByFile?: Record<string, { name?: string; target?: string }>;
-  installResult?: CommandResult;
+  installError?: Error;
 };
 
 export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
@@ -73,7 +73,9 @@ export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
       }),
     ),
     installBrowsers: mock<FlowsRunDeps["installBrowsers"]>(() =>
-      Promise.resolve(overrides.installResult),
+      overrides.installError
+        ? Promise.reject(overrides.installError)
+        : Promise.resolve(),
     ),
   };
 }
