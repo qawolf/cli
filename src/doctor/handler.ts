@@ -6,7 +6,9 @@ import { expandPatterns } from "~/commands/flows/expand.js";
 import { type CommandContext, type CommandResult } from "~/lib/context.js";
 import { resolvePlaywrightCli } from "~/lib/playwright.js";
 
-import { defaultSpawn, runChecks } from "./checks/index.js";
+import { defaultSpawn } from "~/lib/spawn.js";
+
+import { runChecks } from "./checks/index.js";
 import { renderResults } from "./render.js";
 
 export async function handleDoctor(

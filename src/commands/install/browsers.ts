@@ -3,8 +3,8 @@ import {
   peekFlowMeta as defaultPeekFlowMeta,
   targetToBrowser,
 } from "~/commands/flows/expand.js";
-import { defaultSpawn } from "~/doctor/checks/index.js";
 import type { SpawnFn, SpawnResult } from "~/doctor/types.js";
+import { defaultSpawn } from "~/lib/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { resolvePlaywrightCli } from "~/lib/playwright.js";
 import type { BrowserName } from "~/types.js";
