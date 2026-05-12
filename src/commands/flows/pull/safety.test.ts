@@ -61,6 +61,32 @@ describe("detectLocalModifications", () => {
     const manifest = baseManifest([]);
     expect(await detectLocalModifications(workDir, manifest)).toEqual([]);
   });
+
+  it("rejects a manifest containing an absolute path entry", async () => {
+    const manifest = baseManifest([{ path: "/etc/passwd", sha256: helloHash }]);
+    let caught: unknown;
+    try {
+      await detectLocalModifications(workDir, manifest);
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toMatch(/absolute|traversal/i);
+  });
+
+  it("rejects a manifest entry that escapes the env directory", async () => {
+    const manifest = baseManifest([
+      { path: "../escape.flow.ts", sha256: helloHash },
+    ]);
+    let caught: unknown;
+    try {
+      await detectLocalModifications(workDir, manifest);
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toMatch(/escape|traversal/i);
+  });
 });
 
 describe("promptOverwriteIfModified", () => {
