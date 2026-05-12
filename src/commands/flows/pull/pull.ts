@@ -41,7 +41,7 @@ export async function requestBundle(
     baseUrl: deps.baseUrl,
     fetch: deps.fetch,
   });
-  const result = await trpcClient.query(
+  const result = await trpcClient.mutation(
     "gitwolf.flowsBundle",
     { envId },
     flowsBundleResponseSchema,

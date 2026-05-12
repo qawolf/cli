@@ -3,6 +3,7 @@ import type { Command } from "commander";
 import { withContext } from "~/lib/context.js";
 import type { TraceMode, VideoMode } from "~/types.js";
 
+import { type FlowsPullOptions, handleFlowsPull } from "./pull/handler.js";
 import { handleFlowsRun } from "./runDefaults.js";
 import { type FlowsRunFlags, parseEnum, parseInteger } from "./runInternals.js";
 
@@ -63,4 +64,14 @@ export function registerFlowsCommand(program: Command): void {
         );
       },
     );
+
+  flows
+    .command("pull")
+    .description("Download an environment's flows into .qawolf/<env>/")
+    .requiredOption("--env <env>", "Environment ID")
+    .option("--out <path>", "Override the .qawolf/<env>/ destination")
+    .option("--yes", "Skip the overwrite prompt for locally-modified files")
+    .action((opts: FlowsPullOptions, command: Command) => {
+      return withContext((ctx) => handleFlowsPull(ctx, opts))(opts, command);
+    });
 }
