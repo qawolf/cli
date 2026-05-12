@@ -77,7 +77,6 @@ function waitForBanner(
     const onData = (chunk: Buffer | string) => {
       if (!done && String(chunk).includes(readyBanner)) {
         cleanup();
-        // Discard further output; attach a consumer before calling createAppiumServer if streaming is needed.
         output.resume();
         resolve();
       }
