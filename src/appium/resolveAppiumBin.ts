@@ -17,7 +17,7 @@ export function resolveAppiumBin(): string {
     return join(dirname(pkgPath), binEntry);
   } catch (err) {
     throw new Error(
-      "Appium not found in node_modules. Install it by running: qawolf install",
+      "Appium not found in node_modules. Install it with your package manager (e.g. npm install appium).",
       { cause: err },
     );
   }
