@@ -1,61 +1,14 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
-import type { EmulatorSlot } from "~/android/createEmulatorPool.js";
-import { createAndroidLaunchContext } from "./createAndroidLaunchContext.js";
-import type {
-  AndroidLaunchDeps,
-  AndroidLaunchOptions,
-  AppiumDriver,
-} from "./types.js";
+import {
+  makeCtx,
+  makeDriver,
+  makePool,
+  testSlot,
+} from "./createAndroidLaunchContext.fixtures.js";
 
 afterEach(() => {
   mock.restore();
 });
-
-const testSlot: EmulatorSlot = { serial: "emulator-5554", avdName: "test-avd" };
-
-function makeDriver(overrides: Partial<AppiumDriver> = {}): AppiumDriver {
-  return {
-    startRecordingScreen: async () => {},
-    stopRecordingScreen: async () => Buffer.from("fake-mp4").toString("base64"),
-    deleteSession: async () => {},
-    ...overrides,
-  };
-}
-
-function makePool(slot = testSlot) {
-  const checkOut = mock(async (_avdName: string) => slot);
-  const checkIn = mock((_s: EmulatorSlot) => {});
-  return { checkOut, checkIn };
-}
-
-const baseOptions: AndroidLaunchOptions = {
-  avdName: "test-avd",
-  recordVideo: false,
-  outputDir: "/tmp/qawolf-android-test",
-};
-
-function makeBaseDeps(
-  overrides: Partial<AndroidLaunchDeps> = {},
-): AndroidLaunchDeps {
-  return {
-    appiumServer: { port: 4723, home: "/tmp/appium", stop: () => {} },
-    emulatorPool: makePool(),
-    createSession: async () => makeDriver(),
-    adb: mock(async (_args: string[]) => ({ stdout: "" })),
-    spawn: mock((_bin: string, _args: string[]) => ({ stop: () => {} })),
-    ...overrides,
-  };
-}
-
-function makeCtx(
-  deps: Partial<AndroidLaunchDeps> = {},
-  opts: Partial<AndroidLaunchOptions> = {},
-) {
-  return createAndroidLaunchContext({
-    deps: makeBaseDeps(deps),
-    options: { ...baseOptions, ...opts },
-  });
-}
 
 describe("launch()", () => {
   it("should check out a slot using the avdName option", async () => {
@@ -64,12 +17,14 @@ describe("launch()", () => {
     await context.launch();
     expect(pool.checkOut).toHaveBeenCalledWith("test-avd");
   });
+
   it("should call createSession with the server port and slot serial", async () => {
     const createSession = mock(async () => makeDriver());
     const context = makeCtx({ createSession });
     await context.launch();
     expect(createSession).toHaveBeenCalledWith(4723, "emulator-5554");
   });
+
   it("should call adb to disable animations after session starts", async () => {
     const adb = mock(async (_args: string[]) => ({ stdout: "" }));
     const context = makeCtx({ adb });
@@ -80,6 +35,7 @@ describe("launch()", () => {
     expect(allArgs).toContain("animator_duration_scale");
     expect(allArgs).toContain("0.0");
   });
+
   it("should call adb to dismiss keyguard after session starts", async () => {
     const adb = mock(async (_args: string[]) => ({ stdout: "" }));
     const context = makeCtx({ adb });
@@ -88,6 +44,7 @@ describe("launch()", () => {
     expect(allArgs).toContain("KEYCODE_WAKEUP");
     expect(allArgs).toContain("dismiss-keyguard");
   });
+
   it("should start screen recording when recordVideo is true", async () => {
     const startRecordingScreen = mock(async () => {});
     const driver = makeDriver({ startRecordingScreen });
@@ -98,6 +55,7 @@ describe("launch()", () => {
     await context.launch();
     expect(startRecordingScreen).toHaveBeenCalledTimes(1);
   });
+
   it("should not start screen recording when recordVideo is false", async () => {
     const startRecordingScreen = mock(async () => {});
     const driver = makeDriver({ startRecordingScreen });
@@ -105,6 +63,7 @@ describe("launch()", () => {
     await context.launch();
     expect(startRecordingScreen).not.toHaveBeenCalled();
   });
+
   it("should throw if launch is called twice", async () => {
     const context = makeCtx();
     await context.launch();
@@ -118,6 +77,7 @@ describe("launch()", () => {
       "launch() already called on this context",
     );
   });
+
   it("should check in the slot and rethrow if createSession throws", async () => {
     const pool = makePool();
     const createSession = mock(async () => {
@@ -133,6 +93,7 @@ describe("launch()", () => {
     expect((caughtError as Error).message).toBe("bad caps");
     expect(pool.checkIn).toHaveBeenCalledWith(testSlot);
   });
+
   it("should delete the Appium session and return the slot if configureEmulator throws", async () => {
     const deleteSession = mock(async () => {});
     const driver = makeDriver({ deleteSession });
@@ -161,6 +122,7 @@ describe("pages()", () => {
   it("should return empty array before launch", () => {
     expect(makeCtx().pages()).toEqual([]);
   });
+
   it("should return the driver after launch", async () => {
     const driver = makeDriver();
     const context = makeCtx({ createSession: async () => driver });
@@ -189,16 +151,19 @@ describe("cleanup()", () => {
       expect.any(Buffer),
     );
   });
+
   it("should return empty videoPaths when recordVideo is false", async () => {
     const context = makeCtx();
     await context.launch();
     expect((await context.cleanup(true)).videoPaths).toEqual([]);
   });
+
   it("should always return empty tracePaths", async () => {
     const context = makeCtx();
     await context.launch();
     expect((await context.cleanup(true)).tracePaths).toEqual([]);
   });
+
   it("should call deleteSession on the driver during cleanup", async () => {
     const deleteSession = mock(async () => {});
     const driver = makeDriver({ deleteSession });
@@ -207,6 +172,7 @@ describe("cleanup()", () => {
     await context.cleanup(true);
     expect(deleteSession).toHaveBeenCalledTimes(1);
   });
+
   it("should check in the emulator slot during cleanup", async () => {
     const pool = makePool();
     const context = makeCtx({ emulatorPool: pool });
@@ -214,6 +180,7 @@ describe("cleanup()", () => {
     await context.cleanup(true);
     expect(pool.checkIn).toHaveBeenCalledWith(testSlot);
   });
+
   it("should be idempotent — second cleanup returns empty paths without re-running", async () => {
     const deleteSession = mock(async () => {});
     const driver = makeDriver({ deleteSession });
@@ -224,6 +191,7 @@ describe("cleanup()", () => {
     expect(result2).toEqual({ videoPaths: [], tracePaths: [] });
     expect(deleteSession).toHaveBeenCalledTimes(1);
   });
+
   it("should check in the slot even if deleteSession throws", async () => {
     const deleteSession = mock(async () => {
       throw new Error("session gone");
@@ -237,6 +205,7 @@ describe("cleanup()", () => {
     await context.cleanup(true); // must resolve, not throw
     expect(pool.checkIn).toHaveBeenCalledTimes(1);
   });
+
   it("should return empty paths from cleanup if launch was never called", async () => {
     expect(await makeCtx().cleanup(true)).toEqual({
       videoPaths: [],
