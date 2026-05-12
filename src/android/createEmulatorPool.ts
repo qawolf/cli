@@ -16,6 +16,7 @@ export function createEmulatorPool(params?: {
   checkIn: (slot: EmulatorSlot) => void;
   closeAll: () => void;
 } {
+  let closed = false;
   let nextPort = baseConsolePort;
   const freeSlots = new Map<string, EmulatorSlot[]>();
   const waiters = new Map<
@@ -23,6 +24,9 @@ export function createEmulatorPool(params?: {
     { resolve: (slot: EmulatorSlot) => void; reject: (err: Error) => void }[]
   >();
   const handles: { stop: () => void }[] = [];
+  const inFlightBoots = new Set<
+    Promise<{ serial: string; stop: () => void }>
+  >();
   const bootedAvds = new Set<string>();
 
   return {
@@ -33,11 +37,14 @@ export function createEmulatorPool(params?: {
       const boots = Array.from({ length: count }, () => {
         const port = nextPort;
         nextPort += 2;
-        return createAndroidEmulator({
+        const p = createAndroidEmulator({
           avdName,
           port,
           ...(params?.deps !== undefined ? { deps: params.deps } : {}),
         });
+        inFlightBoots.add(p);
+        void p.finally(() => inFlightBoots.delete(p));
+        return p;
       });
 
       const settled = await Promise.allSettled(boots);
@@ -54,6 +61,10 @@ export function createEmulatorPool(params?: {
         for (const s of successes) s.value.stop();
         bootedAvds.delete(avdName);
         throw failure.reason;
+      }
+      if (closed) {
+        for (const s of successes) s.value.stop();
+        return;
       }
       const results = successes.map((r) => r.value);
 
@@ -91,9 +102,14 @@ export function createEmulatorPool(params?: {
     },
 
     closeAll() {
+      closed = true;
       for (const h of handles) h.stop();
       handles.length = 0;
       freeSlots.clear();
+      for (const p of inFlightBoots) {
+        void p.then((e) => e.stop()).catch(() => {});
+      }
+      inFlightBoots.clear();
       for (const pending of waiters.values()) {
         for (const waiter of pending) {
           waiter.reject(new Error("Pool closed"));
