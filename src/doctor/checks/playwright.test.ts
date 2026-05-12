@@ -12,23 +12,46 @@ function spawnReturning(result: SpawnResult): SpawnFn {
   return mock<SpawnFn>(() => Promise.resolve(result));
 }
 
+const fakeNode = "/fake/node";
+const fakeCli = "/fake/playwright/cli.js";
+
+const checkDeps = (spawn: SpawnFn) => ({
+  spawn,
+  execPath: fakeNode,
+  playwrightCliPath: fakeCli,
+});
+
 describe("checkPlaywright", () => {
+  it("fails immediately when playwrightCliPath is null (resolution failure)", async () => {
+    const spawn = mock<SpawnFn>(() =>
+      Promise.resolve({ exitCode: 0, stdout: "", stderr: "" }),
+    );
+    const r = await checkPlaywright({
+      spawn,
+      execPath: fakeNode,
+      playwrightCliPath: undefined,
+    });
+    expect(r.status).toBe("fail");
+    expect(r.detail).toContain("Could not find");
+    expect(spawn).not.toHaveBeenCalled();
+  });
+
   it("passes when --version exits 0 with a parseable version", async () => {
     const spawn = spawnReturning({
       exitCode: 0,
       stdout: "Version 1.49.1\n",
       stderr: "",
     });
-    const r = await checkPlaywright({ spawn });
+    const r = await checkPlaywright(checkDeps(spawn));
     expect(r).toEqual({ name: "playwright", status: "pass" });
-    expect(spawn).toHaveBeenCalledWith("playwright", ["--version"]);
+    expect(spawn).toHaveBeenCalledWith(fakeNode, [fakeCli, "--version"]);
   });
 
-  it("fails when spawn errors (binary missing)", async () => {
+  it("fails when spawn errors (process failed to launch)", async () => {
     const spawn = spawnReturning({ exitCode: -1, stdout: "", stderr: "" });
-    const r = await checkPlaywright({ spawn });
+    const r = await checkPlaywright(checkDeps(spawn));
     expect(r.status).toBe("fail");
-    expect(r.detail).toContain("not installed");
+    expect(r.detail).toContain("Could not launch");
   });
 
   it("fails when --version exits non-zero", async () => {
@@ -37,14 +60,14 @@ describe("checkPlaywright", () => {
       stdout: "",
       stderr: "boom\n",
     });
-    const r = await checkPlaywright({ spawn });
+    const r = await checkPlaywright(checkDeps(spawn));
     expect(r.status).toBe("fail");
     expect(r.detail).toBe("boom");
   });
 
   it("fails when output has no version string", async () => {
     const spawn = spawnReturning({ exitCode: 0, stdout: "huh\n", stderr: "" });
-    const r = await checkPlaywright({ spawn });
+    const r = await checkPlaywright(checkDeps(spawn));
     expect(r.status).toBe("fail");
     expect(r.detail).toContain("parse");
   });

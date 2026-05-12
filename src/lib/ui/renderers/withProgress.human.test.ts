@@ -19,7 +19,7 @@ describe("createWithProgress — human mode", () => {
 
     const s = clack.createdSpinners[0]!;
     expect(s.start).toHaveBeenCalledTimes(1);
-    expect(s.start).toHaveBeenCalledWith("(1/1) first step");
+    expect(s.start).toHaveBeenCalledWith("[1/1] first step");
     expect(s.message).not.toHaveBeenCalled();
   });
 
@@ -39,8 +39,8 @@ describe("createWithProgress — human mode", () => {
     const s = clack.createdSpinners[0]!;
     expect(s.start).toHaveBeenCalledTimes(1);
     expect(s.message).toHaveBeenCalledTimes(2);
-    expect(s.message).toHaveBeenNthCalledWith(1, "(2/3) second");
-    expect(s.message).toHaveBeenNthCalledWith(2, "(3/3) third");
+    expect(s.message).toHaveBeenNthCalledWith(1, "[2/3] second");
+    expect(s.message).toHaveBeenNthCalledWith(2, "[3/3] third");
   });
 
   it("calls spinner.stop with static done string", async () => {
@@ -121,7 +121,7 @@ describe("createWithProgress — human mode", () => {
     const s = clack.createdSpinners[0]!;
     expect(s.start).toHaveBeenCalledTimes(1);
     expect(s.error).toHaveBeenCalledTimes(1);
-    expect(s.error).toHaveBeenCalledWith("(1/1) will fail");
+    expect(s.error).toHaveBeenCalledWith("[1/1] will fail");
     expect(s.stop).not.toHaveBeenCalled();
   });
 
@@ -138,7 +138,7 @@ describe("createWithProgress — human mode", () => {
     );
 
     const s = clack.createdSpinners[0]!;
-    expect(s.start).toHaveBeenCalledWith("(1/2) fetch data");
-    expect(s.message).toHaveBeenCalledWith("(2/2) process data");
+    expect(s.start).toHaveBeenCalledWith("[1/2] fetch data");
+    expect(s.message).toHaveBeenCalledWith("[2/2] process data");
   });
 });

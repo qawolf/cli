@@ -6,3 +6,8 @@ export const environmentWithVariablesResponseSchema = z.object({
 export type EnvironmentWithVariablesResponse = z.infer<
   typeof environmentWithVariablesResponseSchema
 >;
+export const flowsBundleResponseSchema = z.object({
+  expiresAt: z.iso.datetime(),
+  url: z.url(),
+});
+export type FlowsBundleResponse = z.infer<typeof flowsBundleResponseSchema>;

@@ -18,7 +18,7 @@ afterEach(() => {
   mock.restore();
 });
 
-const BASE_OPTIONS: WebLaunchOptions = {
+const baseOptions: WebLaunchOptions = {
   browser: "chromium",
   headed: false,
   slowMo: 0,
@@ -39,7 +39,7 @@ describe("createWebLaunchContext", () => {
     };
     const wlc = createWebLaunchContext({
       deps: makeUniformDeps(chromiumDep),
-      options: BASE_OPTIONS,
+      options: baseOptions,
     });
 
     await wlc.launch();
@@ -57,7 +57,7 @@ describe("createWebLaunchContext", () => {
     };
     const wlc = createWebLaunchContext({
       deps: makeUniformDeps(chromiumDep),
-      options: { ...BASE_OPTIONS, headed: false },
+      options: { ...baseOptions, headed: false },
     });
 
     await wlc.launch();
@@ -75,7 +75,7 @@ describe("createWebLaunchContext", () => {
     };
     const wlc = createWebLaunchContext({
       deps: makeUniformDeps(chromiumDep),
-      options: { ...BASE_OPTIONS, headed: true },
+      options: { ...baseOptions, headed: true },
     });
 
     await wlc.launch();
@@ -93,7 +93,7 @@ describe("createWebLaunchContext", () => {
     };
     const wlc = createWebLaunchContext({
       deps: makeUniformDeps(chromiumDep),
-      options: { ...BASE_OPTIONS, executablePath: "/usr/bin/chrome" },
+      options: { ...baseOptions, executablePath: "/usr/bin/chrome" },
     });
 
     await wlc.launch();
@@ -117,7 +117,7 @@ describe("createWebLaunchContext", () => {
     };
     const wlc = createWebLaunchContext({
       deps: makeUniformDeps(chromiumDep),
-      options: { ...BASE_OPTIONS, video: "off" },
+      options: { ...baseOptions, video: "off" },
     });
 
     await wlc.launch();
@@ -142,7 +142,7 @@ describe("createWebLaunchContext", () => {
     };
     const wlc = createWebLaunchContext({
       deps: makeUniformDeps(chromiumDep),
-      options: { ...BASE_OPTIONS, video: "on" },
+      options: { ...baseOptions, video: "on" },
     });
 
     await wlc.launch();
@@ -166,7 +166,7 @@ describe("createWebLaunchContext", () => {
     };
     const wlc = createWebLaunchContext({
       deps: makeUniformDeps(chromiumDep),
-      options: { ...BASE_OPTIONS, video: "off" },
+      options: { ...baseOptions, video: "off" },
     });
 
     await wlc.launch();
@@ -186,7 +186,7 @@ describe("createWebLaunchContext", () => {
     };
     const wlc = createWebLaunchContext({
       deps: makeUniformDeps(chromiumDep),
-      options: BASE_OPTIONS,
+      options: baseOptions,
     });
 
     await wlc.launch();
@@ -200,7 +200,7 @@ describe("createWebLaunchContext", () => {
     const browser = makeBrowser(ctx);
     const wlc = createWebLaunchContext({
       deps: makeUniformDeps(makeDep(browser, ctx)),
-      options: BASE_OPTIONS,
+      options: baseOptions,
     });
 
     await wlc.launch();

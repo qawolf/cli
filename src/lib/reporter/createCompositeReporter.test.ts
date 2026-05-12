@@ -6,14 +6,14 @@ afterEach(() => {
   mock.restore();
 });
 
-const FLOW_START_EVENT = { name: "Flow A", path: "src/flows/a.flow.ts" };
-const FLOW_PASS_EVENT = {
+const flowStartEvent = { name: "Flow A", path: "src/flows/a.flow.ts" };
+const flowPassEvent = {
   name: "Flow A",
   path: "src/flows/a.flow.ts",
   tests: { passed: 1, total: 1 },
   durationMs: 500,
 };
-const FLOW_FAIL_EVENT = {
+const flowFailEvent = {
   name: "Flow A",
   path: "src/flows/a.flow.ts",
   err: new Error("boom"),
@@ -22,7 +22,7 @@ const FLOW_FAIL_EVENT = {
   attempt: 1,
   maxAttempts: 1,
 };
-const RUN_COMPLETE_EVENT = {
+const runCompleteEvent = {
   summary: {
     flowsPassed: 1,
     flowsFailed: 0,
@@ -31,7 +31,7 @@ const RUN_COMPLETE_EVENT = {
     testsTotal: 1,
     durationMs: 500,
     meta: {
-      browser: "chromium" as const,
+      browsers: ["chromium" as const],
       workers: 1,
       headed: false,
       video: "off" as const,
@@ -72,7 +72,7 @@ describe("createCompositeReporter", () => {
     const calls1: string[] = [];
     const calls2: string[] = [];
     const r = createCompositeReporter([makeChild(calls1), makeChild(calls2)]);
-    r.onFlowStart?.(FLOW_START_EVENT);
+    r.onFlowStart?.(flowStartEvent);
     expect(calls1).toContain("start:Flow A");
     expect(calls2).toContain("start:Flow A");
   });
@@ -81,10 +81,10 @@ describe("createCompositeReporter", () => {
     const calls1: string[] = [];
     const calls2: string[] = [];
     const r = createCompositeReporter([makeChild(calls1), makeChild(calls2)]);
-    r.onFlowStart?.(FLOW_START_EVENT);
-    r.onFlowPass?.(FLOW_PASS_EVENT);
-    r.onFlowFail?.(FLOW_FAIL_EVENT);
-    r.onRunComplete?.(RUN_COMPLETE_EVENT);
+    r.onFlowStart?.(flowStartEvent);
+    r.onFlowPass?.(flowPassEvent);
+    r.onFlowFail?.(flowFailEvent);
+    r.onRunComplete?.(runCompleteEvent);
     const expected = ["start:Flow A", "pass:Flow A", "fail:Flow A", "complete"];
     expect(calls1).toEqual(expected);
     expect(calls2).toEqual(expected);
@@ -101,7 +101,7 @@ describe("createCompositeReporter", () => {
     };
     const good = makeChild(calls);
     const r = createCompositeReporter([throwing, good]);
-    r.onFlowStart?.(FLOW_START_EVENT);
+    r.onFlowStart?.(flowStartEvent);
     expect(calls).toContain("start:Flow A");
   });
 
@@ -116,13 +116,13 @@ describe("createCompositeReporter", () => {
       },
     };
     const r = createCompositeReporter([throwing]);
-    r.onFlowStart?.(FLOW_START_EVENT);
+    r.onFlowStart?.(flowStartEvent);
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("boom"));
   });
 
   it("works with an empty reporters array", () => {
     const r = createCompositeReporter([]);
-    expect(() => r.onFlowStart?.(FLOW_START_EVENT)).not.toThrow();
+    expect(() => r.onFlowStart?.(flowStartEvent)).not.toThrow();
   });
 
   it("reporters that do not implement a callback are skipped", () => {
@@ -133,7 +133,7 @@ describe("createCompositeReporter", () => {
       },
     };
     const r = createCompositeReporter([partial]);
-    r.onFlowStart?.(FLOW_START_EVENT);
+    r.onFlowStart?.(flowStartEvent);
     expect(calls).toHaveLength(0);
   });
 });

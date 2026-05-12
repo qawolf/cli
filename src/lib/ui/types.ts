@@ -12,10 +12,18 @@ export type UI = {
   intro(title: string): void;
   note(message: string, title?: string): void;
   outro(message: string): void;
-  confirm(message: string): Promise<PromptResult<boolean>>;
+  confirm(
+    message: string,
+    opts?: {
+      /** When true, skip prompting and resolve to `{ ok: true, value: true }`. */
+      yes?: boolean;
+      /** When true, prompt with a typed `y`/`n` keystroke instead of arrow-key. */
+      destructive?: boolean;
+    },
+  ): Promise<PromptResult<boolean>>;
   password(message: string, hint?: string): Promise<PromptResult<string>>;
   withProgress: WithProgressFn;
-  step(message: string): void;
+  step(message: string, progress?: { current: number; total: number }): void;
   success(message: string): void;
   warn(message: string): void;
   cancel(message: string): void;

@@ -33,7 +33,7 @@ function makeSummary(overrides: Partial<RunSummary> = {}): RunSummary {
     testsTotal: 1,
     durationMs: 1000,
     meta: {
-      browser: "chromium",
+      browsers: ["chromium"],
       workers: 1,
       headed: false,
       video: "off",

@@ -10,20 +10,33 @@ import {
 } from "./expand.js";
 
 describe("targetToBrowser", () => {
-  it('should return "chromium" when target is "chromium"', () => {
-    expect(targetToBrowser("chromium")).toBe("chromium");
+  it.each([
+    ["Web - Chrome", "chromium"],
+    ["Web - Chrome (GPU)", "chromium"],
+    ["Web - Firefox", "firefox"],
+    ["Web - Firefox (GPU)", "firefox"],
+    ["Web - Safari", "webkit"],
+    ["Web - Safari (GPU)", "webkit"],
+  ] as const)("maps web preset %p to %p", (target, browser) => {
+    expect(targetToBrowser(target)).toBe(browser);
   });
 
-  it('should return "firefox" when target is "firefox"', () => {
-    expect(targetToBrowser("firefox")).toBe("firefox");
-  });
+  it.each(["Basic", "Electron"])(
+    "returns undefined for non-browser web target %p",
+    (target) => {
+      expect(targetToBrowser(target)).toBeUndefined();
+    },
+  );
 
-  it('should return "webkit" when target is "webkit"', () => {
-    expect(targetToBrowser("webkit")).toBe("webkit");
-  });
+  it.each(["Android - Pixel", "iOS - iPad"])(
+    "returns undefined for non-web target %p",
+    (target) => {
+      expect(targetToBrowser(target)).toBeUndefined();
+    },
+  );
 
-  it("should return undefined when target is not a known browser", () => {
-    expect(targetToBrowser("electron")).toBeUndefined();
+  it("returns undefined for an unrecognised target string", () => {
+    expect(targetToBrowser("not-a-real-target")).toBeUndefined();
   });
 });
 

@@ -1,4 +1,4 @@
-export const EXIT_CODES = {
+export const exitCodes = {
   success: 0,
   testFailure: 1,
   invalidArgs: 2,
@@ -7,7 +7,7 @@ export const EXIT_CODES = {
   config: 5,
 } as const;
 
-type ExitCode = (typeof EXIT_CODES)[keyof typeof EXIT_CODES];
+type ExitCode = (typeof exitCodes)[keyof typeof exitCodes];
 
 type ExitProcess = {
   readonly stderr: { readonly write: (chunk: string) => unknown };

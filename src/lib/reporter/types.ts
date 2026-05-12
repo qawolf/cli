@@ -7,7 +7,7 @@ import type {
 } from "~/types.js";
 
 export type RunMeta = {
-  browser: BrowserName;
+  browsers: BrowserName[];
   workers: number;
   headed: boolean;
   video: VideoMode;

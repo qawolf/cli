@@ -1,19 +1,45 @@
+import { getWebBrowserInfo, parseExecutionTarget } from "@qawolf/flow-targets";
 import { glob, readFile, readdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { BrowserName } from "~/types.js";
 
-const BROWSERS: BrowserName[] = ["chromium", "firefox", "webkit"];
+const browserNameToPlaywright: Record<
+  "chrome" | "firefox" | "safari",
+  BrowserName
+> = {
+  chrome: "chromium",
+  firefox: "firefox",
+  safari: "webkit",
+};
+
+// `parseExecutionTarget`'s parameter is the strict preset-literal union, but it
+// validates `unknown` at runtime via Zod and throws on invalid input. Cast so we
+// can hand it any string and rely on the try/catch to handle non-targets.
+type ParseExecutionTargetArg = Parameters<typeof parseExecutionTarget>[0];
 
 export function targetToBrowser(target: string): BrowserName | undefined {
-  return BROWSERS.includes(target as BrowserName)
-    ? (target as BrowserName)
-    : undefined;
+  let parsed: ReturnType<typeof parseExecutionTarget>;
+  try {
+    parsed = parseExecutionTarget(target as ParseExecutionTargetArg);
+  } catch {
+    return undefined;
+  }
+  if (parsed.platform !== "web") return undefined;
+  const meta = parsed.meta;
+  if (typeof meta === "string") return undefined; // "legacy" form
+  if (!("defaultBrowser" in meta) && !("browser" in meta)) return undefined; // Electron
+  try {
+    const info = getWebBrowserInfo(meta);
+    return browserNameToPlaywright[info.name];
+  } catch {
+    return undefined;
+  }
 }
 
 // Matches the flow name — the first string literal argument to flow():
 //   flow("My Flow", ...)
 //        ^^^^^^^^^
-const NAME_RE = /\bflow\s*\(\s*["']([^"'\n]+)["']/;
+const nameRe = /\bflow\s*\(\s*["']([^"'\n]+)["']/;
 
 // Matches the browser target, scoped to the flow() call so a `target:` property
 // elsewhere in the file (e.g. in a config object) is not captured.
@@ -28,15 +54,15 @@ const NAME_RE = /\bflow\s*\(\s*["']([^"'\n]+)["']/;
 //                               ^^^^^^^^
 //
 // Dynamic expressions (variables, template literals) produce undefined for that field.
-const FLOW_TARGET_RE =
+const flowTargetRe =
   /\bflow\s*\(\s*["'][^"'\n]*["']\s*,\s*(?:["']([^"'\n]+)["']|\{[^{}]*\btarget\s*:\s*["']([^"'\n]+)["'])/;
 
 export function extractFlowMeta(source: string): {
   name: string | undefined;
   target: string | undefined;
 } {
-  const name = NAME_RE.exec(source)?.[1];
-  const flowTargetMatch = FLOW_TARGET_RE.exec(source);
+  const name = nameRe.exec(source)?.[1];
+  const flowTargetMatch = flowTargetRe.exec(source);
   const target = flowTargetMatch?.[1] ?? flowTargetMatch?.[2];
   return { name, target };
 }
