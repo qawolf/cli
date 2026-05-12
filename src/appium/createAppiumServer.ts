@@ -1,0 +1,149 @@
+import { spawn } from "node:child_process";
+import net from "node:net";
+import { join } from "node:path";
+import { PassThrough } from "node:stream";
+
+import envPaths from "env-paths";
+
+import { resolveAppiumBin } from "./resolveAppiumBin.js";
+
+const readyBanner = "Appium REST http interface listener started on";
+const defaultStartTimeoutMs = 30_000;
+
+export type AppiumProcess = {
+  output: NodeJS.ReadableStream;
+  kill: () => void;
+  exitCode: Promise<number>;
+};
+
+export type SpawnAppiumFn = (
+  bin: string,
+  args: string[],
+  env: Record<string, string | undefined>,
+) => AppiumProcess;
+
+export type FindFreePortFn = () => Promise<number>;
+
+function findFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.listen(0, () => {
+      const addr = server.address() as net.AddressInfo;
+      server.close(() => resolve(addr.port));
+    });
+    server.on("error", reject);
+  });
+}
+const defaultSpawnAppium: SpawnAppiumFn = (bin, args, env) => {
+  const child = spawn(bin, args, {
+    stdio: ["ignore", "pipe", "pipe"],
+    env,
+  });
+  const output = new PassThrough();
+  child.stdout?.pipe(output, { end: false });
+  child.stderr?.pipe(output, { end: false });
+  return {
+    output,
+    kill: () => child.kill(),
+    exitCode: new Promise<number>((resolve, reject) => {
+      child.on("error", (err: Error) =>
+        reject(new Error(`Failed to spawn Appium: ${err.message}`)),
+      );
+      child.on("close", (code, signal) =>
+        code !== null
+          ? resolve(code)
+          : reject(
+              new Error(
+                `Appium process killed by signal ${signal ?? "unknown"}`,
+              ),
+            ),
+      );
+    }),
+  };
+};
+
+function waitForBanner(
+  output: NodeJS.ReadableStream,
+  exitCode: Promise<number>,
+  timeoutMs: number,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let done = false;
+    // Hoisted function declaration so onData and timer can call it without TDZ.
+    function cleanup() {
+      done = true;
+      clearTimeout(timer);
+      output.off("data", onData);
+    }
+    const onData = (chunk: Buffer | string) => {
+      if (!done && String(chunk).includes(readyBanner)) {
+        cleanup();
+        // Discard further output; attach a consumer before calling createAppiumServer if streaming is needed.
+        output.resume();
+        resolve();
+      }
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(
+        new Error(`Appium server did not start within ${timeoutMs / 1_000}s`),
+      );
+    }, timeoutMs);
+    output.on("data", onData);
+    void exitCode.then(
+      (code) => {
+        if (!done) {
+          cleanup();
+          reject(
+            new Error(`Appium process exited unexpectedly with code ${code}`),
+          );
+        }
+      },
+      (err: unknown) => {
+        if (!done) {
+          cleanup();
+          reject(err instanceof Error ? err : new Error(String(err)));
+        }
+      },
+    );
+  });
+}
+
+export async function createAppiumServer(params?: {
+  deps?: {
+    spawn?: SpawnAppiumFn;
+    findFreePort?: FindFreePortFn;
+    resolveAppiumBin?: () => string;
+  };
+  options?: {
+    appiumHome?: string;
+    startTimeoutMs?: number;
+  };
+}): Promise<{ port: number; home: string; stop: () => void }> {
+  const spawnFn = params?.deps?.spawn ?? defaultSpawnAppium;
+  const findFreePortFn = params?.deps?.findFreePort ?? findFreePort;
+  const resolveAppiumBinFn = params?.deps?.resolveAppiumBin ?? resolveAppiumBin;
+  const appiumHome =
+    params?.options?.appiumHome ?? join(envPaths("qawolf").data, "appium");
+  const timeoutMs = params?.options?.startTimeoutMs ?? defaultStartTimeoutMs;
+
+  const bin = resolveAppiumBinFn();
+  const port = await findFreePortFn();
+  const proc = spawnFn(bin, ["--port", String(port), "--log-level", "info"], {
+    ...process.env,
+    APPIUM_HOME: appiumHome,
+  });
+
+  await waitForBanner(proc.output, proc.exitCode, timeoutMs);
+
+  let stopped = false;
+  return {
+    port,
+    home: appiumHome,
+    stop: () => {
+      if (stopped) return;
+      stopped = true;
+      proc.kill();
+    },
+  };
+}
