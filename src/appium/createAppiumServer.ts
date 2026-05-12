@@ -9,6 +9,7 @@ import { resolveAppiumBin } from "./resolveAppiumBin.js";
 
 const readyBanner = "Appium REST http interface listener started on";
 const defaultStartTimeoutMs = 30_000;
+const bannerBufferMaxBytes = 1024;
 
 export type AppiumProcess = {
   output: NodeJS.ReadableStream;
@@ -21,7 +22,6 @@ export type SpawnAppiumFn = (
   args: string[],
   env: Record<string, string | undefined>,
 ) => AppiumProcess;
-
 export type FindFreePortFn = () => Promise<number>;
 function findFreePort(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -77,6 +77,9 @@ function waitForBanner(
     const onData = (chunk: Buffer | string) => {
       if (done) return;
       buffer += String(chunk);
+      if (buffer.length > bannerBufferMaxBytes) {
+        buffer = buffer.slice(buffer.length - bannerBufferMaxBytes);
+      }
       if (buffer.includes(readyBanner)) {
         cleanup();
         output.resume();
@@ -130,12 +133,12 @@ export async function createAppiumServer(params?: {
     ...process.env,
     APPIUM_HOME: appiumHome,
   });
-  try {
-    await waitForBanner(proc.output, proc.exitCode, timeoutMs);
-  } catch (err) {
-    proc.kill();
-    throw err;
-  }
+  await waitForBanner(proc.output, proc.exitCode, timeoutMs).catch(
+    (err: unknown) => {
+      proc.kill();
+      throw err;
+    },
+  );
   let stopped = false;
   return {
     port,
