@@ -56,7 +56,7 @@ describe("createEmulatorPool", () => {
 
     await pool.bootForAvd("Pixel_4", 1);
     const slot = await pool.checkOut("Pixel_4");
-    pool.checkIn(slot.avdName, slot);
+    pool.checkIn(slot);
 
     const slot2 = await pool.checkOut("Pixel_4");
     expect(slot2.serial).toBe(slot.serial);
@@ -76,7 +76,7 @@ describe("createEmulatorPool", () => {
       return s;
     });
 
-    pool.checkIn(slot.avdName, slot);
+    pool.checkIn(slot);
     const resolvedSlot = await pending;
 
     expect(resolved).toBe(true);
@@ -99,6 +99,28 @@ describe("createEmulatorPool", () => {
 
     expect(stops).toHaveLength(2);
     for (const s of stops) expect(s).toHaveBeenCalledTimes(1);
+  });
+
+  it("closeAll rejects pending checkOut waiters with Pool closed", async () => {
+    const pool = createEmulatorPool({
+      deps: { spawn: makeSpawn(), adb: makeAdb() },
+    });
+
+    await pool.bootForAvd("Pixel_4", 1);
+    await pool.checkOut("Pixel_4"); // depletes free list
+
+    const pending = pool.checkOut("Pixel_4"); // creates a pending waiter
+
+    pool.closeAll();
+
+    let caughtError: unknown;
+    try {
+      await pending;
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(caughtError).toBeInstanceOf(Error);
+    expect((caughtError as Error).message).toBe("Pool closed");
   });
 
   it("bootForAvd works again for same AVD after closeAll", async () => {

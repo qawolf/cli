@@ -64,7 +64,13 @@ async function waitForBoot(
       timeoutMs,
     ),
   );
-  await Promise.race([bootSequence(adb, serial), deadline]);
+  // Hoist bootSequence to a named variable and suppress background rejection.
+  // If the timeout fires first, bootSequence continues running in the background.
+  // Without the catch handler, any subsequent rejection from adb (e.g., server death)
+  // would be an unhandled rejection and crash the process in Bun. The bootSequence
+  // writes to no shared state, so its background rejection is safe to ignore.
+  const boot = bootSequence(adb, serial).catch(() => {});
+  await Promise.race([boot, deadline]);
 }
 
 export async function createAndroidEmulator(params: {

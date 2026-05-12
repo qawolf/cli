@@ -13,12 +13,15 @@ export function createEmulatorPool(params?: {
 }): {
   bootForAvd: (avdName: string, count: number) => Promise<void>;
   checkOut: (avdName: string) => Promise<EmulatorSlot>;
-  checkIn: (avdName: string, slot: EmulatorSlot) => void;
+  checkIn: (slot: EmulatorSlot) => void;
   closeAll: () => void;
 } {
   let nextPort = baseConsolePort;
   const freeSlots = new Map<string, EmulatorSlot[]>();
-  const waiters = new Map<string, ((slot: EmulatorSlot) => void)[]>();
+  const waiters = new Map<
+    string,
+    { resolve: (slot: EmulatorSlot) => void; reject: (err: Error) => void }[]
+  >();
   const handles: { stop: () => void }[] = [];
   const bootedAvds = new Set<string>();
 
@@ -48,7 +51,13 @@ export function createEmulatorPool(params?: {
       if (!freeSlots.has(avdName)) freeSlots.set(avdName, []);
       for (const r of results) {
         handles.push(r);
-        freeSlots.get(avdName)!.push({ serial: r.serial, avdName });
+        const slot: EmulatorSlot = { serial: r.serial, avdName };
+        const waiter = waiters.get(avdName)?.shift();
+        if (waiter) {
+          waiter.resolve(slot);
+        } else {
+          freeSlots.get(avdName)!.push(slot);
+        }
       }
     },
 
@@ -56,16 +65,16 @@ export function createEmulatorPool(params?: {
       const free = freeSlots.get(avdName);
       if (free?.length) return Promise.resolve(free.shift()!);
 
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         if (!waiters.has(avdName)) waiters.set(avdName, []);
-        waiters.get(avdName)!.push(resolve);
+        waiters.get(avdName)!.push({ resolve, reject });
       });
     },
 
-    checkIn(_avdName, slot) {
+    checkIn(slot) {
       const waiter = waiters.get(slot.avdName)?.shift();
       if (waiter) {
-        waiter(slot);
+        waiter.resolve(slot);
       } else {
         if (!freeSlots.has(slot.avdName)) freeSlots.set(slot.avdName, []);
         freeSlots.get(slot.avdName)!.push(slot);
@@ -76,6 +85,11 @@ export function createEmulatorPool(params?: {
       for (const h of handles) h.stop();
       handles.length = 0;
       freeSlots.clear();
+      for (const pending of waiters.values()) {
+        for (const waiter of pending) {
+          waiter.reject(new Error("Pool closed"));
+        }
+      }
       waiters.clear();
       bootedAvds.clear();
       nextPort = baseConsolePort;
