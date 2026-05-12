@@ -78,9 +78,10 @@ describe("createAppiumServer", () => {
 
   it("should reject when process exits before banner", async () => {
     const { findFreePort, resolveAppiumBin } = makeTestDeps();
+    const killFn = mock(() => {});
     const earlyExitSpawn: SpawnAppiumFn = (_bin, _args, _env) => ({
       output: new PassThrough(),
-      kill: () => {},
+      kill: killFn,
       exitCode: Promise.resolve(1),
     });
 
@@ -97,13 +98,15 @@ describe("createAppiumServer", () => {
     expect((caught as Error).message).toBe(
       "Appium process exited unexpectedly with code 1",
     );
+    expect(killFn).toHaveBeenCalledTimes(1);
   });
 
   it("should reject when startup banner does not appear within timeout", async () => {
     const { findFreePort, resolveAppiumBin } = makeTestDeps();
+    const killFn = mock(() => {});
     const hangingSpawn: SpawnAppiumFn = (_bin, _args, _env) => ({
       output: new PassThrough(),
-      kill: () => {},
+      kill: killFn,
       exitCode: new Promise<number>(() => {}),
     });
 
@@ -118,6 +121,7 @@ describe("createAppiumServer", () => {
     }
     expect(caught).toBeInstanceOf(Error);
     expect((caught as Error).message).toContain("did not start");
+    expect(killFn).toHaveBeenCalledTimes(1);
   });
 
   it("should reject when resolveAppiumBin throws", async () => {
