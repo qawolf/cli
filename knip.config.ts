@@ -30,7 +30,7 @@ const config: KnipConfig = {
     "src/appium/createAppiumServer.ts",
     "src/appium/resolveAppiumBin.ts",
     // TODO WIZ-10332: remove once Android launch context imports createEmulatorPool
-    "src/android/*.ts",
+    "src/android/createEmulatorPool.ts",
   ],
 };
 
