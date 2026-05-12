@@ -6,6 +6,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 
+import { isNoEntError } from "~/lib/errors.js";
+
 export const manifestFilename = ".manifest.json";
 
 const fileSchema = z.object({
@@ -82,13 +84,4 @@ export function hashFile(absPath: string): Promise<string> {
     stream.on("end", () => resolve(hash.digest("hex")));
     stream.on("error", reject);
   });
-}
-
-function isNoEntError(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code: unknown }).code === "ENOENT"
-  );
 }

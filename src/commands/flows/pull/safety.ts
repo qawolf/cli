@@ -1,5 +1,6 @@
 import { join } from "node:path";
 
+import { isNoEntError } from "~/lib/errors.js";
 import { type Manifest, hashFile } from "./manifest.js";
 
 type LocalMod = {
@@ -49,7 +50,7 @@ export async function promptOverwriteIfModified(
   if (modified.length === 0) return "proceed";
 
   const list = modified.map((m) => `  - ${m.path}`).join("\n");
-  const summary = `${String(modified.length)} locally-modified file(s) under ${args.envDir} would be overwritten:\n${list}`;
+  const summary = `${modified.length} locally-modified file(s) under ${args.envDir} would be overwritten:\n${list}`;
 
   if (args.yes) {
     args.log(`${summary}\noverwriting (--yes)`);
@@ -58,13 +59,4 @@ export async function promptOverwriteIfModified(
 
   const accepted = await args.confirm(`${summary}\nContinue?`);
   return accepted ? "proceed" : "abort";
-}
-
-function isNoEntError(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code: unknown }).code === "ENOENT"
-  );
 }
