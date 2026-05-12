@@ -7,7 +7,7 @@ import * as tar from "tar";
 export const testBaseUrl = "https://test.qawolf.com";
 export const testApiKey = "qawolf_test";
 export const testSignedUrl = "https://gcs.example.com/bundle.tar.gz?sig=abc";
-export const testExpiresAt = "2099-12-31T00:00:00.000Z";
+const testExpiresAt = "2099-12-31T00:00:00.000Z";
 export const flowsBundlePath = "gitwolf.flowsBundle";
 
 export async function pathExists(p: string): Promise<boolean> {

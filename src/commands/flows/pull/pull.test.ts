@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, stat, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
@@ -151,10 +151,13 @@ describe("downloadBundle", () => {
     );
 
     const result = await downloadBundle({ fetch: fakeFetch.fetch }, signedUrl);
-    expect(result.tmpArchive).toMatch(/qawolf-pull-[0-9a-f]+\.tar\.gz$/);
-
-    const s = await stat(result.tmpArchive);
-    expect(s.size).toBeGreaterThan(0);
+    try {
+      expect(result.tmpArchive).toMatch(/qawolf-pull-[0-9a-f]+\.tar\.gz$/);
+      const s = await stat(result.tmpArchive);
+      expect(s.size).toBeGreaterThan(0);
+    } finally {
+      await unlink(result.tmpArchive).catch(() => {});
+    }
   });
 
   it("throws an expired-URL message on 403 from the signed URL", async () => {
