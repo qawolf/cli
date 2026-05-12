@@ -1,8 +1,9 @@
-import { mkdir, mkdtemp, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join, sep } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
+import { pathExists } from "~/lib/fs.js";
 import {
   createTempPathRegistry,
   mintTempPath,
@@ -20,15 +21,6 @@ beforeEach(async () => {
 afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
 });
-
-async function exists(p: string): Promise<boolean> {
-  try {
-    await stat(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 describe("mintTempPath", () => {
   it("returns an absolute path matching .pull-<16hex>", () => {
@@ -66,13 +58,13 @@ describe("removeTempDir", () => {
 
     await removeTempDir(dir, registry);
 
-    expect(await exists(dir)).toBe(false);
+    expect(await pathExists(dir)).toBe(false);
   });
 
   it("is a no-op for a minted path that does not exist on disk", async () => {
     const dir = mintTempPath(join(workDir, "envA"), "pull", registry);
     await removeTempDir(dir, registry);
-    expect(await exists(dir)).toBe(false);
+    expect(await pathExists(dir)).toBe(false);
   });
 
   it("rejects empty paths", async () => {
@@ -101,14 +93,14 @@ describe("removeTempDir", () => {
     const dir = join(workDir, "no-sentinel");
     await mkdir(dir);
     expect(removeTempDir(dir, registry)).rejects.toThrow();
-    expect(await exists(dir)).toBe(true);
+    expect(await pathExists(dir)).toBe(true);
   });
 
   it("rejects paths that match the sentinel but were never minted (capability check)", async () => {
     const forged = join(workDir, "forged.pull-1234567890abcdef");
     await mkdir(forged);
     expect(removeTempDir(forged, registry)).rejects.toThrow();
-    expect(await exists(forged)).toBe(true);
+    expect(await pathExists(forged)).toBe(true);
   });
 
   it("rejects paths minted in a different registry", async () => {
@@ -116,6 +108,6 @@ describe("removeTempDir", () => {
     const dir = mintTempPath(join(workDir, "envA"), "pull", otherRegistry);
     await mkdir(dir, { recursive: true });
     expect(removeTempDir(dir, registry)).rejects.toThrow();
-    expect(await exists(dir)).toBe(true);
+    expect(await pathExists(dir)).toBe(true);
   });
 });

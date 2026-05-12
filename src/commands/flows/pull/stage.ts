@@ -1,6 +1,6 @@
-import { rename, stat } from "node:fs/promises";
-import { resolve } from "node:path";
+import { rename } from "node:fs/promises";
 
+import { pathExists } from "~/lib/fs.js";
 import { buildManifest, flattenSingleWrapper } from "./bundle.js";
 import { extractTarGz } from "./extract.js";
 import { writeManifest } from "./manifest.js";
@@ -27,9 +27,8 @@ type StageBundleResult = {
 export async function stageBundle(
   args: StageBundleArgs,
 ): Promise<StageBundleResult> {
-  const destAbs = resolve(args.destAbs);
   const registry = createTempPathRegistry();
-  const tmpDir = mintTempPath(destAbs, "pull", registry);
+  const tmpDir = mintTempPath(args.destAbs, "pull", registry);
 
   try {
     await extractTarGz(args.tmpArchive, tmpDir);
@@ -44,34 +43,25 @@ export async function stageBundle(
 
     let oldDir: string | undefined;
     try {
-      if (await dirExists(destAbs)) {
-        oldDir = mintTempPath(destAbs, "old", registry);
-        await rename(destAbs, oldDir);
+      if (await pathExists(args.destAbs)) {
+        oldDir = mintTempPath(args.destAbs, "old", registry);
+        await rename(args.destAbs, oldDir);
       }
-      await rename(tmpDir, destAbs);
-    } catch (err: unknown) {
-      if (oldDir) await rename(oldDir, destAbs).catch(() => {});
+      await rename(tmpDir, args.destAbs);
+    } catch (err) {
+      if (oldDir) await rename(oldDir, args.destAbs).catch(() => {});
       throw err;
     }
 
     if (oldDir) await removeTempDir(oldDir, registry).catch(() => {});
 
     return {
-      envDir: destAbs,
+      envDir: args.destAbs,
       flowCount: manifest.files.length,
       bundleFlowsVersion: manifest.bundleFlowsVersion,
     };
-  } catch (err: unknown) {
+  } catch (err) {
     await removeTempDir(tmpDir, registry).catch(() => {});
     throw err;
-  }
-}
-
-async function dirExists(p: string): Promise<boolean> {
-  try {
-    await stat(p);
-    return true;
-  } catch {
-    return false;
   }
 }

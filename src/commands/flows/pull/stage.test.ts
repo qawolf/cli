@@ -3,8 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
+import { pathExists } from "~/lib/fs.js";
 import { readManifest } from "./manifest.js";
-import { buildBundle, makeFakeFetch, pathExists } from "./pull.fixtures.js";
+import { buildBundle, makeFakeFetch } from "./pull.fixtures.js";
 import { downloadBundle, requestBundle } from "./pull.js";
 import { stageBundle } from "./stage.js";
 

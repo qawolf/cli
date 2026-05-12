@@ -41,6 +41,7 @@ export async function handleFlowsPull(
 
   const destAbs = resolve(opts.out ?? join(".qawolf", opts.env));
   const yes = opts.yes ?? false;
+  const fetch = globalThis.fetch;
   let archive: string | undefined;
 
   try {
@@ -52,11 +53,7 @@ export async function handleFlowsPull(
           task: async () => {
             signedUrl = (
               await requestBundle(
-                {
-                  apiKey: resolved.key,
-                  baseUrl: ctx.apiBaseUrl,
-                  fetch: globalThis.fetch,
-                },
+                { apiKey: resolved.key, baseUrl: ctx.apiBaseUrl, fetch },
                 opts.env,
               )
             ).signedUrl;
@@ -68,9 +65,7 @@ export async function handleFlowsPull(
             if (signedUrl === undefined) {
               throw new Error("internal: signedUrl not set");
             }
-            archive = (
-              await downloadBundle({ fetch: globalThis.fetch }, signedUrl)
-            ).tmpArchive;
+            archive = (await downloadBundle({ fetch }, signedUrl)).tmpArchive;
           },
         },
       ],
@@ -120,7 +115,8 @@ export async function handleFlowsPull(
       },
     );
 
-    if (ctx.ui.mode !== "human") {
+    // json consumers want the structured result alongside the success line.
+    if (ctx.ui.mode === "json") {
       ctx.ui.output(
         {
           envDir: result.envDir,

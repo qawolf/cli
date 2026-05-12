@@ -16,6 +16,7 @@ import {
   requestBundle,
   validateEnvId,
 } from "./pull.js";
+import { expectRejects } from "./pull.testUtils.js";
 
 let workDir = "";
 let bundleArchive = "";
@@ -28,20 +29,6 @@ beforeEach(async () => {
 afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
 });
-
-async function expectRejects(
-  promise: Promise<unknown>,
-  pattern?: RegExp,
-): Promise<void> {
-  let caught: unknown;
-  try {
-    await promise;
-  } catch (e) {
-    caught = e;
-  }
-  expect(caught).toBeInstanceOf(Error);
-  if (pattern) expect((caught as Error).message).toMatch(pattern);
-}
 
 describe("validateEnvId", () => {
   it("accepts UUID-style ids", () => {
@@ -61,7 +48,7 @@ describe("validateEnvId", () => {
 });
 
 describe("requestBundle", () => {
-  it("sends a Bearer-authed GET to gitwolf.flowsBundle", async () => {
+  it("sends a Bearer-authed POST to gitwolf.flowsBundle", async () => {
     const fakeFetch = makeFakeFetch({
       kind: "ok",
       sourceArchive: bundleArchive,
@@ -76,12 +63,10 @@ describe("requestBundle", () => {
       "env-abc",
     );
 
-    expect(fakeFetch.calls[0]?.url).toContain(
-      `${testBaseUrl}/api/trpc/${flowsBundlePath}`,
-    );
-    const headers = fakeFetch.calls[0]?.init?.headers as
-      | Record<string, string>
-      | undefined;
+    const call = fakeFetch.calls[0];
+    expect(call?.url).toContain(`${testBaseUrl}/api/trpc/${flowsBundlePath}`);
+    expect(call?.init?.method).toBe("POST");
+    const headers = call?.init?.headers as Record<string, string> | undefined;
     expect(headers?.["Authorization"]).toBe(`Bearer ${testApiKey}`);
     expect(result.signedUrl).toMatch(/^https:\/\//);
   });

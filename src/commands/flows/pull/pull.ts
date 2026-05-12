@@ -35,11 +35,11 @@ type RequestBundleDeps = {
   sleep?: (ms: number) => Promise<void>;
 };
 
-// Up to 3 attempts; back off between failures only on transient (network)
-// errors. The cold-start case on a freshly-booted local platform is the
-// typical retry-worthy scenario; HTTP 4xx/5xx and parse errors are not
-// retried since re-running won't change the outcome.
-const requestBundleMaxAttempts = 3;
+// Back off between failures only on transient (network) errors. The
+// cold-start case on a freshly-booted local platform is the typical
+// retry-worthy scenario; HTTP 4xx/5xx and parse errors are not retried
+// since re-running won't change the outcome. The array length is the
+// retry budget: N entries = N+1 total attempts.
 const requestBundleBackoffMs = [500, 1500];
 
 export async function requestBundle(
@@ -51,8 +51,9 @@ export async function requestBundle(
     fetch: deps.fetch,
   });
   const sleep = deps.sleep ?? defaultSleep;
+  const maxAttempts = requestBundleBackoffMs.length + 1;
 
-  for (let attempt = 1; attempt <= requestBundleMaxAttempts; attempt++) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const result = await trpcClient.mutation(
       "gitwolf.flowsBundle",
       { envId },
@@ -60,15 +61,17 @@ export async function requestBundle(
     );
     if (result.ok) return { signedUrl: result.data.url };
 
-    const lastAttempt = attempt === requestBundleMaxAttempts;
+    const lastAttempt = attempt === maxAttempts;
     const retryable = result.error.kind === "network";
     if (lastAttempt || !retryable) {
       throw new Error(describeBundleRequestError(result.error, deps.baseUrl));
     }
-    await sleep(requestBundleBackoffMs[attempt - 1] ?? 0);
+    const backoff = requestBundleBackoffMs[attempt - 1];
+    if (backoff === undefined) {
+      throw new Error("internal: requestBundle backoff index out of bounds");
+    }
+    await sleep(backoff);
   }
-  // Unreachable: the loop either returns on success or throws on the last
-  // attempt. This satisfies TypeScript's return-type check.
   throw new Error("internal: requestBundle retry loop exited unexpectedly");
 }
 

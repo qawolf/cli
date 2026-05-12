@@ -5,7 +5,6 @@ import {
   readFile,
   readdir,
   rm,
-  stat,
   symlink,
   writeFile,
 } from "node:fs/promises";
@@ -15,6 +14,7 @@ import { createGzip } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import * as tar from "tar";
 
+import { pathExists } from "~/lib/fs.js";
 import { extractTarGz } from "./extract.js";
 
 let workDir = "";
@@ -30,15 +30,6 @@ beforeEach(async () => {
 afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
 });
-
-async function exists(p: string): Promise<boolean> {
-  try {
-    await stat(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 type StagedEntry =
   | { kind: "file"; name: string; data: Buffer | string }
@@ -153,7 +144,7 @@ describe("extractTarGz safety guards", () => {
   it("rejects entries with parent-traversal segments and writes nothing", async () => {
     await writeRawTarGzWithName(archivePath, "../escape.txt");
     await expectRejects(extractTarGz(archivePath, destDir));
-    expect(await exists(join(workDir, "escape.txt"))).toBe(false);
+    expect(await pathExists(join(workDir, "escape.txt"))).toBe(false);
   });
 
   it("rejects entries with absolute paths", async () => {
@@ -175,7 +166,7 @@ describe("extractTarGz safety guards", () => {
       /entry|too large|size/i,
     );
 
-    expect(await exists(join(destDir, "big.bin"))).toBe(false);
+    expect(await pathExists(join(destDir, "big.bin"))).toBe(false);
   });
 
   it("rejects when total uncompressed size exceeds the cap", async () => {
@@ -218,8 +209,8 @@ describe("extractTarGz safety guards", () => {
     await writeRawTarGzWithName(archivePath, "../escape.txt");
     await expectRejects(extractTarGz(archivePath, destDir));
 
-    expect(await exists(join(workDir, "escape.txt"))).toBe(false);
-    if (await exists(destDir)) {
+    expect(await pathExists(join(workDir, "escape.txt"))).toBe(false);
+    if (await pathExists(destDir)) {
       const entries = await readdir(destDir);
       expect(entries).toEqual([]);
     }
