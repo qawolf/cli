@@ -40,13 +40,22 @@ export function createEmulatorPool(params?: {
         });
       });
 
-      let results: { serial: string; stop: () => void }[];
-      try {
-        results = await Promise.all(boots);
-      } catch (err) {
+      const settled = await Promise.allSettled(boots);
+      const successes = settled.filter(
+        (
+          r,
+        ): r is PromiseFulfilledResult<{ serial: string; stop: () => void }> =>
+          r.status === "fulfilled",
+      );
+      const failure = settled.find(
+        (r): r is PromiseRejectedResult => r.status === "rejected",
+      );
+      if (failure) {
+        for (const s of successes) s.value.stop();
         bootedAvds.delete(avdName);
-        throw err;
+        throw failure.reason;
       }
+      const results = successes.map((r) => r.value);
 
       if (!freeSlots.has(avdName)) freeSlots.set(avdName, []);
       for (const r of results) {

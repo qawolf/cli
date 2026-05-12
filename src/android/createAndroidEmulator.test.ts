@@ -82,20 +82,16 @@ describe("createAndroidEmulator", () => {
   });
 
   it("does not crash when adb wait-for-device rejects after timeout", async () => {
-    const stopFn = mock(() => {});
-    const spawnFn: SpawnFn = (_bin, _args) => ({ stop: stopFn });
-    let waitForDeviceCallCount = 0;
-    const adbWithDelayedRejection: AdbFn = async (args) => {
+    const spawnFn: SpawnFn = (_bin, _args) => ({ stop: () => {} });
+    // wait-for-device outlasts the boot timeout, then rejects — simulates adb server
+    // dying after Promise.race has already settled with the deadline error.
+    const adbWithDelayedRejection: AdbFn = (args) => {
       if (args.includes("wait-for-device")) {
-        // First call succeeds, subsequent calls (after Promise.race timeout) reject
-        waitForDeviceCallCount++;
-        if (waitForDeviceCallCount > 1) {
-          throw new Error("adb server died");
-        }
-        return { stdout: "" };
+        return new Promise<{ stdout: string }>((_, reject) =>
+          setTimeout(() => reject(new Error("adb server died")), 100),
+        );
       }
-      if (args.includes("getprop")) return { stdout: "0\n" }; // never completes
-      return { stdout: "" };
+      return Promise.resolve({ stdout: "" });
     };
 
     let caught: unknown;
@@ -110,8 +106,10 @@ describe("createAndroidEmulator", () => {
       caught = e;
     }
 
-    // Verify timeout error is thrown, not the adb rejection
     expect(caught).toBeInstanceOf(Error);
     expect((caught as Error).message).toContain("did not finish booting");
+    // Wait for the background wait-for-device to reject; an unhandled rejection here
+    // would crash the Bun process and fail the test suite.
+    await new Promise<void>((r) => setTimeout(r, 100));
   });
 });

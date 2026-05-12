@@ -48,29 +48,35 @@ async function bootSequence(adb: AdbFn, serial: string): Promise<void> {
   }
 }
 
-async function waitForBoot(
+function waitForBoot(
   adb: AdbFn,
   serial: string,
   timeoutMs: number,
 ): Promise<void> {
-  const deadline = new Promise<never>((_, reject) =>
-    setTimeout(
-      () =>
-        reject(
-          new Error(
-            `Android emulator did not finish booting within ${timeoutMs / 1000}s`,
-          ),
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const timer = setTimeout(() => {
+      done = true;
+      reject(
+        new Error(
+          `Android emulator did not finish booting within ${timeoutMs / 1000}s`,
         ),
-      timeoutMs,
-    ),
-  );
-  // Hoist bootSequence to a named variable and suppress background rejection.
-  // If the timeout fires first, bootSequence continues running in the background.
-  // Without the catch handler, any subsequent rejection from adb (e.g., server death)
-  // would be an unhandled rejection and crash the process in Bun. The bootSequence
-  // writes to no shared state, so its background rejection is safe to ignore.
-  const boot = bootSequence(adb, serial).catch(() => {});
-  await Promise.race([boot, deadline]);
+      );
+    }, timeoutMs);
+    // Suppress background rejection: if the timeout fires first, bootSequence keeps
+    // running in the background. .catch(() => {}) prevents that eventual rejection
+    // from becoming an unhandled rejection in Bun. bootSequence writes to no shared
+    // state, so swallowing it is safe.
+    void bootSequence(adb, serial)
+      .catch(() => {})
+      .then(() => {
+        if (!done) {
+          done = true;
+          clearTimeout(timer);
+          resolve();
+        }
+      });
+  });
 }
 
 export async function createAndroidEmulator(params: {
@@ -101,5 +107,13 @@ export async function createAndroidEmulator(params: {
     throw err;
   }
 
-  return { serial, stop: () => proc.stop() };
+  let stopped = false;
+  return {
+    serial,
+    stop: () => {
+      if (stopped) return;
+      stopped = true;
+      proc.stop();
+    },
+  };
 }
