@@ -23,7 +23,6 @@ export type SpawnAppiumFn = (
 ) => AppiumProcess;
 
 export type FindFreePortFn = () => Promise<number>;
-
 function findFreePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
@@ -69,7 +68,7 @@ function waitForBanner(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     let done = false;
-    // Hoisted function declaration so onData and timer can call it without TDZ.
+    // Hoisted so the body can reference timer and onData declared later in source order.
     function cleanup() {
       done = true;
       clearTimeout(timer);
@@ -126,16 +125,18 @@ export async function createAppiumServer(params?: {
   const appiumHome =
     params?.options?.appiumHome ?? join(envPaths("qawolf").data, "appium");
   const timeoutMs = params?.options?.startTimeoutMs ?? defaultStartTimeoutMs;
-
   const bin = resolveAppiumBinFn();
   const port = await findFreePortFn();
   const proc = spawnFn(bin, ["--port", String(port), "--log-level", "info"], {
     ...process.env,
     APPIUM_HOME: appiumHome,
   });
-
-  await waitForBanner(proc.output, proc.exitCode, timeoutMs);
-
+  try {
+    await waitForBanner(proc.output, proc.exitCode, timeoutMs);
+  } catch (err) {
+    proc.kill();
+    throw err;
+  }
   let stopped = false;
   return {
     port,

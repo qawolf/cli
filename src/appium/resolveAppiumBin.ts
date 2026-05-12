@@ -10,7 +10,10 @@ export function resolveAppiumBin(): string {
       bin?: string | Record<string, string>;
     };
     const binEntry =
-      typeof pkg.bin === "string" ? pkg.bin : (pkg.bin?.["appium"] ?? "");
+      typeof pkg.bin === "string" ? pkg.bin : pkg.bin?.["appium"];
+    if (!binEntry) {
+      throw new Error("Appium binary entry missing from package.json");
+    }
     return join(dirname(pkgPath), binEntry);
   } catch (err) {
     throw new Error(
