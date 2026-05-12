@@ -92,6 +92,7 @@ export function createEmulatorPool(params?: {
     },
 
     checkIn(slot) {
+      if (closed) return;
       const waiter = waiters.get(slot.avdName)?.shift();
       if (waiter) {
         waiter.resolve(slot);
