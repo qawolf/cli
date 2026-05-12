@@ -16,15 +16,14 @@ export type AppiumProcess = {
   kill: () => void;
   exitCode: Promise<number>;
 };
-
 export type SpawnAppiumFn = (
   bin: string,
   args: string[],
   env: Record<string, string | undefined>,
 ) => AppiumProcess;
 export type FindFreePortFn = () => Promise<number>;
-function findFreePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
+const findFreePort: FindFreePortFn = () =>
+  new Promise((resolve, reject) => {
     const server = net.createServer();
     server.listen(0, () => {
       const addr = server.address() as net.AddressInfo;
@@ -32,7 +31,6 @@ function findFreePort(): Promise<number> {
     });
     server.on("error", reject);
   });
-}
 const defaultSpawnAppium: SpawnAppiumFn = (bin, args, env) => {
   const child = spawn(process.execPath, [bin, ...args], {
     stdio: ["ignore", "pipe", "pipe"],
