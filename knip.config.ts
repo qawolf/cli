@@ -27,7 +27,8 @@ const config: KnipConfig = {
     // TODO WIZ-10355: remove once flows pull consumes the flowsBundle schema
     "src/apex/types.ts",
     // TODO WIZ-10329: remove once Android/iOS launch context imports createAppiumServer
-    "src/appium/*.ts",
+    "src/appium/createAppiumServer.ts",
+    "src/appium/resolveAppiumBin.ts",
   ],
 };
 
