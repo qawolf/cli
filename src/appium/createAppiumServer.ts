@@ -34,7 +34,7 @@ function findFreePort(): Promise<number> {
   });
 }
 const defaultSpawnAppium: SpawnAppiumFn = (bin, args, env) => {
-  const child = spawn(bin, args, {
+  const child = spawn(process.execPath, [bin, ...args], {
     stdio: ["ignore", "pipe", "pipe"],
     env,
   });
