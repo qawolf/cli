@@ -33,9 +33,13 @@ const defaultAdb: AdbFn = async (args) => {
   return { stdout };
 };
 
-async function bootSequence(adb: AdbFn, serial: string): Promise<void> {
+async function bootSequence(
+  adb: AdbFn,
+  serial: string,
+  cancelled: () => boolean,
+): Promise<void> {
   await adb(["-s", serial, "wait-for-device"]);
-  while (true) {
+  while (!cancelled()) {
     const { stdout } = await adb([
       "-s",
       serial,
@@ -63,11 +67,7 @@ function waitForBoot(
         ),
       );
     }, timeoutMs);
-    // Suppress background rejection: if the timeout fires first, bootSequence keeps
-    // running in the background. .catch(() => {}) prevents that eventual rejection
-    // from becoming an unhandled rejection in Bun. bootSequence writes to no shared
-    // state, so swallowing it is safe.
-    void bootSequence(adb, serial)
+    void bootSequence(adb, serial, () => done)
       .catch(() => {})
       .then(() => {
         if (!done) {
