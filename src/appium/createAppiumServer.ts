@@ -68,14 +68,16 @@ function waitForBanner(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     let done = false;
-    // Hoisted so the body can reference timer and onData declared later in source order.
     function cleanup() {
       done = true;
       clearTimeout(timer);
       output.off("data", onData);
     }
+    let buffer = "";
     const onData = (chunk: Buffer | string) => {
-      if (!done && String(chunk).includes(readyBanner)) {
+      if (done) return;
+      buffer += String(chunk);
+      if (buffer.includes(readyBanner)) {
         cleanup();
         output.resume();
         resolve();
@@ -90,18 +92,16 @@ function waitForBanner(
     output.on("data", onData);
     void exitCode.then(
       (code) => {
-        if (!done) {
-          cleanup();
-          reject(
-            new Error(`Appium process exited unexpectedly with code ${code}`),
-          );
-        }
+        if (done) return;
+        cleanup();
+        reject(
+          new Error(`Appium process exited unexpectedly with code ${code}`),
+        );
       },
       (err: unknown) => {
-        if (!done) {
-          cleanup();
-          reject(err instanceof Error ? err : new Error(String(err)));
-        }
+        if (done) return;
+        cleanup();
+        reject(err instanceof Error ? err : new Error(String(err)));
       },
     );
   });
