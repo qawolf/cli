@@ -31,7 +31,16 @@ type RequestBundleDeps = {
   apiKey: string;
   baseUrl: string;
   fetch: typeof globalThis.fetch;
+  // Optional injection seam so tests can skip the real backoff sleeps.
+  sleep?: (ms: number) => Promise<void>;
 };
+
+// Up to 3 attempts; back off between failures only on transient (network)
+// errors. The cold-start case on a freshly-booted local platform is the
+// typical retry-worthy scenario; HTTP 4xx/5xx and parse errors are not
+// retried since re-running won't change the outcome.
+const requestBundleMaxAttempts = 3;
+const requestBundleBackoffMs = [500, 1500];
 
 export async function requestBundle(
   deps: RequestBundleDeps,
@@ -41,15 +50,30 @@ export async function requestBundle(
     baseUrl: deps.baseUrl,
     fetch: deps.fetch,
   });
-  const result = await trpcClient.mutation(
-    "gitwolf.flowsBundle",
-    { envId },
-    flowsBundleResponseSchema,
-  );
-  if (!result.ok) {
-    throw new Error(describeBundleRequestError(result.error, deps.baseUrl));
+  const sleep = deps.sleep ?? defaultSleep;
+
+  for (let attempt = 1; attempt <= requestBundleMaxAttempts; attempt++) {
+    const result = await trpcClient.mutation(
+      "gitwolf.flowsBundle",
+      { envId },
+      flowsBundleResponseSchema,
+    );
+    if (result.ok) return { signedUrl: result.data.url };
+
+    const lastAttempt = attempt === requestBundleMaxAttempts;
+    const retryable = result.error.kind === "network";
+    if (lastAttempt || !retryable) {
+      throw new Error(describeBundleRequestError(result.error, deps.baseUrl));
+    }
+    await sleep(requestBundleBackoffMs[attempt - 1] ?? 0);
   }
-  return { signedUrl: result.data.url };
+  // Unreachable: the loop either returns on success or throws on the last
+  // attempt. This satisfies TypeScript's return-type check.
+  throw new Error("internal: requestBundle retry loop exited unexpectedly");
+}
+
+function defaultSleep(ms: number): Promise<void> {
+  return new Promise<void>((res) => setTimeout(res, ms));
 }
 
 type DownloadBundleDeps = {
