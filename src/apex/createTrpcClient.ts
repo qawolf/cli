@@ -30,7 +30,7 @@ export type TrpcClient = {
   ) => Promise<WireResult<T>>;
 };
 
-const timeoutMs = 10_000;
+const timeoutMs = 15_000;
 
 export function createTrpcClient(
   apiKey: string,

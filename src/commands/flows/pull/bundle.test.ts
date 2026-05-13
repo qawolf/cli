@@ -1,8 +1,9 @@
-import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
+import { pathExists } from "~/lib/fs.js";
 import { buildManifest, flattenSingleWrapper } from "./bundle.js";
 
 let workDir = "";
@@ -15,15 +16,6 @@ afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
 });
 
-async function exists(p: string): Promise<boolean> {
-  try {
-    await stat(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 describe("flattenSingleWrapper", () => {
   it("promotes contents up one level when dir contains a single subdirectory", async () => {
     const inner = join(workDir, "wrapper");
@@ -34,9 +26,9 @@ describe("flattenSingleWrapper", () => {
 
     await flattenSingleWrapper(workDir);
 
-    expect(await exists(join(workDir, "a.flow.ts"))).toBe(true);
-    expect(await exists(join(workDir, "nested/b.flow.ts"))).toBe(true);
-    expect(await exists(join(workDir, "wrapper"))).toBe(false);
+    expect(await pathExists(join(workDir, "a.flow.ts"))).toBe(true);
+    expect(await pathExists(join(workDir, "nested/b.flow.ts"))).toBe(true);
+    expect(await pathExists(join(workDir, "wrapper"))).toBe(false);
   });
 
   it("leaves dir alone when it contains multiple entries", async () => {
@@ -45,8 +37,8 @@ describe("flattenSingleWrapper", () => {
 
     await flattenSingleWrapper(workDir);
 
-    expect(await exists(join(workDir, "a.flow.ts"))).toBe(true);
-    expect(await exists(join(workDir, "nested"))).toBe(true);
+    expect(await pathExists(join(workDir, "a.flow.ts"))).toBe(true);
+    expect(await pathExists(join(workDir, "nested"))).toBe(true);
   });
 
   it("leaves dir alone when its single entry is a file", async () => {
@@ -54,7 +46,7 @@ describe("flattenSingleWrapper", () => {
 
     await flattenSingleWrapper(workDir);
 
-    expect(await exists(join(workDir, "a.flow.ts"))).toBe(true);
+    expect(await pathExists(join(workDir, "a.flow.ts"))).toBe(true);
   });
 
   it("is a no-op for an empty dir", async () => {

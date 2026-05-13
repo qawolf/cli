@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import superjson from "superjson";
@@ -8,16 +8,7 @@ export const testBaseUrl = "https://test.qawolf.com";
 export const testApiKey = "qawolf_test";
 export const testSignedUrl = "https://gcs.example.com/bundle.tar.gz?sig=abc";
 const testExpiresAt = "2099-12-31T00:00:00.000Z";
-export const flowsBundlePath = "gitwolf.flowsBundle";
-
-export async function pathExists(p: string): Promise<boolean> {
-  try {
-    await stat(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
+export const flowsBundlePath = "gitwolf.getFlowsBundleUrl";
 
 export async function buildBundle(
   archivePath: string,
@@ -57,10 +48,11 @@ export async function buildBundle(
   }
 }
 
-type FetchScenario =
+export type FetchScenario =
   | { kind: "ok"; sourceArchive: string }
   | { kind: "bundleError"; status: number; body: string }
-  | { kind: "downloadError"; status: number; body: string };
+  | { kind: "downloadError"; status: number; body: string }
+  | { kind: "networkError"; error: Error };
 
 type FetchCall = { url: string; init: RequestInit | undefined };
 
@@ -69,8 +61,14 @@ export type FakeFetchResult = {
   calls: FetchCall[];
 };
 
-export function makeFakeFetch(scenario: FetchScenario): FakeFetchResult {
+// Accepts a single scenario (used for the whole session) or a sequence
+// (one per fetch call; the last entry repeats once exhausted).
+export function makeFakeFetch(
+  scenario: FetchScenario | FetchScenario[],
+): FakeFetchResult {
   const calls: FetchCall[] = [];
+  const sequence = Array.isArray(scenario) ? scenario : undefined;
+  const single = Array.isArray(scenario) ? undefined : scenario;
 
   const handler = async (
     input: string | URL | Request,
@@ -84,9 +82,18 @@ export function makeFakeFetch(scenario: FetchScenario): FakeFetchResult {
           : input.url;
     calls.push({ url, init });
 
+    const active =
+      sequence !== undefined
+        ? (sequence[
+            Math.min(calls.length - 1, sequence.length - 1)
+          ] as FetchScenario)
+        : (single as FetchScenario);
+
+    if (active.kind === "networkError") throw active.error;
+
     if (url.includes(`/api/trpc/${flowsBundlePath}`)) {
-      if (scenario.kind === "bundleError") {
-        return new Response(scenario.body, { status: scenario.status });
+      if (active.kind === "bundleError") {
+        return new Response(active.body, { status: active.status });
       }
       const body = {
         result: {
@@ -102,11 +109,11 @@ export function makeFakeFetch(scenario: FetchScenario): FakeFetchResult {
     }
 
     if (url === testSignedUrl) {
-      if (scenario.kind === "downloadError") {
-        return new Response(scenario.body, { status: scenario.status });
+      if (active.kind === "downloadError") {
+        return new Response(active.body, { status: active.status });
       }
-      if (scenario.kind === "ok") {
-        const bytes = await Bun.file(scenario.sourceArchive).bytes();
+      if (active.kind === "ok") {
+        const bytes = await Bun.file(active.sourceArchive).bytes();
         return new Response(bytes);
       }
     }

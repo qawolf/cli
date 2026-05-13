@@ -31,7 +31,11 @@ type RequestBundleDeps = {
   apiKey: string;
   baseUrl: string;
   fetch: typeof globalThis.fetch;
+  sleep?: (ms: number) => Promise<void>;
 };
+
+// Transient-network backoff schedule; length = retry budget.
+const requestBundleBackoffMs = [500, 1500];
 
 export async function requestBundle(
   deps: RequestBundleDeps,
@@ -41,15 +45,24 @@ export async function requestBundle(
     baseUrl: deps.baseUrl,
     fetch: deps.fetch,
   });
-  const result = await trpcClient.query(
-    "gitwolf.flowsBundle",
-    { envId },
-    flowsBundleResponseSchema,
-  );
-  if (!result.ok) {
-    throw new Error(describeBundleRequestError(result.error, deps.baseUrl));
+  const sleep =
+    deps.sleep ?? ((ms) => new Promise<void>((r) => setTimeout(r, ms)));
+
+  for (let attempt = 0; ; attempt++) {
+    const result = await trpcClient.mutation(
+      "gitwolf.getFlowsBundleUrl",
+      { envId },
+      flowsBundleResponseSchema,
+    );
+    if (result.ok) return { signedUrl: result.data.url };
+
+    const backoff = requestBundleBackoffMs[attempt];
+    const retryable = result.error.kind === "network";
+    if (backoff === undefined || !retryable) {
+      throw new Error(describeBundleRequestError(result.error, deps.baseUrl));
+    }
+    await sleep(backoff);
   }
-  return { signedUrl: result.data.url };
 }
 
 type DownloadBundleDeps = {
@@ -78,13 +91,14 @@ export async function downloadBundle(
 type CheckSafetyArgs = {
   envDir: string;
   yes: boolean;
+  interactive?: boolean | undefined;
   log: (message: string) => void;
   confirm: (message: string) => Promise<boolean>;
 };
 
 export async function checkSafety(
   args: CheckSafetyArgs,
-): Promise<"proceed" | "abort"> {
+): Promise<"proceed" | "abort" | "needs-yes"> {
   const existing = await readManifest(args.envDir);
   if (existing === "missing") return "proceed";
   if (existing === "malformed") {
@@ -93,11 +107,5 @@ export async function checkSafety(
     );
     return "proceed";
   }
-  return promptOverwriteIfModified({
-    envDir: args.envDir,
-    manifest: existing,
-    yes: args.yes,
-    log: args.log,
-    confirm: args.confirm,
-  });
+  return promptOverwriteIfModified({ ...args, manifest: existing });
 }

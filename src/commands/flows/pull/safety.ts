@@ -40,13 +40,15 @@ type PromptArgs = {
   envDir: string;
   manifest: Manifest;
   yes: boolean;
+  // Defaults true; pass false (non-TTY) to get "needs-yes" instead of confirm.
+  interactive?: boolean | undefined;
   log: (message: string) => void;
   confirm: (message: string) => Promise<boolean>;
 };
 
 export async function promptOverwriteIfModified(
   args: PromptArgs,
-): Promise<"proceed" | "abort"> {
+): Promise<"proceed" | "abort" | "needs-yes"> {
   const mods = await detectLocalModifications(args.envDir, args.manifest);
   // Don't prompt on "missing-from-disk": a pull restoring a deleted file
   // is the user-evident intent and doesn't need confirmation.
@@ -60,6 +62,7 @@ export async function promptOverwriteIfModified(
     args.log(`${summary}\noverwriting (--yes)`);
     return "proceed";
   }
+  if (args.interactive === false) return "needs-yes";
 
   const accepted = await args.confirm(`${summary}\nContinue?`);
   return accepted ? "proceed" : "abort";
