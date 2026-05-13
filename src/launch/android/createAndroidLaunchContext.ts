@@ -41,8 +41,10 @@ export function createAndroidLaunchContext({
       }
     } catch (err) {
       // Clean up any Appium session that was opened before the failure.
+      // Await before checkIn to avoid the slot being re-allocated while the
+      // previous session is still tearing down.
       if (driver !== undefined) {
-        void driver.deleteSession().catch(() => {});
+        await driver.deleteSession().catch(() => {}); // best-effort; original error is re-thrown below
         driver = undefined;
       }
       deps.emulatorPool.checkIn(slot);
