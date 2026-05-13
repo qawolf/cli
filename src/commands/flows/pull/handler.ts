@@ -2,8 +2,8 @@ import { unlink } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 import { resolveApiKey } from "~/lib/auth/index.js";
+import { flowsVersionFromCli } from "~/lib/config.js";
 import { type CommandContext, type CommandResult } from "~/lib/context.js";
-import cliPackageJson from "../../../../package.json" with { type: "json" };
 import {
   checkSafety,
   downloadBundle,
@@ -11,8 +11,6 @@ import {
   validateEnvId,
 } from "./pull.js";
 import { stageBundle } from "./stage.js";
-
-const flowsVersionFromCli = cliPackageJson.dependencies["@qawolf/flows"];
 
 export type FlowsPullOptions = {
   readonly env: string;
@@ -80,7 +78,7 @@ export async function handleFlowsPull(
     const safety = await checkSafety({
       envDir: destAbs,
       yes,
-      interactive: ctx.ui.mode === "human",
+      interactive: ctx.isInteractive,
       log: (m) => ctx.ui.warn(m),
       confirm: async (m) => {
         const r = await ctx.ui.confirm(m, { destructive: true });
