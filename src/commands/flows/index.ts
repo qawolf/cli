@@ -68,7 +68,7 @@ export function registerFlowsCommand(program: Command): void {
   flows
     .command("pull")
     .description("Download an environment's flows into .qawolf/<env>/")
-    .requiredOption("--env <env>", "Environment ID")
+    .requiredOption("--env <env>", "Environment ID (UUID or kebab-case slug)")
     .option("--out <path>", "Override the .qawolf/<env>/ destination")
     .option("--yes", "Skip the overwrite prompt for locally-modified files")
     .action((opts: FlowsPullOptions, command: Command) => {

@@ -11,6 +11,7 @@ import { stageBundle } from "./stage.js";
 let workDir = "";
 let bundleArchive = "";
 let destDir = "";
+const tmpArchives: string[] = [];
 
 beforeEach(async () => {
   workDir = await mkdtemp(join(tmpdir(), "qawolf-pull-safety-"));
@@ -20,6 +21,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
+  await Promise.all(tmpArchives.splice(0).map((a) => rm(a, { force: true })));
 });
 
 describe("safety + staging integration", () => {
@@ -67,6 +69,7 @@ describe("safety + staging integration", () => {
       { fetch: fakeFetch.fetch },
       signedUrl,
     );
+    tmpArchives.push(tmpArchive);
 
     await stageBundle({
       tmpArchive,

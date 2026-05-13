@@ -12,6 +12,7 @@ import { stageBundle } from "./stage.js";
 let workDir = "";
 let bundleArchive = "";
 let destDir = "";
+const tmpArchives: string[] = [];
 
 beforeEach(async () => {
   workDir = await mkdtemp(join(tmpdir(), "qawolf-stage-"));
@@ -21,6 +22,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
+  await Promise.all(tmpArchives.splice(0).map((a) => rm(a, { force: true })));
 });
 
 // stageBundle expects a real tmp archive on disk. The simplest path to one
@@ -35,6 +37,7 @@ async function prepArchive(): Promise<string> {
     { fetch: fakeFetch.fetch },
     signedUrl,
   );
+  tmpArchives.push(tmpArchive);
   return tmpArchive;
 }
 

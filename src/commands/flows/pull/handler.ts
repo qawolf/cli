@@ -82,6 +82,9 @@ export async function handleFlowsPull(
       yes,
       log: (m) => ctx.ui.warn(m),
       confirm: async (m) => {
+        if (ctx.ui.mode !== "human") {
+          throw new Error("Re-run with --yes to overwrite");
+        }
         const r = await ctx.ui.confirm(m, { destructive: true });
         return r.ok && r.value;
       },
@@ -115,7 +118,6 @@ export async function handleFlowsPull(
       },
     );
 
-    // json consumers want the structured result alongside the success line.
     if (ctx.ui.mode === "json") {
       ctx.ui.output(
         {
