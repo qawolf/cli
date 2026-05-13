@@ -39,24 +39,19 @@ const defaultSpawnAppium: SpawnAppiumFn = (bin, args, env) => {
   const output = new PassThrough();
   child.stdout?.pipe(output, { end: false });
   child.stderr?.pipe(output, { end: false });
-  return {
-    output,
-    kill: () => child.kill(),
-    exitCode: new Promise<number>((resolve, reject) => {
-      child.on("error", (err: Error) =>
-        reject(new Error(`Failed to spawn Appium: ${err.message}`)),
-      );
-      child.on("close", (code, signal) =>
-        code !== null
-          ? resolve(code)
-          : reject(
-              new Error(
-                `Appium process killed by signal ${signal ?? "unknown"}`,
-              ),
-            ),
-      );
-    }),
-  };
+  const exitCode = new Promise<number>((resolve, reject) => {
+    child.on("error", (err: Error) =>
+      reject(new Error(`Failed to spawn Appium: ${err.message}`)),
+    );
+    child.on("close", (code, signal) => {
+      if (code !== null) resolve(code);
+      else
+        reject(
+          new Error(`Appium process killed by signal ${signal ?? "unknown"}`),
+        );
+    });
+  });
+  return { output, kill: () => child.kill(), exitCode };
 };
 
 function waitForBanner(
@@ -91,19 +86,15 @@ function waitForBanner(
       );
     }, timeoutMs);
     output.on("data", onData);
+    const fail = (err: unknown) => {
+      if (done) return;
+      cleanup();
+      reject(err instanceof Error ? err : new Error(String(err)));
+    };
     void exitCode.then(
-      (code) => {
-        if (done) return;
-        cleanup();
-        reject(
-          new Error(`Appium process exited unexpectedly with code ${code}`),
-        );
-      },
-      (err: unknown) => {
-        if (done) return;
-        cleanup();
-        reject(err instanceof Error ? err : new Error(String(err)));
-      },
+      (code) =>
+        fail(new Error(`Appium process exited unexpectedly with code ${code}`)),
+      fail,
     );
   });
 }
@@ -118,7 +109,12 @@ export async function createAppiumServer(params?: {
     appiumHome?: string;
     startTimeoutMs?: number;
   };
-}): Promise<{ port: number; home: string; stop: () => void }> {
+}): Promise<{
+  port: number;
+  home: string;
+  stop: () => void;
+  exited: Promise<number>;
+}> {
   const spawnFn = params?.deps?.spawn ?? defaultSpawnAppium;
   const findFreePortFn = params?.deps?.findFreePort ?? findFreePort;
   const resolveAppiumBinFn = params?.deps?.resolveAppiumBin ?? resolveAppiumBin;
@@ -141,6 +137,7 @@ export async function createAppiumServer(params?: {
   return {
     port,
     home: appiumHome,
+    exited: proc.exitCode,
     stop: () => {
       if (stopped) return;
       stopped = true;

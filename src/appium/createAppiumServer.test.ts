@@ -53,6 +53,38 @@ describe("createAppiumServer", () => {
     expect(typeof result.stop).toBe("function");
   });
 
+  it("should expose exited promise that resolves with the process exit code", async () => {
+    const { findFreePort, resolveAppiumBin } = makeTestDeps();
+    const output = new PassThrough();
+    let resolveExit!: (code: number) => void;
+    const exitCode = new Promise<number>((res) => {
+      resolveExit = res;
+    });
+    const spawnFn: SpawnAppiumFn = (_bin, _args, _env) => ({
+      output,
+      kill: mock(() => {}),
+      exitCode,
+    });
+    setTimeout(
+      () =>
+        output.emit(
+          "data",
+          Buffer.from(
+            "Appium REST http interface listener started on http://localhost:9515\n",
+          ),
+        ),
+      10,
+    );
+
+    const result = await createAppiumServer({
+      deps: { spawn: spawnFn, findFreePort, resolveAppiumBin },
+      options: { appiumHome: "/tmp/appium-home", startTimeoutMs: 1_000 },
+    });
+    resolveExit(0);
+
+    expect(await result.exited).toBe(0);
+  });
+
   it("should call kill when stop is invoked", async () => {
     const { spawnFn, killFn, output, findFreePort, resolveAppiumBin } =
       makeTestDeps();
