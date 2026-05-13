@@ -81,6 +81,30 @@ describe("createAndroidEmulator", () => {
     expect(result.serial).toBe("emulator-5560");
   });
 
+  it("rejects and kills proc when boot sequence throws", async () => {
+    const stopFn = mock(() => {});
+    const spawnFn: SpawnFn = (_bin, _args) => ({ stop: stopFn });
+    const failingAdb: AdbFn = async (args) => {
+      if (args.includes("wait-for-device")) throw new Error("adb server died");
+      return { stdout: "" };
+    };
+
+    let caught: unknown;
+    try {
+      await createAndroidEmulator({
+        avdName: "Pixel_4",
+        port: 5554,
+        deps: { spawn: spawnFn, adb: failingAdb },
+      });
+    } catch (e) {
+      caught = e;
+    }
+
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toBe("adb server died");
+    expect(stopFn).toHaveBeenCalledTimes(1);
+  });
+
   it("does not crash when adb wait-for-device rejects after timeout", async () => {
     const spawnFn: SpawnFn = (_bin, _args) => ({ stop: () => {} });
     // wait-for-device outlasts the boot timeout, then rejects — simulates adb server

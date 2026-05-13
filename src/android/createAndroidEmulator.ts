@@ -68,12 +68,18 @@ function waitForBoot(
       );
     }, timeoutMs);
     void bootSequence(adb, serial, () => done)
-      .catch(() => {})
       .then(() => {
         if (!done) {
           done = true;
           clearTimeout(timer);
           resolve();
+        }
+      })
+      .catch((err: unknown) => {
+        if (!done) {
+          done = true;
+          clearTimeout(timer);
+          reject(err as Error);
         }
       });
   });
