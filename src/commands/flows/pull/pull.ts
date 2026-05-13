@@ -34,8 +34,7 @@ type RequestBundleDeps = {
   sleep?: (ms: number) => Promise<void>;
 };
 
-// Backoff schedule for transient network errors only (HTTP/parse errors
-// don't retry). Array length = retry budget; final attempt has no backoff.
+// Transient-network backoff schedule; length = retry budget.
 const requestBundleBackoffMs = [500, 1500];
 
 export async function requestBundle(
@@ -49,7 +48,7 @@ export async function requestBundle(
   const sleep =
     deps.sleep ?? ((ms) => new Promise<void>((r) => setTimeout(r, ms)));
 
-  for (let attempt = 0; attempt <= requestBundleBackoffMs.length; attempt++) {
+  for (let attempt = 0; ; attempt++) {
     const result = await trpcClient.mutation(
       "gitwolf.getFlowsBundleUrl",
       { envId },
@@ -64,7 +63,6 @@ export async function requestBundle(
     }
     await sleep(backoff);
   }
-  throw new Error("internal: requestBundle retry loop exited unexpectedly");
 }
 
 type DownloadBundleDeps = {
