@@ -8,7 +8,7 @@ export const testBaseUrl = "https://test.qawolf.com";
 export const testApiKey = "qawolf_test";
 export const testSignedUrl = "https://gcs.example.com/bundle.tar.gz?sig=abc";
 const testExpiresAt = "2099-12-31T00:00:00.000Z";
-export const flowsBundlePath = "gitwolf.flowsBundle";
+export const flowsBundlePath = "gitwolf.getFlowsBundleUrl";
 
 export async function buildBundle(
   archivePath: string,

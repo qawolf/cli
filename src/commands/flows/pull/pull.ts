@@ -35,11 +35,8 @@ type RequestBundleDeps = {
   sleep?: (ms: number) => Promise<void>;
 };
 
-// Back off between failures only on transient (network) errors. The
-// cold-start case on a freshly-booted local platform is the typical
-// retry-worthy scenario; HTTP 4xx/5xx and parse errors are not retried
-// since re-running won't change the outcome. The array length is the
-// retry budget: N entries = N+1 total attempts.
+// Backoff schedule for transient network errors only (HTTP/parse errors
+// don't retry). Array length = retry budget; final attempt has no backoff.
 const requestBundleBackoffMs = [500, 1500];
 
 export async function requestBundle(
@@ -50,33 +47,25 @@ export async function requestBundle(
     baseUrl: deps.baseUrl,
     fetch: deps.fetch,
   });
-  const sleep = deps.sleep ?? defaultSleep;
-  const maxAttempts = requestBundleBackoffMs.length + 1;
+  const sleep =
+    deps.sleep ?? ((ms) => new Promise<void>((r) => setTimeout(r, ms)));
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+  for (let attempt = 0; attempt <= requestBundleBackoffMs.length; attempt++) {
     const result = await trpcClient.mutation(
-      "gitwolf.flowsBundle",
+      "gitwolf.getFlowsBundleUrl",
       { envId },
       flowsBundleResponseSchema,
     );
     if (result.ok) return { signedUrl: result.data.url };
 
-    const lastAttempt = attempt === maxAttempts;
+    const backoff = requestBundleBackoffMs[attempt];
     const retryable = result.error.kind === "network";
-    if (lastAttempt || !retryable) {
+    if (backoff === undefined || !retryable) {
       throw new Error(describeBundleRequestError(result.error, deps.baseUrl));
-    }
-    const backoff = requestBundleBackoffMs[attempt - 1];
-    if (backoff === undefined) {
-      throw new Error("internal: requestBundle backoff index out of bounds");
     }
     await sleep(backoff);
   }
   throw new Error("internal: requestBundle retry loop exited unexpectedly");
-}
-
-function defaultSleep(ms: number): Promise<void> {
-  return new Promise<void>((res) => setTimeout(res, ms));
 }
 
 type DownloadBundleDeps = {

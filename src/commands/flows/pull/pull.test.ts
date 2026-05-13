@@ -48,7 +48,7 @@ describe("validateEnvId", () => {
 });
 
 describe("requestBundle", () => {
-  it("sends a Bearer-authed POST to gitwolf.flowsBundle", async () => {
+  it("sends a Bearer-authed POST to gitwolf.getFlowsBundleUrl", async () => {
     const fakeFetch = makeFakeFetch({
       kind: "ok",
       sourceArchive: bundleArchive,
