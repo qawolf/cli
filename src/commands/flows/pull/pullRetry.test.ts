@@ -5,6 +5,12 @@ import { requestBundle } from "./pull.js";
 import { expectRejects } from "./pull.testUtils.js";
 
 const noSleep = async (): Promise<void> => {};
+const deps = (fetch: typeof globalThis.fetch) => ({
+  apiKey: testApiKey,
+  baseUrl: testBaseUrl,
+  fetch,
+  sleep: noSleep,
+});
 
 describe("requestBundle retry", () => {
   it("retries on a network error and returns success on the second attempt", async () => {
@@ -13,15 +19,7 @@ describe("requestBundle retry", () => {
       { kind: "ok", sourceArchive: "/dev/null" },
     ]);
 
-    const result = await requestBundle(
-      {
-        apiKey: testApiKey,
-        baseUrl: testBaseUrl,
-        fetch: fakeFetch.fetch,
-        sleep: noSleep,
-      },
-      "env-abc",
-    );
+    const result = await requestBundle(deps(fakeFetch.fetch), "env-abc");
 
     expect(result.signedUrl).toMatch(/^https:\/\//);
     expect(fakeFetch.calls).toHaveLength(2);
@@ -35,15 +33,7 @@ describe("requestBundle retry", () => {
     ]);
 
     await expectRejects(
-      requestBundle(
-        {
-          apiKey: testApiKey,
-          baseUrl: testBaseUrl,
-          fetch: fakeFetch.fetch,
-          sleep: noSleep,
-        },
-        "env-abc",
-      ),
+      requestBundle(deps(fakeFetch.fetch), "env-abc"),
       /Could not reach the QA Wolf API/i,
     );
     expect(fakeFetch.calls).toHaveLength(3);
@@ -56,15 +46,7 @@ describe("requestBundle retry", () => {
     ]);
 
     await expectRejects(
-      requestBundle(
-        {
-          apiKey: testApiKey,
-          baseUrl: testBaseUrl,
-          fetch: fakeFetch.fetch,
-          sleep: noSleep,
-        },
-        "env-abc",
-      ),
+      requestBundle(deps(fakeFetch.fetch), "env-abc"),
       /could not find that environment|--env/i,
     );
     expect(fakeFetch.calls).toHaveLength(1);

@@ -20,6 +20,11 @@ import { expectRejects } from "./pull.testUtils.js";
 
 let workDir = "";
 let bundleArchive = "";
+const deps = (fetch: typeof globalThis.fetch) => ({
+  apiKey: testApiKey,
+  baseUrl: testBaseUrl,
+  fetch,
+});
 
 beforeEach(async () => {
   workDir = await mkdtemp(join(tmpdir(), "qawolf-pull-"));
@@ -54,14 +59,7 @@ describe("requestBundle", () => {
       sourceArchive: bundleArchive,
     });
 
-    const result = await requestBundle(
-      {
-        apiKey: testApiKey,
-        baseUrl: testBaseUrl,
-        fetch: fakeFetch.fetch,
-      },
-      "env-abc",
-    );
+    const result = await requestBundle(deps(fakeFetch.fetch), "env-abc");
 
     const call = fakeFetch.calls[0];
     expect(call?.url).toContain(`${testBaseUrl}/api/trpc/${flowsBundlePath}`);
@@ -79,14 +77,7 @@ describe("requestBundle", () => {
     });
 
     await expectRejects(
-      requestBundle(
-        {
-          apiKey: testApiKey,
-          baseUrl: testBaseUrl,
-          fetch: fakeFetch.fetch,
-        },
-        "env-abc",
-      ),
+      requestBundle(deps(fakeFetch.fetch), "env-abc"),
       /could not find that environment|--env/i,
     );
   });
@@ -99,14 +90,7 @@ describe("requestBundle", () => {
     });
 
     await expectRejects(
-      requestBundle(
-        {
-          apiKey: testApiKey,
-          baseUrl: testBaseUrl,
-          fetch: fakeFetch.fetch,
-        },
-        "env-abc",
-      ),
+      requestBundle(deps(fakeFetch.fetch), "env-abc"),
       /API key/i,
     );
   });
@@ -126,14 +110,7 @@ describe("downloadBundle", () => {
     // requestBundle is what produces the signed URL in real flow; here we
     // can call the fake fetch helper directly with the canonical URL since
     // the fixture routes by URL.
-    const { signedUrl } = await requestBundle(
-      {
-        apiKey: testApiKey,
-        baseUrl: testBaseUrl,
-        fetch: fakeFetch.fetch,
-      },
-      "env-abc",
-    );
+    const { signedUrl } = await requestBundle(deps(fakeFetch.fetch), "env-abc");
 
     const result = await downloadBundle({ fetch: fakeFetch.fetch }, signedUrl);
     try {
@@ -151,14 +128,7 @@ describe("downloadBundle", () => {
       status: 403,
       body: "<Error>SignatureExpired</Error>",
     });
-    const { signedUrl } = await requestBundle(
-      {
-        apiKey: testApiKey,
-        baseUrl: testBaseUrl,
-        fetch: fakeFetch.fetch,
-      },
-      "env-abc",
-    );
+    const { signedUrl } = await requestBundle(deps(fakeFetch.fetch), "env-abc");
 
     await expectRejects(
       downloadBundle({ fetch: fakeFetch.fetch }, signedUrl),
