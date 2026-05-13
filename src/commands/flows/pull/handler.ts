@@ -80,15 +80,17 @@ export async function handleFlowsPull(
     const safety = await checkSafety({
       envDir: destAbs,
       yes,
+      interactive: ctx.ui.mode === "human",
       log: (m) => ctx.ui.warn(m),
       confirm: async (m) => {
-        if (ctx.ui.mode !== "human") {
-          throw new Error("Re-run with --yes to overwrite");
-        }
         const r = await ctx.ui.confirm(m, { destructive: true });
         return r.ok && r.value;
       },
     });
+    if (safety === "needs-yes") {
+      ctx.ui.error("Re-run with --yes to overwrite locally-modified files");
+      return { error: "local modifications require --yes" };
+    }
     if (safety === "abort") {
       ctx.ui.info("Aborted; no changes.");
       return;

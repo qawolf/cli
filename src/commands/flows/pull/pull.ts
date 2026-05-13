@@ -31,7 +31,6 @@ type RequestBundleDeps = {
   apiKey: string;
   baseUrl: string;
   fetch: typeof globalThis.fetch;
-  // Optional injection seam so tests can skip the real backoff sleeps.
   sleep?: (ms: number) => Promise<void>;
 };
 
@@ -94,13 +93,14 @@ export async function downloadBundle(
 type CheckSafetyArgs = {
   envDir: string;
   yes: boolean;
+  interactive?: boolean | undefined;
   log: (message: string) => void;
   confirm: (message: string) => Promise<boolean>;
 };
 
 export async function checkSafety(
   args: CheckSafetyArgs,
-): Promise<"proceed" | "abort"> {
+): Promise<"proceed" | "abort" | "needs-yes"> {
   const existing = await readManifest(args.envDir);
   if (existing === "missing") return "proceed";
   if (existing === "malformed") {
@@ -109,11 +109,5 @@ export async function checkSafety(
     );
     return "proceed";
   }
-  return promptOverwriteIfModified({
-    envDir: args.envDir,
-    manifest: existing,
-    yes: args.yes,
-    log: args.log,
-    confirm: args.confirm,
-  });
+  return promptOverwriteIfModified({ ...args, manifest: existing });
 }
