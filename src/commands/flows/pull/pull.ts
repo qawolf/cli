@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import { createTrpcClient } from "~/apex/createTrpcClient.js";
 import { fetchSignedUrl } from "~/apex/fetchSignedUrl.js";
+import { requestWithRetry } from "~/apex/requestWithRetry.js";
 import { flowsBundleResponseSchema } from "~/apex/types.js";
 import { readManifest } from "./manifest.js";
 import { promptOverwriteIfModified } from "./safety.js";
@@ -45,24 +46,18 @@ export async function requestBundle(
     baseUrl: deps.baseUrl,
     fetch: deps.fetch,
   });
-  const sleep =
-    deps.sleep ?? ((ms) => new Promise<void>((r) => setTimeout(r, ms)));
-
-  for (let attempt = 0; ; attempt++) {
-    const result = await trpcClient.mutation(
-      "gitwolf.getFlowsBundleUrl",
-      { envId },
-      flowsBundleResponseSchema,
-    );
-    if (result.ok) return { signedUrl: result.data.url };
-
-    const backoff = requestBundleBackoffMs[attempt];
-    const retryable = result.error.kind === "network";
-    if (backoff === undefined || !retryable) {
-      throw new Error(describeBundleRequestError(result.error, deps.baseUrl));
-    }
-    await sleep(backoff);
-  }
+  const data = await requestWithRetry({
+    call: () =>
+      trpcClient.mutation(
+        "gitwolf.getFlowsBundleUrl",
+        { envId },
+        flowsBundleResponseSchema,
+      ),
+    backoffMs: requestBundleBackoffMs,
+    describe: (err) => describeBundleRequestError(err, deps.baseUrl),
+    sleep: deps.sleep,
+  });
+  return { signedUrl: data.url };
 }
 
 type DownloadBundleDeps = {
