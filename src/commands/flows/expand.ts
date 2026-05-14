@@ -1,7 +1,11 @@
 import { getWebBrowserInfo, parseExecutionTarget } from "@qawolf/flow-targets";
 import { glob, readFile, readdir } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import type { BrowserName } from "~/types.js";
+
+export function flowBasename(file: string): string {
+  return basename(file).replace(/\.flow\.(ts|js)$/, "");
+}
 
 const browserNameToPlaywright: Record<
   "chrome" | "firefox" | "safari",
@@ -91,7 +95,8 @@ export async function expandPatterns(
   patterns: string[],
   cwd = process.cwd(),
 ): Promise<string[]> {
-  const effectivePatterns = patterns.length > 0 ? patterns : ["**/*.flow.ts"];
+  const effectivePatterns =
+    patterns.length > 0 ? patterns : ["**/*.flow.{ts,js}"];
   const root = patterns.length > 0 ? cwd : await resolveGlobRoot(cwd);
   const seen = new Set<string>();
   for (const pattern of effectivePatterns) {

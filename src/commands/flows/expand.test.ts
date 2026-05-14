@@ -205,4 +205,17 @@ describe("expandPatterns", () => {
     const result = await expandPatterns([], multiEnvTmpDir);
     expect(result).toContain(join(multiEnvTmpDir, "a.flow.ts"));
   });
+
+  it("should discover .flow.js files alongside .flow.ts with the default pattern", async () => {
+    const tmp = await mkdtemp(join(tmpdir(), "expand-jsmix-"));
+    await writeFile(join(tmp, "a.flow.ts"), "// a");
+    await writeFile(join(tmp, "b.flow.js"), "// b");
+    try {
+      const result = await expandPatterns([], tmp);
+      expect(result).toContain(join(tmp, "a.flow.ts"));
+      expect(result).toContain(join(tmp, "b.flow.js"));
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
+  });
 });
