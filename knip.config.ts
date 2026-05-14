@@ -31,6 +31,8 @@ const config: KnipConfig = {
     "src/appium/resolveAppiumBin.ts",
     // TODO WIZ-10332: remove once Android launch context imports createEmulatorPool
     "src/android/createEmulatorPool.ts",
+    // TODO WIZ-10337: remove once Android runner wiring imports these types
+    "src/launch/android/types.ts",
   ],
 };
 
