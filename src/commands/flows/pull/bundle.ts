@@ -38,6 +38,7 @@ export async function buildManifest(args: {
   bundleDir: string;
   cliFlowsVersion: string;
   now: Date;
+  envVarsFetchedAt: Date | undefined;
 }): Promise<Manifest> {
   const flowPaths = await walkForFlows(args.bundleDir);
   const files = await Promise.all(
@@ -52,6 +53,7 @@ export async function buildManifest(args: {
     envId: args.envId,
     envSlug: undefined,
     fetchedAt: args.now.toISOString(),
+    envVarsFetchedAt: args.envVarsFetchedAt?.toISOString(),
     cliFlowsVersion: args.cliFlowsVersion,
     bundleFlowsVersion,
     files,

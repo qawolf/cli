@@ -19,6 +19,7 @@ const manifestSchema = z.object({
   envId: z.string(),
   envSlug: z.string().optional(),
   fetchedAt: z.string(),
+  envVarsFetchedAt: z.string().optional(),
   cliFlowsVersion: z.string(),
   bundleFlowsVersion: z.string().optional(),
   files: z.array(fileSchema),
@@ -28,6 +29,7 @@ export type Manifest = {
   envId: string;
   envSlug: string | undefined;
   fetchedAt: string;
+  envVarsFetchedAt: string | undefined;
   cliFlowsVersion: string;
   bundleFlowsVersion: string | undefined;
   files: { path: string; sha256: string }[];
@@ -62,6 +64,7 @@ export async function readManifest(
     envId: result.data.envId,
     envSlug: result.data.envSlug,
     fetchedAt: result.data.fetchedAt,
+    envVarsFetchedAt: result.data.envVarsFetchedAt,
     cliFlowsVersion: result.data.cliFlowsVersion,
     bundleFlowsVersion: result.data.bundleFlowsVersion,
     files: result.data.files,

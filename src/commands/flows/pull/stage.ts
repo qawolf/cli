@@ -2,6 +2,7 @@ import { rename } from "node:fs/promises";
 
 import { pathExists } from "~/lib/fs.js";
 import { buildManifest, flattenSingleWrapper } from "./bundle.js";
+import { writeEnvFile } from "./envVars.js";
 import { extractTarGz } from "./extract.js";
 import { writeManifest } from "./manifest.js";
 import {
@@ -16,11 +17,14 @@ type StageBundleArgs = {
   envId: string;
   cliFlowsVersion: string;
   now: Date;
+  envVars: Record<string, string>;
+  envVarsFetchedAt: Date;
 };
 
 type StageBundleResult = {
   envDir: string;
   flowCount: number;
+  envVarCount: number;
   bundleFlowsVersion: string | undefined;
 };
 
@@ -33,11 +37,13 @@ export async function stageBundle(
   try {
     await extractTarGz(args.tmpArchive, tmpDir);
     await flattenSingleWrapper(tmpDir);
+    await writeEnvFile(tmpDir, args.envVars);
     const manifest = await buildManifest({
       envId: args.envId,
       bundleDir: tmpDir,
       cliFlowsVersion: args.cliFlowsVersion,
       now: args.now,
+      envVarsFetchedAt: args.envVarsFetchedAt,
     });
     await writeManifest(tmpDir, manifest);
 
@@ -58,6 +64,7 @@ export async function stageBundle(
     return {
       envDir: args.destAbs,
       flowCount: manifest.files.length,
+      envVarCount: Object.keys(args.envVars).length,
       bundleFlowsVersion: manifest.bundleFlowsVersion,
     };
   } catch (err) {

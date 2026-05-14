@@ -5,12 +5,8 @@ import { resolveApiKey } from "~/lib/auth/index.js";
 import { flowsVersionFromCli } from "~/lib/config.js";
 import { type CommandContext, type CommandResult } from "~/lib/context.js";
 import { pluralize } from "~/lib/pluralize.js";
-import {
-  checkSafety,
-  downloadBundle,
-  requestBundle,
-  validateEnvId,
-} from "./pull.js";
+import { fetchBundleAndEnvVars } from "./fetchPhase.js";
+import { checkSafety, validateEnvId } from "./pull.js";
 import { stageBundle } from "./stage.js";
 
 export type FlowsPullOptions = {
@@ -44,37 +40,13 @@ export async function handleFlowsPull(
   let archive: string | undefined;
 
   try {
-    let signedUrl: string | undefined;
-    await ctx.ui.withProgress(
-      [
-        {
-          message: "Resolving signed URL",
-          task: async () => {
-            signedUrl = (
-              await requestBundle(
-                { apiKey: resolved.key, baseUrl: ctx.apiBaseUrl, fetch },
-                opts.env,
-              )
-            ).signedUrl;
-          },
-        },
-        {
-          message: "Downloading bundle",
-          task: async () => {
-            if (signedUrl === undefined) {
-              throw new Error("internal: signedUrl not set");
-            }
-            archive = (await downloadBundle({ fetch }, signedUrl)).tmpArchive;
-          },
-        },
-      ],
-      "Downloaded",
+    const fetched = await fetchBundleAndEnvVars(
+      ctx,
+      opts.env,
+      resolved.key,
+      fetch,
     );
-
-    if (archive === undefined) {
-      throw new Error("internal: archive not set");
-    }
-    const archivePath = archive;
+    archive = fetched.tmpArchive;
 
     const safety = await checkSafety({
       envDir: destAbs,
@@ -101,11 +73,13 @@ export async function handleFlowsPull(
           message: "Extracting bundle",
           task: () =>
             stageBundle({
-              tmpArchive: archivePath,
+              tmpArchive: fetched.tmpArchive,
               destAbs,
               envId: opts.env,
               cliFlowsVersion: flowsVersionFromCli,
               now: new Date(),
+              envVars: fetched.envVars,
+              envVarsFetchedAt: fetched.envVarsFetchedAt,
             }),
         },
       ],
@@ -122,6 +96,7 @@ export async function handleFlowsPull(
         {
           envDir: result.envDir,
           flowCount: result.flowCount,
+          envVarCount: result.envVarCount,
           bundleFlowsVersion: result.bundleFlowsVersion,
         },
         "",

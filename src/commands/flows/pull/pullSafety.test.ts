@@ -32,6 +32,7 @@ describe("safety + staging integration", () => {
       envId: "env-abc",
       envSlug: undefined,
       fetchedAt: "2026-05-09T00:00:00.000Z",
+      envVarsFetchedAt: undefined,
       cliFlowsVersion: "0.4.0",
       bundleFlowsVersion: "0.5.0",
       files: [
@@ -77,6 +78,8 @@ describe("safety + staging integration", () => {
       envId: "env-abc",
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
+      envVars: {},
+      envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
     });
 
     expect(await readFile(join(destDir, "a.flow.ts"), "utf8")).toBe("original");
