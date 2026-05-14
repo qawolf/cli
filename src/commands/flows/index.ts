@@ -3,6 +3,7 @@ import type { Command } from "commander";
 import { withContext } from "~/lib/context.js";
 import type { TraceMode, VideoMode } from "~/types.js";
 
+import { handleFlowsList } from "./list.js";
 import { type FlowsPullOptions, handleFlowsPull } from "./pull/handler.js";
 import { handleFlowsRun } from "./runDefaults.js";
 import { type FlowsRunFlags, parseEnum, parseInteger } from "./runInternals.js";
@@ -63,6 +64,15 @@ export function registerFlowsCommand(program: Command): void {
           command,
         );
       },
+    );
+
+  flows
+    .command("list [pattern]")
+    .description(
+      "List flow files matched by [pattern] (all flows when omitted)",
+    )
+    .action((pattern: string | undefined, opts: unknown, command: Command) =>
+      withContext((ctx) => handleFlowsList(ctx, pattern))(opts, command),
     );
 
   flows
