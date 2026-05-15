@@ -10,11 +10,22 @@
           {
             "group": ["../*"],
             "message": "Use \"~/\" path alias instead of relative parent imports."
+          },
+          {
+            "group": ["bun", "bun:*"],
+            "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
           }
         ]
       }
     ],
     "eslint/max-lines": ["error", { "max": 150 }],
+    "eslint/no-restricted-globals": [
+      "error",
+      {
+        "name": "Bun",
+        "message": "Bun global is not available in the nodejs build — use a Bun-compatible API or guard with typeof Bun !== 'undefined'."
+      }
+    ],
     "eslint/eqeqeq": "error",
     "eslint/no-case-declarations": "error",
     "eslint/no-empty": "error",
@@ -82,10 +93,28 @@
   "ignorePatterns": ["dist/", "node_modules/", "knip.config.ts"],
   "overrides": [
     {
-      "files": ["**/*.test.ts", "**/*.mock.ts", "**/*.fixtures.ts"],
+      "files": [
+        "**/*.test.ts",
+        "**/*.test.js",
+        "**/*.mock.ts",
+        "**/*.fixtures.ts",
+        "**/*.testUtils.ts"
+      ],
       "rules": {
         "typescript/unbound-method": "off",
-        "eslint/max-lines": ["error", { "max": 250 }]
+        "eslint/max-lines": ["error", { "max": 250 }],
+        "eslint/no-restricted-globals": "off",
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../*"],
+                "message": "Use \"~/\" path alias instead of relative parent imports."
+              }
+            ]
+          }
+        ]
       }
     },
     {
