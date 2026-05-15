@@ -15,6 +15,13 @@
       }
     ],
     "eslint/max-lines": ["error", { "max": 150 }],
+    "eslint/no-restricted-globals": [
+      "error",
+      {
+        "name": "Bun",
+        "message": "Bun global is not available in the nodejs build — use a Bun-compatible API or guard with typeof Bun !== 'undefined'."
+      }
+    ],
     "eslint/eqeqeq": "error",
     "eslint/no-case-declarations": "error",
     "eslint/no-empty": "error",
@@ -85,7 +92,8 @@
       "files": ["**/*.test.ts", "**/*.mock.ts", "**/*.fixtures.ts"],
       "rules": {
         "typescript/unbound-method": "off",
-        "eslint/max-lines": ["error", { "max": 250 }]
+        "eslint/max-lines": ["error", { "max": 250 }],
+        "eslint/no-restricted-globals": "off"
       }
     },
     {
