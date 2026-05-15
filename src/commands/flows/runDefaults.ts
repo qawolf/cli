@@ -13,6 +13,7 @@ import { defaultSpawn } from "~/lib/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { resolvePlaywrightCli } from "~/lib/playwright.js";
 import { createConsoleReporter } from "~/lib/reporter/createConsoleReporter.js";
+import { runAndroidFlow as defaultRunAndroidFlow } from "~/lib/runner/runAndroidFlow.js";
 import {
   type RunWebFlowDeps,
   runWebFlow as defaultRunWebFlow,
@@ -141,6 +142,8 @@ export async function handleFlowsRun(
       }),
     runWebFlow: defaultRunWebFlow,
     runWebFlowDeps: defaultRunWebFlowDeps(resolvedDir),
+    runAndroidFlow: defaultRunAndroidFlow,
+    runAndroidFlowDeps: undefined, // TODO WIZ-10343: wire production Android deps
     reporter: createConsoleReporter({
       stdout: process.stdout,
       stderr: process.stderr,

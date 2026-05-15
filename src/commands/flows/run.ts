@@ -1,14 +1,14 @@
-import { flowBasename, targetToBrowser } from "~/commands/flows/expand.js";
+import { flowBasename, isAndroidTarget, targetToBrowser } from "~/commands/flows/expand.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import type { RunSummary } from "~/lib/reporter/types.js";
-import type { RunWebFlowOptions } from "~/lib/runner/runWebFlow.js";
 import type { BrowserName } from "~/types.js";
 
+import { buildRunOptions, runFlows } from "./runHelpers.js";
 import {
   type FlowsRunDeps,
   type FlowsRunFlags,
   type ResolvedFlow,
-  dispatchFlow,
+  type WebResolvedFlow,
   unsupportedTargetMessage,
 } from "./runInternals.js";
 
@@ -37,16 +37,25 @@ export async function flowsRun(
       const file = batch[j]!;
       if (!meta.target) continue;
       const browser = targetToBrowser(meta.target);
-      if (!browser) {
+      if (browser) {
+        flows.push({
+          kind: "web",
+          file,
+          name: meta.name ?? flowBasename(file),
+          browser,
+        });
+      } else if (isAndroidTarget(meta.target)) {
+        flows.push({
+          kind: "android",
+          file,
+          name: meta.name ?? flowBasename(file),
+          target: meta.target,
+        });
+      } else {
         const message = unsupportedTargetMessage(meta.target);
         ctx.ui.error(message);
         return { error: message, exitCode: 2 };
       }
-      flows.push({
-        file,
-        name: meta.name ?? flowBasename(file),
-        browser,
-      });
     }
   }
 
@@ -55,70 +64,32 @@ export async function flowsRun(
     return;
   }
 
-  // TODO WIZ-10505: browser here comes from the flow's `target` field (static
-  // metadata), but the browser actually launched at runtime is chosen by
-  // deps.launch() inside the flow body. If they disagree, Playwright fails
-  // with an opaque "browser not installed" error. Detect and report the mismatch.
+  const webFlows = flows.filter((f): f is WebResolvedFlow => f.kind === "web");
   const browsers = [
-    ...new Set<BrowserName>(flows.map((f) => f.browser)),
+    ...new Set<BrowserName>(webFlows.map((f) => f.browser)),
   ].sort();
-  await deps.installBrowsers(ctx, browsers);
-
-  const counts = {
-    flowsPassed: 0,
-    flowsFailed: 0,
-    flowsSkipped: 0,
-    testsPassed: 0,
-    testsTotal: 0,
-  };
-  const startTime = deps.now();
-  // RunWebFlowOptions omits `browser` — the flow's launch() callback picks it.
-  const options: RunWebFlowOptions = {
-    retries: flags.retries,
-    outputDir: flags.outputDir,
-    headed: false,
-    slowMo: 0,
-    video: flags.video,
-    timeout: flags.timeout,
-  };
-  let bailed = false;
-
-  for (const flow of flows) {
-    if (bailed) {
-      counts.flowsSkipped++;
-      continue;
-    }
-    const { run, durationMs } = await dispatchFlow(flow, options, deps);
-    counts.testsPassed += run.testCounts.passed;
-    counts.testsTotal += run.testCounts.total;
-    if (run.passed) {
-      counts.flowsPassed++;
-      deps.reporter.onFlowPass?.({
-        name: flow.name,
-        path: flow.file,
-        tests: run.testCounts,
-        durationMs,
-      });
-    } else {
-      counts.flowsFailed++;
-      deps.reporter.onFlowFail?.({
-        name: flow.name,
-        path: flow.file,
-        err: run.error ?? new Error("Flow failed"),
-        tests: run.testCounts,
-        durationMs,
-        attempt: run.attempts,
-        maxAttempts: flags.retries + 1,
-      });
-      if (flags.bail) bailed = true;
-    }
+  if (browsers.length > 0) {
+    await deps.installBrowsers(ctx, browsers);
   }
 
+  const { webOptions, androidOptions } = buildRunOptions(flags);
+  const { counts, startTime } = await runFlows(
+    flows,
+    flags,
+    deps,
+    webOptions,
+    androidOptions,
+  );
+
   const summary: RunSummary = {
-    ...counts,
+    flowsPassed: counts.flowsPassed,
+    flowsFailed: counts.flowsFailed,
+    flowsSkipped: counts.flowsSkipped,
+    testsPassed: counts.testsPassed,
+    testsTotal: counts.testsTotal,
     durationMs: deps.now() - startTime,
     meta: {
-      browsers: [...new Set(flows.map((f) => f.browser))],
+      browsers: webFlows.map((f) => f.browser),
       workers: flags.workers,
       headed: false,
       video: flags.video,

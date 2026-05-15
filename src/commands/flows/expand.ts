@@ -41,6 +41,15 @@ export function targetToBrowser(target: string): BrowserName | undefined {
   }
 }
 
+export function isAndroidTarget(target: string): boolean {
+  try {
+    const parsed = parseExecutionTarget(target as ParseExecutionTargetArg);
+    return parsed.platform === "android";
+  } catch {
+    return false;
+  }
+}
+
 // Matches the flow name — the first string literal argument to flow():
 //   flow("My Flow", ...)
 //        ^^^^^^^^^

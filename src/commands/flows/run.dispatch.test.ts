@@ -1,15 +1,21 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
+import type { RunSummary } from "~/lib/reporter/types.js";
+
 import {
   callsOf,
   defaultFlags,
   failResult,
   makeCtx,
   makeDeps,
+  makeFakeRunAndroidFlowDeps,
   makeReporter,
   passResult,
 } from "./run.fixtures.js";
 import { flowsRun } from "./run.js";
+
+type FlowCallArg = { deps: unknown; flowPath: string; options: unknown };
+type RunCompleteCall = { summary: RunSummary };
 
 afterEach(() => {
   mock.restore();
@@ -142,16 +148,10 @@ describe("flowsRun dispatch", () => {
 
     expect(callsOf(deps.runWebFlow).length).toBe(2);
     expect(result).toEqual({ error: "1 flow(s) failed" });
-    const completeCall = callsOf(reporter.onRunComplete!)[0]?.[0] as {
-      summary: {
-        flowsPassed: number;
-        flowsFailed: number;
-        flowsSkipped: number;
-      };
-    };
-    expect(completeCall.summary.flowsPassed).toBe(1);
-    expect(completeCall.summary.flowsFailed).toBe(1);
-    expect(completeCall.summary.flowsSkipped).toBe(1);
+    const bail = callsOf(reporter.onRunComplete!)[0]?.[0] as RunCompleteCall;
+    expect(bail.summary.flowsPassed).toBe(1);
+    expect(bail.summary.flowsFailed).toBe(1);
+    expect(bail.summary.flowsSkipped).toBe(1);
   });
 
   it("runs all flows when --bail is false even if one fails", async () => {
@@ -171,16 +171,10 @@ describe("flowsRun dispatch", () => {
 
     expect(callsOf(deps.runWebFlow).length).toBe(3);
     expect(result).toEqual({ error: "1 flow(s) failed" });
-    const completeCall = callsOf(reporter.onRunComplete!)[0]?.[0] as {
-      summary: {
-        flowsPassed: number;
-        flowsFailed: number;
-        flowsSkipped: number;
-      };
-    };
-    expect(completeCall.summary.flowsPassed).toBe(2);
-    expect(completeCall.summary.flowsFailed).toBe(1);
-    expect(completeCall.summary.flowsSkipped).toBe(0);
+    const allCall = callsOf(reporter.onRunComplete!)[0]?.[0] as RunCompleteCall;
+    expect(allCall.summary.flowsPassed).toBe(2);
+    expect(allCall.summary.flowsFailed).toBe(1);
+    expect(allCall.summary.flowsSkipped).toBe(0);
   });
 
   it("treats a thrown runWebFlow as a flow failure and continues dispatch", async () => {
@@ -204,5 +198,53 @@ describe("flowsRun dispatch", () => {
     expect(reporter.onFlowFail).toHaveBeenCalledTimes(2);
     expect(result).toEqual({ error: "2 flow(s) failed" });
     expect(reporter.onRunComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it("treats an Android flow as a flow failure when runAndroidFlowDeps is not wired", async () => {
+    const reporter = makeReporter();
+    const deps = makeDeps({
+      files: ["/a.ts"],
+      metaByFile: { "/a.ts": { target: "Android - Pixel" } },
+      reporter,
+    });
+    await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
+    const failCall = callsOf(reporter.onFlowFail!)[0]?.[0] as { err: Error };
+    expect((failCall.err.cause as Error).message).toContain("WIZ-10343");
+  });
+
+  it("dispatches an Android flow to runAndroidFlow and fires reporter events", async () => {
+    const reporter = makeReporter();
+    const deps = makeDeps({
+      files: ["/a.ts"],
+      metaByFile: { "/a.ts": { target: "Android - Pixel" } },
+      runResults: [passResult()],
+      androidFlowDeps: makeFakeRunAndroidFlowDeps(),
+      reporter,
+    });
+    await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
+    const calls = callsOf(deps.runAndroidFlow);
+    const arg = calls[0]?.[0] as FlowCallArg;
+    expect(arg.deps).toBe(deps.runAndroidFlowDeps);
+    expect(arg.flowPath).toBe("/a.ts");
+    expect(arg.options).toMatchObject({ retries: 0, recordVideo: false });
+    expect(reporter.onFlowPass).toHaveBeenCalledTimes(1);
+  });
+
+  it("runs web and Android flows in order and reports both", async () => {
+    const reporter = makeReporter();
+    const deps = makeDeps({
+      files: ["/w.ts", "/a.ts"],
+      metaByFile: {
+        "/w.ts": { target: "Web - Chrome" },
+        "/a.ts": { target: "Android - Pixel" },
+      },
+      runResults: [passResult(), passResult()],
+      androidFlowDeps: makeFakeRunAndroidFlowDeps(),
+      reporter,
+    });
+    await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
+    expect(callsOf(deps.runWebFlow).length).toBe(1);
+    expect(callsOf(deps.runAndroidFlow).length).toBe(1);
+    expect(reporter.onFlowPass).toHaveBeenCalledTimes(2);
   });
 });

@@ -74,10 +74,6 @@ describe("flowsRun pre-flight", () => {
       "Electron",
       "Electron targets aren't supported in v0.1. Run them on app.qawolf.com or wait for v0.2.",
     ],
-    [
-      "Android - Pixel",
-      "Android targets aren't yet implemented in v0.1; tracked in WIZ-10446.",
-    ],
   ] as const)(
     "rejects unsupported target %p with exit-2 message",
     async (target, expectedMessage) => {
@@ -110,5 +106,17 @@ describe("flowsRun pre-flight", () => {
     expect(
       flowsRun(makeCtx(), undefined, defaultFlags(), deps),
     ).rejects.toThrow("playwright install chromium failed: boom");
+  });
+
+  it("does not call installBrowsers when all matched flows are Android targets", async () => {
+    const deps = makeDeps({
+      files: ["/a.flow.ts"],
+      metaByFile: { "/a.flow.ts": { target: "Android - Pixel" } },
+      // androidFlowDeps stays null by default — dispatch fails, but installBrowsers must still not be called
+    });
+
+    await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
+
+    expect(deps.installBrowsers).not.toHaveBeenCalled();
   });
 });
