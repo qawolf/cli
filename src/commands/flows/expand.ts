@@ -1,6 +1,7 @@
 import { getWebBrowserInfo, parseExecutionTarget } from "@qawolf/flow-targets";
-import { glob, readFile, readdir } from "node:fs/promises";
-import { basename, join, resolve } from "node:path";
+import { readFile, readdir } from "node:fs/promises";
+import { basename, join } from "node:path";
+import { glob } from "tinyglobby";
 import type { BrowserName } from "~/types.js";
 
 export function flowBasename(file: string): string {
@@ -78,14 +79,9 @@ export async function peekFlowMeta(
   return extractFlowMeta(source);
 }
 
-// Globs run from cwd *and* from each `.qawolf/<env>/` subdir. The env-dir
-// roots are what makes a freshly-pulled `.qawolf/<env>/src/flows/...` layout
-// discoverable, since Node's `glob` doesn't expand `**` into dotted dirs.
-// Keeping cwd as a root preserves cwd-relative patterns like
-// `.qawolf/<env>/src/flows/**/*.flow.js` (Node's glob *does* match literal
-// dotted segments in a pattern — only the `**` wildcard skips them) and
-// project-local flows alongside pulled ones. Duplicates are merged on
-// absolute path downstream.
+// Globs run from cwd *and* from each `.qawolf/<env>/` subdir so a
+// freshly-pulled `.qawolf/<env>/src/flows/...` layout is discoverable
+// alongside project-local flows. Duplicates are merged on absolute path.
 async function resolveGlobRoots(cwd: string): Promise<string[]> {
   const qawolfPath = join(cwd, ".qawolf");
   let envDirs: string[] = [];
@@ -109,11 +105,11 @@ export async function expandPatterns(
   const roots = await resolveGlobRoots(cwd);
   const seen = new Set<string>();
   for (const root of roots) {
-    for (const pattern of effectivePatterns) {
-      for await (const file of glob(pattern, { cwd: root })) {
-        seen.add(resolve(root, file));
-      }
-    }
+    const matches = await glob(effectivePatterns, {
+      cwd: root,
+      absolute: true,
+    });
+    for (const file of matches) seen.add(file);
   }
   return [...seen];
 }
