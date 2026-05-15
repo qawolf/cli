@@ -17,6 +17,7 @@ import type {
   RunnerDeps,
   RunnerOptions,
 } from "./types.js";
+import { FailWithoutRetryError } from "./errors.js";
 import { notSupported } from "./runWebFlowUtils.js";
 import {
   resolveAvdName,
@@ -98,9 +99,7 @@ export async function runAndroidFlow({
         workflowInputs: flowDeps.flowInputs,
         setOutput: flowDeps.setOutput,
         failWithoutRetry: () => {
-          const err = new Error("failWithoutRetry");
-          err.name = "FailWithoutRetryError";
-          throw err;
+          throw new FailWithoutRetryError("failWithoutRetry");
         },
         wdio: { startAndroid },
       };

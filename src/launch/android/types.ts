@@ -8,7 +8,7 @@ export type AppiumDriver = {
   deleteSession(): Promise<void>;
 };
 
-export type AppiumServerHandle = {
+type AppiumServerHandle = {
   port: number;
   home: string;
   stop: () => void;
@@ -20,15 +20,12 @@ export type AppiumServerHandle = {
  * only acquires and releases individual slots; pool lifecycle is the caller's
  * responsibility.
  */
-export type EmulatorPoolHandle = {
+type EmulatorPoolHandle = {
   checkOut: (avdName: string) => Promise<EmulatorSlot>;
   checkIn: (slot: EmulatorSlot) => void;
 };
 
-export type CreateSessionFn = (
-  port: number,
-  serial: string,
-) => Promise<AppiumDriver>;
+type CreateSessionFn = (port: number, serial: string) => Promise<AppiumDriver>;
 
 export type WriteFileFn = (filePath: string, data: Buffer) => Promise<void>; // (D1)
 
