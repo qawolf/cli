@@ -21,6 +21,7 @@ import type {
   WebLaunchOptions,
 } from "./web/types.js";
 import { FailWithoutRetryError } from "./errors.js";
+import { initFlowRuntime } from "./initFlowRuntime.js";
 import {
   normalizeBrowserName,
   notSupported,
@@ -110,6 +111,8 @@ export async function runWebFlow({
     openContexts.push(context);
     return { browser, browserType: browserName, context };
   };
+
+  await initFlowRuntime(flowPath);
 
   const flowDef: FlowDefinition = {
     name: flowName,
