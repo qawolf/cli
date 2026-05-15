@@ -167,6 +167,19 @@ describe("createConsoleReporter", () => {
     expect(out.calls.join("")).not.toContain("Retrying");
   });
 
+  it("onFlowFail walks err.cause and prints each cause's message", () => {
+    const { err, r } = make();
+    const root = new Error("Cannot find package '@qawolf/flows'");
+    const wrapped = new Error('Flow "Login" failed on attempt 1', {
+      cause: root,
+    });
+    r.onFlowFail?.(makeFlowFail({ err: wrapped }));
+    const s = err.calls.join("");
+    expect(s).toContain('Flow "Login" failed on attempt 1');
+    expect(s).toContain("Caused by:");
+    expect(s).toContain("Cannot find package '@qawolf/flows'");
+  });
+
   it("onFlowFail falls back to String(err) when err.stack is undefined", () => {
     const { err, r } = make();
     const e = new Error("no stack");

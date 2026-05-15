@@ -14,6 +14,16 @@ function fmtDuration(ms: number): string {
   return `(${(ms / 1000).toFixed(2)}s)`;
 }
 
+function formatErrorChain(err: Error): string {
+  const parts = [String(err)];
+  let cause: unknown = err.cause;
+  while (cause instanceof Error) {
+    parts.push(`Caused by: ${String(cause)}`);
+    cause = cause.cause;
+  }
+  return parts.join("\n");
+}
+
 export function createConsoleReporter(deps: ConsoleDeps): Reporter {
   return {
     onFlowStart({ name, path }) {
@@ -44,8 +54,7 @@ export function createConsoleReporter(deps: ConsoleDeps): Reporter {
     },
 
     onFlowFail({ err, tests, durationMs, attempt, maxAttempts }) {
-      // err.stack starts with "Error: <message>\n at ..." so first line is always the error message
-      const errStr = err.stack ?? String(err);
+      const errStr = formatErrorChain(err);
       const [firstLine, ...restLines] = errStr.split("\n");
       const indent = "    ";
       const formatted = [
