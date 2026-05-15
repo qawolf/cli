@@ -29,8 +29,8 @@ describe("writeEnvFile", () => {
 
     const body = await readFile(join(workDir, ".env"), "utf8");
     expect(body).toBe('TOKEN="abc"\nURL="https://example.com"\n');
-    const s = await stat(join(workDir, ".env"));
-    expect(s.mode & 0o777).toBe(0o600);
+    const stats = await stat(join(workDir, ".env"));
+    expect(stats.mode & 0o777).toBe(0o600);
   });
 
   it("skips writing .env when no vars are present", async () => {

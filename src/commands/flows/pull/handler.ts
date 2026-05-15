@@ -15,21 +15,20 @@ export type FlowsPullOptions = {
   readonly yes?: boolean;
 };
 
-function formatPullSummary(r: {
+function formatPullSummary(result: {
   envDir: string;
   flowCount: number;
   envVarCount: number;
   bundleFlowsVersion: string | undefined;
 }): string {
-  const flows = pluralize(r.flowCount, "flow");
+  const flows = pluralize(result.flowCount, "flow");
   const envVars =
-    r.envVarCount === 0
+    result.envVarCount === 0
       ? ""
-      : ` and ${pluralize(r.envVarCount, "environment variable")}`;
-  const version = r.bundleFlowsVersion
-    ? ` (@qawolf/flows@${r.bundleFlowsVersion})`
-    : "";
-  return `Pulled ${flows}${envVars} into ${r.envDir}${version}`;
+      : ` and ${pluralize(result.envVarCount, "environment variable")}`;
+  const base = `Pulled ${flows}${envVars} into ${result.envDir}`;
+  if (!result.bundleFlowsVersion) return base;
+  return `${base} (@qawolf/flows@${result.bundleFlowsVersion})`;
 }
 
 export async function handleFlowsPull(
@@ -100,7 +99,7 @@ export async function handleFlowsPull(
             }),
         },
       ],
-      (r) => formatPullSummary(r[0]),
+      (results) => formatPullSummary(results[0]),
     );
 
     if (ctx.ui.mode === "json") {

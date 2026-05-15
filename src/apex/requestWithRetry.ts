@@ -14,7 +14,7 @@ type RequestWithRetryArgs<T> = {
 };
 
 const defaultSleep = (ms: number): Promise<void> =>
-  new Promise((r) => setTimeout(r, ms));
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 // Retries `call` on transient network errors only; HTTP/parse errors are
 // deterministic and surface immediately. The infinite loop is bounded by the

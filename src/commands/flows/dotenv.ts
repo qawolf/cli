@@ -15,7 +15,7 @@ export function serializeDotenv(vars: Record<string, string>): string {
     }
   }
   if (keys.length === 0) return "";
-  return `${keys.map((k) => `${k}=${quote(vars[k] ?? "")}`).join("\n")}\n`;
+  return `${keys.map((key) => `${key}=${quote(vars[key] ?? "")}`).join("\n")}\n`;
 }
 
 function quote(value: string): string {
@@ -33,11 +33,11 @@ export function parseDotenv(content: string): Record<string, string> {
   for (const raw of content.split("\n")) {
     const line = raw.trim();
     if (line === "") continue;
-    const m = lineRe.exec(line);
-    if (!m) {
+    const match = lineRe.exec(line);
+    if (!match) {
       throw new Error(`Cannot parse .env line: ${JSON.stringify(line)}`);
     }
-    out[m[1]!] = unquote(m[2]!);
+    out[match[1]!] = unquote(match[2]!);
   }
   return out;
 }
@@ -46,12 +46,12 @@ export function parseDotenv(content: string): Record<string, string> {
 // serializer's order — handle `\\` last is unsafe because intermediate state
 // can contain real backslashes that would re-match. Single-pass walk avoids
 // the ambiguity entirely.
-function unquote(s: string): string {
+function unquote(escaped: string): string {
   let out = "";
   let i = 0;
-  while (i < s.length) {
-    if (s[i] === "\\" && i + 1 < s.length) {
-      const next = s[i + 1];
+  while (i < escaped.length) {
+    if (escaped[i] === "\\" && i + 1 < escaped.length) {
+      const next = escaped[i + 1];
       if (next === "\\") out += "\\";
       else if (next === '"') out += '"';
       else if (next === "n") out += "\n";
@@ -60,7 +60,7 @@ function unquote(s: string): string {
       else out += next;
       i += 2;
     } else {
-      out += s[i];
+      out += escaped[i];
       i += 1;
     }
   }
