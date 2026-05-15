@@ -78,17 +78,26 @@ export async function peekFlowMeta(
   return extractFlowMeta(source);
 }
 
-async function resolveGlobRoot(cwd: string): Promise<string> {
+// Globs run from cwd *and* from each `.qawolf/<env>/` subdir. The env-dir
+// roots are what makes a freshly-pulled `.qawolf/<env>/src/flows/...` layout
+// discoverable, since Node's `glob` doesn't expand `**` into dotted dirs.
+// Keeping cwd as a root preserves cwd-relative patterns like
+// `.qawolf/<env>/src/flows/**/*.flow.js` (Node's glob *does* match literal
+// dotted segments in a pattern — only the `**` wildcard skips them) and
+// project-local flows alongside pulled ones. Duplicates are merged on
+// absolute path downstream.
+async function resolveGlobRoots(cwd: string): Promise<string[]> {
   const qawolfPath = join(cwd, ".qawolf");
+  let envDirs: string[] = [];
   try {
     const entries = await readdir(qawolfPath, { withFileTypes: true });
-    const envDirs = entries.filter((e) => e.isDirectory());
-    const [first] = envDirs;
-    if (envDirs.length === 1 && first) return join(qawolfPath, first.name);
+    envDirs = entries
+      .filter((e) => e.isDirectory())
+      .map((e) => join(qawolfPath, e.name));
   } catch {
     // .qawolf dir absent or unreadable
   }
-  return cwd;
+  return [cwd, ...envDirs];
 }
 
 export async function expandPatterns(
@@ -97,11 +106,13 @@ export async function expandPatterns(
 ): Promise<string[]> {
   const effectivePatterns =
     patterns.length > 0 ? patterns : ["**/*.flow.{ts,js}"];
-  const root = patterns.length > 0 ? cwd : await resolveGlobRoot(cwd);
+  const roots = await resolveGlobRoots(cwd);
   const seen = new Set<string>();
-  for (const pattern of effectivePatterns) {
-    for await (const file of glob(pattern, { cwd: root })) {
-      seen.add(resolve(root, file));
+  for (const root of roots) {
+    for (const pattern of effectivePatterns) {
+      for await (const file of glob(pattern, { cwd: root })) {
+        seen.add(resolve(root, file));
+      }
     }
   }
   return [...seen];

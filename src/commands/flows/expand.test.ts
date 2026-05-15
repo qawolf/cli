@@ -168,7 +168,15 @@ describe("expandPatterns", () => {
     await mkdir(join(multiEnvTmpDir, ".qawolf", "staging"), {
       recursive: true,
     });
+    await writeFile(
+      join(multiEnvTmpDir, ".qawolf", "staging", "s.flow.ts"),
+      "// s",
+    );
     await mkdir(join(multiEnvTmpDir, ".qawolf", "prod"), { recursive: true });
+    await writeFile(
+      join(multiEnvTmpDir, ".qawolf", "prod", "p.flow.ts"),
+      "// p",
+    );
   });
 
   afterAll(async () => {
@@ -183,17 +191,21 @@ describe("expandPatterns", () => {
     expect(result).toContain(join(noQawolfTmpDir, "sub", "b.flow.ts"));
   });
 
-  it("should return files from the single .qawolf env dir when no patterns provided", async () => {
+  it("should return files from the .qawolf env dir alongside cwd flows when no patterns provided", async () => {
     const result = await expandPatterns([], mainTmpDir);
     expect(result).toContain(
       join(mainTmpDir, ".qawolf", "staging", "c.flow.ts"),
     );
-    expect(result).not.toContain(join(mainTmpDir, "a.flow.ts"));
+    expect(result).toContain(join(mainTmpDir, "a.flow.ts"));
+    expect(result).toContain(join(mainTmpDir, "sub", "b.flow.ts"));
   });
 
-  it("should return matched files when explicit patterns provided", async () => {
-    const result = await expandPatterns(["sub/*.flow.ts"], mainTmpDir);
-    expect(result).toContain(join(mainTmpDir, "sub", "b.flow.ts"));
+  it("should resolve a pattern relative to each env dir root", async () => {
+    const result = await expandPatterns(["*.flow.ts"], mainTmpDir);
+    expect(result).toContain(
+      join(mainTmpDir, ".qawolf", "staging", "c.flow.ts"),
+    );
+    expect(result).toContain(join(mainTmpDir, "a.flow.ts"));
   });
 
   it("should return empty array when no files match", async () => {
@@ -201,8 +213,14 @@ describe("expandPatterns", () => {
     expect(result).toEqual([]);
   });
 
-  it("should fall back to cwd when .qawolf has multiple env dirs", async () => {
+  it("should glob across all .qawolf env dirs when there are multiple", async () => {
     const result = await expandPatterns([], multiEnvTmpDir);
+    expect(result).toContain(
+      join(multiEnvTmpDir, ".qawolf", "staging", "s.flow.ts"),
+    );
+    expect(result).toContain(
+      join(multiEnvTmpDir, ".qawolf", "prod", "p.flow.ts"),
+    );
     expect(result).toContain(join(multiEnvTmpDir, "a.flow.ts"));
   });
 
