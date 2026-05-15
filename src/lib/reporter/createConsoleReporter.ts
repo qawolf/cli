@@ -15,7 +15,7 @@ function fmtDuration(ms: number): string {
 }
 
 function renderCause(cause: unknown): string {
-  if (cause instanceof Error) return cause.stack ?? cause.message;
+  if (cause instanceof Error) return cause.message;
   if (typeof cause === "object" && cause !== null) {
     const obj = cause as Record<string, unknown>;
     // Duck-type: if it has a string message, treat it as error-like
@@ -31,7 +31,7 @@ function renderCause(cause: unknown): string {
 }
 
 function formatErrorWithCause(err: Error): string {
-  const parts: string[] = [err.stack ?? String(err)];
+  const parts: string[] = [String(err)];
   let cause: unknown = err.cause;
   while (cause !== undefined && cause !== null) {
     parts.push(`Caused by: ${renderCause(cause)}`);
