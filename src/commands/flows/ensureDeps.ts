@@ -60,7 +60,7 @@ export function resolveUniqueEnvDir(files: string[]): string | undefined {
   if (dirs.size > 1) {
     const listed = [...dirs].map((d) => `  - ${d}`).join("\n");
     throw new Error(
-      `Pattern matches flows from ${dirs.size} packages — narrow it to a single package:\n${listed}`,
+      `Pattern matches flows from ${dirs.size} packages — narrow it to a single package:\n${listed}\n\nHint: pass a pattern scoped to one package, e.g \`qawolf flows run '.qawolf/<env>/**'\`.`,
     );
   }
   return dirs.size === 1 ? [...dirs][0] : undefined;
