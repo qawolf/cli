@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import { resolveApiKey } from "~/lib/auth/index.js";
 import { flowsVersionFromCli } from "~/lib/config.js";
 import { type CommandContext, type CommandResult } from "~/lib/context.js";
+import { pluralize } from "~/lib/pluralize.js";
 import {
   checkSafety,
   downloadBundle,
@@ -109,9 +110,7 @@ export async function handleFlowsPull(
         },
       ],
       (r) => {
-        const count = r[0].flowCount;
-        const word = count === 1 ? "flow" : "flows";
-        const base = `Pulled ${String(count)} ${word} into ${r[0].envDir}`;
+        const base = `Pulled ${pluralize(r[0].flowCount, "flow")} into ${r[0].envDir}`;
         return r[0].bundleFlowsVersion
           ? `${base} (@qawolf/flows@${r[0].bundleFlowsVersion})`
           : base;

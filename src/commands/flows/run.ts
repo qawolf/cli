@@ -1,6 +1,4 @@
-import path from "node:path";
-
-import { targetToBrowser } from "~/commands/flows/expand.js";
+import { flowBasename, targetToBrowser } from "~/commands/flows/expand.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import type { RunSummary } from "~/lib/reporter/types.js";
 import type { RunWebFlowOptions } from "~/lib/runner/runWebFlow.js";
@@ -46,7 +44,7 @@ export async function flowsRun(
       }
       flows.push({
         file,
-        name: meta.name ?? path.basename(file, ".flow.ts"),
+        name: meta.name ?? flowBasename(file),
         browser,
       });
     }
