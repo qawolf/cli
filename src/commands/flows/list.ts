@@ -59,15 +59,14 @@ export async function flowsList(
     ctx.ui.info("No flows matched.");
     return;
   }
-  const isHuman = ctx.ui.mode === "human";
-  if (isHuman) {
-    ctx.ui.gap();
-    ctx.ui.intro("Flows");
+  if (ctx.ui.mode === "agent") {
+    process.stderr.write(renderTable(items, false));
+    return;
   }
-  process.stdout.write(renderTable(items, isHuman));
-  if (isHuman) {
-    ctx.ui.outro(pluralize(items.length, "flow"));
-  }
+  ctx.ui.gap();
+  ctx.ui.intro("Flows");
+  process.stdout.write(renderTable(items, true));
+  ctx.ui.outro(pluralize(items.length, "flow"));
 }
 
 export function handleFlowsList(
