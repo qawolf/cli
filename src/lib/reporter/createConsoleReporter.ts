@@ -14,11 +14,11 @@ function fmtDuration(ms: number): string {
   return `(${(ms / 1000).toFixed(2)}s)`;
 }
 
-function formatErrorChain(err: Error): string {
-  const parts = [String(err)];
+function formatErrorWithCause(err: Error): string {
+  const parts: string[] = [err.stack ?? String(err)];
   let cause: unknown = err.cause;
   while (cause instanceof Error) {
-    parts.push(`Caused by: ${String(cause)}`);
+    parts.push(`Caused by: ${cause.stack ?? cause.message}`);
     cause = cause.cause;
   }
   return parts.join("\n");
@@ -54,7 +54,7 @@ export function createConsoleReporter(deps: ConsoleDeps): Reporter {
     },
 
     onFlowFail({ err, tests, durationMs, attempt, maxAttempts }) {
-      const errStr = formatErrorChain(err);
+      const errStr = formatErrorWithCause(err);
       const [firstLine, ...restLines] = errStr.split("\n");
       const indent = "    ";
       const formatted = [
