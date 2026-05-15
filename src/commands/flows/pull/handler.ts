@@ -23,10 +23,10 @@ function formatPullSummary(r: {
 }): string {
   const flows = pluralize(r.flowCount, "flow");
   const envVars = pluralize(r.envVarCount, "environment variable");
-  const base = `Pulled ${flows} and ${envVars} into ${r.envDir}`;
-  return r.bundleFlowsVersion
-    ? `${base} (@qawolf/flows@${r.bundleFlowsVersion})`
-    : base;
+  const version = r.bundleFlowsVersion
+    ? ` (@qawolf/flows@${r.bundleFlowsVersion})`
+    : "";
+  return `Pulled ${flows} and ${envVars} into ${r.envDir}${version}`;
 }
 
 export async function handleFlowsPull(

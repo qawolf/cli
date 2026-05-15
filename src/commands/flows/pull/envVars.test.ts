@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
+import { pathExists } from "~/lib/fs.js";
 import { envVarsTrpcPath, requestEnvVars, writeEnvFile } from "./envVars.js";
 import {
   envVarsPath,
@@ -32,11 +33,10 @@ describe("writeEnvFile", () => {
     expect(s.mode & 0o777).toBe(0o600);
   });
 
-  it("writes an empty file when no vars are present", async () => {
+  it("skips writing .env when no vars are present", async () => {
     await writeEnvFile(workDir, {});
 
-    const body = await readFile(join(workDir, ".env"), "utf8");
-    expect(body).toBe("");
+    expect(await pathExists(join(workDir, ".env"))).toBe(false);
   });
 });
 

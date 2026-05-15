@@ -37,6 +37,7 @@ export async function stageBundle(
   try {
     await extractTarGz(args.tmpArchive, tmpDir);
     await flattenSingleWrapper(tmpDir);
+    // Overwrites any .env that came in the flows bundle — API is authoritative.
     await writeEnvFile(tmpDir, args.envVars);
     const manifest = await buildManifest({
       envId: args.envId,

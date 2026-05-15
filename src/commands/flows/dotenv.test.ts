@@ -58,10 +58,7 @@ describe("parseDotenv", () => {
   });
 
   it("trims whitespace around lines, including CRLF endings", () => {
-    expect(parseDotenv('A="1"\r\n  B="2"  \r\n')).toEqual({
-      A: "1",
-      B: "2",
-    });
+    expect(parseDotenv('A="1"\r\n  B="2"  \r\n')).toEqual({ A: "1", B: "2" });
   });
 
   it('unescapes \\\\, \\", \\n, \\r, \\t inside values', () => {
