@@ -1,4 +1,4 @@
-import { flowBasename, isAndroidTarget, targetToBrowser } from "~/commands/flows/expand.js";
+import { classifyTarget, flowBasename } from "~/commands/flows/expand.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import type { RunSummary } from "~/lib/reporter/types.js";
 import type { BrowserName } from "~/types.js";
@@ -36,15 +36,15 @@ export async function flowsRun(
     for (const [j, meta] of metas.entries()) {
       const file = batch[j]!;
       if (!meta.target) continue;
-      const browser = targetToBrowser(meta.target);
-      if (browser) {
+      const classified = classifyTarget(meta.target);
+      if (classified?.kind === "web") {
         flows.push({
           kind: "web",
           file,
           name: meta.name ?? flowBasename(file),
-          browser,
+          browser: classified.browser,
         });
-      } else if (isAndroidTarget(meta.target)) {
+      } else if (classified?.kind === "android") {
         flows.push({
           kind: "android",
           file,
@@ -65,6 +65,10 @@ export async function flowsRun(
   }
 
   const webFlows = flows.filter((f): f is WebResolvedFlow => f.kind === "web");
+  // TODO WIZ-10505: browser here comes from the flow's `target` field (static
+  // metadata), but the browser actually launched at runtime is chosen by
+  // deps.launch() inside the flow body. If they disagree, Playwright fails
+  // with an opaque "browser not installed" error. Detect and report the mismatch.
   const browsers = [
     ...new Set<BrowserName>(webFlows.map((f) => f.browser)),
   ].sort();
@@ -73,7 +77,7 @@ export async function flowsRun(
   }
 
   const { webOptions, androidOptions } = buildRunOptions(flags);
-  const { counts, startTime } = await runFlows(
+  const { counts, durationMs } = await runFlows(
     flows,
     flags,
     deps,
@@ -87,9 +91,9 @@ export async function flowsRun(
     flowsSkipped: counts.flowsSkipped,
     testsPassed: counts.testsPassed,
     testsTotal: counts.testsTotal,
-    durationMs: deps.now() - startTime,
+    durationMs,
     meta: {
-      browsers: webFlows.map((f) => f.browser),
+      browsers: [...new Set(webFlows.map((f) => f.browser))],
       workers: flags.workers,
       headed: false,
       video: flags.video,

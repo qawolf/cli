@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  classifyTarget,
   expandPatterns,
   extractFlowMeta,
   isAndroidTarget,
@@ -38,6 +39,27 @@ describe("targetToBrowser", () => {
 
   it("returns undefined for an unrecognised target string", () => {
     expect(targetToBrowser("not-a-real-target")).toBeUndefined();
+  });
+});
+
+describe("classifyTarget", () => {
+  it("should return { kind: 'web', browser } for a web preset target", () => {
+    expect(classifyTarget("Web - Chrome")).toEqual({
+      kind: "web",
+      browser: "chromium",
+    });
+  });
+
+  it("should return { kind: 'android' } for an Android preset target", () => {
+    expect(classifyTarget("Android - Pixel")).toEqual({ kind: "android" });
+  });
+
+  it("should return undefined for an unsupported target", () => {
+    expect(classifyTarget("iOS - iPad")).toBeUndefined();
+  });
+
+  it("should return undefined for an unrecognised target string", () => {
+    expect(classifyTarget("not-a-real-target")).toBeUndefined();
   });
 });
 

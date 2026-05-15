@@ -112,7 +112,7 @@ describe("flowsRun pre-flight", () => {
     const deps = makeDeps({
       files: ["/a.flow.ts"],
       metaByFile: { "/a.flow.ts": { target: "Android - Pixel" } },
-      // androidFlowDeps stays null by default — dispatch fails, but installBrowsers must still not be called
+      // androidFlowDeps defaults to "not-wired" — dispatch fails, but installBrowsers must still not be called
     });
 
     await flowsRun(makeCtx(), undefined, defaultFlags(), deps);

@@ -45,7 +45,7 @@ export async function runFlows(
   androidOptions: RunAndroidFlowOptions,
 ): Promise<{
   counts: FlowCounts;
-  startTime: number;
+  durationMs: number;
 }> {
   const counts: FlowCounts = {
     flowsPassed: 0,
@@ -94,5 +94,5 @@ export async function runFlows(
     }
   }
 
-  return { counts, startTime };
+  return { counts, durationMs: deps.now() - startTime };
 }

@@ -41,7 +41,7 @@ export type FlowsRunDeps = {
   readonly runWebFlow: typeof defaultRunWebFlow;
   readonly runWebFlowDeps: RunWebFlowDeps;
   readonly runAndroidFlow: typeof defaultRunAndroidFlow;
-  readonly runAndroidFlowDeps: RunAndroidFlowDeps | undefined;
+  readonly runAndroidFlowDeps: RunAndroidFlowDeps | "not-wired";
   readonly reporter: Reporter;
   readonly now: () => number;
 };
@@ -125,7 +125,7 @@ export async function dispatchFlow({
       });
     } else {
       // flow.kind === "android"
-      if (!deps.runAndroidFlowDeps) {
+      if (deps.runAndroidFlowDeps === "not-wired") {
         throw new Error(
           "Android flow dispatch requires wired AndroidLaunchDeps; " +
             "tracked in WIZ-10343",

@@ -143,7 +143,7 @@ export async function handleFlowsRun(
     runWebFlow: defaultRunWebFlow,
     runWebFlowDeps: defaultRunWebFlowDeps(resolvedDir),
     runAndroidFlow: defaultRunAndroidFlow,
-    runAndroidFlowDeps: undefined, // TODO WIZ-10343: wire production Android deps
+    runAndroidFlowDeps: "not-wired", // TODO WIZ-10343: wire production Android deps
     reporter: createConsoleReporter({
       stdout: process.stdout,
       stderr: process.stderr,

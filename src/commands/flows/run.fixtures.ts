@@ -122,7 +122,7 @@ export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
         runResults[runIdx++] ?? runResults[runResults.length - 1]!,
       ),
     ),
-    runAndroidFlowDeps: overrides.androidFlowDeps,
+    runAndroidFlowDeps: overrides.androidFlowDeps ?? "not-wired",
     reporter: overrides.reporter ?? makeReporter(),
     now: mock<() => number>(
       () => nowSeq[Math.min(nowIdx++, nowSeq.length - 1)]!,
