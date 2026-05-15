@@ -23,7 +23,8 @@ function renderCause(cause: unknown): string {
     try {
       return JSON.stringify(cause);
     } catch {
-      return "[object]"; // JSON.stringify failed (e.g. circular reference)
+      // oxlint-disable-next-line @typescript-eslint/no-base-to-string
+      return String(cause);
     }
   }
   return String(cause);
