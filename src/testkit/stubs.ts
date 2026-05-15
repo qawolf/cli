@@ -1,8 +1,9 @@
-import type { TestkitClient, TestkitPorts } from "@qawolf/testkit/client";
+import type { createTestkitClient } from "@qawolf/testkit/client";
+import type { configureTestkitClient } from "@qawolf/testkit";
 
 type ConfigureTestkitDeps = {
-  createTestkitClient: (ports: TestkitPorts) => TestkitClient;
-  configureTestkitClient: (client: TestkitClient) => void;
+  createTestkitClient: typeof createTestkitClient;
+  configureTestkitClient: typeof configureTestkitClient;
 };
 
 const roadmapLink =
