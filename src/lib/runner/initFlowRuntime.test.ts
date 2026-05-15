@@ -1,0 +1,95 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, it } from "bun:test";
+import { _resetInitCache, initFlowRuntime } from "./initFlowRuntime.js";
+
+afterEach(() => {
+  _resetInitCache();
+});
+
+const thisDir = new URL(".", import.meta.url).pathname;
+
+describe("initFlowRuntime", () => {
+  it("resolves using the CLI's own @qawolf/flows", async () => {
+    await initFlowRuntime(path.join(thisDir, "fake.flow.ts"));
+  });
+
+  it("returns the same promise for repeated calls from the same directory", () => {
+    const p1 = initFlowRuntime(path.join(thisDir, "a.flow.ts"));
+    const p2 = initFlowRuntime(path.join(thisDir, "b.flow.ts"));
+    expect(p1).toBe(p2);
+  });
+
+  it("returns a different promise for a different starting directory", () => {
+    const p1 = initFlowRuntime(path.join(thisDir, "a.flow.ts"));
+    const p2 = initFlowRuntime(path.join(thisDir, "sub", "b.flow.ts"));
+    expect(p1).not.toBe(p2);
+    // settle both so they don't leak into subsequent tests
+    return Promise.allSettled([p1, p2]);
+  });
+
+  it("throws when @qawolf/flows is not found in any parent directory", async () => {
+    const tmp = await mkdtemp(path.join(tmpdir(), "qawolf-init-test-"));
+    try {
+      let caught: unknown;
+      try {
+        await initFlowRuntime(path.join(tmp, "my.flow.ts"));
+      } catch (e) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(Error);
+      expect((caught as Error).message).toContain(
+        "not found in node_modules above",
+      );
+    } finally {
+      await rm(tmp, { recursive: true });
+    }
+  });
+
+  it("throws when package.json exports map is missing the ./_runner import condition", async () => {
+    const tmp = await mkdtemp(path.join(tmpdir(), "qawolf-init-test-"));
+    try {
+      const pkgDir = path.join(tmp, "node_modules", "@qawolf", "flows");
+      await mkdir(pkgDir, { recursive: true });
+      await writeFile(
+        path.join(pkgDir, "package.json"),
+        JSON.stringify({
+          exports: { "./_runner": { require: "./runner.cjs" } },
+        }),
+      );
+      let caught: unknown;
+      try {
+        await initFlowRuntime(path.join(tmp, "my.flow.ts"));
+      } catch (e) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(Error);
+      expect((caught as Error).message).toContain(
+        'does not export "./_runner"',
+      );
+    } finally {
+      await rm(tmp, { recursive: true });
+    }
+  });
+
+  it("re-throws non-ENOENT errors from readFile", async () => {
+    const tmp = await mkdtemp(path.join(tmpdir(), "qawolf-init-test-"));
+    try {
+      const pkgDir = path.join(tmp, "node_modules", "@qawolf", "flows");
+      await mkdir(pkgDir, { recursive: true });
+      // A directory where the file should be causes readFile to throw EISDIR.
+      await mkdir(path.join(pkgDir, "package.json"));
+      let caught: unknown;
+      try {
+        await initFlowRuntime(path.join(tmp, "my.flow.ts"));
+      } catch (e) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(Error);
+      expect((caught as NodeJS.ErrnoException).code).toBe("EISDIR");
+    } finally {
+      await rm(tmp, { recursive: true });
+    }
+  });
+});

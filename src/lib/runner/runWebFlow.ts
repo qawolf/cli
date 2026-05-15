@@ -42,6 +42,8 @@ export async function runWebFlow({
   options: RunWebFlowOptions;
   flowPath: string;
 }): Promise<FlowRunResult> {
+  await initFlowRuntime(flowPath);
+
   const mod = (await import(pathToFileURL(flowPath).href)) as Record<
     string,
     unknown
@@ -111,8 +113,6 @@ export async function runWebFlow({
     openContexts.push(context);
     return { browser, browserType: browserName, context };
   };
-
-  await initFlowRuntime(flowPath);
 
   const flowDef: FlowDefinition = {
     name: flowName,
