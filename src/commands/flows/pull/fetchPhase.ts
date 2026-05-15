@@ -23,13 +23,13 @@ export async function fetchBundleAndEnvVars(
   await ctx.ui.withProgress(
     [
       {
-        message: "Resolving signed URL",
+        message: "Resolving flows bundle download URL",
         task: async () => {
           signedUrl = (await requestBundle(deps, envId)).signedUrl;
         },
       },
       {
-        message: "Downloading bundle",
+        message: "Downloading flows bundle",
         task: async () => {
           if (signedUrl === undefined) {
             throw new Error("internal: signedUrl not set");
@@ -45,7 +45,7 @@ export async function fetchBundleAndEnvVars(
         },
       },
     ],
-    "Downloaded",
+    "Downloaded flows bundle and environment variables",
   );
 
   if (

@@ -15,6 +15,20 @@ export type FlowsPullOptions = {
   readonly yes?: boolean;
 };
 
+function formatPullSummary(r: {
+  envDir: string;
+  flowCount: number;
+  envVarCount: number;
+  bundleFlowsVersion: string | undefined;
+}): string {
+  const flows = pluralize(r.flowCount, "flow");
+  const envVars = pluralize(r.envVarCount, "environment variable");
+  const base = `Pulled ${flows} and ${envVars} into ${r.envDir}`;
+  return r.bundleFlowsVersion
+    ? `${base} (@qawolf/flows@${r.bundleFlowsVersion})`
+    : base;
+}
+
 export async function handleFlowsPull(
   ctx: CommandContext,
   opts: FlowsPullOptions,
@@ -83,12 +97,7 @@ export async function handleFlowsPull(
             }),
         },
       ],
-      (r) => {
-        const base = `Pulled ${pluralize(r[0].flowCount, "flow")} into ${r[0].envDir}`;
-        return r[0].bundleFlowsVersion
-          ? `${base} (@qawolf/flows@${r[0].bundleFlowsVersion})`
-          : base;
-      },
+      (r) => formatPullSummary(r[0]),
     );
 
     if (ctx.ui.mode === "json") {
