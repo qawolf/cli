@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 import { realpathSync } from "node:fs";
 import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -42,54 +42,60 @@ async function makeLocalPlaywright(
   return cliPath;
 }
 
-it("should resolve cli.js from local node_modules (bin as object)", async () => {
-  const tmpDir = await makeTmpDir();
-  const expected = await makeLocalPlaywright(tmpDir, { playwright: "cli.js" });
-  expect(resolvePlaywrightCli(tmpDir, "")).toBe(expected);
-});
+describe("resolvePlaywrightCli", () => {
+  it("should resolve cli.js from local node_modules (bin as object)", async () => {
+    const tmpDir = await makeTmpDir();
+    const expected = await makeLocalPlaywright(tmpDir, {
+      playwright: "cli.js",
+    });
+    expect(resolvePlaywrightCli(tmpDir, "")).toBe(expected);
+  });
 
-it("should resolve cli.js from local node_modules (bin as string)", async () => {
-  const tmpDir = await makeTmpDir();
-  const expected = await makeLocalPlaywright(tmpDir, "cli.js");
-  expect(resolvePlaywrightCli(tmpDir, "")).toBe(expected);
-});
+  it("should resolve cli.js from local node_modules (bin as string)", async () => {
+    const tmpDir = await makeTmpDir();
+    const expected = await makeLocalPlaywright(tmpDir, "cli.js");
+    expect(resolvePlaywrightCli(tmpDir, "")).toBe(expected);
+  });
 
-it("should resolve cli.js via PATH fallback when not installed locally", async () => {
-  const emptyDir = await makeTmpDir();
-  const globalDir = await makeTmpDir();
-  const pkgDir = join(globalDir, "pkg", "playwright");
-  const binDir = join(globalDir, "bin");
-  await mkdir(pkgDir, { recursive: true });
-  await mkdir(binDir, { recursive: true });
-  const cliPath = join(pkgDir, "cli.js");
-  await writeFile(
-    join(pkgDir, "package.json"),
-    JSON.stringify({ name: "playwright", bin: { playwright: "cli.js" } }),
-  );
-  await writeFile(cliPath, "// playwright cli");
-  // Symlink models npm global layout: bin/playwright → .../playwright/cli.js
-  await symlink(cliPath, join(binDir, "playwright"));
+  it("should resolve cli.js via PATH fallback when not installed locally", async () => {
+    const emptyDir = await makeTmpDir();
+    const globalDir = await makeTmpDir();
+    const pkgDir = join(globalDir, "pkg", "playwright");
+    const binDir = join(globalDir, "bin");
+    await mkdir(pkgDir, { recursive: true });
+    await mkdir(binDir, { recursive: true });
+    const cliPath = join(pkgDir, "cli.js");
+    await writeFile(
+      join(pkgDir, "package.json"),
+      JSON.stringify({ name: "playwright", bin: { playwright: "cli.js" } }),
+    );
+    await writeFile(cliPath, "// playwright cli");
+    // Symlink models npm global layout: bin/playwright → .../playwright/cli.js
+    await symlink(cliPath, join(binDir, "playwright"));
 
-  expect(resolvePlaywrightCli(emptyDir, binDir)).toBe(cliPath);
-});
+    expect(resolvePlaywrightCli(emptyDir, binDir)).toBe(cliPath);
+  });
 
-it("should resolve cli.js from a parent node_modules (monorepo hoisting)", async () => {
-  const root = await makeTmpDir();
-  // playwright is installed at the root, cwd is a nested package
-  const cwd = join(root, "packages", "app");
-  await mkdir(cwd, { recursive: true });
-  const expected = await makeLocalPlaywright(root, { playwright: "cli.js" });
-  expect(resolvePlaywrightCli(cwd, "")).toBe(expected);
-});
+  it("should resolve cli.js from a parent node_modules (monorepo hoisting)", async () => {
+    const root = await makeTmpDir();
+    // playwright is installed at the root, cwd is a nested package
+    const cwd = join(root, "packages", "app");
+    await mkdir(cwd, { recursive: true });
+    const expected = await makeLocalPlaywright(root, { playwright: "cli.js" });
+    expect(resolvePlaywrightCli(cwd, "")).toBe(expected);
+  });
 
-it("should throw with install instructions when playwright is not found anywhere", async () => {
-  const emptyDir = await makeTmpDir();
-  let caughtError: unknown;
-  try {
-    resolvePlaywrightCli(emptyDir, "");
-  } catch (e) {
-    caughtError = e;
-  }
-  expect(caughtError).toBeInstanceOf(Error);
-  expect((caughtError as Error).message).toContain("Could not find Playwright");
+  it("should throw with install instructions when playwright is not found anywhere", async () => {
+    const emptyDir = await makeTmpDir();
+    let caughtError: unknown;
+    try {
+      resolvePlaywrightCli(emptyDir, "");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(caughtError).toBeInstanceOf(Error);
+    expect((caughtError as Error).message).toContain(
+      "Could not find Playwright",
+    );
+  });
 });
