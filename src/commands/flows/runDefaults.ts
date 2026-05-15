@@ -10,6 +10,7 @@ import { createConsoleReporter } from "~/lib/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/lib/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/lib/runner/runWebFlow.js";
 import { configureEmails } from "~/emails/configureEmails.js";
+import { configureTestkit } from "~/testkit/stubs.js";
 
 import { ensureFlowDeps, resolveUniqueEnvDir } from "./ensureDeps.js";
 import { defaultRunWebFlowDeps } from "./runWebFlowDeps.js";
@@ -54,6 +55,7 @@ export async function handleFlowsRun(
   const resolvedDir = envDir ?? cwd;
 
   await configureEmails(ctx.apiBaseUrl);
+  await configureTestkit();
   return flowsRun(ctx, pattern, flags, {
     cwd,
     expandPatterns: defaultExpandPatterns,
