@@ -24,8 +24,6 @@ export async function handleFlowsRun(
 ): Promise<CommandResult> {
   const cwd = process.cwd();
 
-  // Pre-expand to find the env directory so we can install its deps and
-  // resolve playwright from there. The expansion runs again inside flowsRun.
   const expandedFiles = await defaultExpandPatterns(
     pattern ? [pattern] : [],
     cwd,
@@ -63,7 +61,6 @@ export async function handleFlowsRun(
       installBrowserList(innerCtx, browsers, {
         spawn: defaultSpawn,
         platform: process.platform,
-        execPath: process.execPath,
         playwrightCliPath: resolvePlaywrightCli(resolvedDir),
       }),
     runWebFlow: defaultRunWebFlow,

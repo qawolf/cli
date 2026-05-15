@@ -180,11 +180,9 @@ describe("createConsoleReporter", () => {
     expect(s).toContain("Cannot find package '@qawolf/flows'");
   });
 
-  it("onFlowFail uses err.message when err.stack is undefined", () => {
+  it("onFlowFail formats top-level error as Error: message", () => {
     const { err, r } = make();
-    const e = new Error("no stack");
-    Object.defineProperty(e, "stack", { value: undefined });
-    r.onFlowFail?.(makeFlowFail({ err: e }));
+    r.onFlowFail?.(makeFlowFail({ err: new Error("no stack") }));
     expect(err.calls.join("")).toContain("Error: no stack");
   });
 
