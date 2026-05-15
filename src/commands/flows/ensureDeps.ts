@@ -71,11 +71,13 @@ export function resolveUniqueEnvDir(files: string[]): string | undefined {
 export async function ensureFlowDeps(envDir: string): Promise<void> {
   const pm = detectPackageManager(envDir);
 
-  const install = await spawnPm(pm, ["install"], envDir);
-  if (install.exitCode !== 0) {
-    throw new Error(
-      `${pm} install failed in ${envDir}:\n${install.stderr.trim()}`,
-    );
+  if (!existsSync(pkgDir(envDir))) {
+    const install = await spawnPm(pm, ["install"], envDir);
+    if (install.exitCode !== 0) {
+      throw new Error(
+        `${pm} install failed in ${envDir}:\n${install.stderr.trim()}`,
+      );
+    }
   }
 
   if (!existsSync(pkgDir(envDir, "playwright"))) {
