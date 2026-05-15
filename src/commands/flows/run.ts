@@ -93,7 +93,7 @@ export async function flowsRun(
     testsTotal: counts.testsTotal,
     durationMs,
     meta: {
-      browsers: [...new Set(webFlows.map((f) => f.browser))],
+      browsers,
       workers: flags.workers,
       headed: false,
       video: flags.video,

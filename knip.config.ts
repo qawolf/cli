@@ -14,7 +14,12 @@ const config: KnipConfig = {
     "playwright",
     // TODO WIZ-10341 follow-up: consumed once the web-flow runner imports it.
     "@playwright/test",
+    // Dev tools used only as script binaries — not imported in source.
+    "oxfmt",
+    "oxlint",
+    "oxlint-tsgolint",
   ],
+  ignoreBinaries: ["oxfmt", "oxlint", "knip", "tsc"],
   ignore: [
     // TODO WIZ-10324: move to its domain when the commands that use it land
     "src/types.ts",
@@ -26,11 +31,6 @@ const config: KnipConfig = {
     "src/apex/createTrpcClient.ts",
     // TODO WIZ-10355: remove once flows pull consumes the flowsBundle schema
     "src/apex/types.ts",
-    // TODO WIZ-10329: remove once Android/iOS launch context imports createAppiumServer
-    "src/appium/createAppiumServer.ts",
-    "src/appium/resolveAppiumBin.ts",
-    // TODO WIZ-10332: remove once Android launch context imports createEmulatorPool
-    "src/android/createEmulatorPool.ts",
   ],
 };
 
