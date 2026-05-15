@@ -1,6 +1,5 @@
 import { spawn as nodeSpawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 
 // Walk up from a flow file to find its containing package root (the directory
@@ -30,6 +29,10 @@ async function spawnNpm(
   });
 }
 
+function pkgDir(envDir: string, ...pkgParts: string[]): string {
+  return join(envDir, "node_modules", ...pkgParts);
+}
+
 // Install all deps in the env directory, then ensure playwright and
 // @qawolf/flows are present — adding them via --no-save if not declared.
 export async function ensureFlowDeps(envDir: string): Promise<void> {
@@ -40,20 +43,14 @@ export async function ensureFlowDeps(envDir: string): Promise<void> {
     );
   }
 
-  const req = createRequire(join(envDir, "package.json"));
-
-  try {
-    req.resolve("playwright");
-  } catch {
+  if (!existsSync(pkgDir(envDir, "playwright"))) {
     const r = await spawnNpm(["install", "--no-save", "playwright"], envDir);
     if (r.exitCode !== 0) {
       throw new Error(`npm install playwright failed:\n${r.stderr.trim()}`);
     }
   }
 
-  try {
-    req.resolve("@qawolf/flows/web");
-  } catch {
+  if (!existsSync(pkgDir(envDir, "@qawolf", "flows"))) {
     const r = await spawnNpm(["install", "--no-save", "@qawolf/flows"], envDir);
     if (r.exitCode !== 0) {
       throw new Error(`npm install @qawolf/flows failed:\n${r.stderr.trim()}`);
