@@ -43,7 +43,6 @@ export function makeBaseDeps(
     emulatorPool: makePool(),
     createSession: async () => makeDriver(),
     adb: mock(async (_args: string[]) => ({ stdout: "" })),
-    spawn: mock((_bin: string, _args: string[]) => ({ stop: () => {} })),
     ...overrides,
   };
 }

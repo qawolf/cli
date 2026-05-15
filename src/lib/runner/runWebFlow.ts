@@ -20,6 +20,7 @@ import type {
   WebLaunchDeps,
   WebLaunchOptions,
 } from "./web/types.js";
+import { FailWithoutRetryError } from "./errors.js";
 import {
   normalizeBrowserName,
   notSupported,
@@ -125,9 +126,7 @@ export async function runWebFlow({
         workflowInputs: flowDeps.flowInputs,
         setOutput: flowDeps.setOutput,
         failWithoutRetry: () => {
-          const err = new Error("failWithoutRetry");
-          err.name = "FailWithoutRetryError";
-          throw err;
+          throw new FailWithoutRetryError("failWithoutRetry");
         },
       };
       await runFn(webDeps as unknown as Parameters<typeof runFn>[0]);
