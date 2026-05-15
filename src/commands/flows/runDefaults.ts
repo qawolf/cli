@@ -30,19 +30,19 @@ function defaultRunWebFlowDeps(cwd = process.cwd()): RunWebFlowDeps {
   // newContext() returns Page[].video() = Video | null while MinimalPage
   // expects MinimalVideo | undefined. Runtime values are interchangeable
   // (the runner only reads .path() / .delete() on the video).
-  let chromium: RunWebFlowDeps["chromium"];
-  let firefox: RunWebFlowDeps["firefox"];
-  let webkit: RunWebFlowDeps["webkit"];
+  let playwright: Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
   try {
-    ({ chromium, firefox, webkit } = createRequire(join(cwd, "package.json"))(
-      "playwright",
-    ) as Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">);
-  } catch {
-    // rethrow with a clear message so users know what to install
+    playwright = createRequire(join(cwd, "package.json"))("playwright") as Pick<
+      RunWebFlowDeps,
+      "chromium" | "firefox" | "webkit"
+    >;
+  } catch (err) {
     throw new Error(
-      "Playwright is not installed in your project. Run `npm install playwright` or `bun add playwright`.",
+      "Could not load Playwright. Install it in your project: `npm install playwright` or `bun add playwright`.",
+      { cause: err },
     );
   }
+  const { chromium, firefox, webkit } = playwright;
   return {
     chromium,
     firefox,

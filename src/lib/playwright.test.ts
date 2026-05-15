@@ -73,6 +73,15 @@ it("should resolve cli.js via PATH fallback when not installed locally", async (
   expect(resolvePlaywrightCli(emptyDir, binDir)).toBe(cliPath);
 });
 
+it("should resolve cli.js from a parent node_modules (monorepo hoisting)", async () => {
+  const root = await makeTmpDir();
+  // playwright is installed at the root, cwd is a nested package
+  const cwd = join(root, "packages", "app");
+  await mkdir(cwd, { recursive: true });
+  const expected = await makeLocalPlaywright(root, { playwright: "cli.js" });
+  expect(resolvePlaywrightCli(cwd, "")).toBe(expected);
+});
+
 it("should throw with install instructions when playwright is not found anywhere", async () => {
   const emptyDir = await makeTmpDir();
   let caughtError: unknown;
