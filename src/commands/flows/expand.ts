@@ -22,23 +22,37 @@ const browserNameToPlaywright: Record<
 // can hand it any string and rely on the try/catch to handle non-targets.
 type ParseExecutionTargetArg = Parameters<typeof parseExecutionTarget>[0];
 
-export function targetToBrowser(target: string): BrowserName | undefined {
+export function classifyTarget(
+  target: string,
+): { kind: "web"; browser: BrowserName } | { kind: "android" } | undefined {
   let parsed: ReturnType<typeof parseExecutionTarget>;
   try {
     parsed = parseExecutionTarget(target as ParseExecutionTargetArg);
   } catch {
     return undefined;
   }
+  if (parsed.platform === "android") return { kind: "android" };
   if (parsed.platform !== "web") return undefined;
   const meta = parsed.meta;
   if (typeof meta === "string") return undefined; // "legacy" form
   if (!("defaultBrowser" in meta) && !("browser" in meta)) return undefined; // Electron
   try {
     const info = getWebBrowserInfo(meta);
-    return browserNameToPlaywright[info.name];
+    const browser = browserNameToPlaywright[info.name];
+    if (!browser) return undefined;
+    return { kind: "web", browser };
   } catch {
     return undefined;
   }
+}
+
+export function targetToBrowser(target: string): BrowserName | undefined {
+  const c = classifyTarget(target);
+  return c?.kind === "web" ? c.browser : undefined;
+}
+
+export function isAndroidTarget(target: string): boolean {
+  return classifyTarget(target)?.kind === "android";
 }
 
 // Matches the flow name — the first string literal argument to flow():

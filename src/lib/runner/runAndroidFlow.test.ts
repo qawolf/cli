@@ -82,6 +82,23 @@ describe("runAndroidFlow", () => {
     expect(pool.checkIn).toHaveBeenCalledTimes(1);
   });
 
+  it("should call cleanup when the flow fails after calling startAndroid", async () => {
+    const pool = makePool();
+    const deps: RunAndroidFlowDeps = {
+      ...makeBaseDeps({ emulatorPool: pool }),
+      ...makeRunnerDeps(),
+    };
+
+    const result = await runAndroidFlow({
+      deps,
+      options: baseOptions,
+      flowPath: fixturePath("failAfterLaunch"),
+    });
+
+    expect(result.passed).toBe(false);
+    expect(pool.checkIn).toHaveBeenCalledTimes(1);
+  });
+
   it("should count all attempts when retries is set", async () => {
     const result = await runAndroidFlow({
       deps: makeAndroidDeps(),

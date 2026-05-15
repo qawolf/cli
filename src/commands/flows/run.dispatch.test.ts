@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
+import type { RunSummary } from "~/lib/reporter/types.js";
+
 import {
   callsOf,
   defaultFlags,
@@ -142,16 +144,12 @@ describe("flowsRun dispatch", () => {
 
     expect(callsOf(deps.runWebFlow).length).toBe(2);
     expect(result).toEqual({ error: "1 flow(s) failed" });
-    const completeCall = callsOf(reporter.onRunComplete!)[0]?.[0] as {
-      summary: {
-        flowsPassed: number;
-        flowsFailed: number;
-        flowsSkipped: number;
-      };
+    const bail = callsOf(reporter.onRunComplete!)[0]?.[0] as {
+      summary: RunSummary;
     };
-    expect(completeCall.summary.flowsPassed).toBe(1);
-    expect(completeCall.summary.flowsFailed).toBe(1);
-    expect(completeCall.summary.flowsSkipped).toBe(1);
+    expect(bail.summary.flowsPassed).toBe(1);
+    expect(bail.summary.flowsFailed).toBe(1);
+    expect(bail.summary.flowsSkipped).toBe(1);
   });
 
   it("runs all flows when --bail is false even if one fails", async () => {
@@ -171,16 +169,12 @@ describe("flowsRun dispatch", () => {
 
     expect(callsOf(deps.runWebFlow).length).toBe(3);
     expect(result).toEqual({ error: "1 flow(s) failed" });
-    const completeCall = callsOf(reporter.onRunComplete!)[0]?.[0] as {
-      summary: {
-        flowsPassed: number;
-        flowsFailed: number;
-        flowsSkipped: number;
-      };
+    const allCall = callsOf(reporter.onRunComplete!)[0]?.[0] as {
+      summary: RunSummary;
     };
-    expect(completeCall.summary.flowsPassed).toBe(2);
-    expect(completeCall.summary.flowsFailed).toBe(1);
-    expect(completeCall.summary.flowsSkipped).toBe(0);
+    expect(allCall.summary.flowsPassed).toBe(2);
+    expect(allCall.summary.flowsFailed).toBe(1);
+    expect(allCall.summary.flowsSkipped).toBe(0);
   });
 
   it("treats a thrown runWebFlow as a flow failure and continues dispatch", async () => {

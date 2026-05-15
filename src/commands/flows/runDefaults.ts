@@ -13,6 +13,7 @@ import { defaultSpawn } from "~/lib/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { resolvePlaywrightCli } from "~/lib/playwright.js";
 import { createConsoleReporter } from "~/lib/reporter/createConsoleReporter.js";
+import { runAndroidFlow as defaultRunAndroidFlow } from "~/lib/runner/runAndroidFlow.js";
 import {
   type RunWebFlowDeps,
   runWebFlow as defaultRunWebFlow,
@@ -23,14 +24,11 @@ import { flowsRun } from "./run.js";
 import type { FlowsRunFlags } from "./runInternals.js";
 
 function defaultRunWebFlowDeps(cwd = process.cwd()): RunWebFlowDeps {
-  // Resolved via createRequire so bun's --compile bundler does not trace the
-  // import statically. playwright-core has optional deps (electron,
-  // chromium-bidi) that are not installed and would break the binary build.
+  // createRequire prevents bun's --compile from statically tracing the import;
+  // playwright-core's optional deps (electron, chromium-bidi) aren't installed.
   // Resolved from cwd so the project's playwright is used, not the CLI's.
-  // Playwright's BrowserType is structurally close to BrowserDep but its
-  // newContext() returns Page[].video() = Video | null while MinimalPage
-  // expects MinimalVideo | undefined. Runtime values are interchangeable
-  // (the runner only reads .path() / .delete() on the video).
+  // BrowserType isn't structurally exact (video: Video|null vs MinimalVideo|undefined)
+  // but works at runtime — the runner only calls .path()/.delete() on video.
   let playwright: Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
   try {
     playwright = createRequire(join(cwd, "package.json"))("playwright") as Pick<
@@ -141,6 +139,8 @@ export async function handleFlowsRun(
       }),
     runWebFlow: defaultRunWebFlow,
     runWebFlowDeps: defaultRunWebFlowDeps(resolvedDir),
+    runAndroidFlow: defaultRunAndroidFlow,
+    runAndroidFlowDeps: "not-wired", // TODO WIZ-10343: wire production Android deps
     reporter: createConsoleReporter({
       stdout: process.stdout,
       stderr: process.stderr,

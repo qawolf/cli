@@ -8,6 +8,11 @@ import type { CommandContext } from "~/lib/context.js";
 import type { Reporter } from "~/lib/reporter/types.js";
 import { FlowRunError } from "~/lib/runner/errors.js";
 import type {
+  RunAndroidFlowDeps,
+  RunAndroidFlowOptions,
+  runAndroidFlow as defaultRunAndroidFlow,
+} from "~/lib/runner/runAndroidFlow.js";
+import type {
   RunWebFlowDeps,
   RunWebFlowOptions,
   runWebFlow as defaultRunWebFlow,
@@ -35,20 +40,29 @@ export type FlowsRunDeps = {
   ) => Promise<void>;
   readonly runWebFlow: typeof defaultRunWebFlow;
   readonly runWebFlowDeps: RunWebFlowDeps;
+  readonly runAndroidFlow: typeof defaultRunAndroidFlow;
+  readonly runAndroidFlowDeps: RunAndroidFlowDeps | "not-wired";
   readonly reporter: Reporter;
   readonly now: () => number;
 };
 
-export type ResolvedFlow = {
+export type WebResolvedFlow = {
+  readonly kind: "web";
   readonly file: string;
   readonly name: string;
   readonly browser: BrowserName;
 };
 
+type AndroidResolvedFlow = {
+  readonly kind: "android";
+  readonly file: string;
+  readonly name: string;
+  readonly target: string;
+};
+
+export type ResolvedFlow = WebResolvedFlow | AndroidResolvedFlow;
+
 export function unsupportedTargetMessage(target: string): string {
-  if (target.startsWith("Android - ")) {
-    return "Android targets aren't yet implemented in v0.1; tracked in WIZ-10446.";
-  }
   return `${target} targets aren't supported in v0.1. Run them on app.qawolf.com or wait for v0.2.`;
 }
 
@@ -86,20 +100,41 @@ export function parseEnum<T extends string>(
   };
 }
 
-export async function dispatchFlow(
-  flow: ResolvedFlow,
-  options: RunWebFlowOptions,
-  deps: FlowsRunDeps,
-): Promise<{ run: FlowRunResult; durationMs: number }> {
+export async function dispatchFlow({
+  deps,
+  flow,
+  webOptions,
+  androidOptions,
+}: {
+  deps: FlowsRunDeps;
+  flow: ResolvedFlow;
+  webOptions: RunWebFlowOptions;
+  androidOptions: RunAndroidFlowOptions;
+}): Promise<{ run: FlowRunResult; durationMs: number }> {
   deps.reporter.onFlowStart?.({ name: flow.name, path: flow.file });
   const flowStart = deps.now();
   let run: FlowRunResult;
   try {
-    run = await deps.runWebFlow({
-      deps: deps.runWebFlowDeps,
-      options,
-      flowPath: flow.file,
-    });
+    if (flow.kind === "web") {
+      run = await deps.runWebFlow({
+        deps: deps.runWebFlowDeps,
+        options: webOptions,
+        flowPath: flow.file,
+      });
+    } else {
+      // flow.kind === "android"
+      if (deps.runAndroidFlowDeps === "not-wired") {
+        throw new Error(
+          "Android flow dispatch requires wired AndroidLaunchDeps; " +
+            "tracked in WIZ-10343",
+        );
+      }
+      run = await deps.runAndroidFlow({
+        deps: deps.runAndroidFlowDeps,
+        options: androidOptions,
+        flowPath: flow.file,
+      });
+    }
   } catch (err) {
     run = {
       passed: false,

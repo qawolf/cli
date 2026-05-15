@@ -7,6 +7,8 @@ import type { RunWebFlowDeps } from "~/lib/runner/runWebFlow.js";
 import type { FlowRunResult } from "~/lib/runner/types.js";
 import type { UI } from "~/lib/ui/index.js";
 
+import type { RunAndroidFlowDeps } from "~/lib/runner/runAndroidFlow.js";
+
 import type { FlowsRunDeps, FlowsRunFlags } from "./runInternals.js";
 
 export const fakeCwd = "/proj";
@@ -60,6 +62,10 @@ export function makeFakeRunWebFlowDeps(): RunWebFlowDeps {
   return {} as RunWebFlowDeps;
 }
 
+export function makeFakeRunAndroidFlowDeps(): RunAndroidFlowDeps {
+  return {} as RunAndroidFlowDeps;
+}
+
 export function defaultFlags(): FlowsRunFlags {
   return {
     retries: 0,
@@ -79,6 +85,7 @@ type DepsOverrides = {
   runResults?: FlowRunResult[];
   nowSequence?: readonly number[];
   reporter?: Reporter;
+  androidFlowDeps?: RunAndroidFlowDeps;
 };
 
 export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
@@ -110,6 +117,12 @@ export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
       ),
     ),
     runWebFlowDeps: makeFakeRunWebFlowDeps(),
+    runAndroidFlow: mock<FlowsRunDeps["runAndroidFlow"]>(() =>
+      Promise.resolve(
+        runResults[runIdx++] ?? runResults[runResults.length - 1]!,
+      ),
+    ),
+    runAndroidFlowDeps: overrides.androidFlowDeps ?? "not-wired",
     reporter: overrides.reporter ?? makeReporter(),
     now: mock<() => number>(
       () => nowSeq[Math.min(nowIdx++, nowSeq.length - 1)]!,
