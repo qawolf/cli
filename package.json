@@ -41,6 +41,7 @@
     "playwright": "1.59.1",
     "superjson": "2.2.6",
     "tar": "7.5.15",
+    "tinyglobby": "0.2.16",
     "zod": "4.4.2"
   },
   "devDependencies": {
