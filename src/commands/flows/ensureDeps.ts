@@ -52,7 +52,7 @@ export async function ensureFlowDeps(envDir: string): Promise<void> {
   }
 
   try {
-    req.resolve("@qawolf/flows");
+    req.resolve("@qawolf/flows/web");
   } catch {
     const r = await spawnNpm(["install", "--no-save", "@qawolf/flows"], envDir);
     if (r.exitCode !== 0) {
