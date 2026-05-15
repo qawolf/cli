@@ -108,7 +108,8 @@ export async function handleFlowsRun(
   try {
     envDir = resolveUniqueEnvDir(expandedFiles);
   } catch (err) {
-    return { error: (err as Error).message, exitCode: 2 };
+    const error = err instanceof Error ? err.message : String(err);
+    return { error, exitCode: 2 };
   }
 
   if (envDir) {

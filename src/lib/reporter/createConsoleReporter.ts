@@ -16,6 +16,16 @@ function fmtDuration(ms: number): string {
 
 function renderCause(cause: unknown): string {
   if (cause instanceof Error) return cause.stack ?? cause.message;
+  if (typeof cause === "object" && cause !== null) {
+    const obj = cause as Record<string, unknown>;
+    // Duck-type: if it has a string message, treat it as error-like
+    if (typeof obj["message"] === "string") return obj["message"];
+    try {
+      return JSON.stringify(cause);
+    } catch {
+      return "[object]"; // JSON.stringify failed (e.g. circular reference)
+    }
+  }
   return String(cause);
 }
 

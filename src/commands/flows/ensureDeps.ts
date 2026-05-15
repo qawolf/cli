@@ -17,7 +17,9 @@ export function findEnvDir(flowPath: string): string | undefined {
 type PackageManager = "npm" | "bun" | "pnpm" | "yarn";
 
 export function detectPackageManager(dir: string): PackageManager {
-  if (existsSync(join(dir, "bun.lockb"))) return "bun";
+  // bun.lockb = binary format (bun < 1.1); bun.lock = text format (bun ≥ 1.1, now default)
+  if (existsSync(join(dir, "bun.lockb")) || existsSync(join(dir, "bun.lock")))
+    return "bun";
   if (existsSync(join(dir, "pnpm-lock.yaml"))) return "pnpm";
   if (existsSync(join(dir, "yarn.lock"))) return "yarn";
   return "npm";
