@@ -18,7 +18,7 @@ import {
   type RunWebFlowDeps,
   runWebFlow as defaultRunWebFlow,
 } from "~/lib/runner/runWebFlow.js";
-
+import { configureEmails } from "~/emails/configureEmails.js";
 import { ensureFlowDeps, resolveUniqueEnvDir } from "./ensureDeps.js";
 import { flowsRun } from "./run.js";
 import type { FlowsRunFlags } from "./runInternals.js";
@@ -122,10 +122,10 @@ export async function handleFlowsRun(
     );
   }
 
-  // Resolve playwright from the env dir (where it was just installed).
-  // Falls back to CWD if no env dir was detected (e.g. running local flows).
+  // Resolve playwright from the env dir; falls back to CWD for local flows.
   const resolvedDir = envDir ?? cwd;
 
+  await configureEmails(ctx.apiBaseUrl);
   return flowsRun(ctx, pattern, flags, {
     cwd,
     expandPatterns: defaultExpandPatterns,
