@@ -52,6 +52,7 @@ export function withContext(
         apiBaseUrl: getApiBaseUrl(env),
       });
       if (result !== undefined) {
+        ui.error(result.error);
         process.exitCode = result.exitCode ?? 1;
       }
     } catch (err: unknown) {

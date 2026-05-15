@@ -14,11 +14,28 @@ function fmtDuration(ms: number): string {
   return `(${(ms / 1000).toFixed(2)}s)`;
 }
 
-function formatErrorChain(err: Error): string {
-  const parts = [String(err)];
+function renderCause(cause: unknown): string {
+  if (cause instanceof Error) return cause.stack ?? cause.message;
+  if (typeof cause === "object" && cause !== null) {
+    const obj = cause as Record<string, unknown>;
+    // Duck-type: if it has a string message, treat it as error-like
+    if (typeof obj["message"] === "string") return obj["message"];
+    try {
+      return JSON.stringify(cause);
+    } catch {
+      // oxlint-disable-next-line @typescript-eslint/no-base-to-string
+      return String(cause);
+    }
+  }
+  return String(cause);
+}
+
+function formatErrorWithCause(err: Error): string {
+  const parts: string[] = [err.stack ?? String(err)];
   let cause: unknown = err.cause;
-  while (cause instanceof Error) {
-    parts.push(`Caused by: ${String(cause)}`);
+  while (cause !== undefined && cause !== null) {
+    parts.push(`Caused by: ${renderCause(cause)}`);
+    if (!(cause instanceof Error)) break;
     cause = cause.cause;
   }
   return parts.join("\n");
@@ -54,7 +71,7 @@ export function createConsoleReporter(deps: ConsoleDeps): Reporter {
     },
 
     onFlowFail({ err, tests, durationMs, attempt, maxAttempts }) {
-      const errStr = formatErrorChain(err);
+      const errStr = formatErrorWithCause(err);
       const [firstLine, ...restLines] = errStr.split("\n");
       const indent = "    ";
       const formatted = [
