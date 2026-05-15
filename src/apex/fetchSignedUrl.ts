@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import type { WireResult } from "./createTrpcClient.js";
 
 type Deps = {
@@ -27,8 +28,15 @@ export async function fetchSignedUrl(
     };
   }
 
+  if (!response.body) {
+    return {
+      ok: false,
+      error: { cause: new Error("response had no body"), kind: "network" },
+    };
+  }
+
   try {
-    await Bun.write(args.dest, response);
+    await writeFile(args.dest, response.body);
   } catch (error: unknown) {
     return { ok: false, error: { cause: toError(error), kind: "network" } };
   }
