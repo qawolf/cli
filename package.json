@@ -12,8 +12,10 @@
   ],
   "type": "module",
   "scripts": {
+    "prebuild": "bun scripts/genFlowsVersions.ts",
     "build": "bun build ./src/main.ts --outfile dist/cli.js --target node --external @napi-rs/keyring --external @qawolf/flow-targets --external @qawolf/flows --external playwright --external playwright-core --external @qawolf/emails --external @qawolf/testkit",
     "postbuild": "./scripts/postbuild.sh",
+    "prebuild:binary": "bun scripts/genFlowsVersions.ts",
     "build:binary": "bun build --compile --bytecode ./src/main.ts --outfile dist/qawolf --external @qawolf/emails --external @qawolf/testkit",
     "dev": "bun run src/main.ts",
     "format": "oxfmt .",

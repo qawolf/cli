@@ -1,6 +1,7 @@
 import { spawn as nodeSpawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { flowsVersion, playwrightVersion } from "./flowsVersions.js";
 
 // Walk up from a flow file to find its containing package root (the directory
 // with the package.json that declares its dependencies).
@@ -30,8 +31,12 @@ async function spawnPm(
   args: string[],
   cwd: string,
 ): Promise<{ exitCode: number; stderr: string }> {
+  // npm 7+ does strict peer-dep resolution by default, which rejects
+  // peerOptional conflicts like @qawolf/flows vs. a project's pinned
+  // playwright. --legacy-peer-deps reverts to npm 6 behaviour (warnings only).
+  const resolvedArgs = pm === "npm" ? [...args, "--legacy-peer-deps"] : args;
   return new Promise((resolve) => {
-    const child = nodeSpawn(pm, args, { cwd });
+    const child = nodeSpawn(pm, resolvedArgs, { cwd });
     let stderr = "";
     child.stderr?.on("data", (chunk: Buffer) => {
       stderr += String(chunk);
@@ -45,10 +50,33 @@ function pkgDir(envDir: string, ...pkgParts: string[]): string {
   return join(envDir, "node_modules", ...pkgParts);
 }
 
-// npm uses --no-save so the package.json is not modified; other managers'
-// "add" commands always persist to the manifest (no equivalent flag exists).
 function addArgs(pm: PackageManager, pkg: string): string[] {
-  return pm === "npm" ? ["install", "--no-save", pkg] : ["add", pkg];
+  return pm === "npm"
+    ? ["install", "--save-exact", pkg]
+    : ["add", "--save-exact", pkg];
+}
+
+function readPkgJson(
+  envDir: string,
+  ...parts: string[]
+): Record<string, unknown> | undefined {
+  try {
+    return JSON.parse(
+      readFileSync(join(pkgDir(envDir, ...parts), "package.json"), "utf8"),
+    ) as Record<string, unknown>;
+  } catch {
+    return undefined;
+  }
+}
+
+// Returns the version field from an installed package's package.json.
+function installedVersion(
+  envDir: string,
+  ...parts: string[]
+): string | undefined {
+  const pkg = readPkgJson(envDir, ...parts);
+  const v = pkg?.["version"];
+  return typeof v === "string" ? v : undefined;
 }
 
 // Returns the single envDir for all flow files, or undefined if none have a
@@ -66,8 +94,10 @@ export function resolveUniqueEnvDir(files: string[]): string | undefined {
   return dirs.size === 1 ? [...dirs][0] : undefined;
 }
 
-// Install all deps in the env directory, then ensure playwright and
-// @qawolf/flows are present — adding them if not declared.
+// Install all deps in the env directory, then ensure @qawolf/flows and
+// playwright are present at the versions the CLI requires. Both versions are
+// baked in at build time (see flowsVersions.ts) so they match the CLI binary
+// regardless of what the env's own package.json may declare.
 export async function ensureFlowDeps(envDir: string): Promise<void> {
   const pm = detectPackageManager(envDir);
 
@@ -80,17 +110,25 @@ export async function ensureFlowDeps(envDir: string): Promise<void> {
     }
   }
 
-  if (!existsSync(pkgDir(envDir, "playwright"))) {
-    const r = await spawnPm(pm, addArgs(pm, "playwright"), envDir);
+  if (installedVersion(envDir, "@qawolf", "flows") !== flowsVersion) {
+    const r = await spawnPm(
+      pm,
+      addArgs(pm, `@qawolf/flows@${flowsVersion}`),
+      envDir,
+    );
     if (r.exitCode !== 0) {
-      throw new Error(`${pm} add playwright failed:\n${r.stderr.trim()}`);
+      throw new Error(`${pm} add @qawolf/flows failed:\n${r.stderr.trim()}`);
     }
   }
 
-  if (!existsSync(pkgDir(envDir, "@qawolf", "flows"))) {
-    const r = await spawnPm(pm, addArgs(pm, "@qawolf/flows"), envDir);
+  if (installedVersion(envDir, "playwright") !== playwrightVersion) {
+    const r = await spawnPm(
+      pm,
+      addArgs(pm, `playwright@${playwrightVersion}`),
+      envDir,
+    );
     if (r.exitCode !== 0) {
-      throw new Error(`${pm} add @qawolf/flows failed:\n${r.stderr.trim()}`);
+      throw new Error(`${pm} add playwright failed:\n${r.stderr.trim()}`);
     }
   }
 }
