@@ -180,10 +180,9 @@ describe("createConsoleReporter", () => {
     expect(s).toContain("Cannot find package '@qawolf/flows'");
   });
 
-  it("onFlowFail falls back to String(err) when err.stack is undefined", () => {
+  it("onFlowFail uses err.message when err.stack is undefined", () => {
     const { err, r } = make();
     const e = new Error("no stack");
-    // Force stack to be undefined
     Object.defineProperty(e, "stack", { value: undefined });
     r.onFlowFail?.(makeFlowFail({ err: e }));
     expect(err.calls.join("")).toContain("Error: no stack");
