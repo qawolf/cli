@@ -22,11 +22,14 @@ function formatPullSummary(r: {
   bundleFlowsVersion: string | undefined;
 }): string {
   const flows = pluralize(r.flowCount, "flow");
-  const envVars = pluralize(r.envVarCount, "environment variable");
+  const envVars =
+    r.envVarCount === 0
+      ? ""
+      : ` and ${pluralize(r.envVarCount, "environment variable")}`;
   const version = r.bundleFlowsVersion
     ? ` (@qawolf/flows@${r.bundleFlowsVersion})`
     : "";
-  return `Pulled ${flows} and ${envVars} into ${r.envDir}${version}`;
+  return `Pulled ${flows}${envVars} into ${r.envDir}${version}`;
 }
 
 export async function handleFlowsPull(
