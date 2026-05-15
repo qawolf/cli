@@ -25,67 +25,56 @@ async function makeTmpDir(): Promise<string> {
   return d;
 }
 
-async function makeLocalPlaywright(
-  root: string,
-  bin: string | Record<string, string>,
-): Promise<string> {
+// Creates a fake playwright package in root/node_modules and the corresponding
+// .bin/playwright wrapper. Returns the bin wrapper path, which is what
+// resolvePlaywrightCli is expected to return for local installs.
+async function makeLocalPlaywright(root: string): Promise<string> {
   const pkgDir = join(root, "node_modules", "playwright");
+  const binDir = join(root, "node_modules", ".bin");
   await mkdir(pkgDir, { recursive: true });
+  await mkdir(binDir, { recursive: true });
   await writeFile(
     join(pkgDir, "package.json"),
-    JSON.stringify({ name: "playwright", bin }),
+    JSON.stringify({ name: "playwright", bin: { playwright: "cli.js" } }),
   );
-  const cliName =
-    typeof bin === "string" ? bin : (bin["playwright"] ?? "cli.js");
-  const cliPath = join(pkgDir, cliName);
-  await writeFile(cliPath, "// playwright cli");
-  return cliPath;
+  await writeFile(join(pkgDir, "cli.js"), "// playwright cli");
+  const binWrapper = join(binDir, "playwright");
+  await writeFile(binWrapper, "#!/usr/bin/env node\nrequire('./cli.js')");
+  return binWrapper;
 }
 
 describe("resolvePlaywrightCli", () => {
-  it("should resolve cli.js from local node_modules (bin as object)", async () => {
+  it("returns the .bin/playwright wrapper from local node_modules", async () => {
     const tmpDir = await makeTmpDir();
-    const expected = await makeLocalPlaywright(tmpDir, {
-      playwright: "cli.js",
-    });
+    const expected = await makeLocalPlaywright(tmpDir);
     expect(resolvePlaywrightCli(tmpDir, "")).toBe(expected);
   });
 
-  it("should resolve cli.js from local node_modules (bin as string)", async () => {
-    const tmpDir = await makeTmpDir();
-    const expected = await makeLocalPlaywright(tmpDir, "cli.js");
-    expect(resolvePlaywrightCli(tmpDir, "")).toBe(expected);
-  });
-
-  it("should resolve cli.js via PATH fallback when not installed locally", async () => {
+  it("returns the playwright binary from PATH when not installed locally", async () => {
     const emptyDir = await makeTmpDir();
     const globalDir = await makeTmpDir();
-    const pkgDir = join(globalDir, "pkg", "playwright");
     const binDir = join(globalDir, "bin");
-    await mkdir(pkgDir, { recursive: true });
+    const pkgDir = join(globalDir, "pkg", "playwright");
     await mkdir(binDir, { recursive: true });
+    await mkdir(pkgDir, { recursive: true });
     const cliPath = join(pkgDir, "cli.js");
-    await writeFile(
-      join(pkgDir, "package.json"),
-      JSON.stringify({ name: "playwright", bin: { playwright: "cli.js" } }),
-    );
     await writeFile(cliPath, "// playwright cli");
+    const binPath = join(binDir, "playwright");
     // Symlink models npm global layout: bin/playwright → .../playwright/cli.js
-    await symlink(cliPath, join(binDir, "playwright"));
+    await symlink(cliPath, binPath);
 
-    expect(resolvePlaywrightCli(emptyDir, binDir)).toBe(cliPath);
+    expect(resolvePlaywrightCli(emptyDir, binDir)).toBe(binPath);
   });
 
-  it("should resolve cli.js from a parent node_modules (monorepo hoisting)", async () => {
+  it("resolves via parent node_modules in a monorepo (hoisted install)", async () => {
     const root = await makeTmpDir();
-    // playwright is installed at the root, cwd is a nested package
     const cwd = join(root, "packages", "app");
     await mkdir(cwd, { recursive: true });
-    const expected = await makeLocalPlaywright(root, { playwright: "cli.js" });
+    const expected = await makeLocalPlaywright(root);
     expect(resolvePlaywrightCli(cwd, "")).toBe(expected);
   });
 
-  it("should throw with install instructions when playwright is not found anywhere", async () => {
+  it("throws with install instructions when playwright is not found anywhere", async () => {
     const emptyDir = await makeTmpDir();
     let caughtError: unknown;
     try {

@@ -15,17 +15,13 @@ export type InstallBrowsersDeps = {
   readonly platform: NodeJS.Platform;
   readonly expandPatterns: typeof defaultExpandPatterns;
   readonly peekFlowMeta: typeof defaultPeekFlowMeta;
-  readonly execPath: string;
   readonly playwrightCliPath: string;
 };
 
 export async function installBrowserList(
   ctx: CommandContext,
   browsers: BrowserName[],
-  deps: Pick<
-    InstallBrowsersDeps,
-    "spawn" | "platform" | "execPath" | "playwrightCliPath"
-  >,
+  deps: Pick<InstallBrowsersDeps, "spawn" | "platform" | "playwrightCliPath">,
 ): Promise<void> {
   const done =
     browsers.length === 1
@@ -36,8 +32,8 @@ export async function installBrowserList(
     browsers.map((browser) => ({
       message: `Install ${browser}`,
       task: async () => {
-        const args = buildArgs(deps.playwrightCliPath, browser, deps.platform);
-        const result = await deps.spawn(deps.execPath, args);
+        const args = buildArgs(browser, deps.platform);
+        const result = await deps.spawn(deps.playwrightCliPath, args);
         if (result.exitCode !== 0) {
           throw new Error(formatError(browser, result));
         }
@@ -83,14 +79,10 @@ async function collectBrowsers(
   return [...seen].sort();
 }
 
-function buildArgs(
-  cliPath: string,
-  browser: BrowserName,
-  platform: NodeJS.Platform,
-): string[] {
+function buildArgs(browser: BrowserName, platform: NodeJS.Platform): string[] {
   return platform === "linux"
-    ? [cliPath, "install", "--with-deps", browser]
-    : [cliPath, "install", browser];
+    ? ["install", "--with-deps", browser]
+    : ["install", browser];
 }
 
 function formatError(browser: BrowserName, result: SpawnResult): string {
@@ -113,7 +105,6 @@ export async function handleInstallBrowsers(
     platform: process.platform,
     expandPatterns: defaultExpandPatterns,
     peekFlowMeta: defaultPeekFlowMeta,
-    execPath: process.execPath,
     playwrightCliPath: resolvePlaywrightCli(),
   });
 }
