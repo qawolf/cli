@@ -4,6 +4,7 @@ import { downloadBundle, requestBundle } from "./pull.js";
 
 type FetchedBundle = {
   tmpArchive: string;
+  bundleFetchedAt: Date;
   envVars: Record<string, string>;
   envVarsFetchedAt: Date;
 };
@@ -17,6 +18,7 @@ export async function fetchBundleAndEnvVars(
   const deps = { apiKey, baseUrl: ctx.apiBaseUrl, fetch };
   let signedUrl: string | undefined;
   let tmpArchive: string | undefined;
+  let bundleFetchedAt: Date | undefined;
   let envVars: Record<string, string> | undefined;
   let envVarsFetchedAt: Date | undefined;
 
@@ -35,6 +37,7 @@ export async function fetchBundleAndEnvVars(
             throw new Error("internal: signedUrl not set");
           }
           tmpArchive = (await downloadBundle({ fetch }, signedUrl)).tmpArchive;
+          bundleFetchedAt = new Date();
         },
       },
       {
@@ -50,10 +53,11 @@ export async function fetchBundleAndEnvVars(
 
   if (
     tmpArchive === undefined ||
+    bundleFetchedAt === undefined ||
     envVars === undefined ||
     envVarsFetchedAt === undefined
   ) {
     throw new Error("internal: fetch phase did not populate all results");
   }
-  return { tmpArchive, envVars, envVarsFetchedAt };
+  return { tmpArchive, bundleFetchedAt, envVars, envVarsFetchedAt };
 }
