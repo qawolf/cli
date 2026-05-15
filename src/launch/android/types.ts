@@ -1,4 +1,4 @@
-import type { AdbFn, SpawnFn } from "~/android/createAndroidEmulator.js";
+import type { AdbFn } from "~/android/createAndroidEmulator.js";
 import type { EmulatorSlot } from "~/android/createEmulatorPool.js"; // (D2)
 
 export type AppiumDriver = {
@@ -37,7 +37,6 @@ export type AndroidLaunchDeps = {
   emulatorPool: EmulatorPoolHandle;
   /** Required: no default until WebDriverIO is added in the runner wiring ticket. */
   createSession: CreateSessionFn;
-  spawn?: SpawnFn;
   adb?: AdbFn;
   writeFile?: WriteFileFn;
 };
