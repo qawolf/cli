@@ -18,6 +18,7 @@ import {
   runWebFlow as defaultRunWebFlow,
 } from "~/lib/runner/runWebFlow.js";
 
+import { ensureFlowDeps, findEnvDir } from "./ensureDeps.js";
 import { flowsRun } from "./run.js";
 import type { FlowsRunFlags } from "./runInternals.js";
 
@@ -95,6 +96,32 @@ export async function handleFlowsRun(
   flags: FlowsRunFlags,
 ): Promise<CommandResult> {
   const cwd = process.cwd();
+
+  // Pre-expand to find the env directory so we can install its deps and
+  // resolve playwright from there. The expansion runs again inside flowsRun.
+  const expandedFiles = await defaultExpandPatterns(
+    pattern ? [pattern] : [],
+    cwd,
+  );
+  const envDir =
+    expandedFiles.length > 0 ? findEnvDir(expandedFiles[0]!) : undefined;
+
+  if (envDir) {
+    await ctx.ui.withProgress(
+      [
+        {
+          message: "Preparing environment",
+          task: () => ensureFlowDeps(envDir),
+        },
+      ],
+      () => "Environment ready",
+    );
+  }
+
+  // Resolve playwright from the env dir (where it was just installed).
+  // Falls back to CWD if no env dir was detected (e.g. running local flows).
+  const resolvedDir = envDir ?? cwd;
+
   return flowsRun(ctx, pattern, flags, {
     cwd,
     expandPatterns: defaultExpandPatterns,
@@ -104,10 +131,10 @@ export async function handleFlowsRun(
         spawn: defaultSpawn,
         platform: process.platform,
         execPath: process.execPath,
-        playwrightCliPath: resolvePlaywrightCli(cwd),
+        playwrightCliPath: resolvePlaywrightCli(resolvedDir),
       }),
     runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: defaultRunWebFlowDeps(cwd),
+    runWebFlowDeps: defaultRunWebFlowDeps(resolvedDir),
     reporter: createConsoleReporter({
       stdout: process.stdout,
       stderr: process.stderr,
