@@ -103,17 +103,15 @@ export function parseEnum<T extends string>(
 export async function dispatchFlow({
   deps,
   flow,
-  reporter,
   webOptions,
   androidOptions,
 }: {
   deps: FlowsRunDeps;
   flow: ResolvedFlow;
-  reporter: Reporter;
   webOptions: RunWebFlowOptions;
   androidOptions: RunAndroidFlowOptions;
 }): Promise<{ run: FlowRunResult; durationMs: number }> {
-  reporter.onFlowStart?.({ name: flow.name, path: flow.file });
+  deps.reporter.onFlowStart?.({ name: flow.name, path: flow.file });
   const flowStart = deps.now();
   let run: FlowRunResult;
   try {

@@ -65,7 +65,6 @@ export async function runFlows(
     const { run, durationMs } = await dispatchFlow({
       deps,
       flow,
-      reporter: deps.reporter,
       webOptions,
       androidOptions,
     });

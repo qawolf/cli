@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
+import type { RunSummary } from "~/lib/reporter/types.js";
+
 import {
   callsOf,
   defaultFlags,
@@ -68,5 +70,9 @@ describe("flowsRun Android dispatch", () => {
     expect(callsOf(deps.runWebFlow).length).toBe(1);
     expect(callsOf(deps.runAndroidFlow).length).toBe(1);
     expect(reporter.onFlowPass).toHaveBeenCalledTimes(2);
+    const completeCall = callsOf(reporter.onRunComplete!)[0]?.[0] as {
+      summary: RunSummary;
+    };
+    expect(completeCall.summary.meta.browsers).toEqual(["chromium"]);
   });
 });
