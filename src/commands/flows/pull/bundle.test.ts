@@ -77,11 +77,13 @@ describe("buildManifest", () => {
     bundleDir: string;
     cliFlowsVersion: string;
     now: Date;
+    envVarsFetchedAt: Date | undefined;
   } => ({
     envId: "env-x",
     bundleDir: workDir,
     cliFlowsVersion: "0.4.0",
     now: new Date("2026-05-10T12:00:00.000Z"),
+    envVarsFetchedAt: undefined,
   });
 
   it("walks .flow.ts and .flow.js files, ignores other extensions", async () => {

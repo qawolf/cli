@@ -23,6 +23,7 @@ const baseManifest = (files: { path: string; sha256: string }[]): Manifest => ({
   envId: "env-abc",
   envSlug: undefined,
   fetchedAt: "2026-05-10T12:00:00.000Z",
+  envVarsFetchedAt: undefined,
   cliFlowsVersion: "0.1.0",
   bundleFlowsVersion: "0.1.0",
   files,

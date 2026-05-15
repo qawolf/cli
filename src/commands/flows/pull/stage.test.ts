@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
@@ -58,11 +58,14 @@ describe("stageBundle", () => {
       envId: "env-abc",
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
+      envVars: {},
+      envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
     });
 
     expect(result).toEqual({
       envDir: destDir,
       flowCount: 2,
+      envVarCount: 0,
       bundleFlowsVersion: "0.5.0",
     });
     expect(await readFile(join(destDir, "checkout.flow.ts"), "utf8")).toBe(
@@ -93,11 +96,45 @@ describe("stageBundle", () => {
       envId: "env-abc",
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
+      envVars: {},
+      envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
     });
 
     expect(result.flowCount).toBe(1);
     expect(await readFile(join(destDir, "a.flow.js"), "utf8")).toBe("// a\n");
     expect(await pathExists(join(destDir, "garden-x-y-abc123"))).toBe(false);
+  });
+
+  it("writes env vars to .env with mode 0600 and records envVarsFetchedAt", async () => {
+    await buildBundle(bundleArchive, {
+      flows: [{ name: "a.flow.ts", data: "// a\n" }],
+      bundleFlowsVersion: "0.5.0",
+    });
+    const archive = await prepArchive();
+    const fetchedAt = new Date("2026-05-10T12:30:00.000Z");
+
+    const result = await stageBundle({
+      tmpArchive: archive,
+      destAbs: destDir,
+      envId: "env-abc",
+      cliFlowsVersion: "0.4.0",
+      now: new Date("2026-05-10T12:00:00.000Z"),
+      envVars: { BASE_URL: "https://example.com", TOKEN: "abc" },
+      envVarsFetchedAt: fetchedAt,
+    });
+
+    expect(result.envVarCount).toBe(2);
+    expect(await readFile(join(destDir, ".env"), "utf8")).toBe(
+      'BASE_URL="https://example.com"\nTOKEN="abc"\n',
+    );
+    const stats = await stat(join(destDir, ".env"));
+    expect(stats.mode & 0o777).toBe(0o600);
+
+    const manifest = await readManifest(destDir);
+    if (manifest === "missing" || manifest === "malformed") {
+      throw new Error("manifest should be present");
+    }
+    expect(manifest.envVarsFetchedAt).toBe(fetchedAt.toISOString());
   });
 
   it("records bundleFlowsVersion as undefined when bundle has no pin", async () => {
@@ -113,6 +150,8 @@ describe("stageBundle", () => {
       envId: "env-abc",
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
+      envVars: {},
+      envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
     });
 
     expect(result.bundleFlowsVersion).toBeUndefined();

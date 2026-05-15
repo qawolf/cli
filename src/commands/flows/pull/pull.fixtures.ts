@@ -9,6 +9,11 @@ export const testApiKey = "qawolf_test";
 export const testSignedUrl = "https://gcs.example.com/bundle.tar.gz?sig=abc";
 const testExpiresAt = "2099-12-31T00:00:00.000Z";
 export const flowsBundlePath = "gitwolf.getFlowsBundleUrl";
+export const envVarsPath = "environment.getEnvironmentWithVariables";
+export const testEnvVars: Record<string, string> = {
+  BASE_URL: "https://example.com",
+  PASSWORD: "p@ss\"w'd",
+};
 
 export async function buildBundle(
   archivePath: string,
@@ -49,9 +54,10 @@ export async function buildBundle(
 }
 
 export type FetchScenario =
-  | { kind: "ok"; sourceArchive: string }
+  | { kind: "ok"; sourceArchive: string; envVars?: Record<string, string> }
   | { kind: "bundleError"; status: number; body: string }
   | { kind: "downloadError"; status: number; body: string }
+  | { kind: "envVarsError"; status: number; body: string }
   | { kind: "networkError"; error: Error };
 
 type FetchCall = { url: string; init: RequestInit | undefined };
@@ -101,6 +107,22 @@ export function makeFakeFetch(
             url: testSignedUrl,
             expiresAt: testExpiresAt,
           }),
+        },
+      };
+      return new Response(JSON.stringify(body), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    if (url.includes(`/api/trpc/${envVarsPath}`)) {
+      if (active.kind === "envVarsError") {
+        return new Response(active.body, { status: active.status });
+      }
+      const vars =
+        active.kind === "ok" && active.envVars ? active.envVars : testEnvVars;
+      const body = {
+        result: {
+          data: superjson.serialize({ environmentVariables: vars }),
         },
       };
       return new Response(JSON.stringify(body), {
