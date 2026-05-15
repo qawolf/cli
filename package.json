@@ -31,26 +31,26 @@
     "uninstall:binary": "rm ~/.local/bin/qawolf"
   },
   "dependencies": {
-    "@clack/prompts": "1.3.0",
+    "@clack/prompts": "1.4.0",
     "@napi-rs/keyring": "1.3.0",
-    "@playwright/test": "1.59.1",
+    "@playwright/test": "1.60.0",
     "@qawolf/flow-targets": "1.0.0",
-    "@qawolf/flows": "0.1.0",
+    "@qawolf/flows": "0.1.1",
     "commander": "14.0.3",
     "env-paths": "4.0.0",
-    "playwright": "1.59.1",
+    "playwright": "1.60.0",
     "superjson": "2.2.6",
     "tar": "7.5.15",
     "tinyglobby": "0.2.16",
-    "zod": "4.4.2"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@tsconfig/bun": "1.0.10",
     "@tsconfig/strictest": "2.0.8",
-    "@types/bun": "1.3.13",
-    "knip": "6.11.0",
-    "oxfmt": "0.47.0",
-    "oxlint": "1.62.0",
+    "@types/bun": "1.3.14",
+    "knip": "6.14.0",
+    "oxfmt": "0.50.0",
+    "oxlint": "1.65.0",
     "oxlint-tsgolint": "0.22.1",
     "typescript": "6.0.3"
   },
