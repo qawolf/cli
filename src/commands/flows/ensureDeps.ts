@@ -14,12 +14,22 @@ export function findEnvDir(flowPath: string): string | undefined {
   }
 }
 
-async function spawnNpm(
+type PackageManager = "npm" | "bun" | "pnpm" | "yarn";
+
+export function detectPackageManager(dir: string): PackageManager {
+  if (existsSync(join(dir, "bun.lockb"))) return "bun";
+  if (existsSync(join(dir, "pnpm-lock.yaml"))) return "pnpm";
+  if (existsSync(join(dir, "yarn.lock"))) return "yarn";
+  return "npm";
+}
+
+async function spawnPm(
+  pm: PackageManager,
   args: string[],
   cwd: string,
 ): Promise<{ exitCode: number; stderr: string }> {
   return new Promise((resolve) => {
-    const child = nodeSpawn("npm", args, { cwd });
+    const child = nodeSpawn(pm, args, { cwd });
     let stderr = "";
     child.stderr?.on("data", (chunk: Buffer) => {
       stderr += String(chunk);
@@ -33,27 +43,50 @@ function pkgDir(envDir: string, ...pkgParts: string[]): string {
   return join(envDir, "node_modules", ...pkgParts);
 }
 
+// npm uses --no-save so the package.json is not modified; other managers'
+// "add" commands always persist to the manifest (no equivalent flag exists).
+function addArgs(pm: PackageManager, pkg: string): string[] {
+  return pm === "npm" ? ["install", "--no-save", pkg] : ["add", pkg];
+}
+
+// Returns the single envDir for all flow files, or undefined if none have a
+// package.json ancestor. Throws if files span multiple packages.
+export function resolveUniqueEnvDir(files: string[]): string | undefined {
+  const dirs = new Set(
+    files.map(findEnvDir).filter((d): d is string => d !== undefined),
+  );
+  if (dirs.size > 1) {
+    const listed = [...dirs].map((d) => `  - ${d}`).join("\n");
+    throw new Error(
+      `Pattern matches flows from ${dirs.size} packages — narrow it to a single package:\n${listed}`,
+    );
+  }
+  return dirs.size === 1 ? [...dirs][0] : undefined;
+}
+
 // Install all deps in the env directory, then ensure playwright and
-// @qawolf/flows are present — adding them via --no-save if not declared.
+// @qawolf/flows are present — adding them if not declared.
 export async function ensureFlowDeps(envDir: string): Promise<void> {
-  const install = await spawnNpm(["install"], envDir);
+  const pm = detectPackageManager(envDir);
+
+  const install = await spawnPm(pm, ["install"], envDir);
   if (install.exitCode !== 0) {
     throw new Error(
-      `npm install failed in ${envDir}:\n${install.stderr.trim()}`,
+      `${pm} install failed in ${envDir}:\n${install.stderr.trim()}`,
     );
   }
 
   if (!existsSync(pkgDir(envDir, "playwright"))) {
-    const r = await spawnNpm(["install", "--no-save", "playwright"], envDir);
+    const r = await spawnPm(pm, addArgs(pm, "playwright"), envDir);
     if (r.exitCode !== 0) {
-      throw new Error(`npm install playwright failed:\n${r.stderr.trim()}`);
+      throw new Error(`${pm} add playwright failed:\n${r.stderr.trim()}`);
     }
   }
 
   if (!existsSync(pkgDir(envDir, "@qawolf", "flows"))) {
-    const r = await spawnNpm(["install", "--no-save", "@qawolf/flows"], envDir);
+    const r = await spawnPm(pm, addArgs(pm, "@qawolf/flows"), envDir);
     if (r.exitCode !== 0) {
-      throw new Error(`npm install @qawolf/flows failed:\n${r.stderr.trim()}`);
+      throw new Error(`${pm} add @qawolf/flows failed:\n${r.stderr.trim()}`);
     }
   }
 }

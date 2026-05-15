@@ -14,11 +14,17 @@ function fmtDuration(ms: number): string {
   return `(${(ms / 1000).toFixed(2)}s)`;
 }
 
+function renderCause(cause: unknown): string {
+  if (cause instanceof Error) return cause.stack ?? cause.message;
+  return String(cause);
+}
+
 function formatErrorWithCause(err: Error): string {
   const parts: string[] = [err.stack ?? String(err)];
   let cause: unknown = err.cause;
-  while (cause instanceof Error) {
-    parts.push(`Caused by: ${cause.stack ?? cause.message}`);
+  while (cause !== undefined && cause !== null) {
+    parts.push(`Caused by: ${renderCause(cause)}`);
+    if (!(cause instanceof Error)) break;
     cause = cause.cause;
   }
   return parts.join("\n");

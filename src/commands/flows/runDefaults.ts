@@ -18,7 +18,7 @@ import {
   runWebFlow as defaultRunWebFlow,
 } from "~/lib/runner/runWebFlow.js";
 
-import { ensureFlowDeps, findEnvDir } from "./ensureDeps.js";
+import { ensureFlowDeps, resolveUniqueEnvDir } from "./ensureDeps.js";
 import { flowsRun } from "./run.js";
 import type { FlowsRunFlags } from "./runInternals.js";
 
@@ -103,8 +103,13 @@ export async function handleFlowsRun(
     pattern ? [pattern] : [],
     cwd,
   );
-  const envDir =
-    expandedFiles.length > 0 ? findEnvDir(expandedFiles[0]!) : undefined;
+
+  let envDir: string | undefined;
+  try {
+    envDir = resolveUniqueEnvDir(expandedFiles);
+  } catch (err) {
+    return { error: (err as Error).message, exitCode: 2 };
+  }
 
   if (envDir) {
     await ctx.ui.withProgress(
