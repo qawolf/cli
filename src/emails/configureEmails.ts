@@ -10,7 +10,12 @@ type ConfigureEmailsDeps = {
 // which zod@4.4.2 throws on. Tests always inject deps, so this path only runs
 // in production where the compatible SDK environment is assumed.
 async function loadSdkDeps(): Promise<ConfigureEmailsDeps> {
-  const sdk = await import("@qawolf/emails");
+  const sdk = await import("@qawolf/emails").catch((err: unknown) => {
+    throw new Error(
+      "Could not load @qawolf/emails. Install it in your project: `npm install @qawolf/emails` or `bun add @qawolf/emails`.",
+      { cause: err },
+    );
+  });
   return {
     createEmailsClient: sdk.createEmailsClient,
     configureEmailsClient: sdk.configureEmailsClient,

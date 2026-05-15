@@ -60,4 +60,23 @@ describe("configureEmails", () => {
     expect(caughtError).toBeInstanceOf(Error);
     expect((caughtError as Error).message).toBe("service unavailable");
   });
+
+  it("should propagate errors thrown by configureEmailsClient", async () => {
+    const deps = {
+      createEmailsClient: async () => fakeClient,
+      configureEmailsClient: (): void => {
+        throw new Error("registration failed");
+      },
+    };
+
+    let caughtError: unknown;
+    try {
+      await configureEmails("https://example.com", deps);
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeInstanceOf(Error);
+    expect((caughtError as Error).message).toBe("registration failed");
+  });
 });
