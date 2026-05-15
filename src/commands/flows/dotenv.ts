@@ -31,10 +31,11 @@ function quote(value: string): string {
 export function parseDotenv(content: string): Record<string, string> {
   const out: Record<string, string> = {};
   for (const raw of content.split("\n")) {
-    if (raw === "") continue;
-    const m = lineRe.exec(raw);
+    const line = raw.trim();
+    if (line === "") continue;
+    const m = lineRe.exec(line);
     if (!m) {
-      throw new Error(`Cannot parse .env line: ${JSON.stringify(raw)}`);
+      throw new Error(`Cannot parse .env line: ${JSON.stringify(line)}`);
     }
     out[m[1]!] = unquote(m[2]!);
   }
