@@ -50,10 +50,10 @@ function pkgDir(envDir: string, ...pkgParts: string[]): string {
   return join(envDir, "node_modules", ...pkgParts);
 }
 
+// npm uses --no-save so the package.json is not modified; other managers'
+// "add" commands always persist to the manifest (no equivalent flag exists).
 function addArgs(pm: PackageManager, pkg: string): string[] {
-  return pm === "npm"
-    ? ["install", "--save-exact", pkg]
-    : ["add", "--save-exact", pkg];
+  return pm === "npm" ? ["install", "--no-save", pkg] : ["add", pkg];
 }
 
 function readPkgJson(
