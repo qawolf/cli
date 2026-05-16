@@ -32,7 +32,7 @@ const findFreePort: FindFreePortFn = () =>
     server.on("error", reject);
   });
 const defaultSpawnAppium: SpawnAppiumFn = (bin, args, env) => {
-  const child = spawn(process.execPath, [bin, ...args], {
+  const child = spawn(bin, args, {
     stdio: ["ignore", "pipe", "pipe"],
     env,
   });

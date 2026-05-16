@@ -15,23 +15,8 @@ function readVersion(pkgName: string): string {
   return (JSON.parse(raw) as { version: string }).version;
 }
 
-function readFlowsVersion(): { flows: string; playwright: string } {
-  const raw = readFileSync(
-    join(root, "node_modules/@qawolf/flows/package.json"),
-    "utf8",
-  );
-  const pkg = JSON.parse(raw) as {
-    version: string;
-    peerDependencies?: Record<string, string>;
-  };
-  return {
-    flows: pkg.version,
-    playwright: pkg.peerDependencies?.["playwright"] ?? "",
-  };
-}
-
-const { flows: flowsVersion, playwright: playwrightVersion } =
-  readFlowsVersion();
+const flowsVersion = readVersion("@qawolf/flows");
+const playwrightVersion = readVersion("playwright");
 const emailsVersion = readVersion("@qawolf/emails");
 const testkitVersion = readVersion("@qawolf/testkit");
 const appiumVersion = readVersion("appium");

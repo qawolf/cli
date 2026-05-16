@@ -48,7 +48,7 @@ export async function configureTestkit(
     deps ?? (await loadSdkDeps(cwd));
   const client = createTestkitClient({
     mountCifsShare: () => notAvailableLocally("mountCifsShare"),
-    saveSnapshot: () => notAvailableLocally("saveBaselineScreenshot"),
+    saveSnapshot: () => notAvailableLocally("saveBaselineScreenshot"), // Port key is saveSnapshot; platform capability is saveBaselineScreenshot
     startOpenVpn: () => notAvailableLocally("startOpenVpn"),
     startWireGuard: () => notAvailableLocally("startWireGuard"),
   });
