@@ -1,6 +1,6 @@
 import { classifyTarget, flowBasename } from "~/commands/flows/expand.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
-import type { RunSummary } from "~/lib/reporter/types.js";
+import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
 
 import { buildRunOptions, runFlows } from "./runHelpers.js";

@@ -22,7 +22,7 @@ const config: KnipConfig = {
     // TODO WIZ-10325: remove once flowsRun consumes more of the runner surface
     "src/lib/runner/*.ts",
     // TODO WIZ-10326: remove once Reporter is consumed by more than the console reporter
-    "src/lib/reporter/*.ts",
+    "src/shell/reporter/*.ts",
     // TODO WIZ-10355: remove once flows pull consumes the flowsBundle schema
     "src/apex/types.ts",
   ],

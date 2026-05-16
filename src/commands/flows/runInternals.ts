@@ -5,7 +5,7 @@ import type {
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/commands/flows/expand.js";
 import type { CommandContext } from "~/lib/context.js";
-import type { Reporter } from "~/lib/reporter/types.js";
+import type { Reporter } from "~/shell/reporter/types.js";
 import { FlowRunError } from "~/lib/runner/errors.js";
 import type {
   RunAndroidFlowDeps,

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-import type { RunSummary } from "~/lib/reporter/types.js";
+import type { RunSummary } from "~/shell/reporter/types.js";
 
 import {
   callsOf,

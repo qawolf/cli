@@ -10,7 +10,7 @@ import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { isNoEntError } from "~/core/errors.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
-import { createConsoleReporter } from "~/lib/reporter/createConsoleReporter.js";
+import { createConsoleReporter } from "~/shell/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/lib/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/lib/runner/runWebFlow.js";
 // import { configureEmails } from "~/emails/configureEmails.js";
