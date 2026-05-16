@@ -1,5 +1,5 @@
 import { mock } from "bun:test";
-import type { EmulatorSlot } from "~/android/createEmulatorPool.js";
+import type { EmulatorSlot } from "./createEmulatorPool.js";
 import { createAndroidLaunchContext } from "./createAndroidLaunchContext.js";
 import type {
   AndroidLaunchDeps,

@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import type { AdbFn } from "~/android/createAndroidEmulator.js";
+import type { AdbFn } from "./createAndroidEmulator.js";
 
 const execFileAsync = promisify(execFile);
 

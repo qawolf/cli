@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, mock } from "bun:test";
 import {
   makeBaseDeps,
   makePool,
-} from "~/launch/android/createAndroidLaunchContext.fixtures.js";
+} from "~/shell/appium/createAndroidLaunchContext.fixtures.js";
 import type {
   RunAndroidFlowDeps,
   RunAndroidFlowOptions,

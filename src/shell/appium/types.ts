@@ -1,5 +1,5 @@
-import type { AdbFn } from "~/android/createAndroidEmulator.js";
-import type { EmulatorSlot } from "~/android/createEmulatorPool.js"; // (D2)
+import type { AdbFn } from "./createAndroidEmulator.js";
+import type { EmulatorSlot } from "./createEmulatorPool.js"; // (D2)
 
 export type AppiumDriver = {
   startRecordingScreen(): Promise<void>;

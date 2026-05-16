@@ -3,12 +3,12 @@ import type {
   AndroidFlowApiReturnValue,
   AndroidFlowDefinition,
 } from "@qawolf/flows/android";
-import { createAndroidLaunchContext } from "~/launch/android/createAndroidLaunchContext.js";
+import { createAndroidLaunchContext } from "~/shell/appium/createAndroidLaunchContext.js";
 import type {
   AndroidLaunchContext,
   AndroidLaunchDeps,
   AndroidLaunchOptions,
-} from "~/launch/android/types.js";
+} from "~/shell/appium/types.js";
 import { createRunner } from "./createRunner.js";
 import type {
   FlowDefinition,
