@@ -8,7 +8,7 @@ import { type CommandContext, type CommandResult } from "~/lib/context.js";
 import { resolveApiKey } from "~/lib/auth/resolve.js";
 import { resolvePlaywrightCli } from "~/lib/playwright.js";
 
-import { defaultSpawn } from "~/lib/spawn.js";
+import { defaultSpawn } from "~/shell/spawn.js";
 
 import { runChecks } from "./checks/index.js";
 import { renderResults } from "./render.js";

@@ -1,4 +1,6 @@
-import type { CheckResult, SpawnFn } from "~/doctor/types.js";
+import type { SpawnFn } from "~/shell/spawn.js";
+
+import type { CheckResult } from "~/doctor/types.js";
 
 type PlaywrightDeps = {
   readonly spawn: SpawnFn;

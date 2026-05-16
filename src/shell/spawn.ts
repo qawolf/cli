@@ -1,6 +1,12 @@
 import { spawn } from "node:child_process";
 
-import type { SpawnFn } from "~/doctor/types.js";
+export type SpawnResult = {
+  readonly exitCode: number;
+  readonly stdout: string;
+  readonly stderr: string;
+};
+
+export type SpawnFn = (cmd: string, args: string[]) => Promise<SpawnResult>;
 
 export const defaultSpawn: SpawnFn = (cmd, args) =>
   new Promise((resolve) => {

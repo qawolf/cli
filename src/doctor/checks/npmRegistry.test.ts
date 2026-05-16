@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-import type { SpawnFn, SpawnResult } from "~/doctor/types.js";
+import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 
 import { checkNpmRegistry } from "./npmRegistry.js";
 

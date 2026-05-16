@@ -1,4 +1,6 @@
-import type { CheckResult, SpawnFn } from "~/doctor/types.js";
+import type { SpawnFn } from "~/shell/spawn.js";
+
+import type { CheckResult } from "~/doctor/types.js";
 
 import { checkApiKey } from "./apiKey.js";
 import { checkApiUrl } from "./apiUrl.js";

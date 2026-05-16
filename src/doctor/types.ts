@@ -5,11 +5,3 @@ export type CheckResult = {
   readonly status: CheckStatus;
   readonly detail?: string;
 };
-
-export type SpawnResult = {
-  readonly exitCode: number;
-  readonly stdout: string;
-  readonly stderr: string;
-};
-
-export type SpawnFn = (cmd: string, args: string[]) => Promise<SpawnResult>;

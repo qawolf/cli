@@ -1,6 +1,6 @@
 import { mock } from "bun:test";
 
-import type { SpawnFn, SpawnResult } from "~/doctor/types.js";
+import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext } from "~/lib/context.js";
 import type { UI } from "~/lib/ui/index.js";
 
