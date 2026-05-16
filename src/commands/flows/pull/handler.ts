@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 import { resolveApiKey } from "~/lib/auth/index.js";
 import { flowsVersionFromCli } from "~/lib/config.js";
 import { type CommandContext, type CommandResult } from "~/lib/context.js";
-import { pluralize } from "~/lib/pluralize.js";
+import { pluralize } from "~/core/pluralize.js";
 import { fetchBundleAndEnvVars } from "./fetchPhase.js";
 import { manifestFilename } from "./manifest.js";
 import { checkSafety, validateEnvId } from "./pull.js";

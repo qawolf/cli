@@ -1,4 +1,4 @@
-import type { TestCounts } from "~/types.js";
+import type { TestCounts } from "~/core/types.js";
 import type { FlowRunError } from "./errors.js";
 
 export type JsonSerializable =

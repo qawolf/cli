@@ -1,4 +1,4 @@
-import { errorMessage } from "~/lib/errors.js";
+import { errorMessage } from "~/core/errors.js";
 import type { CheckResult } from "~/doctor/types.js";
 
 type ApiUrlDeps = {

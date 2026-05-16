@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { isNoEntError } from "~/lib/errors.js";
+import { isNoEntError } from "~/core/errors.js";
 
 type ConfigureFlowRuntime = (opts: {
   target: unknown;

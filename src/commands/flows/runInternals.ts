@@ -18,7 +18,7 @@ import type {
   runWebFlow as defaultRunWebFlow,
 } from "~/lib/runner/runWebFlow.js";
 import type { FlowRunResult } from "~/lib/runner/types.js";
-import type { BrowserName, TraceMode, VideoMode } from "~/types.js";
+import type { BrowserName, TraceMode, VideoMode } from "~/core/types.js";
 
 export type FlowsRunFlags = {
   readonly retries: number;

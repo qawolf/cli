@@ -7,7 +7,7 @@ import type { SpawnFn, SpawnResult } from "~/doctor/types.js";
 import { defaultSpawn } from "~/lib/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { resolvePlaywrightCli } from "~/lib/playwright.js";
-import type { BrowserName } from "~/types.js";
+import type { BrowserName } from "~/core/types.js";
 
 export type InstallBrowsersDeps = {
   readonly cwd: string;

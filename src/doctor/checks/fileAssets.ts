@@ -1,7 +1,7 @@
 import { relative } from "node:path";
 
 import type { CheckResult } from "~/doctor/types.js";
-import { errorMessage } from "~/lib/errors.js";
+import { errorMessage } from "~/core/errors.js";
 
 type FileAssetCategory = "file-asset" | "mobile-input";
 

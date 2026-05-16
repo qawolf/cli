@@ -1,6 +1,6 @@
 import { stat } from "node:fs/promises";
 
-import { isNoEntError } from "./errors.js";
+import { isNoEntError } from "~/core/errors.js";
 
 export async function pathExists(p: string): Promise<boolean> {
   try {

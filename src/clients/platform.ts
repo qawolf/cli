@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { getApiBaseUrl } from "~/lib/config.js";
-import { errorMessage } from "~/lib/errors.js";
+import { errorMessage } from "~/core/errors.js";
 
 const identityResponseSchema = z.object({
   team: z.object({

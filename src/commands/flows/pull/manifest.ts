@@ -6,7 +6,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 
-import { isNoEntError } from "~/lib/errors.js";
+import { isNoEntError } from "~/core/errors.js";
 
 export const manifestFilename = ".manifest.json";
 

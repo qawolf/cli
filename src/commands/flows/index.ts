@@ -1,7 +1,7 @@
 import type { Command } from "commander";
 
 import { withContext } from "~/lib/context.js";
-import type { TraceMode, VideoMode } from "~/types.js";
+import type { TraceMode, VideoMode } from "~/core/types.js";
 
 import { handleFlowsList } from "./list.js";
 import { type FlowsPullOptions, handleFlowsPull } from "./pull/handler.js";

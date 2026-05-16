@@ -1,4 +1,4 @@
-import type { BrowserName, TraceMode, VideoMode } from "~/types.js";
+import type { BrowserName, TraceMode, VideoMode } from "~/core/types.js";
 
 type BrowserLaunchOptions = {
   headless: boolean;

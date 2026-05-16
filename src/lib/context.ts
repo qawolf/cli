@@ -1,7 +1,7 @@
 import type { Command } from "commander";
 
-import { errorMessage } from "./errors.js";
-import { getConfigDir } from "./paths.js";
+import { errorMessage } from "~/core/errors.js";
+import { getConfigDir } from "~/core/paths.js";
 import { getApiBaseUrl } from "./config.js";
 import {
   type OutputFlags,

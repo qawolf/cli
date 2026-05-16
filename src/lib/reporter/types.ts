@@ -4,7 +4,7 @@ import type {
   TestCounts,
   TraceMode,
   VideoMode,
-} from "~/types.js";
+} from "~/core/types.js";
 
 export type RunMeta = {
   browsers: BrowserName[];

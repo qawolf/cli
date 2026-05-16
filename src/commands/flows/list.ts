@@ -1,8 +1,8 @@
 import path from "node:path";
 
 import type { CommandContext, CommandResult } from "~/lib/context.js";
-import { pluralize } from "~/lib/pluralize.js";
-import type { BrowserName } from "~/types.js";
+import { pluralize } from "~/core/pluralize.js";
+import type { BrowserName } from "~/core/types.js";
 
 import {
   expandPatterns,

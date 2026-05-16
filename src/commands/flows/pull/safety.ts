@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 
-import { isNoEntError } from "~/lib/errors.js";
+import { isNoEntError } from "~/core/errors.js";
 import { validateEntryPath } from "./entryPath.js";
 import { type Manifest, hashFile } from "./manifest.js";
 

@@ -1,6 +1,6 @@
 import { resolveApiKey, validateApiKey } from "~/lib/auth/index.js";
 import { type CommandContext, type CommandResult } from "~/lib/context.js";
-import { authCopy } from "~/lib/copy/index.js";
+import { authCopy } from "~/core/copy/index.js";
 
 export async function handleWhoami(
   ctx: CommandContext,

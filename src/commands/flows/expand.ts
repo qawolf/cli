@@ -2,7 +2,7 @@ import { getWebBrowserInfo, parseExecutionTarget } from "@qawolf/flow-targets";
 import { readFile, readdir } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { glob } from "tinyglobby";
-import type { BrowserName } from "~/types.js";
+import type { BrowserName } from "~/core/types.js";
 
 export function flowBasename(file: string): string {
   return basename(file).replace(/\.flow\.(ts|js)$/, "");

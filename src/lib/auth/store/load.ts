@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { Entry } from "@napi-rs/keyring";
 
-import { errorMessage } from "~/lib/errors.js";
+import { errorMessage } from "~/core/errors.js";
 import type { LoadApiKeyResult } from "~/lib/auth/types.js";
 import { account, credentialsFile, service } from "./constants.js";
 import { credentialsFileSchema } from "./types.js";
