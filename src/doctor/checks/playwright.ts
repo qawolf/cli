@@ -2,7 +2,6 @@ import type { CheckResult, SpawnFn } from "~/doctor/types.js";
 
 type PlaywrightDeps = {
   readonly spawn: SpawnFn;
-  readonly execPath: string;
   readonly playwrightCliPath: string | undefined;
 };
 
@@ -14,14 +13,11 @@ export async function checkPlaywright(
       name: "playwright",
       status: "fail",
       detail:
-        "Could not find Playwright. It should ship with the qawolf CLI — try reinstalling the CLI.",
+        "Could not find Playwright. Run `qawolf flows run` to install it, or run `npm install playwright` in your flow directory.",
     };
   }
 
-  const result = await deps.spawn(deps.execPath, [
-    deps.playwrightCliPath,
-    "--version",
-  ]);
+  const result = await deps.spawn(deps.playwrightCliPath, ["--version"]);
 
   if (result.exitCode < 0) {
     return {

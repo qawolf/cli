@@ -32,7 +32,7 @@ const findFreePort: FindFreePortFn = () =>
     server.on("error", reject);
   });
 const defaultSpawnAppium: SpawnAppiumFn = (bin, args, env) => {
-  const child = spawn(process.execPath, [bin, ...args], {
+  const child = spawn(bin, args, {
     stdio: ["ignore", "pipe", "pipe"],
     env,
   });
@@ -99,17 +99,20 @@ function waitForBanner(
   });
 }
 
-export async function createAppiumServer(params?: {
-  deps?: {
-    spawn?: SpawnAppiumFn;
-    findFreePort?: FindFreePortFn;
-    resolveAppiumBin?: () => string;
-  };
-  options?: {
-    appiumHome?: string;
-    startTimeoutMs?: number;
-  };
-}): Promise<{
+export async function createAppiumServer(
+  envDir: string,
+  params?: {
+    deps?: {
+      spawn?: SpawnAppiumFn;
+      findFreePort?: FindFreePortFn;
+      resolveAppiumBin?: (envDir: string) => string;
+    };
+    options?: {
+      appiumHome?: string;
+      startTimeoutMs?: number;
+    };
+  },
+): Promise<{
   port: number;
   home: string;
   stop: () => void;
@@ -121,7 +124,7 @@ export async function createAppiumServer(params?: {
   const appiumHome =
     params?.options?.appiumHome ?? join(envPaths("qawolf").data, "appium");
   const timeoutMs = params?.options?.startTimeoutMs ?? defaultStartTimeoutMs;
-  const bin = resolveAppiumBinFn();
+  const bin = resolveAppiumBinFn(envDir);
   const port = await findFreePortFn();
   const proc = spawnFn(bin, ["--port", String(port), "--log-level", "info"], {
     ...process.env,

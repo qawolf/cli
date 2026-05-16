@@ -22,7 +22,7 @@ describe("runChecks", () => {
     ) as unknown as typeof globalThis.fetch;
 
     const results = await runChecks({
-      env: { QAWOLF_API_KEY: "x" },
+      apiKey: "qawolf_test_key",
       fetch,
       spawn,
       apiBaseUrl: "https://app.qawolf.com",
@@ -31,8 +31,7 @@ describe("runChecks", () => {
       flowFiles: [],
       readFile: () => Promise.resolve(""),
       cwd: "/repo",
-      execPath: "/fake/node",
-      playwrightCliPath: "/fake/playwright/cli.js",
+      playwrightCliPath: "/fake/node_modules/.bin/playwright",
     });
 
     expect(results.map((result) => result.name)).toEqual([
@@ -63,7 +62,7 @@ describe("runChecks", () => {
     };
 
     const results = await runChecks({
-      env: { QAWOLF_API_KEY: "x" },
+      apiKey: "qawolf_test_key",
       fetch,
       spawn,
       apiBaseUrl: "https://app.qawolf.com",
@@ -76,8 +75,7 @@ describe("runChecks", () => {
         return Promise.resolve(source);
       },
       cwd: "/repo",
-      execPath: "/fake/node",
-      playwrightCliPath: "/fake/playwright/cli.js",
+      playwrightCliPath: "/fake/node_modules/.bin/playwright",
     });
 
     const warns = results.filter((r) => r.name === "file-assets");

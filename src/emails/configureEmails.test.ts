@@ -19,7 +19,7 @@ describe("configureEmails", () => {
       configureEmailsClient: () => {},
     };
 
-    await configureEmails("https://app.qawolf.com", deps);
+    await configureEmails("https://app.qawolf.com", "/test", deps);
 
     expect(capturedOpts).toEqual({
       emailerUrl: "https://app.qawolf.com",
@@ -37,7 +37,7 @@ describe("configureEmails", () => {
       },
     };
 
-    await configureEmails("https://example.com", deps);
+    await configureEmails("https://example.com", "/test", deps);
 
     expect(registeredClient).toBe(fakeClient);
   });
@@ -52,7 +52,7 @@ describe("configureEmails", () => {
 
     let caughtError: unknown;
     try {
-      await configureEmails("https://example.com", deps);
+      await configureEmails("https://example.com", "/test", deps);
     } catch (e) {
       caughtError = e;
     }
@@ -71,7 +71,7 @@ describe("configureEmails", () => {
 
     let caughtError: unknown;
     try {
-      await configureEmails("https://example.com", deps);
+      await configureEmails("https://example.com", "/test", deps);
     } catch (e) {
       caughtError = e;
     }

@@ -21,6 +21,7 @@ import type {
   WebLaunchOptions,
 } from "./web/types.js";
 import { FailWithoutRetryError } from "./errors.js";
+import { initFlowRuntime } from "./initFlowRuntime.js";
 import {
   normalizeBrowserName,
   notSupported,
@@ -41,6 +42,8 @@ export async function runWebFlow({
   options: RunWebFlowOptions;
   flowPath: string;
 }): Promise<FlowRunResult> {
+  await initFlowRuntime(flowPath);
+
   const mod = (await import(pathToFileURL(flowPath).href)) as Record<
     string,
     unknown

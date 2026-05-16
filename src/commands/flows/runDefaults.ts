@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
 import {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
@@ -5,17 +8,33 @@ import {
 import { installBrowserList } from "~/commands/install/browsers.js";
 import { defaultSpawn } from "~/lib/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
+import { isNoEntError } from "~/lib/errors.js";
 import { resolvePlaywrightCli } from "~/lib/playwright.js";
 import { createConsoleReporter } from "~/lib/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/lib/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/lib/runner/runWebFlow.js";
-import { configureEmails } from "~/emails/configureEmails.js";
+// import { configureEmails } from "~/emails/configureEmails.js";
 import { configureTestkit } from "~/testkit/stubs.js";
 
+import { parseDotenv } from "./dotenv.js";
 import { ensureFlowDeps, resolveUniqueEnvDir } from "./ensureDeps.js";
 import { defaultRunWebFlowDeps } from "./runWebFlowDeps.js";
 import { flowsRun } from "./run.js";
 import type { FlowsRunFlags } from "./runInternals.js";
+
+export async function _loadEnvFile(envDir: string): Promise<void> {
+  let content: string;
+  try {
+    content = await readFile(join(envDir, ".env"), "utf8");
+  } catch (err) {
+    if (isNoEntError(err)) return;
+    throw err;
+  }
+  const vars = parseDotenv(content);
+  for (const [key, value] of Object.entries(vars)) {
+    if (process.env[key] === undefined) process.env[key] = value;
+  }
+}
 
 export async function handleFlowsRun(
   ctx: CommandContext,
@@ -24,8 +43,6 @@ export async function handleFlowsRun(
 ): Promise<CommandResult> {
   const cwd = process.cwd();
 
-  // Pre-expand to find the env directory so we can install its deps and
-  // resolve playwright from there. The expansion runs again inside flowsRun.
   const expandedFiles = await defaultExpandPatterns(
     pattern ? [pattern] : [],
     cwd,
@@ -49,12 +66,13 @@ export async function handleFlowsRun(
       ],
       () => "Environment ready",
     );
+    await _loadEnvFile(envDir);
   }
 
   // Resolve playwright from the env dir; falls back to CWD for local flows.
   const resolvedDir = envDir ?? cwd;
 
-  await Promise.all([configureEmails(ctx.apiBaseUrl), configureTestkit()]);
+  await configureTestkit(resolvedDir);
   return flowsRun(ctx, pattern, flags, {
     cwd,
     expandPatterns: defaultExpandPatterns,
@@ -63,11 +81,10 @@ export async function handleFlowsRun(
       installBrowserList(innerCtx, browsers, {
         spawn: defaultSpawn,
         platform: process.platform,
-        execPath: process.execPath,
         playwrightCliPath: resolvePlaywrightCli(resolvedDir),
       }),
     runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: defaultRunWebFlowDeps(resolvedDir),
+    runWebFlowDeps: await defaultRunWebFlowDeps(resolvedDir),
     runAndroidFlow: defaultRunAndroidFlow,
     runAndroidFlowDeps: "not-wired", // TODO WIZ-10343: wire production Android deps
     reporter: createConsoleReporter({

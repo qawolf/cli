@@ -12,12 +12,10 @@ function spawnReturning(result: SpawnResult): SpawnFn {
   return mock<SpawnFn>(() => Promise.resolve(result));
 }
 
-const fakeNode = "/fake/node";
-const fakeCli = "/fake/playwright/cli.js";
+const fakeCli = "/fake/node_modules/.bin/playwright";
 
 const checkDeps = (spawn: SpawnFn) => ({
   spawn,
-  execPath: fakeNode,
   playwrightCliPath: fakeCli,
 });
 
@@ -28,7 +26,6 @@ describe("checkPlaywright", () => {
     );
     const r = await checkPlaywright({
       spawn,
-      execPath: fakeNode,
       playwrightCliPath: undefined,
     });
     expect(r.status).toBe("fail");
@@ -44,7 +41,7 @@ describe("checkPlaywright", () => {
     });
     const r = await checkPlaywright(checkDeps(spawn));
     expect(r).toEqual({ name: "playwright", status: "pass" });
-    expect(spawn).toHaveBeenCalledWith(fakeNode, [fakeCli, "--version"]);
+    expect(spawn).toHaveBeenCalledWith(fakeCli, ["--version"]);
   });
 
   it("fails when spawn errors (process failed to launch)", async () => {

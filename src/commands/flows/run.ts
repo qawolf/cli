@@ -59,6 +59,8 @@ export async function flowsRun(
     }
   }
 
+  flows.sort((a, b) => a.file.localeCompare(b.file));
+
   if (flows.length === 0) {
     ctx.ui.info("No flows matched.");
     return;
