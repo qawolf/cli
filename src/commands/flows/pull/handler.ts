@@ -6,6 +6,7 @@ import { flowsVersionFromCli } from "~/lib/config.js";
 import { type CommandContext, type CommandResult } from "~/lib/context.js";
 import { pluralize } from "~/lib/pluralize.js";
 import { fetchBundleAndEnvVars } from "./fetchPhase.js";
+import { manifestFilename } from "./manifest.js";
 import { checkSafety, validateEnvId } from "./pull.js";
 import { stageBundle } from "./stage.js";
 
@@ -93,7 +94,7 @@ export async function handleFlowsPull(
               destAbs,
               envId: opts.env,
               cliFlowsVersion: flowsVersionFromCli,
-              now: new Date(),
+              now: fetched.bundleFetchedAt,
               envVars: fetched.envVars,
               envVarsFetchedAt: fetched.envVarsFetchedAt,
             }),
@@ -105,10 +106,12 @@ export async function handleFlowsPull(
     if (ctx.ui.mode === "json") {
       ctx.ui.output(
         {
+          env: opts.env,
           envDir: result.envDir,
+          fetchedAt: fetched.bundleFetchedAt.toISOString(),
           flowCount: result.flowCount,
           envVarCount: result.envVarCount,
-          bundleFlowsVersion: result.bundleFlowsVersion,
+          manifestPath: join(result.envDir, manifestFilename),
         },
         "",
       );
