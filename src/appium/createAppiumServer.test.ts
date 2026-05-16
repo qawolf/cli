@@ -26,7 +26,7 @@ describe("createAppiumServer", () => {
     const spawnFn: SpawnAppiumFn =
       overrides?.spawn ?? ((_bin, _args, _env) => fakeProcess);
     const findFreePort: FindFreePortFn = async () => 9515;
-    const resolveAppiumBin = () => "/fake/appium";
+    const resolveAppiumBin = (_envDir: string) => "/fake/appium";
     return { spawnFn, killFn, output, findFreePort, resolveAppiumBin };
   }
 
@@ -43,7 +43,7 @@ describe("createAppiumServer", () => {
       10,
     );
 
-    const result = await createAppiumServer({
+    const result = await createAppiumServer("/fake/env", {
       deps: { spawn: spawnFn, findFreePort, resolveAppiumBin },
       options: { appiumHome: "/tmp/appium-home", startTimeoutMs: 1_000 },
     });
@@ -76,7 +76,7 @@ describe("createAppiumServer", () => {
       10,
     );
 
-    const result = await createAppiumServer({
+    const result = await createAppiumServer("/fake/env", {
       deps: { spawn: spawnFn, findFreePort, resolveAppiumBin },
       options: { appiumHome: "/tmp/appium-home", startTimeoutMs: 1_000 },
     });
@@ -99,7 +99,7 @@ describe("createAppiumServer", () => {
       10,
     );
 
-    const result = await createAppiumServer({
+    const result = await createAppiumServer("/fake/env", {
       deps: { spawn: spawnFn, findFreePort, resolveAppiumBin },
       options: { appiumHome: "/tmp/appium-home", startTimeoutMs: 1_000 },
     });
@@ -119,7 +119,7 @@ describe("createAppiumServer", () => {
 
     let caught: unknown;
     try {
-      await createAppiumServer({
+      await createAppiumServer("/fake/env", {
         deps: { spawn: earlyExitSpawn, findFreePort, resolveAppiumBin },
         options: { startTimeoutMs: 5_000 },
       });
@@ -144,7 +144,7 @@ describe("createAppiumServer", () => {
 
     let caught: unknown;
     try {
-      await createAppiumServer({
+      await createAppiumServer("/fake/env", {
         deps: { spawn: hangingSpawn, findFreePort, resolveAppiumBin },
         options: { startTimeoutMs: 50 },
       });
@@ -158,7 +158,7 @@ describe("createAppiumServer", () => {
 
   it("should reject when resolveAppiumBin throws", async () => {
     const { spawnFn, findFreePort } = makeTestDeps();
-    const failResolve = () => {
+    const failResolve = (_envDir: string) => {
       throw new Error(
         "Appium not found in node_modules. Install it by running: qawolf install",
       );
@@ -166,7 +166,7 @@ describe("createAppiumServer", () => {
 
     let caught: unknown;
     try {
-      await createAppiumServer({
+      await createAppiumServer("/fake/env", {
         deps: { spawn: spawnFn, findFreePort, resolveAppiumBin: failResolve },
       });
     } catch (e) {

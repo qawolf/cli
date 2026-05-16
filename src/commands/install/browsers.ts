@@ -105,6 +105,6 @@ export async function handleInstallBrowsers(
     platform: process.platform,
     expandPatterns: defaultExpandPatterns,
     peekFlowMeta: defaultPeekFlowMeta,
-    playwrightCliPath: resolvePlaywrightCli(),
+    playwrightCliPath: resolvePlaywrightCli(process.cwd()),
   });
 }

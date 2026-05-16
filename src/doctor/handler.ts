@@ -18,7 +18,7 @@ export async function handleDoctor(
   const flowFiles = await expandPatterns([], cwd);
   let playwrightCliPath: string | undefined;
   try {
-    playwrightCliPath = resolvePlaywrightCli();
+    playwrightCliPath = resolvePlaywrightCli(cwd);
   } catch {
     playwrightCliPath = undefined;
   }

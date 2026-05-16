@@ -11,6 +11,10 @@ const config: KnipConfig = {
   ignoreDependencies: [
     // TODO WIZ-10341 follow-up: consumed once the web-flow runner imports it.
     "@playwright/test",
+    // Installed into the flow env dir at runtime by ensureFlowDeps; not imported by the CLI.
+    "appium",
+    "appium-xcuitest-driver",
+    "appium-uiautomator2-driver",
   ],
   ignore: [
     // TODO WIZ-10324: move to its domain when the commands that use it land

@@ -2,6 +2,9 @@ import { spawn as nodeSpawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
+  appiumUiautomator2DriverVersion,
+  appiumVersion,
+  appiumXcuitestDriverVersion,
   emailsVersion,
   flowsVersion,
   playwrightVersion,
@@ -98,6 +101,9 @@ const pinnedPackages: [string, string][] = [
   ["playwright", playwrightVersion],
   ["@qawolf/emails", emailsVersion],
   ["@qawolf/testkit", testkitVersion],
+  ["appium", appiumVersion],
+  ["appium-xcuitest-driver", appiumXcuitestDriverVersion],
+  ["appium-uiautomator2-driver", appiumUiautomator2DriverVersion],
 ];
 
 // Install all deps in the env directory, then ensure the CLI's external
