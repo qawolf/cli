@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 
+# Generated source files
+src/generated/
+
 # Environment
 .env
 .env.*

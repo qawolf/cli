@@ -2,7 +2,7 @@
 // Reads the installed @qawolf/flows package.json and writes the version
 // constants used by ensureDeps.ts. Run automatically via prebuild hooks;
 // re-run manually after bumping @qawolf/flows.
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = new URL("..", import.meta.url).pathname;
@@ -27,7 +27,9 @@ const out = [
   "",
 ].join("\n");
 
-writeFileSync(join(root, "src/commands/flows/flowsVersions.ts"), out);
+const outDir = join(root, "src/generated");
+mkdirSync(outDir, { recursive: true });
+writeFileSync(join(outDir, "flowsVersions.ts"), out);
 console.log(
-  `Generated flowsVersions.ts: flows=${flowsVersion} playwright=${playwrightVersion}`,
+  `Generated src/generated/flowsVersions.ts: flows=${flowsVersion} playwright=${playwrightVersion}`,
 );

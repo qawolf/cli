@@ -1,7 +1,7 @@
 import { spawn as nodeSpawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { flowsVersion, playwrightVersion } from "./flowsVersions.js";
+import { flowsVersion, playwrightVersion } from "~/generated/flowsVersions.js";
 
 // Walk up from a flow file to find its containing package root (the directory
 // with the package.json that declares its dependencies).
