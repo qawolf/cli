@@ -55,12 +55,6 @@ function pkgDir(envDir: string, ...pkgParts: string[]): string {
   return join(envDir, "node_modules", ...pkgParts);
 }
 
-// npm uses --no-save so the package.json is not modified; other managers'
-// "add" commands always persist to the manifest (no equivalent flag exists).
-function addArgs(pm: PackageManager, pkg: string): string[] {
-  return pm === "npm" ? ["install", "--no-save", pkg] : ["add", pkg];
-}
-
 function readPkgJson(
   envDir: string,
   ...parts: string[]
@@ -99,18 +93,12 @@ export function resolveUniqueEnvDir(files: string[]): string | undefined {
   return dirs.size === 1 ? [...dirs][0] : undefined;
 }
 
-async function ensurePinnedPkg(
-  pm: PackageManager,
-  envDir: string,
-  pkg: string,
-  requiredVersion: string,
-): Promise<void> {
-  if (installedVersion(envDir, ...pkg.split("/")) === requiredVersion) return;
-  const r = await spawnPm(pm, addArgs(pm, `${pkg}@${requiredVersion}`), envDir);
-  if (r.exitCode !== 0) {
-    throw new Error(`${pm} add ${pkg} failed:\n${r.stderr.trim()}`);
-  }
-}
+const pinnedPackages: [string, string][] = [
+  ["@qawolf/flows", flowsVersion],
+  ["playwright", playwrightVersion],
+  ["@qawolf/emails", emailsVersion],
+  ["@qawolf/testkit", testkitVersion],
+];
 
 // Install all deps in the env directory, then ensure the CLI's external
 // packages are present at the versions baked in at build time (see
@@ -128,8 +116,19 @@ export async function ensureFlowDeps(envDir: string): Promise<void> {
     }
   }
 
-  await ensurePinnedPkg(pm, envDir, "@qawolf/flows", flowsVersion);
-  await ensurePinnedPkg(pm, envDir, "playwright", playwrightVersion);
-  await ensurePinnedPkg(pm, envDir, "@qawolf/emails", emailsVersion);
-  await ensurePinnedPkg(pm, envDir, "@qawolf/testkit", testkitVersion);
+  const needsInstall = pinnedPackages.some(
+    ([pkg, version]) => installedVersion(envDir, ...pkg.split("/")) !== version,
+  );
+  if (!needsInstall) return;
+
+  // All pinned packages are installed in one command. npm replaces the entire
+  // @qawolf/ scope directory on each sequential install, so batching prevents
+  // a later @qawolf/* install from wiping an earlier one.
+  const pkgSpecs = pinnedPackages.map(([pkg, ver]) => `${pkg}@${ver}`);
+  const installCmd =
+    pm === "npm" ? ["install", "--no-save", ...pkgSpecs] : ["add", ...pkgSpecs];
+  const r = await spawnPm(pm, installCmd, envDir);
+  if (r.exitCode !== 0) {
+    throw new Error(`${pm} install failed in ${envDir}:\n${r.stderr.trim()}`);
+  }
 }
