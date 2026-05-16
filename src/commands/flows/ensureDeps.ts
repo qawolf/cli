@@ -1,7 +1,12 @@
 import { spawn as nodeSpawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { flowsVersion, playwrightVersion } from "~/generated/flowsVersions.js";
+import {
+  emailsVersion,
+  flowsVersion,
+  playwrightVersion,
+  testkitVersion,
+} from "~/generated/dependencyVersions.js";
 
 // Walk up from a flow file to find its containing package root (the directory
 // with the package.json that declares its dependencies).
@@ -94,10 +99,23 @@ export function resolveUniqueEnvDir(files: string[]): string | undefined {
   return dirs.size === 1 ? [...dirs][0] : undefined;
 }
 
-// Install all deps in the env directory, then ensure @qawolf/flows and
-// playwright are present at the versions the CLI requires. Both versions are
-// baked in at build time (see flowsVersions.ts) so they match the CLI binary
-// regardless of what the env's own package.json may declare.
+async function ensurePinnedPkg(
+  pm: PackageManager,
+  envDir: string,
+  pkg: string,
+  requiredVersion: string,
+): Promise<void> {
+  if (installedVersion(envDir, ...pkg.split("/")) === requiredVersion) return;
+  const r = await spawnPm(pm, addArgs(pm, `${pkg}@${requiredVersion}`), envDir);
+  if (r.exitCode !== 0) {
+    throw new Error(`${pm} add ${pkg} failed:\n${r.stderr.trim()}`);
+  }
+}
+
+// Install all deps in the env directory, then ensure the CLI's external
+// packages are present at the versions baked in at build time (see
+// dependencyVersions.ts). This guarantees the env matches the CLI binary
+// regardless of what the env's own package.json declares.
 export async function ensureFlowDeps(envDir: string): Promise<void> {
   const pm = detectPackageManager(envDir);
 
@@ -110,25 +128,8 @@ export async function ensureFlowDeps(envDir: string): Promise<void> {
     }
   }
 
-  if (installedVersion(envDir, "@qawolf", "flows") !== flowsVersion) {
-    const r = await spawnPm(
-      pm,
-      addArgs(pm, `@qawolf/flows@${flowsVersion}`),
-      envDir,
-    );
-    if (r.exitCode !== 0) {
-      throw new Error(`${pm} add @qawolf/flows failed:\n${r.stderr.trim()}`);
-    }
-  }
-
-  if (installedVersion(envDir, "playwright") !== playwrightVersion) {
-    const r = await spawnPm(
-      pm,
-      addArgs(pm, `playwright@${playwrightVersion}`),
-      envDir,
-    );
-    if (r.exitCode !== 0) {
-      throw new Error(`${pm} add playwright failed:\n${r.stderr.trim()}`);
-    }
-  }
+  await ensurePinnedPkg(pm, envDir, "@qawolf/flows", flowsVersion);
+  await ensurePinnedPkg(pm, envDir, "playwright", playwrightVersion);
+  await ensurePinnedPkg(pm, envDir, "@qawolf/emails", emailsVersion);
+  await ensurePinnedPkg(pm, envDir, "@qawolf/testkit", testkitVersion);
 }
