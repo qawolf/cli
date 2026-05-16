@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 import type { CommandContext } from "~/lib/context.js";
-import type { OutputMode } from "~/lib/ui/env.js";
+import type { OutputMode } from "~/shell/ui/env.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
 import { makeFakeUI } from "./run.fixtures.js";

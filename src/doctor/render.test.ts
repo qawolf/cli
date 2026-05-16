@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-import type { UI } from "~/lib/ui/types.js";
+import type { UI } from "~/shell/ui/types.js";
 
 import { renderResults } from "./render.js";
 import type { CheckResult } from "./types.js";

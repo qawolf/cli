@@ -5,7 +5,7 @@ import type { Reporter } from "~/lib/reporter/types.js";
 import type { FlowRunError } from "~/lib/runner/errors.js";
 import type { RunWebFlowDeps } from "~/lib/runner/runWebFlow.js";
 import type { FlowRunResult } from "~/lib/runner/types.js";
-import type { UI } from "~/lib/ui/index.js";
+import type { UI } from "~/shell/ui/index.js";
 
 import type { RunAndroidFlowDeps } from "~/lib/runner/runAndroidFlow.js";
 

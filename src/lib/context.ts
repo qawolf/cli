@@ -8,8 +8,8 @@ import {
   type OutputMode,
   detectOutputMode,
   isInteractive,
-} from "./ui/env.js";
-import { type UI, createUI } from "./ui/index.js";
+} from "~/shell/ui/env.js";
+import { type UI, createUI } from "~/shell/ui/index.js";
 
 export type CommandContext = {
   readonly ui: UI;

@@ -1,4 +1,4 @@
-import type { UI } from "~/lib/ui/types.js";
+import type { UI } from "~/shell/ui/types.js";
 
 import type { CheckResult } from "./types.js";
 
