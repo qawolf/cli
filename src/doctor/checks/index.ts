@@ -8,7 +8,7 @@ import { checkNpmRegistry } from "./npmRegistry.js";
 import { checkPlaywright } from "./playwright.js";
 
 type CheckDeps = {
-  readonly env: Record<string, string | undefined>;
+  readonly apiKey: string | undefined;
   readonly fetch: typeof globalThis.fetch;
   readonly spawn: SpawnFn;
   readonly apiBaseUrl: string;
@@ -17,7 +17,6 @@ type CheckDeps = {
   readonly flowFiles: readonly string[];
   readonly readFile: (path: string) => Promise<string>;
   readonly cwd: string;
-  readonly execPath: string;
   readonly playwrightCliPath: string | undefined;
 };
 
@@ -30,10 +29,9 @@ export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
       }),
       checkPlaywright({
         spawn: deps.spawn,
-        execPath: deps.execPath,
         playwrightCliPath: deps.playwrightCliPath,
       }),
-      checkApiKey({ env: deps.env }),
+      checkApiKey({ apiKey: deps.apiKey }),
       checkApiUrl({ fetch: deps.fetch, apiBaseUrl: deps.apiBaseUrl }),
       checkNpmRegistry({ spawn: deps.spawn }),
       checkFileAssets({

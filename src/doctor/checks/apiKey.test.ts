@@ -3,19 +3,14 @@ import { describe, expect, it } from "bun:test";
 import { checkApiKey } from "./apiKey.js";
 
 describe("checkApiKey", () => {
-  it("passes when QAWOLF_API_KEY is set", async () => {
-    const r = await checkApiKey({ env: { QAWOLF_API_KEY: "x" } });
+  it("passes when an api key is provided", async () => {
+    const r = await checkApiKey({ apiKey: "qawolf_test_key" });
     expect(r).toEqual({ name: "api-key", status: "pass" });
   });
 
-  it("warns when QAWOLF_API_KEY is unset", async () => {
-    const r = await checkApiKey({ env: {} });
+  it("warns when no api key is found", async () => {
+    const r = await checkApiKey({ apiKey: undefined });
     expect(r.status).toBe("warn");
-    expect(r.detail).toContain("not set");
-  });
-
-  it("warns when QAWOLF_API_KEY is whitespace", async () => {
-    const r = await checkApiKey({ env: { QAWOLF_API_KEY: "   " } });
-    expect(r.status).toBe("warn");
+    expect(r.detail).toContain("qawolf auth login");
   });
 });
