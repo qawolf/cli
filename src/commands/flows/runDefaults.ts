@@ -1,9 +1,3 @@
-import { AsyncLocalStorage } from "node:async_hooks";
-import { spawn as nodeSpawn } from "node:child_process";
-import { mkdir, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
-import { join } from "node:path";
-
 import {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
@@ -14,79 +8,13 @@ import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { resolvePlaywrightCli } from "~/lib/playwright.js";
 import { createConsoleReporter } from "~/lib/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/lib/runner/runAndroidFlow.js";
-import {
-  type RunWebFlowDeps,
-  runWebFlow as defaultRunWebFlow,
-} from "~/lib/runner/runWebFlow.js";
+import { runWebFlow as defaultRunWebFlow } from "~/lib/runner/runWebFlow.js";
+import { configureEmails } from "~/emails/configureEmails.js";
 
 import { ensureFlowDeps, resolveUniqueEnvDir } from "./ensureDeps.js";
+import { defaultRunWebFlowDeps } from "./runWebFlowDeps.js";
 import { flowsRun } from "./run.js";
 import type { FlowsRunFlags } from "./runInternals.js";
-
-function defaultRunWebFlowDeps(cwd = process.cwd()): RunWebFlowDeps {
-  // createRequire prevents bun's --compile from statically tracing the import;
-  // playwright-core's optional deps (electron, chromium-bidi) aren't installed.
-  // Resolved from cwd so the project's playwright is used, not the CLI's.
-  // BrowserType isn't structurally exact (video: Video|null vs MinimalVideo|undefined)
-  // but works at runtime — the runner only calls .path()/.delete() on video.
-  let playwright: Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
-  try {
-    playwright = createRequire(join(cwd, "package.json"))("playwright") as Pick<
-      RunWebFlowDeps,
-      "chromium" | "firefox" | "webkit"
-    >;
-  } catch (err) {
-    throw new Error(
-      "Could not load Playwright. Install it in your project: `npm install playwright` or `bun add playwright`.",
-      { cause: err },
-    );
-  }
-  const { chromium, firefox, webkit } = playwright;
-  return {
-    chromium,
-    firefox,
-    webkit,
-    fs: {
-      mkdir: async (p, opts) => {
-        await mkdir(p, opts);
-      },
-      writeFile: async (p, d) => {
-        await writeFile(p, d);
-      },
-    },
-    spawn: (cmd, args) => {
-      const child = nodeSpawn(cmd, args);
-      return {
-        exitCode: new Promise((resolve) =>
-          child.on("close", (code) => resolve(code ?? -1)),
-        ),
-        kill: () => {
-          child.kill();
-        },
-      };
-    },
-    signals: {
-      on: (signal, handler) => {
-        process.on(signal, handler);
-        return () => {
-          process.off(signal, handler);
-        };
-      },
-    },
-    createStorage: <T>() => {
-      // Stored as `unknown` internally; casts on the boundary keep the outer T
-      // contract while sidestepping TS's inability to unify the outer T with
-      // AsyncLocalStorage's instance method generic.
-      const als = new AsyncLocalStorage<unknown>();
-      return {
-        run: async (store, callback) => {
-          await als.run(store, callback);
-        },
-        getStore: () => als.getStore() as T | undefined,
-      };
-    },
-  };
-}
 
 export async function handleFlowsRun(
   ctx: CommandContext,
@@ -122,10 +50,10 @@ export async function handleFlowsRun(
     );
   }
 
-  // Resolve playwright from the env dir (where it was just installed).
-  // Falls back to CWD if no env dir was detected (e.g. running local flows).
+  // Resolve playwright from the env dir; falls back to CWD for local flows.
   const resolvedDir = envDir ?? cwd;
 
+  await configureEmails(ctx.apiBaseUrl);
   return flowsRun(ctx, pattern, flags, {
     cwd,
     expandPatterns: defaultExpandPatterns,
