@@ -72,7 +72,10 @@ export async function handleFlowsRun(
   // Resolve playwright from the env dir; falls back to CWD for local flows.
   const resolvedDir = envDir ?? cwd;
 
-  await Promise.all([configureEmails(ctx.apiBaseUrl), configureTestkit()]);
+  await Promise.all([
+    configureEmails(ctx.apiBaseUrl, resolvedDir),
+    configureTestkit(resolvedDir),
+  ]);
   return flowsRun(ctx, pattern, flags, {
     cwd,
     expandPatterns: defaultExpandPatterns,

@@ -38,7 +38,7 @@ describe("configureTestkit", () => {
       configureTestkitClient: () => {},
     };
 
-    await configureTestkit(deps);
+    await configureTestkit("/test", deps);
 
     if (capturedPorts === undefined)
       throw new Error("createTestkitClient was not called");
@@ -60,7 +60,7 @@ describe("configureTestkit", () => {
       configureTestkitClient: () => {},
     };
 
-    await configureTestkit(deps);
+    await configureTestkit("/test", deps);
 
     if (capturedPorts === undefined)
       throw new Error("createTestkitClient was not called");
@@ -80,7 +80,7 @@ describe("configureTestkit", () => {
       configureTestkitClient: () => {},
     };
 
-    await configureTestkit(deps);
+    await configureTestkit("/test", deps);
 
     if (capturedPorts === undefined)
       throw new Error("createTestkitClient was not called");
@@ -100,7 +100,7 @@ describe("configureTestkit", () => {
       configureTestkitClient: () => {},
     };
 
-    await configureTestkit(deps);
+    await configureTestkit("/test", deps);
 
     if (capturedPorts === undefined)
       throw new Error("createTestkitClient was not called");
@@ -125,7 +125,7 @@ describe("configureTestkit", () => {
       },
     };
 
-    await configureTestkit(deps);
+    await configureTestkit("/test", deps);
 
     expect(registeredClient).toBe(fakeClient);
   });
@@ -142,7 +142,7 @@ describe("configureTestkit", () => {
 
     let caughtError: unknown;
     try {
-      await configureTestkit(deps);
+      await configureTestkit("/test", deps);
     } catch (e) {
       caughtError = e;
     }
@@ -162,7 +162,7 @@ describe("configureTestkit", () => {
 
     let caughtError: unknown;
     try {
-      await configureTestkit(deps);
+      await configureTestkit("/test", deps);
     } catch (e) {
       caughtError = e;
     }

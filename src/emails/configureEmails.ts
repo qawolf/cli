@@ -1,3 +1,5 @@
+import { createRequire } from "node:module";
+import { join } from "node:path";
 import type { EmailsClient, EmailsClientOptions } from "@qawolf/emails";
 
 type ConfigureEmailsDeps = {
@@ -5,14 +7,18 @@ type ConfigureEmailsDeps = {
   configureEmailsClient: (client: EmailsClient) => void;
 };
 
-// Dynamic import prevents @qawolf/emailer-types from loading at module init
-// time. That package calls .merge() on a refined zod schema at module level,
-// which zod@4.4.2 throws on. Tests always inject deps, so this path only runs
-// in production where the compatible SDK environment is assumed.
-async function loadSdkDeps(): Promise<ConfigureEmailsDeps> {
+// Loaded via createRequire from the env dir so the binary resolves the package
+// from the project's node_modules, not from alongside the CLI binary. Tests
+// always inject deps so this path only runs in production.
+// Note: @qawolf/emailer-types calls .merge() on a zod schema at module level
+// which zod@4.4.2 throws on — lazy loading (here vs. top-level import) avoids
+// that crash.
+function loadSdkDeps(cwd: string): ConfigureEmailsDeps {
   try {
-    const { createEmailsClient, configureEmailsClient } =
-      await import("@qawolf/emails");
+    const requireFrom = createRequire(join(cwd, "package.json"));
+    const { createEmailsClient, configureEmailsClient } = requireFrom(
+      "@qawolf/emails",
+    ) as ConfigureEmailsDeps;
     return { createEmailsClient, configureEmailsClient };
   } catch (err) {
     throw new Error(
@@ -24,10 +30,11 @@ async function loadSdkDeps(): Promise<ConfigureEmailsDeps> {
 
 export async function configureEmails(
   apiBaseUrl: string,
+  cwd: string,
   deps?: ConfigureEmailsDeps,
 ): Promise<void> {
   const { createEmailsClient, configureEmailsClient } =
-    deps ?? (await loadSdkDeps());
+    deps ?? loadSdkDeps(cwd);
   const client = await createEmailsClient({
     emailerUrl: apiBaseUrl,
     pollForEmailsDefaultTimeoutMs: 60_000,

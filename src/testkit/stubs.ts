@@ -1,3 +1,5 @@
+import { createRequire } from "node:module";
+import { join } from "node:path";
 import type { createTestkitClient } from "@qawolf/testkit/client";
 import type { configureTestkitClient } from "@qawolf/testkit";
 
@@ -15,16 +17,24 @@ function notAvailableLocally(name: string): never {
   );
 }
 
-// Dynamic import prevents @qawolf/testkit from loading at module init time,
-// mirroring the configureEmails pattern. Tests always inject deps.
-async function loadSdkDeps(): Promise<ConfigureTestkitDeps> {
+// Loaded via createRequire from the env dir so the binary resolves the packages
+// from the project's node_modules, not from alongside the CLI binary. Tests
+// always inject deps.
+function loadSdkDeps(cwd: string): ConfigureTestkitDeps {
   try {
-    const [{ createTestkitClient }, { configureTestkitClient }] =
-      await Promise.all([
-        import("@qawolf/testkit/client"),
-        import("@qawolf/testkit"),
-      ]);
-    return { createTestkitClient, configureTestkitClient };
+    const requireFrom = createRequire(join(cwd, "package.json"));
+    const clientPkg = requireFrom("@qawolf/testkit/client") as Pick<
+      ConfigureTestkitDeps,
+      "createTestkitClient"
+    >;
+    const mainPkg = requireFrom("@qawolf/testkit") as Pick<
+      ConfigureTestkitDeps,
+      "configureTestkitClient"
+    >;
+    return {
+      createTestkitClient: clientPkg.createTestkitClient,
+      configureTestkitClient: mainPkg.configureTestkitClient,
+    };
   } catch (err) {
     throw new Error(
       "Could not load @qawolf/testkit. Install it in your project: `npm install @qawolf/testkit` or `bun add @qawolf/testkit`.",
@@ -34,10 +44,11 @@ async function loadSdkDeps(): Promise<ConfigureTestkitDeps> {
 }
 
 export async function configureTestkit(
+  cwd: string,
   deps?: ConfigureTestkitDeps,
 ): Promise<void> {
   const { createTestkitClient, configureTestkitClient } =
-    deps ?? (await loadSdkDeps());
+    deps ?? loadSdkDeps(cwd);
   const client = createTestkitClient({
     mountCifsShare: () => notAvailableLocally("mountCifsShare"),
     saveSnapshot: () => notAvailableLocally("saveBaselineScreenshot"),
