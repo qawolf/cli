@@ -3,7 +3,7 @@ import { homedir, tmpdir } from "node:os";
 import { join, sep } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-import { pathExists } from "~/lib/fs.js";
+import { pathExists } from "~/shell/fs.js";
 import {
   createTempPathRegistry,
   mintTempPath,

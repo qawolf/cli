@@ -9,12 +9,12 @@ import { installBrowserList } from "~/commands/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { isNoEntError } from "~/core/errors.js";
-import { resolvePlaywrightCli } from "~/lib/playwright.js";
+import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { createConsoleReporter } from "~/lib/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/lib/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/lib/runner/runWebFlow.js";
 // import { configureEmails } from "~/emails/configureEmails.js";
-import { configureTestkit } from "~/testkit/stubs.js";
+import { configureTestkit } from "~/shell/testkit.js";
 
 import { parseDotenv } from "./dotenv.js";
 import { ensureFlowDeps, resolveUniqueEnvDir } from "./ensureDeps.js";

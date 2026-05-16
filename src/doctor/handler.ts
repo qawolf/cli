@@ -6,7 +6,7 @@ import { expandPatterns } from "~/commands/flows/expand.js";
 import { resolveUniqueEnvDir } from "~/commands/flows/ensureDeps.js";
 import { type CommandContext, type CommandResult } from "~/lib/context.js";
 import { resolveApiKey } from "~/lib/auth/resolve.js";
-import { resolvePlaywrightCli } from "~/lib/playwright.js";
+import { resolvePlaywrightCli } from "~/shell/playwright.js";
 
 import { defaultSpawn } from "~/shell/spawn.js";
 

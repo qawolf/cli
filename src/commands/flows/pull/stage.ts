@@ -1,6 +1,6 @@
 import { rename } from "node:fs/promises";
 
-import { pathExists } from "~/lib/fs.js";
+import { pathExists } from "~/shell/fs.js";
 import { buildManifest, flattenSingleWrapper } from "./bundle.js";
 import { writeEnvFile } from "./envVars.js";
 import { extractTarGz } from "./extract.js";

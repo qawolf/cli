@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-import { pathExists } from "~/lib/fs.js";
+import { pathExists } from "~/shell/fs.js";
 import { buildManifest, flattenSingleWrapper } from "./bundle.js";
 
 let workDir = "";

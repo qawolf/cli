@@ -14,7 +14,7 @@ import { createGzip } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import * as tar from "tar";
 
-import { pathExists } from "~/lib/fs.js";
+import { pathExists } from "~/shell/fs.js";
 import { extractTarGz } from "./extract.js";
 
 let workDir = "";

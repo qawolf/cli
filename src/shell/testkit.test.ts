@@ -4,7 +4,7 @@ import type {
   TestkitClientWithBaseline,
   TestkitPorts,
 } from "@qawolf/testkit/client";
-import { configureTestkit } from "./stubs.js";
+import { configureTestkit } from "./testkit.js";
 
 const fakeClient: TestkitClientWithBaseline = {
   mountCifsShare: () => {

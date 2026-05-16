@@ -5,7 +5,7 @@ import {
 } from "~/commands/flows/expand.js";
 import { defaultSpawn, type SpawnFn, type SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
-import { resolvePlaywrightCli } from "~/lib/playwright.js";
+import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import type { BrowserName } from "~/core/types.js";
 
 export type InstallBrowsersDeps = {
