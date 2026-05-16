@@ -1,4 +1,4 @@
-import type { WireError } from "~/apex/createTrpcClient.js";
+import type { WireError } from "~/shell/platform/createTrpcClient.js";
 
 // `noun` names the kind of API request that failed (e.g. "env-vars"). When
 // undefined, messages use the generic phrasing ("request", "that environment"),

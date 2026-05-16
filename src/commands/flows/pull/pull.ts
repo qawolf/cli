@@ -3,10 +3,10 @@ import { unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createTrpcClient } from "~/apex/createTrpcClient.js";
-import { fetchSignedUrl } from "~/apex/fetchSignedUrl.js";
-import { requestWithRetry } from "~/apex/requestWithRetry.js";
-import { flowsBundleResponseSchema } from "~/apex/types.js";
+import { createTrpcClient } from "~/shell/platform/createTrpcClient.js";
+import { fetchSignedUrl } from "~/shell/platform/fetchSignedUrl.js";
+import { requestWithRetry } from "~/shell/platform/requestWithRetry.js";
+import { flowsBundleResponseSchema } from "~/shell/platform/types.js";
 import { readManifest } from "./manifest.js";
 import { promptOverwriteIfModified } from "./safety.js";
 import {

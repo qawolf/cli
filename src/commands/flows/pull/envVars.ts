@@ -1,9 +1,9 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { createTrpcClient } from "~/apex/createTrpcClient.js";
-import { requestWithRetry } from "~/apex/requestWithRetry.js";
-import { environmentWithVariablesResponseSchema } from "~/apex/types.js";
+import { createTrpcClient } from "~/shell/platform/createTrpcClient.js";
+import { requestWithRetry } from "~/shell/platform/requestWithRetry.js";
+import { environmentWithVariablesResponseSchema } from "~/shell/platform/types.js";
 import { serializeDotenv } from "~/commands/flows/dotenv.js";
 import { describeEnvVarsRequestError } from "./wireErrors.js";
 

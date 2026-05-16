@@ -1,4 +1,4 @@
-import type { IdentityResponse } from "~/clients/platform.js";
+import type { IdentityResponse } from "~/shell/platform/getIdentity.js";
 
 // "keychain" = OS credential store (macOS Keychain, Windows Credential Manager, etc.)
 // "file"     = fallback JSON file in the config directory

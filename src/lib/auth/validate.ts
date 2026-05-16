@@ -1,7 +1,7 @@
 import {
   type GetIdentityResult,
   getIdentity as getIdentityFromPlatform,
-} from "~/clients/platform.js";
+} from "~/shell/platform/getIdentity.js";
 
 import type { ValidateApiKeyResult } from "./types.js";
 

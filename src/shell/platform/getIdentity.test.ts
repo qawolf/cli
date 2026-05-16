@@ -1,6 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
 
-import { getIdentity } from "./platform.js";
+import { getIdentity } from "./getIdentity.js";
 
 function createFetchMock(resolvedValue: Response) {
   return mock<typeof fetch>().mockResolvedValue(

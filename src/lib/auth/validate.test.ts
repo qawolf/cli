@@ -1,6 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
 
-import type { GetIdentityResult } from "~/clients/platform.js";
+import type { GetIdentityResult } from "~/shell/platform/getIdentity.js";
 
 import { validateApiKey } from "./validate.js";
 
