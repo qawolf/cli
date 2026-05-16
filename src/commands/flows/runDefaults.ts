@@ -10,6 +10,7 @@ import { createConsoleReporter } from "~/lib/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/lib/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/lib/runner/runWebFlow.js";
 import { configureEmails } from "~/emails/configureEmails.js";
+import { configureTestkit } from "~/testkit/stubs.js";
 
 import { ensureFlowDeps, resolveUniqueEnvDir } from "./ensureDeps.js";
 import { defaultRunWebFlowDeps } from "./runWebFlowDeps.js";
@@ -53,7 +54,7 @@ export async function handleFlowsRun(
   // Resolve playwright from the env dir; falls back to CWD for local flows.
   const resolvedDir = envDir ?? cwd;
 
-  await configureEmails(ctx.apiBaseUrl);
+  await Promise.all([configureEmails(ctx.apiBaseUrl), configureTestkit()]);
   return flowsRun(ctx, pattern, flags, {
     cwd,
     expandPatterns: defaultExpandPatterns,
