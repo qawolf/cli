@@ -13,7 +13,7 @@ import { resolvePlaywrightCli } from "~/lib/playwright.js";
 import { createConsoleReporter } from "~/lib/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/lib/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/lib/runner/runWebFlow.js";
-import { configureEmails } from "~/emails/configureEmails.js";
+// import { configureEmails } from "~/emails/configureEmails.js";
 import { configureTestkit } from "~/testkit/stubs.js";
 
 import { parseDotenv } from "./dotenv.js";
@@ -72,10 +72,7 @@ export async function handleFlowsRun(
   // Resolve playwright from the env dir; falls back to CWD for local flows.
   const resolvedDir = envDir ?? cwd;
 
-  await Promise.all([
-    configureEmails(ctx.apiBaseUrl, resolvedDir),
-    configureTestkit(resolvedDir),
-  ]);
+  await configureTestkit(resolvedDir);
   return flowsRun(ctx, pattern, flags, {
     cwd,
     expandPatterns: defaultExpandPatterns,
@@ -87,7 +84,7 @@ export async function handleFlowsRun(
         playwrightCliPath: resolvePlaywrightCli(resolvedDir),
       }),
     runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: defaultRunWebFlowDeps(resolvedDir),
+    runWebFlowDeps: await defaultRunWebFlowDeps(resolvedDir),
     runAndroidFlow: defaultRunAndroidFlow,
     runAndroidFlowDeps: "not-wired", // TODO WIZ-10343: wire production Android deps
     reporter: createConsoleReporter({

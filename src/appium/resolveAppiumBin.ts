@@ -4,8 +4,9 @@ import { dirname, join } from "node:path";
 
 export function resolveAppiumBin(): string {
   try {
-    const require_ = createRequire(import.meta.url);
-    const pkgPath = require_.resolve("appium/package.json");
+    const pkgPath = createRequire(import.meta.url).resolve(
+      "appium/package.json",
+    );
     const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as {
       bin?: string | Record<string, string>;
     };
