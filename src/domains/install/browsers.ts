@@ -2,7 +2,7 @@ import type {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/commands/flows/expand.js";
-import { targetToBrowser } from "~/commands/flows/expand.js";
+import { targetToBrowser } from "~/core/flowMeta.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import type { BrowserName } from "~/core/types.js";

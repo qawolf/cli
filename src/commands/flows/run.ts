@@ -1,4 +1,4 @@
-import { classifyTarget, flowBasename } from "~/commands/flows/expand.js";
+import { classifyTarget, flowBasename } from "~/core/flowMeta.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";

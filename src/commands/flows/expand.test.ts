@@ -2,12 +2,8 @@ import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  expandPatterns,
-  extractFlowMeta,
-  peekFlowMeta,
-  targetToBrowser,
-} from "./expand.js";
+import { extractFlowMeta, targetToBrowser } from "~/core/flowMeta.js";
+import { expandPatterns, peekFlowMeta } from "./expand.js";
 
 describe("targetToBrowser", () => {
   it.each([

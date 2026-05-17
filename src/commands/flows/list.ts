@@ -4,12 +4,8 @@ import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { pluralize } from "~/core/pluralize.js";
 import type { BrowserName } from "~/core/types.js";
 
-import {
-  expandPatterns,
-  flowBasename,
-  peekFlowMeta,
-  targetToBrowser,
-} from "./expand.js";
+import { flowBasename, targetToBrowser } from "~/core/flowMeta.js";
+import { expandPatterns, peekFlowMeta } from "./expand.js";
 
 const batchSize = 32;
 
