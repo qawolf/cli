@@ -3,7 +3,7 @@ import { InvalidArgumentError } from "commander";
 import type {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
-} from "~/commands/flows/expand.js";
+} from "~/domains/flows/expand.js";
 import type { CommandContext } from "~/lib/context.js";
 import type { Reporter } from "~/shell/reporter/types.js";
 import { FlowRunError } from "~/lib/runner/errors.js";

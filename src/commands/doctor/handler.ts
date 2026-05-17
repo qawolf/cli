@@ -2,8 +2,8 @@ import { readFile } from "node:fs/promises";
 
 import packageJson from "../../../package.json" with { type: "json" };
 
-import { expandPatterns } from "~/commands/flows/expand.js";
-import { resolveUniqueEnvDir } from "~/commands/flows/ensureDeps.js";
+import { expandPatterns } from "~/domains/flows/expand.js";
+import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
 import { type CommandContext, type CommandResult } from "~/lib/context.js";
 import { resolveApiKey } from "~/domains/auth/resolve.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";

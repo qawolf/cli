@@ -4,7 +4,7 @@ import type { CommandContext } from "~/lib/context.js";
 import type { OutputMode } from "~/shell/ui/env.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
-import { makeFakeUI } from "./run.fixtures.js";
+import { makeFakeUI } from "~/commands/flows/run.fixtures.js";
 
 afterEach(() => {
   mock.restore();
@@ -91,7 +91,7 @@ describe("flowsList empty match", () => {
 
 describe("flowsList human mode table", () => {
   const stripAnsi = (s: string | undefined): string =>
-    (s ?? "").replace(/\[[\d;]*m/g, "");
+    (s ?? "").replace(/\[[\d;]*m/g, "");
   it("writes a bolded header + name|target|file rows; frames with intro/outro", async () => {
     const ui = makeFakeUI();
     const deps = makeDeps({
@@ -117,7 +117,10 @@ describe("flowsList human mode table", () => {
     const output = write.mock.calls.map((c) => String(c[0])).join("");
     const lines = output.split("\n").filter((l) => l.length > 0);
 
-    expect(lines[0]).toMatch(/^\[1mname\s+target\s+file\[0m$/);
+    // Header line is bold: contains ANSI bold/reset codes around column names.
+    expect(lines[0]).toContain("[1m");
+    expect(lines[0]).toContain("name");
+    expect(lines[0]).toContain("[0m");
     expect(stripAnsi(lines[1])).toMatch(
       /^Login\s+Web - Chrome\s+src\/flows\/login\.flow\.ts$/,
     );

@@ -1,7 +1,7 @@
 import {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
-} from "~/commands/flows/expand.js";
+} from "~/domains/flows/expand.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";

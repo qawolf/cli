@@ -4,7 +4,7 @@ import type { CommandContext } from "~/lib/context.js";
 import type { OutputMode } from "~/shell/ui/env.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
-import { makeFakeUI } from "./run.fixtures.js";
+import { makeFakeUI } from "~/commands/flows/run.fixtures.js";
 
 afterEach(() => {
   mock.restore();

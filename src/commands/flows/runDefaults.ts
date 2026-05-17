@@ -4,7 +4,7 @@ import { join } from "node:path";
 import {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
-} from "~/commands/flows/expand.js";
+} from "~/domains/flows/expand.js";
 import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
@@ -16,8 +16,11 @@ import { runWebFlow as defaultRunWebFlow } from "~/lib/runner/runWebFlow.js";
 // import { configureEmails } from "~/emails/configureEmails.js";
 import { configureTestkit } from "~/shell/testkit.js";
 
-import { parseDotenv } from "./dotenv.js";
-import { ensureFlowDeps, resolveUniqueEnvDir } from "./ensureDeps.js";
+import { parseDotenv } from "~/domains/flows/dotenv.js";
+import {
+  ensureFlowDeps,
+  resolveUniqueEnvDir,
+} from "~/domains/flows/ensureDeps.js";
 import { defaultRunWebFlowDeps } from "./runWebFlowDeps.js";
 import { flowsRun } from "./run.js";
 import type { FlowsRunFlags } from "./runInternals.js";

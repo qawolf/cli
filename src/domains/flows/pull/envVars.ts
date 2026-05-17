@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { createTrpcClient } from "~/shell/platform/createTrpcClient.js";
 import { requestWithRetry } from "~/shell/platform/requestWithRetry.js";
 import { environmentWithVariablesResponseSchema } from "~/shell/platform/types.js";
-import { serializeDotenv } from "~/commands/flows/dotenv.js";
+import { serializeDotenv } from "~/domains/flows/dotenv.js";
 import { describeEnvVarsRequestError } from "./wireErrors.js";
 
 type RequestEnvVarsDeps = {
