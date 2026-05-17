@@ -4,7 +4,10 @@ import { withContext } from "~/lib/context.js";
 import type { TraceMode, VideoMode } from "~/core/types.js";
 
 import { handleFlowsList } from "./list.js";
-import { type FlowsPullOptions, handleFlowsPull } from "./pull/handler.js";
+import {
+  type FlowsPullOptions,
+  handleFlowsPull,
+} from "~/domains/flows/pull/handler.js";
 import { handleFlowsRun } from "./runDefaults.js";
 import { type FlowsRunFlags, parseEnum, parseInteger } from "./runInternals.js";
 
