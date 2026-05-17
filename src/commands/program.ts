@@ -1,9 +1,9 @@
 import { Command } from "commander";
 
-import { registerAuthCommand } from "../commands/auth/index.js";
-import { registerFlowsCommand } from "../commands/flows/index.js";
-import { registerInstallCommand } from "../commands/install/index.js";
-import { registerDoctorCommand } from "../commands/doctor/index.js";
+import { registerAuthCommand } from "./auth/index.js";
+import { registerFlowsCommand } from "./flows/index.js";
+import { registerInstallCommand } from "./install/index.js";
+import { registerDoctorCommand } from "./doctor/index.js";
 import { exitCodes, exit } from "~/shell/exit.js";
 import packageJson from "../../package.json" with { type: "json" };
 

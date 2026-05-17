@@ -1,3 +1,3 @@
-import { createProgram } from "./lib/program.js";
+import { createProgram } from "./commands/program.js";
 
 createProgram().parse();
