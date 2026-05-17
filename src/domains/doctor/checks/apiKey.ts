@@ -1,4 +1,4 @@
-import type { CheckResult } from "~/doctor/types.js";
+import type { CheckResult } from "~/domains/doctor/types.js";
 
 type ApiKeyDeps = {
   readonly apiKey: string | undefined;

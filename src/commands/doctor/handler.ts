@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-import packageJson from "../../package.json" with { type: "json" };
+import packageJson from "../../../package.json" with { type: "json" };
 
 import { expandPatterns } from "~/commands/flows/expand.js";
 import { resolveUniqueEnvDir } from "~/commands/flows/ensureDeps.js";
@@ -10,8 +10,8 @@ import { resolvePlaywrightCli } from "~/shell/playwright.js";
 
 import { defaultSpawn } from "~/shell/spawn.js";
 
-import { runChecks } from "./checks/index.js";
-import { renderResults } from "./render.js";
+import { runChecks } from "~/domains/doctor/checks/index.js";
+import { renderResults } from "~/domains/doctor/render.js";
 
 export async function handleDoctor(
   ctx: CommandContext,

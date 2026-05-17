@@ -1,5 +1,5 @@
 import { errorMessage } from "~/core/errors.js";
-import type { CheckResult } from "~/doctor/types.js";
+import type { CheckResult } from "~/domains/doctor/types.js";
 
 type ApiUrlDeps = {
   readonly fetch: typeof globalThis.fetch;
