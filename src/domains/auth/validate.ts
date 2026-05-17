@@ -6,24 +6,24 @@ import {
 import type { ValidateApiKeyResult } from "./types.js";
 
 type Dependencies = {
+  baseUrl: string;
   getIdentity: (apiKey: string, baseUrl: string) => Promise<GetIdentityResult>;
 };
 
-const defaultDeps: Dependencies = {
-  getIdentity: (apiKey, baseUrl) =>
+export const defaultDeps = {
+  getIdentity: (apiKey: string, baseUrl: string): Promise<GetIdentityResult> =>
     getIdentityFromPlatform(apiKey, { baseUrl, fetch: globalThis.fetch }),
 };
 
 export async function validateApiKey(
   apiKey: string,
-  baseUrl: string,
-  deps: Dependencies = defaultDeps,
+  deps: Dependencies,
 ): Promise<ValidateApiKeyResult> {
   if (!apiKey.trim()) {
     return { valid: false, error: "API key is empty" };
   }
 
-  const result = await deps.getIdentity(apiKey, baseUrl);
+  const result = await deps.getIdentity(apiKey, deps.baseUrl);
 
   if (!result.ok) {
     if (

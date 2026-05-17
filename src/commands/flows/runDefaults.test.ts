@@ -2,7 +2,19 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-import { _loadEnvFile } from "./runDefaults.js";
+import { _buildPatternArgs, _loadEnvFile } from "./runDefaults.js";
+
+describe("_buildPatternArgs", () => {
+  it("wraps a pattern string in an array", () => {
+    expect(_buildPatternArgs("tests/login.flow.ts")).toEqual([
+      "tests/login.flow.ts",
+    ]);
+  });
+
+  it("returns an empty array when pattern is undefined", () => {
+    expect(_buildPatternArgs(undefined)).toEqual([]);
+  });
+});
 
 describe("_loadEnvFile", () => {
   let dir: string;

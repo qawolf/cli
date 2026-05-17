@@ -25,6 +25,10 @@ import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
 import { flowsRun } from "~/domains/runner/run.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
+export function _buildPatternArgs(pattern: string | undefined): string[] {
+  return pattern ? [pattern] : [];
+}
+
 export async function _loadEnvFile(envDir: string): Promise<void> {
   let content: string;
   try {
@@ -47,7 +51,7 @@ export async function handleFlowsRun(
   const cwd = process.cwd();
 
   const expandedFiles = await defaultExpandPatterns(
-    pattern ? [pattern] : [],
+    _buildPatternArgs(pattern),
     cwd,
   );
 
