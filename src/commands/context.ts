@@ -1,30 +1,13 @@
 import type { Command } from "commander";
-
 import { errorMessage } from "~/core/errors.js";
 import { getConfigDir } from "~/core/paths.js";
 import {
   type OutputFlags,
-  type OutputMode,
   detectOutputMode,
   isInteractive,
 } from "~/shell/ui/env.js";
-import { type UI, createUI } from "~/shell/ui/index.js";
-
-export type CommandContext = {
-  readonly ui: UI;
-  readonly configDir: string;
-  readonly outputMode: OutputMode;
-  readonly isInteractive: boolean;
-  readonly apiBaseUrl: string;
-};
-
-type CommandError = {
-  readonly error: string;
-  /** Defaults to 1. Set explicitly (e.g. 2 for invalid-args) when a command needs a non-default code. */
-  readonly exitCode?: number;
-};
-
-export type CommandResult = CommandError | void;
+import { createUI } from "~/shell/ui/index.js";
+import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 
 type ContextAction = (ctx: CommandContext) => Promise<CommandResult>;
 

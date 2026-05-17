@@ -3,7 +3,7 @@ import {
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/domains/flows/expand.js";
 import { defaultSpawn } from "~/shell/spawn.js";
-import type { CommandContext, CommandResult } from "~/lib/context.js";
+import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { installBrowsers } from "~/domains/install/browsers.js";
 

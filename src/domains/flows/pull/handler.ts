@@ -4,7 +4,10 @@ import { join, resolve } from "node:path";
 import cliPackageJson from "../../../../package.json" with { type: "json" };
 
 import { resolveApiKey } from "~/domains/auth/index.js";
-import { type CommandContext, type CommandResult } from "~/lib/context.js";
+import {
+  type CommandContext,
+  type CommandResult,
+} from "~/shell/commandContext.js";
 import { pluralize } from "~/core/pluralize.js";
 import { fetchBundleAndEnvVars } from "./fetchPhase.js";
 import { manifestFilename } from "./manifest.js";

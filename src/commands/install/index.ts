@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 
-import { withContext } from "~/lib/context.js";
+import { withContext } from "~/commands/context.js";
 
 import { handleInstallBrowsers } from "./browsers.js";
 

@@ -1,4 +1,4 @@
-import type { CommandContext } from "~/lib/context.js";
+import type { CommandContext } from "~/shell/commandContext.js";
 import { requestEnvVars } from "./envVars.js";
 import { downloadBundle, requestBundle } from "./pull.js";
 

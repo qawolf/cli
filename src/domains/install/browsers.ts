@@ -1,6 +1,6 @@
 import { targetToBrowser } from "~/core/flowMeta.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
-import type { CommandContext, CommandResult } from "~/lib/context.js";
+import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { BrowserName } from "~/core/types.js";
 
 export type InstallBrowsersDeps = {

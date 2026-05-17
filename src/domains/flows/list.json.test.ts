@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-import type { CommandContext } from "~/lib/context.js";
+import type { CommandContext } from "~/shell/commandContext.js";
 import type { OutputMode } from "~/shell/ui/env.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";

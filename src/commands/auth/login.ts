@@ -3,7 +3,10 @@ import {
   saveApiKey,
   validateApiKey,
 } from "~/domains/auth/index.js";
-import { type CommandContext, type CommandResult } from "~/lib/context.js";
+import {
+  type CommandContext,
+  type CommandResult,
+} from "~/shell/commandContext.js";
 import { authCopy } from "~/core/copy/index.js";
 
 export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {

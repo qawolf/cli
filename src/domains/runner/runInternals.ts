@@ -1,6 +1,6 @@
 import { InvalidArgumentError } from "commander";
 
-import type { CommandContext } from "~/lib/context.js";
+import type { CommandContext } from "~/shell/commandContext.js";
 import type { Reporter } from "~/shell/reporter/types.js";
 import { FlowRunError } from "./errors.js";
 import type {

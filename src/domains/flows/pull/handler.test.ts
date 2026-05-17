@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-import type { CommandContext } from "~/lib/context.js";
+import type { CommandContext } from "~/shell/commandContext.js";
 import type { UI } from "~/shell/ui/index.js";
 
 import { makeFakeUI } from "~/domains/runner/run.fixtures.js";

@@ -4,7 +4,10 @@ import packageJson from "../../../package.json" with { type: "json" };
 
 import { expandPatterns } from "~/domains/flows/expand.js";
 import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
-import { type CommandContext, type CommandResult } from "~/lib/context.js";
+import {
+  type CommandContext,
+  type CommandResult,
+} from "~/shell/commandContext.js";
 import { resolveApiKey } from "~/domains/auth/resolve.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 

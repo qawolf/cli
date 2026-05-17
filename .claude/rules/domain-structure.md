@@ -1,26 +1,47 @@
 ---
-description: Domain-based project structure for CLI commands and modules
+description: Four-layer architecture and import boundaries for src/
 globs: src/**
 ---
 
+## Four-layer architecture
+
+Import rules are enforced by oxlint:
+- `core/`: no imports from `shell/`, `domains/`, or `commands/`
+- `shell/`: no imports from `domains/` or `commands/`
+- `domains/<x>/`: no imports from `commands/`; no imports from sibling domains
+- `commands/`: composite root — may import any layer
+
 ## Adding a command
 
-1. Create the command directory under `src/commands/<domain>/`
-2. Export a registration function that takes a Commander program instance
-3. Colocate types, Zod schemas, and handler logic within the domain directory
-4. Import API clients from `src/clients/` (one module per auth boundary)
-5. Import shared utilities from `src/lib/`
+1. Create the handler directory under `src/commands/<domain>/`
+2. Export a registration function (`registerXCommand`) that takes a Commander `program` instance
+3. In the registration function, use `withContext` from `~/commands/context.js` to wrap each action
+4. Extract pure business logic to `src/domains/<domain>/`; keep commands/ files as thin wiring
+5. Import I/O utilities (spawn, playwright, UI) from `src/shell/`
+6. Import pure helpers and types from `src/core/`
 
-Do not create a shared types directory. Types belong with their domain.
+Do not put business logic in `commands/`. If a handler grows beyond wiring dependencies to a domain function, the excess belongs in `domains/`.
 
-## Adding an API client
+## Adding domain logic
 
-1. Create the client module in `src/clients/`
-2. Each client module owns one auth boundary (e.g., `platform.ts` owns `QAWOLF_API_KEY`)
-3. Export a configured client instance that command handlers import
+1. Create or extend a directory under `src/domains/<domain>/`
+2. Domain files may import from `src/core/` and `src/shell/`
+3. Domain files must not import from `src/commands/` or from a sibling domain (`~/domains/<other>/`)
+4. Cross-domain shared types go in `src/core/` (pure types) or `src/shell/` (types that reference UI or I/O)
+5. Colocate tests as `<name>.test.ts` next to the source file
 
-## Adding shared utilities
+## Adding shell utilities
 
-1. Place them in `src/lib/`
-2. Utilities must be cross-cutting concerns: output formatting, config, program factory
-3. If it's domain-specific, it belongs in the command directory instead
+1. Place I/O executors in `src/shell/`
+2. Shell files may import from `src/core/` and other `src/shell/` files
+3. Shell files must not import from `src/domains/` or `src/commands/`
+
+## Adding pure utilities or types
+
+1. Place in `src/core/`
+2. Core files must not import from any other src/ layer
+
+## Do not create
+
+- Shared types directories — types belong with the layer that owns them
+- A new `src/lib/` or `src/clients/` directory — these are replaced by `shell/` and `domains/`

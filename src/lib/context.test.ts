@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { Command } from "commander";
 
-import { withContext } from "./context.js";
+import { withContext } from "~/commands/context.js";
 
 function fakeCommand(): Command {
   return {

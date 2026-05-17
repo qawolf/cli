@@ -1,6 +1,6 @@
 import { mock } from "bun:test";
 
-import type { CommandContext } from "~/lib/context.js";
+import type { CommandContext } from "~/shell/commandContext.js";
 import type { Reporter } from "~/shell/reporter/types.js";
 import type { FlowRunError } from "~/domains/runner/errors.js";
 import type { RunWebFlowDeps } from "~/domains/runner/runWebFlow.js";

@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import type { CommandContext, CommandResult } from "~/lib/context.js";
+import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { pluralize } from "~/core/pluralize.js";
 import type { BrowserName } from "~/core/types.js";
 
