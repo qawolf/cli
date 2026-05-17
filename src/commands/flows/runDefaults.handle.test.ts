@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
@@ -98,6 +98,12 @@ function makeCtx(): CommandContext {
     },
   } as unknown as CommandContext;
 }
+
+// Restore module mocks after all tests so they don't bleed into other test
+// files when Bun runs multiple files in the same process.
+afterAll(() => {
+  mock.restore();
+});
 
 beforeEach(() => {
   for (const m of trackedMocks) m.mockClear();
