@@ -17,8 +17,6 @@ const config: KnipConfig = {
     "appium-uiautomator2-driver",
   ],
   ignore: [
-    // TODO WIZ-10324: move to its domain when the commands that use it land
-    "src/core/types.ts",
     // TODO WIZ-10325: remove once flowsRun consumes more of the runner surface
     "src/domains/runner/*.ts",
     // TODO WIZ-10326: remove once Reporter is consumed by more than the console reporter
