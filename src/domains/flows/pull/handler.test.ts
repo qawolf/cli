@@ -20,23 +20,16 @@ let workDir = "";
 let destDir = "";
 let bundleArchive = "";
 const originalFetch = globalThis.fetch;
-const originalApiKey = process.env["QAWOLF_API_KEY"];
 
 beforeEach(async () => {
   workDir = await mkdtemp(join(tmpdir(), "qawolf-pull-handler-"));
   destDir = join(workDir, "dest");
   bundleArchive = join(workDir, "bundle.tar.gz");
-  process.env["QAWOLF_API_KEY"] = testApiKey;
 });
 
 afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
   globalThis.fetch = originalFetch;
-  if (originalApiKey === undefined) {
-    delete process.env["QAWOLF_API_KEY"];
-  } else {
-    process.env["QAWOLF_API_KEY"] = originalApiKey;
-  }
   mock.restore();
 });
 
@@ -89,7 +82,11 @@ describe("handleFlowsPull json mode output", () => {
     const ui = makeJsonUi();
     const ctx = makeCtx(ui);
 
-    await handleFlowsPull(ctx, { env: "env-abc", out: destDir });
+    await handleFlowsPull(ctx, {
+      env: "env-abc",
+      out: destDir,
+      apiKey: testApiKey,
+    });
 
     expect(ui.output).toHaveBeenCalledTimes(1);
     const [payload, humanMessage] = (ui.output as ReturnType<typeof mock>).mock
@@ -129,7 +126,11 @@ describe("handleFlowsPull json mode output", () => {
     const ui: UI = { ...makeJsonUi(), mode: "human" };
     const ctx: CommandContext = { ...makeCtx(ui), outputMode: "human" };
 
-    await handleFlowsPull(ctx, { env: "env-abc", out: destDir });
+    await handleFlowsPull(ctx, {
+      env: "env-abc",
+      out: destDir,
+      apiKey: testApiKey,
+    });
 
     expect(ui.output).not.toHaveBeenCalled();
   });

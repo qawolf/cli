@@ -3,7 +3,6 @@ import { join, resolve } from "node:path";
 
 import cliPackageJson from "../../../../package.json" with { type: "json" };
 
-import { resolveApiKey } from "~/domains/auth/index.js";
 import {
   type CommandContext,
   type CommandResult,
@@ -18,6 +17,8 @@ export type FlowsPullOptions = {
   readonly env: string;
   readonly out?: string;
   readonly yes?: boolean;
+  /** Resolved API key — must be provided by the command layer. */
+  readonly apiKey: string;
 };
 
 function formatPullSummary(result: {
@@ -53,15 +54,6 @@ export async function handleFlowsPull(
     return { error: validation.error };
   }
 
-  const resolved = await resolveApiKey(ctx.configDir);
-  if (!resolved) {
-    ctx.ui.error(
-      "Not authenticated",
-      "Run `qawolf auth login` or set QAWOLF_API_KEY.",
-    );
-    return { error: "not authenticated" };
-  }
-
   const destAbs = resolve(opts.out ?? join(".qawolf", opts.env));
   const yes = opts.yes ?? false;
   const fetch = globalThis.fetch;
@@ -71,7 +63,7 @@ export async function handleFlowsPull(
     const fetched = await fetchBundleAndEnvVars(
       ctx,
       opts.env,
-      resolved.key,
+      opts.apiKey,
       fetch,
     );
     archive = fetched.tmpArchive;
