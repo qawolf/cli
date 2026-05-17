@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { getApiBaseUrl } from "~/lib/config.js";
 import { errorMessage } from "~/core/errors.js";
 
 const identityResponseSchema = z.object({
@@ -27,7 +26,9 @@ export async function getIdentity(
   apiKey: string,
   deps: GetIdentityDeps = {
     fetch: globalThis.fetch,
-    baseUrl: getApiBaseUrl(process.env),
+    baseUrl:
+      process.env["QAWOLF_API_URL"]?.replace(/\/+$/, "") ||
+      "https://app.qawolf.com",
   },
 ): Promise<GetIdentityResult> {
   const url = `${deps.baseUrl}/api/v0/identity`;

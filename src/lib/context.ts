@@ -2,7 +2,6 @@ import type { Command } from "commander";
 
 import { errorMessage } from "~/core/errors.js";
 import { getConfigDir } from "~/core/paths.js";
-import { getApiBaseUrl } from "./config.js";
 import {
   type OutputFlags,
   type OutputMode,
@@ -49,7 +48,9 @@ export function withContext(
           stdinIsTTY: Boolean(process.stdin.isTTY),
           env,
         }),
-        apiBaseUrl: getApiBaseUrl(env),
+        apiBaseUrl:
+          env["QAWOLF_API_URL"]?.replace(/\/+$/, "") ||
+          "https://app.qawolf.com",
       });
       if (result !== undefined) {
         ui.error(result.error);

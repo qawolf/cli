@@ -5,7 +5,7 @@ import {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/commands/flows/expand.js";
-import { installBrowserList } from "~/commands/install/browsers.js";
+import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { isNoEntError } from "~/core/errors.js";

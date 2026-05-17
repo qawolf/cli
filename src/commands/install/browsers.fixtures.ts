@@ -4,7 +4,7 @@ import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext } from "~/lib/context.js";
 import type { UI } from "~/shell/ui/index.js";
 
-import type { InstallBrowsersDeps } from "./browsers.js";
+import type { InstallBrowsersDeps } from "~/domains/install/browsers.js";
 
 export const fakeCli = "/fake/node_modules/.bin/playwright";
 

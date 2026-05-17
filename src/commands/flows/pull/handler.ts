@@ -1,8 +1,9 @@
 import { unlink } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-import { resolveApiKey } from "~/lib/auth/index.js";
-import { flowsVersionFromCli } from "~/lib/config.js";
+import cliPackageJson from "../../../../package.json" with { type: "json" };
+
+import { resolveApiKey } from "~/domains/auth/index.js";
 import { type CommandContext, type CommandResult } from "~/lib/context.js";
 import { pluralize } from "~/core/pluralize.js";
 import { fetchBundleAndEnvVars } from "./fetchPhase.js";
@@ -32,9 +33,16 @@ function formatPullSummary(result: {
   return `${base} (@qawolf/flows@${result.bundleFlowsVersion})`;
 }
 
+type HandleFlowsPullDeps = {
+  readonly flowsVersion: string;
+};
+
 export async function handleFlowsPull(
   ctx: CommandContext,
   opts: FlowsPullOptions,
+  deps: HandleFlowsPullDeps = {
+    flowsVersion: cliPackageJson.dependencies["@qawolf/flows"],
+  },
 ): Promise<CommandResult> {
   const validation = validateEnvId(opts.env);
   if (validation !== "ok") {
@@ -93,7 +101,7 @@ export async function handleFlowsPull(
               tmpArchive: fetched.tmpArchive,
               destAbs,
               envId: opts.env,
-              cliFlowsVersion: flowsVersionFromCli,
+              cliFlowsVersion: deps.flowsVersion,
               now: fetched.bundleFetchedAt,
               envVars: fetched.envVars,
               envVarsFetchedAt: fetched.envVarsFetchedAt,

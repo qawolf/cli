@@ -1,4 +1,4 @@
-import { deleteApiKey, resolveApiKey } from "~/lib/auth/index.js";
+import { deleteApiKey, resolveApiKey } from "~/domains/auth/index.js";
 import { type CommandContext, type CommandResult } from "~/lib/context.js";
 import { authCopy } from "~/core/copy/index.js";
 

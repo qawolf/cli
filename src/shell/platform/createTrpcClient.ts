@@ -1,8 +1,6 @@
 import superjson, { type SuperJSONResult } from "superjson";
 import type { z } from "zod";
 
-import { getApiBaseUrl } from "~/lib/config.js";
-
 export type WireError =
   | { kind: "http"; status: number; body: string }
   | { kind: "network"; cause: Error }
@@ -35,7 +33,9 @@ const timeoutMs = 15_000;
 export function createTrpcClient(
   apiKey: string,
   deps: Deps = {
-    baseUrl: getApiBaseUrl(process.env),
+    baseUrl:
+      process.env["QAWOLF_API_URL"]?.replace(/\/+$/, "") ||
+      "https://app.qawolf.com",
     fetch: globalThis.fetch,
   },
 ): TrpcClient {
