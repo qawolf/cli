@@ -30,15 +30,7 @@ export type TrpcClient = {
 
 const timeoutMs = 15_000;
 
-export function createTrpcClient(
-  apiKey: string,
-  deps: Deps = {
-    baseUrl:
-      process.env["QAWOLF_API_URL"]?.replace(/\/+$/, "") ||
-      "https://app.qawolf.com",
-    fetch: globalThis.fetch,
-  },
-): TrpcClient {
+export function createTrpcClient(apiKey: string, deps: Deps): TrpcClient {
   const authHeader = { Authorization: `Bearer ${apiKey}` };
 
   return {

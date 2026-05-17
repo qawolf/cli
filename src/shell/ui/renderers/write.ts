@@ -13,6 +13,11 @@ export function writeJsonDiagnostic(data: unknown): void {
   process.stderr.write(JSON.stringify(data) + "\n");
 }
 
+/** Raw text to stderr. */
+export function writeStderrRaw(text: string): void {
+  process.stderr.write(text);
+}
+
 /** Plain text line to stderr. */
 export function writeStderrLine(message: string): void {
   process.stderr.write(`${message}\n`);

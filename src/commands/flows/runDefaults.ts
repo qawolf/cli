@@ -76,9 +76,7 @@ export async function handleFlowsRun(
   const resolvedDir = envDir ?? cwd;
 
   await configureTestkit(resolvedDir);
-  return flowsRun(ctx, pattern, flags, {
-    cwd,
-    expandPatterns: defaultExpandPatterns,
+  return flowsRun(ctx, expandedFiles, flags, {
     peekFlowMeta: defaultPeekFlowMeta,
     installBrowsers: (innerCtx, browsers) =>
       installBrowserList(innerCtx, browsers, {

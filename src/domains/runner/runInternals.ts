@@ -27,11 +27,6 @@ export type FlowsRunFlags = {
 };
 
 export type FlowsRunDeps = {
-  readonly cwd: string;
-  readonly expandPatterns: (
-    patterns: string[],
-    cwd?: string,
-  ) => Promise<string[]>;
   readonly peekFlowMeta: (
     filePath: string,
   ) => Promise<{ name: string | undefined; target: string | undefined }>;

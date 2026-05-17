@@ -80,7 +80,6 @@ export function defaultFlags(): FlowsRunFlags {
 }
 
 type DepsOverrides = {
-  files?: readonly string[];
   metaByFile?: Record<string, { name?: string; target?: string }>;
   installError?: Error;
   runResults?: FlowRunResult[];
@@ -90,17 +89,12 @@ type DepsOverrides = {
 };
 
 export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
-  const files = overrides.files ?? [];
   const metaByFile = overrides.metaByFile ?? {};
   const runResults = overrides.runResults ?? [];
   let runIdx = 0;
   const nowSeq = overrides.nowSequence ?? [0];
   let nowIdx = 0;
   return {
-    cwd: fakeCwd,
-    expandPatterns: mock<FlowsRunDeps["expandPatterns"]>(() =>
-      Promise.resolve([...files]),
-    ),
     peekFlowMeta: mock<FlowsRunDeps["peekFlowMeta"]>((file: string) =>
       Promise.resolve({
         name: metaByFile[file]?.name,

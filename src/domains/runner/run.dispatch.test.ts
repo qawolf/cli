@@ -21,14 +21,18 @@ describe("flowsRun dispatch", () => {
   it("fires onFlowStart, onFlowPass, and onRunComplete when one flow passes", async () => {
     const reporter = makeReporter();
     const deps = makeDeps({
-      files: ["/a.flow.ts"],
       metaByFile: { "/a.flow.ts": { name: "Sign in", target: "Web - Chrome" } },
       runResults: [passResult({ passed: 2, total: 2 })],
       nowSequence: [100, 200, 300],
       reporter,
     });
 
-    const result = await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
+    const result = await flowsRun(
+      makeCtx(),
+      ["/a.flow.ts"],
+      defaultFlags(),
+      deps,
+    );
 
     expect(result).toBeUndefined();
     expect(reporter.onFlowStart).toHaveBeenCalledWith({
@@ -66,13 +70,17 @@ describe("flowsRun dispatch", () => {
   it("fires onFlowFail and returns error when one flow fails", async () => {
     const reporter = makeReporter();
     const deps = makeDeps({
-      files: ["/a.flow.ts"],
       metaByFile: { "/a.flow.ts": { name: "Sign in", target: "Web - Chrome" } },
       runResults: [failResult()],
       reporter,
     });
 
-    const result = await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
+    const result = await flowsRun(
+      makeCtx(),
+      ["/a.flow.ts"],
+      defaultFlags(),
+      deps,
+    );
 
     expect(result).toEqual({ error: "1 flow(s) failed" });
     expect(reporter.onFlowPass).not.toHaveBeenCalled();
@@ -83,13 +91,12 @@ describe("flowsRun dispatch", () => {
   it("uses path basename without extension as flow name when meta.name is missing", async () => {
     const reporter = makeReporter();
     const deps = makeDeps({
-      files: ["/path/to/login.flow.ts"],
       metaByFile: { "/path/to/login.flow.ts": { target: "Web - Chrome" } },
       runResults: [passResult()],
       reporter,
     });
 
-    await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
+    await flowsRun(makeCtx(), ["/path/to/login.flow.ts"], defaultFlags(), deps);
 
     expect(reporter.onFlowStart).toHaveBeenCalledWith({
       name: "login",
@@ -99,7 +106,6 @@ describe("flowsRun dispatch", () => {
 
   it("calls runWebFlow once per matched web flow with the same runWebFlowDeps", async () => {
     const deps = makeDeps({
-      files: ["/c.flow.ts", "/f.flow.ts", "/w.flow.ts"],
       metaByFile: {
         "/c.flow.ts": { target: "Web - Chrome" },
         "/f.flow.ts": { target: "Web - Firefox" },
@@ -108,7 +114,12 @@ describe("flowsRun dispatch", () => {
       runResults: [passResult(), passResult(), passResult()],
     });
 
-    await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
+    await flowsRun(
+      makeCtx(),
+      ["/c.flow.ts", "/f.flow.ts", "/w.flow.ts"],
+      defaultFlags(),
+      deps,
+    );
 
     const calls = callsOf(deps.runWebFlow);
     expect(calls.length).toBe(3);
@@ -129,7 +140,6 @@ describe("flowsRun dispatch", () => {
   it("marks remaining flows as skipped when --bail is true and a flow fails", async () => {
     const reporter = makeReporter();
     const deps = makeDeps({
-      files: ["/a", "/b", "/c"],
       metaByFile: {
         "/a": { target: "Web - Chrome" },
         "/b": { target: "Web - Chrome" },
@@ -140,7 +150,7 @@ describe("flowsRun dispatch", () => {
     });
     const flags = { ...defaultFlags(), bail: true };
 
-    const result = await flowsRun(makeCtx(), undefined, flags, deps);
+    const result = await flowsRun(makeCtx(), ["/a", "/b", "/c"], flags, deps);
 
     expect(callsOf(deps.runWebFlow).length).toBe(2);
     expect(result).toEqual({ error: "1 flow(s) failed" });
@@ -155,7 +165,6 @@ describe("flowsRun dispatch", () => {
   it("runs all flows when --bail is false even if one fails", async () => {
     const reporter = makeReporter();
     const deps = makeDeps({
-      files: ["/a", "/b", "/c"],
       metaByFile: {
         "/a": { target: "Web - Chrome" },
         "/b": { target: "Web - Chrome" },
@@ -165,7 +174,12 @@ describe("flowsRun dispatch", () => {
       reporter,
     });
 
-    const result = await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
+    const result = await flowsRun(
+      makeCtx(),
+      ["/a", "/b", "/c"],
+      defaultFlags(),
+      deps,
+    );
 
     expect(callsOf(deps.runWebFlow).length).toBe(3);
     expect(result).toEqual({ error: "1 flow(s) failed" });
@@ -180,7 +194,6 @@ describe("flowsRun dispatch", () => {
   it("treats a thrown runWebFlow as a flow failure and continues dispatch", async () => {
     const reporter = makeReporter();
     const deps = makeDeps({
-      files: ["/a", "/b"],
       metaByFile: {
         "/a": { target: "Web - Chrome" },
         "/b": { target: "Web - Chrome" },
@@ -192,7 +205,12 @@ describe("flowsRun dispatch", () => {
       typeof deps.runWebFlow
     >(() => Promise.reject(new Error("malformed flow")));
 
-    const result = await flowsRun(makeCtx(), undefined, defaultFlags(), deps);
+    const result = await flowsRun(
+      makeCtx(),
+      ["/a", "/b"],
+      defaultFlags(),
+      deps,
+    );
 
     expect(callsOf(deps.runWebFlow).length).toBe(2);
     expect(reporter.onFlowFail).toHaveBeenCalledTimes(2);

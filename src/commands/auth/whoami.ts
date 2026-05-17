@@ -18,7 +18,7 @@ export async function handleWhoami(
   ctx.ui.gap();
   ctx.ui.intro(authCopy.title);
 
-  const validation = await validateApiKey(resolved.key);
+  const validation = await validateApiKey(resolved.key, ctx.apiBaseUrl);
 
   if (!validation.valid) {
     if (ctx.ui.mode === "human") {

@@ -24,12 +24,7 @@ type GetIdentityDeps = {
 
 export async function getIdentity(
   apiKey: string,
-  deps: GetIdentityDeps = {
-    fetch: globalThis.fetch,
-    baseUrl:
-      process.env["QAWOLF_API_URL"]?.replace(/\/+$/, "") ||
-      "https://app.qawolf.com",
-  },
+  deps: GetIdentityDeps,
 ): Promise<GetIdentityResult> {
   const url = `${deps.baseUrl}/api/v0/identity`;
 

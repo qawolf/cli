@@ -16,7 +16,7 @@ const batchSize = 32;
 
 export async function flowsRun(
   ctx: CommandContext,
-  pattern: string | undefined,
+  files: readonly string[],
   flags: FlowsRunFlags,
   deps: FlowsRunDeps,
 ): Promise<CommandResult> {
@@ -25,9 +25,6 @@ export async function flowsRun(
     ctx.ui.error(message);
     return { error: message, exitCode: 2 };
   }
-
-  const patterns = pattern ? [pattern] : [];
-  const files = await deps.expandPatterns(patterns, deps.cwd);
 
   const flows: ResolvedFlow[] = [];
   for (let i = 0; i < files.length; i += batchSize) {
