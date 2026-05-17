@@ -11,8 +11,8 @@ import type { CommandContext, CommandResult } from "~/lib/context.js";
 import { isNoEntError } from "~/core/errors.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { createConsoleReporter } from "~/shell/reporter/createConsoleReporter.js";
-import { runAndroidFlow as defaultRunAndroidFlow } from "~/lib/runner/runAndroidFlow.js";
-import { runWebFlow as defaultRunWebFlow } from "~/lib/runner/runWebFlow.js";
+import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
+import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
 // import { configureEmails } from "~/emails/configureEmails.js";
 import { configureTestkit } from "~/shell/testkit.js";
 

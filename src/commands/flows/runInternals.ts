@@ -6,18 +6,18 @@ import type {
 } from "~/domains/flows/expand.js";
 import type { CommandContext } from "~/lib/context.js";
 import type { Reporter } from "~/shell/reporter/types.js";
-import { FlowRunError } from "~/lib/runner/errors.js";
+import { FlowRunError } from "~/domains/runner/errors.js";
 import type {
   RunAndroidFlowDeps,
   RunAndroidFlowOptions,
   runAndroidFlow as defaultRunAndroidFlow,
-} from "~/lib/runner/runAndroidFlow.js";
+} from "~/domains/runner/runAndroidFlow.js";
 import type {
   RunWebFlowDeps,
   RunWebFlowOptions,
   runWebFlow as defaultRunWebFlow,
-} from "~/lib/runner/runWebFlow.js";
-import type { FlowRunResult } from "~/lib/runner/types.js";
+} from "~/domains/runner/runWebFlow.js";
+import type { FlowRunResult } from "~/domains/runner/types.js";
 import type { BrowserName, TraceMode, VideoMode } from "~/core/types.js";
 
 export type FlowsRunFlags = {

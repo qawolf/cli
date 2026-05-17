@@ -2,12 +2,12 @@ import { mock } from "bun:test";
 
 import type { CommandContext } from "~/lib/context.js";
 import type { Reporter } from "~/shell/reporter/types.js";
-import type { FlowRunError } from "~/lib/runner/errors.js";
-import type { RunWebFlowDeps } from "~/lib/runner/runWebFlow.js";
-import type { FlowRunResult } from "~/lib/runner/types.js";
+import type { FlowRunError } from "~/domains/runner/errors.js";
+import type { RunWebFlowDeps } from "~/domains/runner/runWebFlow.js";
+import type { FlowRunResult } from "~/domains/runner/types.js";
 import type { UI } from "~/shell/ui/index.js";
 
-import type { RunAndroidFlowDeps } from "~/lib/runner/runAndroidFlow.js";
+import type { RunAndroidFlowDeps } from "~/domains/runner/runAndroidFlow.js";
 
 import type { FlowsRunDeps, FlowsRunFlags } from "./runInternals.js";
 

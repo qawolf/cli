@@ -1,5 +1,5 @@
-import type { RunAndroidFlowOptions } from "~/lib/runner/runAndroidFlow.js";
-import type { RunWebFlowOptions } from "~/lib/runner/runWebFlow.js";
+import type { RunAndroidFlowOptions } from "~/domains/runner/runAndroidFlow.js";
+import type { RunWebFlowOptions } from "~/domains/runner/runWebFlow.js";
 
 import type {
   FlowsRunDeps,
