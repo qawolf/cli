@@ -1,67 +1,17 @@
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
+import { handleFlowsRun, type HandleFlowsRunDeps } from "./runDefaults.js";
 
-// mock.module must be called before the first import of runDefaults.ts.
-// Each factory captures the mock function reference so call history can be
-// inspected and reset between tests via mockClear().
+// handleFlowsRun accepts injectable deps, so no mock.module() is needed.
 
 const expandPatternsMock =
   mock<(patterns: string[], cwd?: string) => Promise<string[]>>();
-const resolveUniqueEnvDirMock =
-  mock<(files: readonly string[]) => string | undefined>();
+const resolveUniqueEnvDirMock = mock<(files: string[]) => string | undefined>();
 const ensureFlowDepsMock = mock<(envDir: string) => Promise<void>>();
 const configureTestkitMock = mock<(dir: string) => Promise<void>>();
-const flowsRunMock = mock<(...args: unknown[]) => Promise<unknown>>();
-const defaultRunWebFlowDepsMock = mock<(dir: string) => Promise<unknown>>();
-
-await mock.module("~/domains/flows/expand.js", () => ({
-  expandPatterns: expandPatternsMock,
-  peekFlowMeta: mock(),
-}));
-
-await mock.module("~/domains/flows/ensureDeps.js", () => ({
-  resolveUniqueEnvDir: resolveUniqueEnvDirMock,
-  ensureFlowDeps: ensureFlowDepsMock,
-}));
-
-await mock.module("~/shell/testkit.js", () => ({
-  configureTestkit: configureTestkitMock,
-}));
-
-await mock.module("~/domains/runner/run.js", () => ({
-  flowsRun: flowsRunMock,
-}));
-
-await mock.module("~/domains/runner/runWebFlowDeps.js", () => ({
-  defaultRunWebFlowDeps: defaultRunWebFlowDepsMock,
-}));
-
-await mock.module("~/shell/playwright.js", () => ({
-  resolvePlaywrightCli: () => "/mock/playwright",
-}));
-
-await mock.module("~/shell/reporter/createConsoleReporter.js", () => ({
-  createConsoleReporter: () => ({}),
-}));
-
-await mock.module("~/domains/runner/runWebFlow.js", () => ({
-  runWebFlow: mock(),
-}));
-
-await mock.module("~/domains/runner/runAndroidFlow.js", () => ({
-  runAndroidFlow: mock(),
-}));
-
-await mock.module("~/shell/spawn.js", () => ({
-  defaultSpawn: mock(),
-}));
-
-await mock.module("~/domains/install/browsers.js", () => ({
-  installBrowserList: mock(),
-}));
-
-const { handleFlowsRun } = await import("./runDefaults.js");
+const flowsRunMock = mock<HandleFlowsRunDeps["flowsRun"]>();
+const runWebFlowDepsMock = mock<(...args: unknown[]) => Promise<unknown>>();
 
 const trackedMocks = [
   expandPatternsMock,
@@ -69,8 +19,20 @@ const trackedMocks = [
   ensureFlowDepsMock,
   configureTestkitMock,
   flowsRunMock,
-  defaultRunWebFlowDepsMock,
+  runWebFlowDepsMock,
 ];
+
+function makeDeps(): HandleFlowsRunDeps {
+  return {
+    expandPatterns: expandPatternsMock,
+    resolveUniqueEnvDir: resolveUniqueEnvDirMock,
+    ensureFlowDeps: ensureFlowDepsMock,
+    configureTestkit: configureTestkitMock,
+    flowsRun: flowsRunMock,
+    runWebFlowDeps:
+      runWebFlowDepsMock as unknown as HandleFlowsRunDeps["runWebFlowDeps"],
+  };
+}
 
 function defaultFlags(): FlowsRunFlags {
   return {
@@ -99,12 +61,6 @@ function makeCtx(): CommandContext {
   } as unknown as CommandContext;
 }
 
-// Restore module mocks after all tests so they don't bleed into other test
-// files when Bun runs multiple files in the same process.
-afterAll(() => {
-  mock.restore();
-});
-
 beforeEach(() => {
   for (const m of trackedMocks) m.mockClear();
   expandPatternsMock.mockResolvedValue([]);
@@ -112,7 +68,7 @@ beforeEach(() => {
   ensureFlowDepsMock.mockResolvedValue(undefined);
   configureTestkitMock.mockResolvedValue(undefined);
   flowsRunMock.mockResolvedValue(undefined);
-  defaultRunWebFlowDepsMock.mockResolvedValue({});
+  runWebFlowDepsMock.mockResolvedValue({});
 });
 
 describe("handleFlowsRun", () => {
@@ -122,7 +78,12 @@ describe("handleFlowsRun", () => {
       throw new Error("files span multiple env dirs");
     });
 
-    const result = await handleFlowsRun(makeCtx(), undefined, defaultFlags());
+    const result = await handleFlowsRun(
+      makeCtx(),
+      undefined,
+      defaultFlags(),
+      makeDeps(),
+    );
 
     expect(result).toEqual({
       error: "files span multiple env dirs",
@@ -133,7 +94,7 @@ describe("handleFlowsRun", () => {
   });
 
   it("skips env setup and calls flowsRun when no envDir", async () => {
-    await handleFlowsRun(makeCtx(), undefined, defaultFlags());
+    await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
 
     expect(ensureFlowDepsMock).not.toHaveBeenCalled();
     expect(configureTestkitMock).toHaveBeenCalledTimes(1);
@@ -145,7 +106,7 @@ describe("handleFlowsRun", () => {
     expandPatternsMock.mockResolvedValue([`${envDir}/login.flow.ts`]);
     resolveUniqueEnvDirMock.mockReturnValue(envDir);
 
-    await handleFlowsRun(makeCtx(), undefined, defaultFlags());
+    await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
 
     expect(ensureFlowDepsMock).toHaveBeenCalledWith(envDir);
     expect(configureTestkitMock).toHaveBeenCalledWith(envDir);

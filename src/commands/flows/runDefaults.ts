@@ -14,15 +14,15 @@ import { createConsoleReporter } from "~/shell/reporter/createConsoleReporter.js
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
 // import { configureEmails } from "~/emails/configureEmails.js";
-import { configureTestkit } from "~/shell/testkit.js";
+import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 
 import { parseDotenv } from "~/domains/flows/dotenv.js";
 import {
-  ensureFlowDeps,
-  resolveUniqueEnvDir,
+  ensureFlowDeps as defaultEnsureFlowDeps,
+  resolveUniqueEnvDir as defaultResolveUniqueEnvDir,
 } from "~/domains/flows/ensureDeps.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
-import { flowsRun } from "~/domains/runner/run.js";
+import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
 export function _buildPatternArgs(pattern: string | undefined): string[] {
@@ -43,44 +43,66 @@ export async function _loadEnvFile(envDir: string): Promise<void> {
   }
 }
 
+export type HandleFlowsRunDeps = {
+  expandPatterns: (patterns: string[], cwd?: string) => Promise<string[]>;
+  resolveUniqueEnvDir: (files: string[]) => string | undefined;
+  ensureFlowDeps: (envDir: string) => Promise<void>;
+  configureTestkit: (dir: string) => Promise<void>;
+  runWebFlowDeps: typeof defaultRunWebFlowDeps;
+  flowsRun: typeof defaultFlowsRun;
+};
+
+function makeDefaultDeps(): HandleFlowsRunDeps {
+  return {
+    expandPatterns: defaultExpandPatterns,
+    resolveUniqueEnvDir: defaultResolveUniqueEnvDir,
+    ensureFlowDeps: defaultEnsureFlowDeps,
+    configureTestkit: defaultConfigureTestkit,
+    runWebFlowDeps: defaultRunWebFlowDeps,
+    flowsRun: defaultFlowsRun,
+  };
+}
+
 export async function handleFlowsRun(
   ctx: CommandContext,
   pattern: string | undefined,
   flags: FlowsRunFlags,
+  deps: HandleFlowsRunDeps = makeDefaultDeps(),
 ): Promise<CommandResult> {
   const cwd = process.cwd();
 
-  const expandedFiles = await defaultExpandPatterns(
+  const expandedFiles = await deps.expandPatterns(
     _buildPatternArgs(pattern),
     cwd,
   );
 
   let envDir: string | undefined;
   try {
-    envDir = resolveUniqueEnvDir(expandedFiles);
+    envDir = deps.resolveUniqueEnvDir(expandedFiles);
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
     return { error, exitCode: 2 };
   }
 
   if (envDir) {
+    const dir = envDir;
     await ctx.ui.withProgress(
       [
         {
           message: "Preparing environment",
-          task: () => ensureFlowDeps(envDir),
+          task: () => deps.ensureFlowDeps(dir),
         },
       ],
       () => "Environment ready",
     );
-    await _loadEnvFile(envDir);
+    await _loadEnvFile(dir);
   }
 
   // Resolve playwright from the env dir; falls back to CWD for local flows.
   const resolvedDir = envDir ?? cwd;
 
-  await configureTestkit(resolvedDir);
-  return flowsRun(ctx, expandedFiles, flags, {
+  await deps.configureTestkit(resolvedDir);
+  return deps.flowsRun(ctx, expandedFiles, flags, {
     peekFlowMeta: defaultPeekFlowMeta,
     installBrowsers: (innerCtx, browsers) =>
       installBrowserList(innerCtx, browsers, {
@@ -89,7 +111,7 @@ export async function handleFlowsRun(
         playwrightCliPath: resolvePlaywrightCli(resolvedDir),
       }),
     runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: await defaultRunWebFlowDeps(resolvedDir),
+    runWebFlowDeps: await deps.runWebFlowDeps(resolvedDir),
     runAndroidFlow: defaultRunAndroidFlow,
     runAndroidFlowDeps: "not-wired", // TODO WIZ-10343: wire production Android deps
     reporter: createConsoleReporter({
