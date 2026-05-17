@@ -1,23 +1,19 @@
 import { InvalidArgumentError } from "commander";
 
-import type {
-  expandPatterns as defaultExpandPatterns,
-  peekFlowMeta as defaultPeekFlowMeta,
-} from "~/domains/flows/expand.js";
 import type { CommandContext } from "~/lib/context.js";
 import type { Reporter } from "~/shell/reporter/types.js";
-import { FlowRunError } from "~/domains/runner/errors.js";
+import { FlowRunError } from "./errors.js";
 import type {
   RunAndroidFlowDeps,
   RunAndroidFlowOptions,
   runAndroidFlow as defaultRunAndroidFlow,
-} from "~/domains/runner/runAndroidFlow.js";
+} from "./runAndroidFlow.js";
 import type {
   RunWebFlowDeps,
   RunWebFlowOptions,
   runWebFlow as defaultRunWebFlow,
-} from "~/domains/runner/runWebFlow.js";
-import type { FlowRunResult } from "~/domains/runner/types.js";
+} from "./runWebFlow.js";
+import type { FlowRunResult } from "./types.js";
 import type { BrowserName, TraceMode, VideoMode } from "~/core/types.js";
 
 export type FlowsRunFlags = {
@@ -32,8 +28,13 @@ export type FlowsRunFlags = {
 
 export type FlowsRunDeps = {
   readonly cwd: string;
-  readonly expandPatterns: typeof defaultExpandPatterns;
-  readonly peekFlowMeta: typeof defaultPeekFlowMeta;
+  readonly expandPatterns: (
+    patterns: string[],
+    cwd?: string,
+  ) => Promise<string[]>;
+  readonly peekFlowMeta: (
+    filePath: string,
+  ) => Promise<{ name: string | undefined; target: string | undefined }>;
   readonly installBrowsers: (
     ctx: CommandContext,
     browsers: BrowserName[],

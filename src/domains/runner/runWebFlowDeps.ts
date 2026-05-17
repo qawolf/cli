@@ -3,7 +3,7 @@ import { spawn as nodeSpawn } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
-import type { RunWebFlowDeps } from "~/domains/runner/runWebFlow.js";
+import type { RunWebFlowDeps } from "./runWebFlow.js";
 
 export async function defaultRunWebFlowDeps(
   cwd = process.cwd(),

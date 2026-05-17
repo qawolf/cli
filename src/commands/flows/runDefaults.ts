@@ -21,9 +21,9 @@ import {
   ensureFlowDeps,
   resolveUniqueEnvDir,
 } from "~/domains/flows/ensureDeps.js";
-import { defaultRunWebFlowDeps } from "./runWebFlowDeps.js";
-import { flowsRun } from "./run.js";
-import type { FlowsRunFlags } from "./runInternals.js";
+import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
+import { flowsRun } from "~/domains/runner/run.js";
+import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
 export async function _loadEnvFile(envDir: string): Promise<void> {
   let content: string;

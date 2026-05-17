@@ -9,7 +9,11 @@ import {
   handleFlowsPull,
 } from "~/domains/flows/pull/handler.js";
 import { handleFlowsRun } from "./runDefaults.js";
-import { type FlowsRunFlags, parseEnum, parseInteger } from "./runInternals.js";
+import {
+  type FlowsRunFlags,
+  parseEnum,
+  parseInteger,
+} from "~/domains/runner/runInternals.js";
 
 const videoModes = ["on", "off", "retain-on-failure"] as const;
 const traceModes = ["on", "off", "retain-on-failure"] as const;

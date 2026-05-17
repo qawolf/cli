@@ -45,7 +45,7 @@ export type AndroidLaunchOptions = {
 };
 
 /**
- * Matches the shape of `CleanupResult` in `src/lib/runner/web/types.ts`.
+ * Matches the shape of `CleanupResult` in `src/domains/runner/web/types.ts`.
  * `tracePaths` is always `[]` for Android — included for structural parity so
  * the runner core can accept either context type.
  */

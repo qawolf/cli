@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { CommandContext } from "~/lib/context.js";
 import type { UI } from "~/shell/ui/index.js";
 
-import { makeFakeUI } from "~/commands/flows/run.fixtures.js";
+import { makeFakeUI } from "~/domains/runner/run.fixtures.js";
 import { handleFlowsPull } from "./handler.js";
 import { manifestFilename } from "./manifest.js";
 import {
