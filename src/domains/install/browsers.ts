@@ -1,7 +1,3 @@
-import type {
-  expandPatterns as defaultExpandPatterns,
-  peekFlowMeta as defaultPeekFlowMeta,
-} from "~/domains/flows/expand.js";
 import { targetToBrowser } from "~/core/flowMeta.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/lib/context.js";
@@ -11,8 +7,13 @@ export type InstallBrowsersDeps = {
   readonly cwd: string;
   readonly spawn: SpawnFn;
   readonly platform: NodeJS.Platform;
-  readonly expandPatterns: typeof defaultExpandPatterns;
-  readonly peekFlowMeta: typeof defaultPeekFlowMeta;
+  readonly expandPatterns: (
+    patterns: string[],
+    cwd?: string,
+  ) => Promise<string[]>;
+  readonly peekFlowMeta: (
+    filePath: string,
+  ) => Promise<{ name: string | undefined; target: string | undefined }>;
   readonly playwrightCliPath: string;
 };
 
@@ -62,7 +63,9 @@ const batchSize = 32;
 
 async function collectBrowsers(
   files: readonly string[],
-  peekFlowMeta: typeof defaultPeekFlowMeta,
+  peekFlowMeta: (
+    filePath: string,
+  ) => Promise<{ name: string | undefined; target: string | undefined }>,
 ): Promise<BrowserName[]> {
   const seen = new Set<BrowserName>();
   for (let i = 0; i < files.length; i += batchSize) {

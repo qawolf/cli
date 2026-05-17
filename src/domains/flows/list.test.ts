@@ -117,10 +117,14 @@ describe("flowsList human mode table", () => {
     const output = write.mock.calls.map((c) => String(c[0])).join("");
     const lines = output.split("\n").filter((l) => l.length > 0);
 
-    // Header line is bold: contains ANSI bold/reset codes around column names.
-    expect(lines[0]).toContain("[1m");
-    expect(lines[0]).toContain("name");
-    expect(lines[0]).toContain("[0m");
+    // Header is bold — ESC[1m wraps the content, ESC[0m resets it.
+    expect(lines[0]).toMatch(/\[1m/);
+    expect(lines[0]).toMatch(/\[0m/);
+    // Column order: strip all ANSI codes (including bare ESC) before asserting.
+    // oxlint-disable-next-line no-control-regex, @typescript-eslint/no-non-null-assertion
+    expect(lines[0]!.replace(/\x1b[^m]*m/g, "")).toMatch(
+      /^name\s+target\s+file$/,
+    );
     expect(stripAnsi(lines[1])).toMatch(
       /^Login\s+Web - Chrome\s+src\/flows\/login\.flow\.ts$/,
     );
