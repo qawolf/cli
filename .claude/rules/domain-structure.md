@@ -6,6 +6,7 @@ globs: src/**
 ## Four-layer architecture
 
 Import rules are enforced by oxlint:
+
 - `core/`: no imports from `shell/`, `domains/`, or `commands/`
 - `shell/`: no imports from `domains/` or `commands/`
 - `domains/<x>/`: no imports from `commands/`; no imports from sibling domains

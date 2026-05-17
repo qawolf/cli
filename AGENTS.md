@@ -102,4 +102,4 @@ Conventional commits: `type(scope): description`
 - Do not commit `.env` files or API keys
 - Do not add dependencies without justification
 - The CLI is a thin client — business logic belongs in the platform API, not here
-- When adding a hacky workaround, add a `TODO TECH-0000` comment to track it
+- When adding a hacky workaround, file a follow-up ticket in Linear, then add a `TODO $TICKET_ID` comment to track it

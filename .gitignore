@@ -35,4 +35,4 @@ bun.lockb
 
 # Agents
 .claude/*
-!claude/rules/
+!.claude/rules/
