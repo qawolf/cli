@@ -1,5 +1,5 @@
 import {
-  defaultDeps,
+  makeDefaultDeps,
   resolveApiKey,
   validateApiKey,
 } from "~/domains/auth/index.js";
@@ -22,10 +22,10 @@ export async function handleWhoami(
   ctx.ui.gap();
   ctx.ui.intro(authCopy.title);
 
-  const validation = await validateApiKey(resolved.key, {
-    ...defaultDeps,
-    baseUrl: ctx.apiBaseUrl,
-  });
+  const validation = await validateApiKey(
+    resolved.key,
+    makeDefaultDeps(ctx.apiBaseUrl),
+  );
 
   if (!validation.valid) {
     if (ctx.ui.mode === "human") {

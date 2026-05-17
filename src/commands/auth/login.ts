@@ -1,5 +1,5 @@
 import {
-  defaultDeps,
+  makeDefaultDeps,
   resolveApiKey,
   saveApiKey,
   validateApiKey,
@@ -42,10 +42,10 @@ export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
       {
         message: authCopy.verifying,
         task: async () => {
-          const v = await validateApiKey(result.value, {
-            ...defaultDeps,
-            baseUrl: ctx.apiBaseUrl,
-          });
+          const v = await validateApiKey(
+            result.value,
+            makeDefaultDeps(ctx.apiBaseUrl),
+          );
           if (!v.valid) throw Error(v.error);
         },
       },

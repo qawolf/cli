@@ -10,10 +10,16 @@ type Dependencies = {
   getIdentity: (apiKey: string, baseUrl: string) => Promise<GetIdentityResult>;
 };
 
-export const defaultDeps = {
-  getIdentity: (apiKey: string, baseUrl: string): Promise<GetIdentityResult> =>
-    getIdentityFromPlatform(apiKey, { baseUrl, fetch: globalThis.fetch }),
-};
+export function makeDefaultDeps(baseUrl: string): Dependencies {
+  return {
+    baseUrl,
+    getIdentity: (apiKey, url) =>
+      getIdentityFromPlatform(apiKey, {
+        baseUrl: url,
+        fetch: globalThis.fetch,
+      }),
+  };
+}
 
 export async function validateApiKey(
   apiKey: string,
