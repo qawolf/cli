@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync } from "~/shell/fs.js";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 

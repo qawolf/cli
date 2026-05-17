@@ -45,6 +45,7 @@ export function makeFakeUI(): UI {
     output: mock(() => {}),
     error: mock(() => {}),
     info: mock(() => {}),
+    write: mock(() => {}),
   };
 }
 

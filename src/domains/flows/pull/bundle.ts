@@ -1,4 +1,4 @@
-import { readFile, readdir, rename, rmdir, stat } from "node:fs/promises";
+import { readFile, readdir, rename, rmdir, stat } from "~/shell/fs.js";
 import { join, relative } from "node:path";
 import { z } from "zod";
 

@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { spawn as nodeSpawn } from "node:child_process";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "~/shell/fs.js";
+import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import { pathToFileURL } from "node:url";
 
 import type { RunWebFlowDeps } from "./runWebFlow.js";

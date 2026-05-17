@@ -1,6 +1,33 @@
-import { stat } from "node:fs/promises";
+import { createReadStream, existsSync, mkdirSync, readFileSync } from "node:fs";
+import {
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  rmdir,
+  stat,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 
 import { isNoEntError } from "~/core/errors.js";
+
+export {
+  createReadStream,
+  existsSync,
+  mkdir,
+  mkdirSync,
+  readFile,
+  readFileSync,
+  readdir,
+  rename,
+  rm,
+  rmdir,
+  stat,
+  unlink,
+  writeFile,
+};
 
 export async function pathExists(p: string): Promise<boolean> {
   try {

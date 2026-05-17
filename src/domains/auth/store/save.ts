@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "~/shell/fs.js";
 import { join } from "node:path";
 
 import { Entry } from "@napi-rs/keyring";

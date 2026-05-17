@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { writeFile } from "~/shell/fs.js";
 import { join } from "node:path";
 
 import { createTrpcClient } from "~/shell/platform/createTrpcClient.js";

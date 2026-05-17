@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile } from "~/shell/fs.js";
 import { join } from "node:path";
 
 import { Entry } from "@napi-rs/keyring";

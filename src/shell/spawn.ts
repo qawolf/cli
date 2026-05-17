@@ -1,5 +1,7 @@
 import { spawn } from "node:child_process";
 
+export { spawn };
+
 export type SpawnResult = {
   readonly exitCode: number;
   readonly stdout: string;

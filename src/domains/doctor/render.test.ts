@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import type { UI } from "~/shell/ui/types.js";
 
@@ -17,6 +17,7 @@ function makeUi(mode: UI["mode"]): UI {
     warn: mock(),
     error: mock(),
     json: mock(),
+    write: mock(),
   } as unknown as UI;
 }
 
@@ -57,13 +58,11 @@ describe("renderResults", () => {
 
   it("writes one prefixed line per check to stderr in agent mode", () => {
     const ui = makeUi("agent");
-    const writes: string[] = [];
-    spyOn(process.stderr, "write").mockImplementation((data: string) => {
-      writes.push(data);
-      return true;
-    });
     renderResults(ui, results);
-    expect(writes).toEqual(["PASS a\n", "WARN b: soft\n", "FAIL c: hard\n"]);
+    expect(ui.write).toHaveBeenCalledTimes(3);
+    expect(ui.write).toHaveBeenNthCalledWith(1, "PASS a\n");
+    expect(ui.write).toHaveBeenNthCalledWith(2, "WARN b: soft\n");
+    expect(ui.write).toHaveBeenNthCalledWith(3, "FAIL c: hard\n");
     expect(ui.intro).not.toHaveBeenCalled();
     expect(ui.success).not.toHaveBeenCalled();
   });

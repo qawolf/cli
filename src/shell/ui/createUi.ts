@@ -1,6 +1,7 @@
 import { createStyledClack } from "./clack/index.js";
 import type { OutputMode } from "./env.js";
 import { createCancel } from "./renderers/cancel.js";
+import { writeStderrLine, writeStdoutRaw } from "./renderers/write.js";
 import { createConfirm } from "./renderers/confirm.js";
 import { createError } from "./renderers/error.js";
 import { createGap } from "./renderers/gap.js";
@@ -37,5 +38,9 @@ export function createUI(mode: OutputMode): UI {
     output: createOutput({ mode, clack }),
     error: createError({ mode, clack }),
     info: createInfo({ mode, clack }),
+    write: (text: string) => {
+      if (mode === "human") writeStdoutRaw(text);
+      else if (mode === "agent") writeStderrLine(text);
+    },
   };
 }

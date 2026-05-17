@@ -35,4 +35,7 @@ export type UI = {
   // diagnostics
   error(title: string, body?: string): void;
   info(message: string): void;
+
+  // raw output — stdout in human mode, stderr in agent mode, no-op in json mode
+  write(text: string): void;
 };

@@ -1,4 +1,4 @@
-import { rename } from "node:fs/promises";
+import { rename } from "~/shell/fs.js";
 
 import { pathExists } from "~/shell/fs.js";
 import { buildManifest, flattenSingleWrapper } from "./bundle.js";

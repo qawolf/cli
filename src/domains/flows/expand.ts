@@ -1,4 +1,4 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir } from "~/shell/fs.js";
 import { join } from "node:path";
 import { glob } from "tinyglobby";
 import { extractFlowMeta } from "~/core/flowMeta.js";

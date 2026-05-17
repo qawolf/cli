@@ -1,9 +1,9 @@
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import type { CommandContext } from "~/shell/commandContext.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
-import { makeFakeUI } from "~/domains/runner/run.fixtures.js";
+import { callsOf, makeFakeUI } from "~/domains/runner/run.fixtures.js";
 
 afterEach(() => {
   mock.restore();
@@ -52,20 +52,15 @@ describe("flowsList agent mode", () => {
         },
       },
     });
-    const stdoutWrite = spyOn(process.stdout, "write").mockImplementation(
-      () => true,
-    );
-    const stderrWrite = spyOn(process.stderr, "write").mockImplementation(
-      () => true,
-    );
 
     await flowsList(makeAgentCtx(ui), undefined, deps);
 
-    const stderr = stderrWrite.mock.calls.map((c) => String(c[0])).join("");
-    expect(stdoutWrite).not.toHaveBeenCalled();
-    expect(stderr).toContain("Login");
-    expect(stderr).toContain("Web - Chrome");
-    expect(stderr).toContain("src/flows/login.flow.ts");
+    const output = callsOf(ui.write)
+      .map((c) => String(c[0]))
+      .join("");
+    expect(output).toContain("Login");
+    expect(output).toContain("Web - Chrome");
+    expect(output).toContain("src/flows/login.flow.ts");
     expect(ui.intro).not.toHaveBeenCalled();
     expect(ui.outro).not.toHaveBeenCalled();
     expect(ui.json).not.toHaveBeenCalled();
@@ -82,15 +77,13 @@ describe("flowsList agent mode", () => {
         },
       },
     });
-    spyOn(process.stdout, "write").mockImplementation(() => true);
-    const stderrWrite = spyOn(process.stderr, "write").mockImplementation(
-      () => true,
-    );
 
     await flowsList(makeAgentCtx(ui), undefined, deps);
 
-    const stderr = stderrWrite.mock.calls.map((c) => String(c[0])).join("");
-    expect(stderr).not.toContain("\x1b[1m");
-    expect(stderr).not.toContain("\x1b[0m");
+    const output = callsOf(ui.write)
+      .map((c) => String(c[0]))
+      .join("");
+    expect(output).not.toContain("\x1b[1m");
+    expect(output).not.toContain("\x1b[0m");
   });
 });

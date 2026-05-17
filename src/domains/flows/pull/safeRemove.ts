@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { rm } from "node:fs/promises";
+import { rm } from "~/shell/fs.js";
 import { isAbsolute } from "node:path";
 
 type TempPathKind = "pull" | "old";

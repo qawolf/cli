@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile } from "~/shell/fs.js";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { isNoEntError } from "~/core/errors.js";

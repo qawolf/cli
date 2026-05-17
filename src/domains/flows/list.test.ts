@@ -1,10 +1,10 @@
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { OutputMode } from "~/shell/ui/env.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
-import { makeFakeUI } from "~/domains/runner/run.fixtures.js";
+import { callsOf, makeFakeUI } from "~/domains/runner/run.fixtures.js";
 
 afterEach(() => {
   mock.restore();
@@ -110,11 +110,12 @@ describe("flowsList human mode table", () => {
         },
       },
     });
-    const write = spyOn(process.stdout, "write").mockImplementation(() => true);
 
     await flowsList(makeCtx(ui, "human"), undefined, deps);
 
-    const output = write.mock.calls.map((c) => String(c[0])).join("");
+    const output = callsOf(ui.write)
+      .map((c) => String(c[0]))
+      .join("");
     const lines = output.split("\n").filter((l) => l.length > 0);
 
     // Header is bold — ESC[1m wraps the content, ESC[0m resets it.
@@ -144,11 +145,12 @@ describe("flowsList human mode table", () => {
         "/proj/src/flows/untargeted.flow.ts": { name: "Untargeted" },
       },
     });
-    const write = spyOn(process.stdout, "write").mockImplementation(() => true);
 
     await flowsList(makeCtx(ui, "human"), undefined, deps);
 
-    const output = write.mock.calls.map((c) => String(c[0])).join("");
+    const output = callsOf(ui.write)
+      .map((c) => String(c[0]))
+      .join("");
     const lines = output.split("\n").filter((l) => l.length > 0);
 
     expect(stripAnsi(lines[1])).toMatch(

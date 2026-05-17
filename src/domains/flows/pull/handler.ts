@@ -1,4 +1,4 @@
-import { unlink } from "node:fs/promises";
+import { unlink } from "~/shell/fs.js";
 import { join, resolve } from "node:path";
 
 import cliPackageJson from "../../../../package.json" with { type: "json" };

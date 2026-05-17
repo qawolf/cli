@@ -12,9 +12,7 @@ export function renderResults(ui: UI, results: CheckResult[]): void {
   if (ui.mode === "agent") {
     for (const result of results) {
       const tail = result.detail ? `: ${result.detail}` : "";
-      process.stderr.write(
-        `${result.status.toUpperCase()} ${result.name}${tail}\n`,
-      );
+      ui.write(`${result.status.toUpperCase()} ${result.name}${tail}\n`);
     }
     return;
   }

@@ -1,8 +1,7 @@
 // TODO WIZ-10356: replace this stub with the canonical manifest format.
 
 import { createHash } from "node:crypto";
-import { createReadStream } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { createReadStream, readFile, writeFile } from "~/shell/fs.js";
 import { join } from "node:path";
 import { z } from "zod";
 

@@ -56,12 +56,12 @@ export async function flowsList(
     return;
   }
   if (ctx.ui.mode === "agent") {
-    process.stderr.write(renderTable(items, false));
+    ctx.ui.write(renderTable(items, false));
     return;
   }
   ctx.ui.gap();
   ctx.ui.intro("Flows");
-  process.stdout.write(renderTable(items, true));
+  ctx.ui.write(renderTable(items, true));
   ctx.ui.outro(pluralize(items.length, "flow"));
 }
 

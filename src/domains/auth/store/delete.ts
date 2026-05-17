@@ -1,4 +1,4 @@
-import { unlink } from "node:fs/promises";
+import { unlink } from "~/shell/fs.js";
 import { join } from "node:path";
 
 import { Entry } from "@napi-rs/keyring";

@@ -1,5 +1,4 @@
-import { createReadStream, mkdirSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { createReadStream, mkdir, mkdirSync, writeFile } from "~/shell/fs.js";
 import { dirname, resolve } from "node:path";
 import { createGunzip } from "node:zlib";
 import { Parser, type ReadEntry } from "tar";

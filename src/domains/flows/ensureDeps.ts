@@ -1,5 +1,5 @@
-import { spawn as nodeSpawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "~/shell/fs.js";
+import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import { dirname, join } from "node:path";
 import {
   appiumUiautomator2DriverVersion,
