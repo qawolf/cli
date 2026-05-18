@@ -1,8 +1,9 @@
 import { resolve } from "node:path";
 
 import { isNoEntError } from "~/core/errors.js";
+import { hashFile } from "~/shell/manifest/io.js";
+import type { Manifest } from "~/shell/manifest/types.js";
 import { validateEntryPath } from "./entryPath.js";
-import { type Manifest, hashFile } from "./manifest.js";
 
 type LocalMod = {
   path: string;
@@ -15,7 +16,7 @@ export async function detectLocalModifications(
 ): Promise<LocalMod[]> {
   const envDirResolved = resolve(envDir);
   const mods: LocalMod[] = [];
-  for (const entry of manifest.files) {
+  for (const entry of manifest.flows) {
     // Reject absolute paths and `..` segments before touching the filesystem.
     // A malformed/malicious manifest could otherwise hash arbitrary locations.
     const abs = validateEntryPath(entry.path, envDirResolved);
@@ -29,7 +30,7 @@ export async function detectLocalModifications(
       }
       throw err;
     }
-    if (actual !== entry.sha256) {
+    if (actual !== entry.contentHash) {
       mods.push({ path: entry.path, reason: "modified" });
     }
   }

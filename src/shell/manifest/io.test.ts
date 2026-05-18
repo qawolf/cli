@@ -4,12 +4,12 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 import {
-  manifestFilename,
-  type Manifest,
   hashFile,
+  manifestFilename,
   readManifest,
   writeManifest,
-} from "./manifest.js";
+} from "./io.js";
+import type { Manifest } from "./types.js";
 
 let workDir = "";
 
@@ -25,10 +25,11 @@ const sample: Manifest = {
   envId: "env-abc",
   envSlug: "staging",
   fetchedAt: "2026-05-10T12:00:00.000Z",
-  envVarsFetchedAt: "2026-05-10T12:30:00.000Z",
   cliFlowsVersion: "0.1.0",
-  bundleFlowsVersion: "0.1.0",
-  files: [{ path: "checkout.flow.ts", sha256: "deadbeef" }],
+  qawolfCommitSha: "c67b5b6ff48766ca3cd72ceb4037e95c49633725",
+  qawolfCommittedAt: "2026-05-09T10:00:00.000Z",
+  envVarsFetchedAt: "2026-05-10T12:30:00.000Z",
+  flows: [{ path: "src/checkout.flow.ts", contentHash: "deadbeef" }],
 };
 
 describe("readManifest", () => {
@@ -64,11 +65,20 @@ describe("writeManifest", () => {
     expect(JSON.parse(raw)).toEqual(sample);
   });
 
-  it("preserves envSlug as undefined when absent", async () => {
-    const m: Manifest = { ...sample, envSlug: undefined };
-    await writeManifest(workDir, m);
+  it("preserves optional fields as undefined when absent", async () => {
+    const minimal: Manifest = {
+      envId: "env-min",
+      envSlug: undefined,
+      fetchedAt: "2026-05-10T12:00:00.000Z",
+      cliFlowsVersion: "0.1.0",
+      qawolfCommitSha: undefined,
+      qawolfCommittedAt: undefined,
+      envVarsFetchedAt: undefined,
+      flows: [],
+    };
+    await writeManifest(workDir, minimal);
     const round = await readManifest(workDir);
-    expect(round).toEqual(m);
+    expect(round).toEqual(minimal);
   });
 });
 

@@ -19,10 +19,6 @@ export async function buildBundle(
   archivePath: string,
   opts: {
     flows: { name: string; data: string }[];
-    // Optional: when set, written into the bundle's package.json under
-    // `dependencies["@qawolf/flows"]`. Omit to simulate a bundle without
-    // any `@qawolf/flows` pin (the user's project may not list it directly).
-    bundleFlowsVersion?: string;
     // When set, all entries are wrapped in a single directory of this name.
     // Used to exercise `flattenSingleWrapper` extraction behavior.
     wrapInDir?: string;
@@ -38,11 +34,11 @@ export async function buildBundle(
       await mkdir(join(target, ".."), { recursive: true });
       await writeFile(target, f.data, "utf8");
     }
-    const pkg: Record<string, unknown> = { name: "@qawolf/flows-bundle" };
-    if (opts.bundleFlowsVersion) {
-      pkg["dependencies"] = { "@qawolf/flows": opts.bundleFlowsVersion };
-    }
-    await writeFile(join(root, "package.json"), JSON.stringify(pkg), "utf8");
+    await writeFile(
+      join(root, "package.json"),
+      JSON.stringify({ name: "@qawolf/flows-bundle" }),
+      "utf8",
+    );
 
     const fileNames = opts.wrapInDir
       ? [opts.wrapInDir]

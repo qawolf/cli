@@ -100,7 +100,6 @@ describe("downloadBundle", () => {
   it("writes the signed-URL response to a tmp .tar.gz file", async () => {
     await buildBundle(bundleArchive, {
       flows: [{ name: "a.flow.ts", data: "ok" }],
-      bundleFlowsVersion: "0.5.0",
     });
     const fakeFetch = makeFakeFetch({
       kind: "ok",

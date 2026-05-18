@@ -8,8 +8,8 @@ import {
   type CommandResult,
 } from "~/shell/commandContext.js";
 import { pluralize } from "~/core/pluralize.js";
+import { manifestFilename } from "~/shell/manifest/io.js";
 import { fetchBundleAndEnvVars } from "./fetchPhase.js";
-import { manifestFilename } from "./manifest.js";
 import { checkSafety, validateEnvId } from "./pull.js";
 import { stageBundle } from "./stage.js";
 
@@ -25,16 +25,13 @@ function formatPullSummary(result: {
   envDir: string;
   flowCount: number;
   envVarCount: number;
-  bundleFlowsVersion: string | undefined;
 }): string {
   const flows = pluralize(result.flowCount, "flow");
   const envVars =
     result.envVarCount === 0
       ? ""
       : ` and ${pluralize(result.envVarCount, "environment variable")}`;
-  const base = `Pulled ${flows}${envVars} into ${result.envDir}`;
-  if (!result.bundleFlowsVersion) return base;
-  return `${base} (@qawolf/flows@${result.bundleFlowsVersion})`;
+  return `Pulled ${flows}${envVars} into ${result.envDir}`;
 }
 
 type HandleFlowsPullDeps = {
