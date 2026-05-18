@@ -1,37 +1,42 @@
-import { readFile, readdir, rename, rmdir, stat } from "~/shell/fs.js";
 import { join, relative } from "node:path";
-import { z } from "zod";
 
-import { type Manifest, hashFile } from "./manifest.js";
+import { hashFile } from "~/shell/manifest/io.js";
+import type { Manifest } from "~/shell/manifest/types.js";
+import { readdir, rename, rmdir, stat } from "~/shell/fs.js";
 
 // If `dir` contains exactly one entry and that entry is a directory, promote
-// its contents up one level. Lets manifest paths be relative to the actual
-// bundle contents rather than a content-hash wrapper directory.
-export async function flattenSingleWrapper(dir: string): Promise<void> {
+// its contents up one level and return the wrapper directory's name. Lets
+// downstream code recover the GitHub-archive wrapper (`<owner>-<repo>-<sha>`)
+// so the bundle's source commit can be recorded in the manifest.
+export async function flattenSingleWrapper(
+  dir: string,
+): Promise<string | undefined> {
   const entries = await readdir(dir);
-  if (entries.length !== 1) return;
+  if (entries.length !== 1) return undefined;
   const innerName = entries[0];
-  if (!innerName) return;
+  if (!innerName) return undefined;
   const inner = join(dir, innerName);
   const innerStat = await stat(inner);
-  if (!innerStat.isDirectory()) return;
+  if (!innerStat.isDirectory()) return undefined;
 
   for (const e of await readdir(inner)) {
     await rename(join(inner, e), join(dir, e));
   }
   await rmdir(inner);
+  return innerName;
+}
+
+// GitHub's tarball archives wrap content in `<owner>-<repo>-<sha>/`, where
+// the trailing 40 hex chars are the commit SHA. Defensive: returns undefined
+// when the wrapper name doesn't match — keeps manifest writes infallible.
+function extractQawolfCommitSha(
+  wrapperName: string | undefined,
+): string | undefined {
+  if (!wrapperName) return undefined;
+  return /-([0-9a-f]{40})$/i.exec(wrapperName)?.[1];
 }
 
 const flowExtensions = [".flow.ts", ".flow.js"];
-
-const packageJsonSchema = z.object({
-  dependencies: z
-    .looseObject({ "@qawolf/flows": z.string().optional() })
-    .optional(),
-  devDependencies: z
-    .looseObject({ "@qawolf/flows": z.string().optional() })
-    .optional(),
-});
 
 export async function buildManifest(args: {
   envId: string;
@@ -39,15 +44,21 @@ export async function buildManifest(args: {
   cliFlowsVersion: string;
   now: Date;
   envVarsFetchedAt: Date | undefined;
+  wrapperName: string | undefined;
 }): Promise<Manifest> {
   const flowPaths = await walkForFlows(args.bundleDir);
-  const files = await Promise.all(
+  const flows = await Promise.all(
     flowPaths.map(async (rel) => ({
       path: rel,
-      sha256: await hashFile(join(args.bundleDir, rel)),
+      contentHash: await hashFile(join(args.bundleDir, rel)),
     })),
   );
-  const bundleFlowsVersion = await readBundleFlowsVersion(args.bundleDir);
+  // Sample any flow file's mtime as commit time — all entries share it via
+  // tar's mtime preservation applied in extract.ts.
+  const sampleFlow = flowPaths[0];
+  const qawolfCommittedAt = sampleFlow
+    ? (await stat(join(args.bundleDir, sampleFlow))).mtime.toISOString()
+    : undefined;
 
   return {
     envId: args.envId,
@@ -55,32 +66,10 @@ export async function buildManifest(args: {
     fetchedAt: args.now.toISOString(),
     envVarsFetchedAt: args.envVarsFetchedAt?.toISOString(),
     cliFlowsVersion: args.cliFlowsVersion,
-    bundleFlowsVersion,
-    files,
+    qawolfCommitSha: extractQawolfCommitSha(args.wrapperName),
+    qawolfCommittedAt,
+    flows,
   };
-}
-
-async function readBundleFlowsVersion(
-  bundleDir: string,
-): Promise<string | undefined> {
-  let raw: string;
-  try {
-    raw = await readFile(join(bundleDir, "package.json"), "utf8");
-  } catch {
-    return undefined;
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return undefined;
-  }
-  const result = packageJsonSchema.safeParse(parsed);
-  if (!result.success) return undefined;
-  return (
-    result.data.dependencies?.["@qawolf/flows"] ??
-    result.data.devDependencies?.["@qawolf/flows"]
-  );
 }
 
 async function walkForFlows(root: string): Promise<string[]> {

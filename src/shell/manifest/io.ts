@@ -1,17 +1,16 @@
-// TODO WIZ-10356: replace this stub with the canonical manifest format.
-
 import { createHash } from "node:crypto";
-import { createReadStream, readFile, writeFile } from "~/shell/fs.js";
 import { join } from "node:path";
 import { z } from "zod";
 
 import { isNoEntError } from "~/core/errors.js";
+import { createReadStream, readFile, writeFile } from "~/shell/fs.js";
+import type { Manifest } from "./types.js";
 
 export const manifestFilename = ".manifest.json";
 
-const fileSchema = z.object({
+const flowEntrySchema = z.object({
   path: z.string(),
-  sha256: z.string(),
+  contentHash: z.string(),
 });
 
 const manifestSchema = z.object({
@@ -20,19 +19,10 @@ const manifestSchema = z.object({
   fetchedAt: z.string(),
   envVarsFetchedAt: z.string().optional(),
   cliFlowsVersion: z.string(),
-  bundleFlowsVersion: z.string().optional(),
-  files: z.array(fileSchema),
+  qawolfCommitSha: z.string().optional(),
+  qawolfCommittedAt: z.string().optional(),
+  flows: z.array(flowEntrySchema),
 });
-
-export type Manifest = {
-  envId: string;
-  envSlug: string | undefined;
-  fetchedAt: string;
-  envVarsFetchedAt: string | undefined;
-  cliFlowsVersion: string;
-  bundleFlowsVersion: string | undefined;
-  files: { path: string; sha256: string }[];
-};
 
 type ReadManifestResult = Manifest | "missing" | "malformed";
 
@@ -65,8 +55,9 @@ export async function readManifest(
     fetchedAt: result.data.fetchedAt,
     envVarsFetchedAt: result.data.envVarsFetchedAt,
     cliFlowsVersion: result.data.cliFlowsVersion,
-    bundleFlowsVersion: result.data.bundleFlowsVersion,
-    files: result.data.files,
+    qawolfCommitSha: result.data.qawolfCommitSha,
+    qawolfCommittedAt: result.data.qawolfCommittedAt,
+    flows: result.data.flows,
   };
 }
 

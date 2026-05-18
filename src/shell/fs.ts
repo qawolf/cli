@@ -8,6 +8,7 @@ import {
   rmdir,
   stat,
   unlink,
+  utimes,
   writeFile,
 } from "node:fs/promises";
 
@@ -26,6 +27,7 @@ export {
   rmdir,
   stat,
   unlink,
+  utimes,
   writeFile,
 };
 

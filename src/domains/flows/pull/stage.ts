@@ -1,10 +1,8 @@
-import { rename } from "~/shell/fs.js";
-
-import { pathExists } from "~/shell/fs.js";
+import { pathExists, rename } from "~/shell/fs.js";
+import { writeManifest } from "~/shell/manifest/io.js";
 import { buildManifest, flattenSingleWrapper } from "./bundle.js";
 import { writeEnvFile } from "./envVars.js";
 import { extractTarGz } from "./extract.js";
-import { writeManifest } from "./manifest.js";
 import {
   createTempPathRegistry,
   mintTempPath,
@@ -25,7 +23,6 @@ type StageBundleResult = {
   envDir: string;
   flowCount: number;
   envVarCount: number;
-  bundleFlowsVersion: string | undefined;
 };
 
 export async function stageBundle(
@@ -36,7 +33,7 @@ export async function stageBundle(
 
   try {
     await extractTarGz(args.tmpArchive, tmpDir);
-    await flattenSingleWrapper(tmpDir);
+    const wrapperName = await flattenSingleWrapper(tmpDir);
     // Overwrites any .env that came in the flows bundle — API is authoritative.
     await writeEnvFile(tmpDir, args.envVars);
     const manifest = await buildManifest({
@@ -45,6 +42,7 @@ export async function stageBundle(
       cliFlowsVersion: args.cliFlowsVersion,
       now: args.now,
       envVarsFetchedAt: args.envVarsFetchedAt,
+      wrapperName,
     });
     await writeManifest(tmpDir, manifest);
 
@@ -64,9 +62,8 @@ export async function stageBundle(
 
     return {
       envDir: args.destAbs,
-      flowCount: manifest.files.length,
+      flowCount: manifest.flows.length,
       envVarCount: Object.keys(args.envVars).length,
-      bundleFlowsVersion: manifest.bundleFlowsVersion,
     };
   } catch (err) {
     await removeTempDir(tmpDir, registry).catch(() => {});

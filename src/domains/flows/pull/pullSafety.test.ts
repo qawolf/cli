@@ -3,7 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-import { type Manifest, hashFile, writeManifest } from "./manifest.js";
+import { hashFile, writeManifest } from "~/shell/manifest/io.js";
+import type { Manifest } from "~/shell/manifest/types.js";
 import { buildBundle, makeFakeFetch } from "./pull.fixtures.js";
 import { checkSafety, downloadBundle, requestBundle } from "./pull.js";
 import { stageBundle } from "./stage.js";
@@ -34,11 +35,12 @@ describe("safety + staging integration", () => {
       fetchedAt: "2026-05-09T00:00:00.000Z",
       envVarsFetchedAt: undefined,
       cliFlowsVersion: "0.4.0",
-      bundleFlowsVersion: "0.5.0",
-      files: [
+      qawolfCommitSha: undefined,
+      qawolfCommittedAt: undefined,
+      flows: [
         {
           path: "a.flow.ts",
-          sha256: await hashFile(join(destDir, "a.flow.ts")),
+          contentHash: await hashFile(join(destDir, "a.flow.ts")),
         },
       ],
     };
@@ -47,7 +49,6 @@ describe("safety + staging integration", () => {
 
     await buildBundle(bundleArchive, {
       flows: [{ name: "a.flow.ts", data: "original" }],
-      bundleFlowsVersion: "0.5.0",
     });
 
     const safety = await checkSafety({

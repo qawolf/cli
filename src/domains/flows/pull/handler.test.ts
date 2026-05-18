@@ -8,7 +8,7 @@ import type { UI } from "~/shell/ui/index.js";
 
 import { makeFakeUI } from "~/domains/runner/run.fixtures.js";
 import { handleFlowsPull } from "./handler.js";
-import { manifestFilename } from "./manifest.js";
+import { manifestFilename } from "~/shell/manifest/io.js";
 import {
   buildBundle,
   makeFakeFetch,
@@ -71,7 +71,6 @@ describe("handleFlowsPull json mode output", () => {
         { name: "login.flow.ts", data: "// login\n" },
         { name: "checkout.flow.ts", data: "// checkout\n" },
       ],
-      bundleFlowsVersion: "0.5.0",
     });
     const fakeFetch = makeFakeFetch({
       kind: "ok",
@@ -116,7 +115,6 @@ describe("handleFlowsPull json mode output", () => {
   it("does not call ui.output when mode is not json", async () => {
     await buildBundle(bundleArchive, {
       flows: [{ name: "a.flow.ts", data: "// a\n" }],
-      bundleFlowsVersion: "0.5.0",
     });
     const fakeFetch = makeFakeFetch({
       kind: "ok",

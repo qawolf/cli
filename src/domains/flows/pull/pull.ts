@@ -7,7 +7,7 @@ import { createTrpcClient } from "~/shell/platform/createTrpcClient.js";
 import { fetchSignedUrl } from "~/shell/platform/fetchSignedUrl.js";
 import { requestWithRetry } from "~/shell/platform/requestWithRetry.js";
 import { flowsBundleResponseSchema } from "~/shell/platform/types.js";
-import { readManifest } from "./manifest.js";
+import { readManifest } from "~/shell/manifest/io.js";
 import { promptOverwriteIfModified } from "./safety.js";
 import {
   describeBundleDownloadError,

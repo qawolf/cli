@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 import { pathExists } from "~/shell/fs.js";
-import { readManifest } from "./manifest.js";
+import { readManifest } from "~/shell/manifest/io.js";
 import { buildBundle, makeFakeFetch } from "./pull.fixtures.js";
 import { downloadBundle, requestBundle } from "./pull.js";
 import { stageBundle } from "./stage.js";
@@ -48,7 +48,6 @@ describe("stageBundle", () => {
         { name: "checkout.flow.ts", data: "// checkout\n" },
         { name: "nested/login.flow.ts", data: "// login\n" },
       ],
-      bundleFlowsVersion: "0.5.0",
     });
     const archive = await prepArchive();
 
@@ -66,7 +65,6 @@ describe("stageBundle", () => {
       envDir: destDir,
       flowCount: 2,
       envVarCount: 0,
-      bundleFlowsVersion: "0.5.0",
     });
     expect(await readFile(join(destDir, "checkout.flow.ts"), "utf8")).toBe(
       "// checkout\n",
@@ -76,7 +74,7 @@ describe("stageBundle", () => {
     if (manifest === "missing" || manifest === "malformed") {
       throw new Error("manifest should be present");
     }
-    expect(manifest.files.map((f) => f.path).sort()).toEqual([
+    expect(manifest.flows.map((f) => f.path).sort()).toEqual([
       "checkout.flow.ts",
       "nested/login.flow.ts",
     ]);
@@ -85,7 +83,6 @@ describe("stageBundle", () => {
   it("flattens a single content-hash wrapper directory", async () => {
     await buildBundle(bundleArchive, {
       flows: [{ name: "a.flow.js", data: "// a\n" }],
-      bundleFlowsVersion: "0.5.0",
       wrapInDir: "garden-x-y-abc123",
     });
     const archive = await prepArchive();
@@ -105,10 +102,37 @@ describe("stageBundle", () => {
     expect(await pathExists(join(destDir, "garden-x-y-abc123"))).toBe(false);
   });
 
+  it("records qawolfCommitSha when the wrapper has a GitHub-style SHA suffix", async () => {
+    const sha = "c67b5b6ff48766ca3cd72ceb4037e95c49633725";
+    await buildBundle(bundleArchive, {
+      flows: [{ name: "a.flow.ts", data: "// a\n" }],
+      wrapInDir: `chases-code-and-audio-jam-chases-code-and-audio-jam-${sha}`,
+    });
+    const archive = await prepArchive();
+
+    await stageBundle({
+      tmpArchive: archive,
+      destAbs: destDir,
+      envId: "env-abc",
+      cliFlowsVersion: "0.4.0",
+      now: new Date("2026-05-10T12:00:00.000Z"),
+      envVars: {},
+      envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+    });
+
+    const manifest = await readManifest(destDir);
+    if (manifest === "missing" || manifest === "malformed") {
+      throw new Error("manifest should be present");
+    }
+    expect(manifest.qawolfCommitSha).toBe(sha);
+    expect(manifest.qawolfCommittedAt).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+    );
+  });
+
   it("writes env vars to .env with mode 0600 and records envVarsFetchedAt", async () => {
     await buildBundle(bundleArchive, {
       flows: [{ name: "a.flow.ts", data: "// a\n" }],
-      bundleFlowsVersion: "0.5.0",
     });
     const archive = await prepArchive();
     const fetchedAt = new Date("2026-05-10T12:30:00.000Z");
@@ -135,31 +159,5 @@ describe("stageBundle", () => {
       throw new Error("manifest should be present");
     }
     expect(manifest.envVarsFetchedAt).toBe(fetchedAt.toISOString());
-  });
-
-  it("records bundleFlowsVersion as undefined when bundle has no pin", async () => {
-    await buildBundle(bundleArchive, {
-      flows: [{ name: "a.flow.js", data: "// a\n" }],
-      // bundleFlowsVersion intentionally omitted
-    });
-    const archive = await prepArchive();
-
-    const result = await stageBundle({
-      tmpArchive: archive,
-      destAbs: destDir,
-      envId: "env-abc",
-      cliFlowsVersion: "0.4.0",
-      now: new Date("2026-05-10T12:00:00.000Z"),
-      envVars: {},
-      envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
-    });
-
-    expect(result.bundleFlowsVersion).toBeUndefined();
-
-    const manifest = await readManifest(destDir);
-    if (manifest === "missing" || manifest === "malformed") {
-      throw new Error("manifest should be present");
-    }
-    expect(manifest.bundleFlowsVersion).toBeUndefined();
   });
 });

@@ -1,4 +1,10 @@
-import { createReadStream, mkdir, mkdirSync, writeFile } from "~/shell/fs.js";
+import {
+  createReadStream,
+  mkdir,
+  mkdirSync,
+  utimes,
+  writeFile,
+} from "~/shell/fs.js";
 import { dirname, resolve } from "node:path";
 import { createGunzip } from "node:zlib";
 import { Parser, type ReadEntry } from "tar";
@@ -135,4 +141,8 @@ async function handleEntry(args: HandleArgs): Promise<void> {
   });
 
   await writeFile(target, Buffer.concat(chunks));
+  // Preserve the tar entry's mtime so the manifest's `qawolfCommittedAt`
+  // (sampled from any flow file's mtime in buildManifest) reflects the
+  // source commit time rather than the extraction time.
+  if (entry.mtime) await utimes(target, entry.mtime, entry.mtime);
 }
