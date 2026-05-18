@@ -8,31 +8,6 @@ import { installAvds } from "./avd.js";
 import type { AvdSpec } from "./avd.js";
 import { installUiautomator2Driver } from "./driver.js";
 
-// Local mirror of @qawolf/flow-targets AndroidPresetLiteral.
-// Update when a new Android preset is added to the package.
-type AndroidPresetLiteral =
-  | "Android - Pixel"
-  | "Android - Pixel 2 (Android 14)"
-  | "Android - Pixel 9"
-  | "Android - Pixel 9 (Android 14)"
-  | "Android - Pixel 9 (Android 15)"
-  | "Android - Pixel 9 (Android 16)"
-  | "Android - Pixel Tablet (Android 14)"
-  | "Android - Tablet";
-
-// Maps each preset to the avdmanager hardware-profile device ID.
-// Device IDs come from `avdmanager list devices`.
-const androidTargetSpecs: Record<AndroidPresetLiteral, { deviceId: string }> = {
-  "Android - Pixel": { deviceId: "pixel_2" },
-  "Android - Pixel 2 (Android 14)": { deviceId: "pixel_2" },
-  "Android - Pixel 9": { deviceId: "pixel_9" },
-  "Android - Pixel 9 (Android 14)": { deviceId: "pixel_9" },
-  "Android - Pixel 9 (Android 15)": { deviceId: "pixel_9" },
-  "Android - Pixel 9 (Android 16)": { deviceId: "pixel_9" },
-  "Android - Pixel Tablet (Android 14)": { deviceId: "pixel_tablet" },
-  "Android - Tablet": { deviceId: "pixel_tablet" },
-};
-
 type PeekFlowMetaFn = (
   filePath: string,
 ) => Promise<{ name: string | undefined; target: string | undefined }>;
@@ -111,10 +86,8 @@ async function collectAndroidTargets(
   return [...seen];
 }
 
-// parseExecutionTarget is called (rather than reading the values stored in
-// ANDROID_TARGET_SPECS) to keep deviceModel and androidVersion authoritative
-// from the @qawolf/flow-targets package — if a preset's metadata changes in
-// a package update, AVD names and system images update automatically.
+// deviceModel from parseExecutionTarget matches the avdmanager device ID directly
+// (e.g. "pixel_9"), so no separate mapping is needed.
 // Cast matches the pattern in runAndroidFlowUtils.ts.
 type ParseArg = Parameters<typeof parseExecutionTarget>[0];
 
@@ -124,8 +97,6 @@ function buildAvdSpecs(
 ): AvdSpec[] {
   const seen = new Map<string, AvdSpec>();
   for (const target of targets) {
-    const spec = androidTargetSpecs[target as keyof typeof androidTargetSpecs];
-    if (!spec) continue;
     let parsed: ReturnType<typeof parseExecutionTarget>;
     try {
       parsed = parseExecutionTarget(target as ParseArg);
@@ -141,7 +112,7 @@ function buildAvdSpecs(
       seen.set(avdName, {
         avdName,
         systemImage: buildSystemImage(androidVersion, arch),
-        deviceId: spec.deviceId,
+        deviceId: deviceModel,
       });
     }
   }
