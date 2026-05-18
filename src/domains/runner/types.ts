@@ -1,3 +1,4 @@
+import type { FlowStamp } from "~/shell/manifest/types.js";
 import type { TestCounts } from "~/core/types.js";
 import type { FlowRunError } from "./errors.js";
 
@@ -62,6 +63,9 @@ export type FlowRunResult = {
   testCounts: TestCounts;
   attempts: number;
   error?: FlowRunError;
+  // Populated when the flow file lives under .qawolf/<env>/ and is listed
+  // in that env's manifest. Identifies the run for diagnostics.
+  manifest?: FlowStamp;
 };
 
 export type Runner = {

@@ -1,6 +1,7 @@
 import { mock } from "bun:test";
 
 import type { CommandContext } from "~/shell/commandContext.js";
+import type { FlowStamp } from "~/shell/manifest/types.js";
 import type { Reporter } from "~/shell/reporter/types.js";
 import type { FlowRunError } from "~/domains/runner/errors.js";
 import type { RunWebFlowDeps } from "~/domains/runner/runWebFlow.js";
@@ -86,6 +87,7 @@ type DepsOverrides = {
   nowSequence?: readonly number[];
   reporter?: Reporter;
   androidFlowDeps?: RunAndroidFlowDeps;
+  stampByFile?: Record<string, FlowStamp>;
 };
 
 export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
@@ -122,6 +124,10 @@ export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
     now: mock<() => number>(
       () => nowSeq[Math.min(nowIdx++, nowSeq.length - 1)]!,
     ),
+    findFlowStamp: mock<FlowsRunDeps["findFlowStamp"]>((file: string) =>
+      Promise.resolve(overrides.stampByFile?.[file]),
+    ),
+    warn: mock<FlowsRunDeps["warn"]>(() => {}),
   };
 }
 
