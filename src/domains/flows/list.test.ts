@@ -91,6 +91,7 @@ describe("flowsList empty match", () => {
 
 describe("flowsList human mode table", () => {
   const stripAnsi = (s: string | undefined): string =>
+    // oxlint-disable-next-line no-control-regex
     (s ?? "").replace(/\x1b\[[\d;]*m/g, "");
   it("writes a bolded header + name|target|file rows; frames with intro/outro", async () => {
     const ui = makeFakeUI();
