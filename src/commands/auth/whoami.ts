@@ -1,6 +1,13 @@
-import { resolveApiKey, validateApiKey } from "~/lib/auth/index.js";
-import { type CommandContext, type CommandResult } from "~/lib/context.js";
-import { authCopy } from "~/lib/copy/index.js";
+import {
+  makeDefaultDeps,
+  resolveApiKey,
+  validateApiKey,
+} from "~/domains/auth/index.js";
+import {
+  type CommandContext,
+  type CommandResult,
+} from "~/shell/commandContext.js";
+import { authCopy } from "~/core/copy/index.js";
 
 export async function handleWhoami(
   ctx: CommandContext,
@@ -15,7 +22,10 @@ export async function handleWhoami(
   ctx.ui.gap();
   ctx.ui.intro(authCopy.title);
 
-  const validation = await validateApiKey(resolved.key);
+  const validation = await validateApiKey(
+    resolved.key,
+    makeDefaultDeps(ctx.apiBaseUrl),
+  );
 
   if (!validation.valid) {
     if (ctx.ui.mode === "human") {

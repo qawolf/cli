@@ -28,30 +28,43 @@ Tests use Bun's test runner. Run a single test file with `bun run test <path>`. 
 
 ```
 src/
-├── main.ts              # Entry point (setup and registration in lib/program.ts)
-├── commands/            # One directory per command domain
-│   ├── auth/            # whoami
-│   ├── flows/           # list, download
-│   ├── runs/            # trigger
-│   ├── diff/            # hash (content-stable change hashing)
-│   └── pr/              # context (PR diff, comments, reviewer state)
-├── clients/             # API client modules (one per auth boundary)
-│   ├── platform.ts      # tRPC client + QAWOLF_API_KEY resolution
-│   └── github.ts        # GitHub API + GITHUB_TOKEN resolution
-└── lib/                 # Shared utilities
+├── main.ts              # Entry point — createProgram().parse()
+├── core/                # Pure functions and types — zero I/O
+│   ├── errors.ts        # errorMessage, isNoEntError
+│   ├── paths.ts         # getConfigDir
+│   ├── flowMeta.ts      # extractFlowMeta, targetToBrowser, flowBasename
+│   ├── copy/            # copyFile, copyDir
+│   ├── pluralize.ts     # pluralize
+│   └── types.ts         # BrowserName, VideoMode, TraceMode, HarMode, TestCounts
+├── shell/               # I/O executors — process spawning, UI, API clients
+│   ├── commandContext.ts # CommandContext, CommandResult types
+│   ├── spawn.ts         # defaultSpawn, SpawnFn
+│   ├── playwright.ts    # resolvePlaywrightCli
+│   ├── testkit.ts       # configureTestkit
+│   ├── exit.ts          # exitCodes, exit
+│   ├── platform/        # getIdentity — platform detection and API identity
+│   ├── reporter/        # Reporter interface, createConsoleReporter
+│   └── ui/              # createUI, detectOutputMode, OutputMode
+├── domains/             # Business logic — one directory per bounded context
+│   ├── auth/            # resolveApiKey, validateApiKey, saveApiKey
+│   ├── config/          # loadConfig (not yet wired)
+│   ├── doctor/          # runChecks, renderResults
+│   ├── emails/          # configureEmails (not yet wired)
+│   ├── flows/           # expandPatterns, peekFlowMeta, flowsList, pull/
+│   ├── install/         # installBrowsers, installBrowserList
+│   └── runner/          # flowsRun, runWebFlow, runAndroidFlow, run.fixtures
+└── commands/            # Thin CLI glue — Commander registration + composite root
+    ├── context.ts       # withContext() Commander action wrapper
     ├── program.ts       # createProgram() factory
-    ├── output.ts        # JSON / Markdown / human formatting
-    └── config.ts        # env-paths, credentials
-actions/                 # GitHub Action wrappers
-plugins/                 # Claude Code plugin
-skills/                  # Agent skills (agentskills.io format)
+    ├── auth/            # login, logout, whoami handlers
+    ├── doctor/          # doctor handler
+    ├── install/         # install browsers handler
+    └── flows/           # flows run/list/pull handlers; runDefaults composite root
 ```
 
-Commands are organized by **domain** — one directory per top-level CLI namespace. Each directory contains command registration, handler logic, and colocated types.
+The codebase is organized into four strict layers. **`core/`** holds pure functions and types with zero I/O. **`shell/`** holds I/O executors (process spawning, Playwright, UI rendering, API clients). **`domains/`** holds bounded-context business logic; each domain may import `core/` and `shell/` but never a sibling domain. **`commands/`** is the composite root: thin Commander registration plus `runDefaults.ts`, which bridges multiple domains to assemble the `flows run` command. oxlint enforces these boundaries via per-layer `no-restricted-imports` overrides in `.oxlintrc.json`.
 
-API clients live in `clients/` — one module per auth boundary. Command handlers import the client they need.
-
-`lib/` contains cross-cutting concerns: output formatting (JSON/Markdown/Clack), config, and the program factory.
+API clients (tRPC for the QA Wolf platform, GitHub REST) live in `src/shell/platform/` and `src/shell/` respectively — one module per auth boundary.
 
 ## Code Style
 
@@ -89,4 +102,4 @@ Conventional commits: `type(scope): description`
 - Do not commit `.env` files or API keys
 - Do not add dependencies without justification
 - The CLI is a thin client — business logic belongs in the platform API, not here
-- When adding a hacky workaround, add a `TODO TECH-0000` comment to track it
+- When adding a hacky workaround, file a follow-up ticket in Linear, then add a `TODO $TICKET_ID` comment to track it

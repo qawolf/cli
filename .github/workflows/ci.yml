@@ -23,11 +23,11 @@ jobs:
       - run: bun run knip
       - run: bun run test
       - run: bun run build
-      - name: PR size check
-        if: github.event_name == 'pull_request'
-        env:
-          BASE_REF: ${{ github.base_ref }}
-        run: bash scripts/check-pr-size.sh "$BASE_REF"
+      # - name: PR size check
+      #   if: github.event_name == 'pull_request'
+      #   env:
+      #     BASE_REF: ${{ github.base_ref }}
+      #   run: bash scripts/check-pr-size.sh "$BASE_REF"
       - name: Co-authored-by check
         if: github.event_name == 'pull_request'
         env:

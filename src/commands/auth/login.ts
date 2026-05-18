@@ -1,6 +1,14 @@
-import { resolveApiKey, saveApiKey, validateApiKey } from "~/lib/auth/index.js";
-import { type CommandContext, type CommandResult } from "~/lib/context.js";
-import { authCopy } from "~/lib/copy/index.js";
+import {
+  makeDefaultDeps,
+  resolveApiKey,
+  saveApiKey,
+  validateApiKey,
+} from "~/domains/auth/index.js";
+import {
+  type CommandContext,
+  type CommandResult,
+} from "~/shell/commandContext.js";
+import { authCopy } from "~/core/copy/index.js";
 
 export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
   if (ctx.ui.mode !== "human") {
@@ -34,7 +42,10 @@ export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
       {
         message: authCopy.verifying,
         task: async () => {
-          const v = await validateApiKey(result.value);
+          const v = await validateApiKey(
+            result.value,
+            makeDefaultDeps(ctx.apiBaseUrl),
+          );
           if (!v.valid) throw Error(v.error);
         },
       },

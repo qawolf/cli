@@ -1,12 +1,20 @@
 import type { Command } from "commander";
 
-import { withContext } from "~/lib/context.js";
-import type { TraceMode, VideoMode } from "~/types.js";
+import { withContext } from "~/commands/context.js";
+import type { TraceMode, VideoMode } from "~/core/types.js";
 
-import { handleFlowsList } from "./list.js";
-import { type FlowsPullOptions, handleFlowsPull } from "./pull/handler.js";
+import { resolveApiKey } from "~/domains/auth/index.js";
+import { handleFlowsList } from "~/domains/flows/list.js";
+import {
+  type FlowsPullOptions,
+  handleFlowsPull,
+} from "~/domains/flows/pull/handler.js";
 import { handleFlowsRun } from "./runDefaults.js";
-import { type FlowsRunFlags, parseEnum, parseInteger } from "./runInternals.js";
+import {
+  type FlowsRunFlags,
+  parseEnum,
+  parseInteger,
+} from "~/domains/runner/runInternals.js";
 
 const videoModes = ["on", "off", "retain-on-failure"] as const;
 const traceModes = ["on", "off", "retain-on-failure"] as const;
@@ -81,7 +89,17 @@ export function registerFlowsCommand(program: Command): void {
     .requiredOption("--env <env>", "Environment ID (UUID or kebab-case slug)")
     .option("--out <path>", "Override the .qawolf/<env>/ destination")
     .option("--yes", "Skip the overwrite prompt for locally-modified files")
-    .action((opts: FlowsPullOptions, command: Command) => {
-      return withContext((ctx) => handleFlowsPull(ctx, opts))(opts, command);
+    .action((opts: Omit<FlowsPullOptions, "apiKey">, command: Command) => {
+      return withContext(async (ctx) => {
+        const resolved = await resolveApiKey(ctx.configDir);
+        if (!resolved) {
+          ctx.ui.error(
+            "Not authenticated",
+            "Run `qawolf auth login` or set QAWOLF_API_KEY.",
+          );
+          return { error: "not authenticated" };
+        }
+        return handleFlowsPull(ctx, { ...opts, apiKey: resolved.key });
+      })(opts, command);
     });
 }

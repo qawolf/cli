@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-import { installBrowsers } from "./browsers.js";
+import { installBrowsers } from "~/domains/install/browsers.js";
 import {
   fakeCli,
   callsOf,
