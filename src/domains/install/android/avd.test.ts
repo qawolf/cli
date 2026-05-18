@@ -16,7 +16,7 @@ const success: SpawnResult = { exitCode: 0, stdout: "", stderr: "" };
 const spec = {
   avdName: "qawolf_pixel_9_api35",
   systemImage: "system-images;android-35;google_apis_playstore;arm64-v8a",
-  deviceId: "pixel_5",
+  deviceId: "pixel_9",
 };
 
 function makeSpawn(overrides: Record<string, SpawnResult> = {}): {
