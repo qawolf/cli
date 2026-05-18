@@ -47,6 +47,7 @@
     "superjson": "2.2.6",
     "tar": "7.5.15",
     "tinyglobby": "0.2.16",
+    "webdriverio": "9.27.1",
     "zod": "4.4.3"
   },
   "devDependencies": {

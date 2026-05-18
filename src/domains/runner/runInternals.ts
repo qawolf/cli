@@ -41,6 +41,10 @@ export type FlowsRunDeps = {
   readonly now: () => number;
   readonly findFlowStamp: typeof defaultFindFlowStamp;
   readonly warn: (message: string) => void;
+  /** Boots the AVDs for the given names before any android flows are dispatched. */
+  readonly bootAndroid?: (avdNames: string[]) => Promise<void>;
+  /** Stops the Appium server and emulator pool after all flows complete. */
+  readonly shutdownAndroid?: () => void;
 };
 
 export type WebResolvedFlow = {
@@ -50,7 +54,7 @@ export type WebResolvedFlow = {
   readonly browser: BrowserName;
 };
 
-type AndroidResolvedFlow = {
+export type AndroidResolvedFlow = {
   readonly kind: "android";
   readonly file: string;
   readonly name: string;
