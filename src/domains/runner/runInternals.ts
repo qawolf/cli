@@ -1,6 +1,5 @@
-import { InvalidArgumentError } from "commander";
-
 import type { CommandContext } from "~/shell/commandContext.js";
+import type { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
 import type { Reporter } from "~/shell/reporter/types.js";
 import { FlowRunError } from "./errors.js";
 import type {
@@ -40,6 +39,8 @@ export type FlowsRunDeps = {
   readonly runAndroidFlowDeps: RunAndroidFlowDeps | "not-wired";
   readonly reporter: Reporter;
   readonly now: () => number;
+  readonly findFlowStamp: typeof defaultFindFlowStamp;
+  readonly warn: (message: string) => void;
 };
 
 export type WebResolvedFlow = {
@@ -60,40 +61,6 @@ export type ResolvedFlow = WebResolvedFlow | AndroidResolvedFlow;
 
 export function unsupportedTargetMessage(target: string): string {
   return `${target} targets aren't supported in v0.1. Run them on app.qawolf.com or wait for v0.2.`;
-}
-
-// Strict integer parser. `String(n) !== value` rejects `"+3"`, leading zeros
-// like `"03"`, and the JS oddity `"-0"` (String(-0) === "0") — same convention
-// as most CLI tooling. The optional `min` bound surfaces domain errors
-// (negative retries, zero workers, etc.) at parse time rather than deeper.
-export function parseInteger(
-  name: string,
-  options: { min?: number } = {},
-): (value: string) => number {
-  return (value) => {
-    const n = Number.parseInt(value, 10);
-    if (!Number.isFinite(n) || String(n) !== value) {
-      throw new InvalidArgumentError(`${name} must be an integer`);
-    }
-    if (options.min !== undefined && n < options.min) {
-      throw new InvalidArgumentError(`${name} must be >= ${options.min}`);
-    }
-    return n;
-  };
-}
-
-export function parseEnum<T extends string>(
-  name: string,
-  values: readonly T[],
-): (value: string) => T {
-  return (value) => {
-    if (!(values as readonly string[]).includes(value)) {
-      throw new InvalidArgumentError(
-        `${name} must be one of: ${values.join(", ")}`,
-      );
-    }
-    return value as T;
-  };
 }
 
 export async function dispatchFlow({
@@ -139,5 +106,16 @@ export async function dispatchFlow({
       error: new FlowRunError(flow.name, 1, err),
     };
   }
+  // Stamping is supplementary diagnostic info — surface I/O failures via
+  // deps.warn so the user/support can see them, but never let a lookup
+  // error erase the flow's pass/fail outcome.
+  let stamp;
+  try {
+    stamp = await deps.findFlowStamp(flow.file);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    deps.warn(`failed to read manifest stamp for ${flow.file}: ${message}`);
+  }
+  if (stamp) run = { ...run, manifest: stamp };
   return { run, durationMs: deps.now() - flowStart };
 }

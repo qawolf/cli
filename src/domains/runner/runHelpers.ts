@@ -77,6 +77,7 @@ export async function runFlows(
         path: flow.file,
         tests: run.testCounts,
         durationMs,
+        manifest: run.manifest,
       });
     } else {
       counts.flowsFailed++;
@@ -88,6 +89,7 @@ export async function runFlows(
         durationMs,
         attempt: run.attempts,
         maxAttempts: flags.retries + 1,
+        manifest: run.manifest,
       });
       if (flags.bail) bailed = true;
     }

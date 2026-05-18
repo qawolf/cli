@@ -9,6 +9,7 @@ import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { isNoEntError } from "~/core/errors.js";
+import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { createConsoleReporter } from "~/shell/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
@@ -119,5 +120,7 @@ export async function handleFlowsRun(
       stderr: process.stderr,
     }),
     now: () => Date.now(),
+    findFlowStamp: defaultFindFlowStamp,
+    warn: (message) => ctx.ui.warn(message),
   });
 }

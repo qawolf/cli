@@ -14,6 +14,14 @@ function fmtDuration(ms: number): string {
   return `(${(ms / 1000).toFixed(2)}s)`;
 }
 
+function fmtStampLine(manifest: {
+  envId: string;
+  contentHash: string;
+}): string {
+  const shortHash = manifest.contentHash.slice(0, 8);
+  return `    ${styleText("dim", `env=${manifest.envId} hash=${shortHash}`)}\n`;
+}
+
 function filterStack(stack: string): string {
   const cwd = process.cwd();
   return stack
@@ -77,15 +85,16 @@ export function createConsoleReporter(deps: ConsoleDeps): Reporter {
       deps.stdout.write(`    ${styleText("dim", `Screenshot: ${path}`)}\n`);
     },
 
-    onFlowPass({ tests, durationMs }) {
+    onFlowPass({ tests, durationMs, manifest }) {
       const counts =
         tests.total > 0 ? `${tests.passed}/${tests.total} tests ` : "";
       deps.stdout.write(
         `  ${styleText("green", "✓")} ${counts}passed ${styleText("dim", fmtDuration(durationMs))}\n`,
       );
+      if (manifest) deps.stdout.write(fmtStampLine(manifest));
     },
 
-    onFlowFail({ err, tests, durationMs, attempt, maxAttempts }) {
+    onFlowFail({ err, tests, durationMs, attempt, maxAttempts, manifest }) {
       const errStr = formatErrorWithCause(err);
       const [firstLine, ...restLines] = errStr.split("\n");
       const indent = "    ";
@@ -100,6 +109,7 @@ export function createConsoleReporter(deps: ConsoleDeps): Reporter {
       deps.stdout.write(
         `  ${styleText("red", "✗")} ${counts}passed ${styleText("dim", fmtDuration(durationMs))}\n`,
       );
+      if (manifest) deps.stdout.write(fmtStampLine(manifest));
 
       if (attempt < maxAttempts) {
         deps.stdout.write(`\nRetrying (${attempt} of ${maxAttempts})...\n`);

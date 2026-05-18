@@ -1,3 +1,4 @@
+import type { FlowStamp } from "~/shell/manifest/types.js";
 import type {
   BrowserName,
   HarMode,
@@ -32,6 +33,7 @@ export type Reporter = {
     path: string;
     tests: TestCounts;
     durationMs: number;
+    manifest?: FlowStamp | undefined;
   }) => void;
   onFlowFail?: (event: {
     name: string;
@@ -41,6 +43,7 @@ export type Reporter = {
     durationMs: number;
     attempt: number;
     maxAttempts: number;
+    manifest?: FlowStamp | undefined;
   }) => void;
   onTestStart?: (event: {
     flowName: string;

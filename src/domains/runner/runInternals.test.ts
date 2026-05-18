@@ -1,7 +1,7 @@
 import { InvalidArgumentError } from "commander";
 import { describe, expect, it } from "bun:test";
 
-import { parseEnum, parseInteger } from "./runInternals.js";
+import { parseEnum, parseInteger } from "./runFlagParsers.js";
 
 describe("parseInteger", () => {
   it("returns the integer for a plain decimal string", () => {
