@@ -21,14 +21,14 @@ type AndroidPresetLiteral =
   | "Android - Tablet";
 
 // Maps each preset to the avdmanager hardware-profile device ID.
-// "pixel_5" is used for Pixel 9 presets — no dedicated "pixel_9" profile exists in current cmdline-tools.
+// Device IDs come from `avdmanager list devices`.
 const androidTargetSpecs: Record<AndroidPresetLiteral, { deviceId: string }> = {
   "Android - Pixel": { deviceId: "pixel_2" },
   "Android - Pixel 2 (Android 14)": { deviceId: "pixel_2" },
-  "Android - Pixel 9": { deviceId: "pixel_5" },
-  "Android - Pixel 9 (Android 14)": { deviceId: "pixel_5" },
-  "Android - Pixel 9 (Android 15)": { deviceId: "pixel_5" },
-  "Android - Pixel 9 (Android 16)": { deviceId: "pixel_5" },
+  "Android - Pixel 9": { deviceId: "pixel_9" },
+  "Android - Pixel 9 (Android 14)": { deviceId: "pixel_9" },
+  "Android - Pixel 9 (Android 15)": { deviceId: "pixel_9" },
+  "Android - Pixel 9 (Android 16)": { deviceId: "pixel_9" },
   "Android - Pixel Tablet (Android 14)": { deviceId: "pixel_tablet" },
   "Android - Tablet": { deviceId: "pixel_tablet" },
 };

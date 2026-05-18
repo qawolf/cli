@@ -169,7 +169,7 @@ describe("installAndroid", () => {
       "-k",
       "system-images;android-35;google_apis_playstore;arm64-v8a",
       "-d",
-      "pixel_5",
+      "pixel_9",
       "--force",
     ]);
   });
