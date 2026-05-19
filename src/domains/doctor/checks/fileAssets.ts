@@ -34,7 +34,7 @@ export const fileAssetsWarnReasons: Readonly<
   Record<FileAssetCategory, string>
 > = {
   "file-asset":
-    "file assets aren't pulled in v0.1; this flow can't run locally",
+    "flow references team-storage assets; ensure required files are present in the local assets/ directory before running",
   "mobile-input":
     "mobile build inputs aren't mounted locally; provide the APK path via a local env var",
 };
