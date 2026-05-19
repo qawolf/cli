@@ -22,7 +22,11 @@ type ParseExecutionTargetArg = Parameters<typeof parseExecutionTarget>[0];
 
 export function classifyTarget(
   target: string,
-): { kind: "web"; browser: BrowserName } | { kind: "android" } | undefined {
+):
+  | { kind: "web"; browser: BrowserName }
+  | { kind: "android" }
+  | { kind: "ios" }
+  | undefined {
   let parsed: ReturnType<typeof parseExecutionTarget>;
   try {
     parsed = parseExecutionTarget(target as ParseExecutionTargetArg);
@@ -30,6 +34,7 @@ export function classifyTarget(
     return undefined;
   }
   if (parsed.platform === "android") return { kind: "android" };
+  if (parsed.platform === "ios") return { kind: "ios" };
   if (parsed.platform !== "web") return undefined;
   const meta = parsed.meta;
   if (typeof meta === "string") return undefined; // "legacy" form
