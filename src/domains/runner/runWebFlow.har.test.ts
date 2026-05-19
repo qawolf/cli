@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
-import type { RunnerDeps } from "./types.js";
-import type { ContextSetupOptions, WebLaunchDeps } from "./web/types.js";
+import type { ContextSetupOptions } from "./web/types.js";
 import {
   makeBrowser,
   makeContext,
@@ -9,50 +8,15 @@ import {
   makeUniformDeps,
 } from "./web/createWebLaunchContext.fixtures.js";
 import { runWebFlow } from "./runWebFlow.js";
-import type { RunWebFlowDeps, RunWebFlowOptions } from "./runWebFlow.js";
+import {
+  baseOptions,
+  fixturePath,
+  makeWebDeps,
+} from "./runWebFlow.fixtures.js";
 
 afterEach(() => {
   mock.restore();
 });
-
-function makeRunnerDeps(): RunnerDeps {
-  return {
-    fs: {
-      mkdir: async () => {},
-      writeFile: async () => {},
-      unlink: async () => {},
-    },
-    spawn: () => ({ exitCode: Promise.resolve(0), kill: () => {} }),
-    signals: { on: () => () => {} },
-    createStorage: <T>() => ({
-      run: async (_store: T, callback: () => Promise<void>) => callback(),
-      getStore: () => undefined,
-    }),
-  };
-}
-
-function makeWebDeps(webLaunchDeps?: WebLaunchDeps): RunWebFlowDeps {
-  const ctx = makeContext([makePage()]);
-  const browser = makeBrowser(ctx);
-  const dep = makeDep(browser, ctx);
-  return {
-    ...makeRunnerDeps(),
-    ...(webLaunchDeps ?? makeUniformDeps(dep)),
-  };
-}
-
-const baseOptions: RunWebFlowOptions = {
-  retries: 0,
-  outputDir: "/tmp/qawolf-test",
-  headed: false,
-  slowMo: 0,
-  video: "off",
-  timeout: 30_000,
-};
-
-function fixturePath(name: string): string {
-  return new URL(`./runWebFlow.${name}.fixture.ts`, import.meta.url).pathname;
-}
 
 describe("runWebFlow HAR", () => {
   it("should not pass recordHar to newContext when har is off", async () => {
