@@ -133,18 +133,18 @@ export async function runWebFlow({
   };
 
   const runner = createRunner({ deps, options });
-  let result: FlowRunResult | undefined;
+  let passed = false;
   try {
-    result = await runner.run(flowDef);
+    const result = await runner.run(flowDef);
+    passed = result.passed;
+    return result;
   } finally {
     await Promise.allSettled([
       ...openContexts.map((c) => c.close()),
       ...openBrowsers.map((b) => b.close()),
     ]);
+    if (harPath !== undefined) {
+      await maybeCleanupHar(deps.fs, harPath, passed, harMode);
+    }
   }
-  // result is always defined here: if runner.run threw, finally re-throws before this line
-  if (harPath !== undefined) {
-    await maybeCleanupHar(deps.fs, harPath, result.passed, harMode);
-  }
-  return result;
 }
