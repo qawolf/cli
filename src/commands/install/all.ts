@@ -72,7 +72,7 @@ export async function installAll(
   if (hasWeb) {
     try {
       const result = await deps.installBrowsers(ctx, pattern);
-      if (result && !firstError) firstError = result;
+      if (result) firstError = result;
     } catch (err: unknown) {
       if (!firstError) firstError = { error: errorMessage(err) };
     }
