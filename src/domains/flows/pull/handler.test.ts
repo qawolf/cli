@@ -92,21 +92,25 @@ describe("handleFlowsPull json mode output", () => {
       .calls[0] as [Record<string, unknown>, string];
     expect(humanMessage).toBe("");
     expect(Object.keys(payload).sort()).toEqual([
+      "assetsDir",
       "env",
       "envDir",
       "envVarCount",
       "fetchedAt",
       "flowCount",
+      "flowsWithTeamStorageRefs",
       "manifestPath",
     ]);
     expect(payload).toEqual({
+      assetsDir: expect.stringContaining("/assets"),
       env: "env-abc",
       envDir: destDir,
       fetchedAt: expect.stringMatching(
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
       ),
       flowCount: 2,
-      envVarCount: 1,
+      envVarCount: 2,
+      flowsWithTeamStorageRefs: [],
       manifestPath: join(destDir, manifestFilename),
     });
     expect(JSON.parse(JSON.stringify(payload))).toEqual(payload);

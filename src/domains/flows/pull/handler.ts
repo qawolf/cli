@@ -1,5 +1,5 @@
-import { unlink } from "~/shell/fs.js";
-import { join, resolve } from "node:path";
+import { mkdir, unlink } from "~/shell/fs.js";
+import { dirname, join, resolve } from "node:path";
 
 import cliPackageJson from "../../../../package.json" with { type: "json" };
 
@@ -21,17 +21,29 @@ export type FlowsPullOptions = {
   readonly apiKey: string;
 };
 
-function formatPullSummary(result: {
-  envDir: string;
-  flowCount: number;
-  envVarCount: number;
-}): string {
+function formatPullSummary(
+  result: {
+    envDir: string;
+    flowCount: number;
+    envVarCount: number;
+    flowsWithTeamStorageRefs: string[];
+  },
+  assetsAbs: string,
+): string {
   const flows = pluralize(result.flowCount, "flow");
   const envVars =
     result.envVarCount === 0
       ? ""
       : ` and ${pluralize(result.envVarCount, "environment variable")}`;
-  return `Pulled ${flows}${envVars} into ${result.envDir}`;
+  let summary = `Pulled ${flows}${envVars} into ${result.envDir}`;
+  if (result.flowsWithTeamStorageRefs.length > 0) {
+    const refs = pluralize(result.flowsWithTeamStorageRefs.length, "flow");
+    summary += `\nTeam-storage assets required for ${refs} — populate ${assetsAbs} before running:`;
+    for (const path of result.flowsWithTeamStorageRefs) {
+      summary += `\n  - ${path}`;
+    }
+  }
+  return summary;
 }
 
 type HandleFlowsPullDeps = {
@@ -52,6 +64,11 @@ export async function handleFlowsPull(
   }
 
   const destAbs = resolve(opts.out ?? join(".qawolf", opts.env));
+  const assetsAbs = join(dirname(destAbs), "assets");
+  // Shared assets sibling of the env directory. Created unconditionally so
+  // TEAM_STORAGE_DIR resolves to a real path even before any asset is dropped
+  // in. Idempotent across re-pulls.
+  await mkdir(assetsAbs, { recursive: true });
   const yes = opts.yes ?? false;
   const fetch = globalThis.fetch;
   let archive: string | undefined;
@@ -92,6 +109,7 @@ export async function handleFlowsPull(
             stageBundle({
               tmpArchive: fetched.tmpArchive,
               destAbs,
+              assetsAbs,
               envId: opts.env,
               cliFlowsVersion: deps.flowsVersion,
               now: fetched.bundleFetchedAt,
@@ -100,7 +118,7 @@ export async function handleFlowsPull(
             }),
         },
       ],
-      (results) => formatPullSummary(results[0]),
+      (results) => formatPullSummary(results[0], assetsAbs),
     );
 
     if (ctx.ui.mode === "json") {
@@ -108,9 +126,11 @@ export async function handleFlowsPull(
         {
           env: opts.env,
           envDir: result.envDir,
+          assetsDir: assetsAbs,
           fetchedAt: fetched.bundleFetchedAt.toISOString(),
           flowCount: result.flowCount,
           envVarCount: result.envVarCount,
+          flowsWithTeamStorageRefs: result.flowsWithTeamStorageRefs,
           manifestPath: join(result.envDir, manifestFilename),
         },
         "",
