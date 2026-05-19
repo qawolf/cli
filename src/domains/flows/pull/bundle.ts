@@ -45,6 +45,7 @@ export async function buildManifest(args: {
   now: Date;
   envVarsFetchedAt: Date | undefined;
   wrapperName: string | undefined;
+  qawolfCommittedAt: string | undefined;
 }): Promise<Manifest> {
   const flowPaths = await walkForFlows(args.bundleDir);
   const flows = await Promise.all(
@@ -53,12 +54,6 @@ export async function buildManifest(args: {
       contentHash: await hashFile(join(args.bundleDir, rel)),
     })),
   );
-  // Sample any flow file's mtime as commit time — all entries share it via
-  // tar's mtime preservation applied in extract.ts.
-  const sampleFlow = flowPaths[0];
-  const qawolfCommittedAt = sampleFlow
-    ? (await stat(join(args.bundleDir, sampleFlow))).mtime.toISOString()
-    : undefined;
 
   return {
     envId: args.envId,
@@ -67,7 +62,7 @@ export async function buildManifest(args: {
     envVarsFetchedAt: args.envVarsFetchedAt?.toISOString(),
     cliFlowsVersion: args.cliFlowsVersion,
     qawolfCommitSha: extractQawolfCommitSha(args.wrapperName),
-    qawolfCommittedAt,
+    qawolfCommittedAt: args.qawolfCommittedAt,
     flows,
   };
 }
@@ -95,4 +90,17 @@ async function walk(
       out.push(relative(root, abs));
     }
   }
+}
+
+// Samples the mtime of any flow file in the bundle. GitHub-archive bundles
+// share one mtime across all entries (preserved by extract.ts). Returns
+// undefined when the bundle has no flow files. Sample BEFORE any local
+// rewrite pass — otherwise the mtime reflects our write, not the source.
+export async function sampleQawolfCommittedAt(
+  bundleDir: string,
+): Promise<string | undefined> {
+  const flowPaths = await walkForFlows(bundleDir);
+  const sample = flowPaths[0];
+  if (!sample) return undefined;
+  return (await stat(join(bundleDir, sample))).mtime.toISOString();
 }

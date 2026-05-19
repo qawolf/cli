@@ -4,7 +4,11 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 import { pathExists } from "~/shell/fs.js";
-import { buildManifest, flattenSingleWrapper } from "./bundle.js";
+import {
+  buildManifest,
+  flattenSingleWrapper,
+  sampleQawolfCommittedAt,
+} from "./bundle.js";
 
 let workDir = "";
 
@@ -71,6 +75,7 @@ describe("buildManifest", () => {
     now: Date;
     envVarsFetchedAt: Date | undefined;
     wrapperName: string | undefined;
+    qawolfCommittedAt: string | undefined;
   } => ({
     envId: "env-x",
     bundleDir: workDir,
@@ -78,6 +83,7 @@ describe("buildManifest", () => {
     now: new Date("2026-05-10T12:00:00.000Z"),
     envVarsFetchedAt: undefined,
     wrapperName: undefined,
+    qawolfCommittedAt: undefined,
   });
 
   it("walks .flow.ts and .flow.js files, ignores other extensions", async () => {
@@ -124,16 +130,18 @@ describe("buildManifest", () => {
     expect(manifest.qawolfCommitSha).toBeUndefined();
   });
 
-  it("samples any flow file's mtime as qawolfCommittedAt", async () => {
+  it("passes qawolfCommittedAt through to the manifest", async () => {
     await stage({ flows: [{ name: "a.flow.ts", data: "// a" }] });
-    const manifest = await buildManifest(baseArgs());
-    expect(manifest.qawolfCommittedAt).toMatch(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
-    );
+    const ts = "2026-05-10T12:00:00.000Z";
+    const manifest = await buildManifest({
+      ...baseArgs(),
+      qawolfCommittedAt: ts,
+    });
+    expect(manifest.qawolfCommittedAt).toBe(ts);
   });
 
-  it("returns qawolfCommittedAt as undefined when the bundle has no flows", async () => {
-    await stage({ flows: [] });
+  it("returns qawolfCommittedAt as undefined when caller passes undefined", async () => {
+    await stage({ flows: [{ name: "a.flow.ts", data: "// a" }] });
     const manifest = await buildManifest(baseArgs());
     expect(manifest.qawolfCommittedAt).toBeUndefined();
   });
@@ -147,5 +155,28 @@ describe("buildManifest", () => {
     expect(manifest.fetchedAt).toBe("2026-05-10T12:00:00.000Z");
     expect(manifest.cliFlowsVersion).toBe("0.4.0");
     expect(manifest.envSlug).toBeUndefined();
+  });
+});
+
+describe("sampleQawolfCommittedAt", () => {
+  let workDir = "";
+
+  beforeEach(async () => {
+    workDir = await mkdtemp(join(tmpdir(), "qawolf-sample-"));
+  });
+
+  afterEach(async () => {
+    await rm(workDir, { recursive: true, force: true });
+  });
+
+  it("samples any flow file's mtime as an ISO string", async () => {
+    await writeFile(join(workDir, "a.flow.ts"), "// a", "utf8");
+    const result = await sampleQawolfCommittedAt(workDir);
+    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+  });
+
+  it("returns undefined when the bundle has no flow files", async () => {
+    const result = await sampleQawolfCommittedAt(workDir);
+    expect(result).toBeUndefined();
   });
 });

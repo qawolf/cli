@@ -1,6 +1,10 @@
 import { pathExists, rename } from "~/shell/fs.js";
 import { writeManifest } from "~/shell/manifest/io.js";
-import { buildManifest, flattenSingleWrapper } from "./bundle.js";
+import {
+  buildManifest,
+  flattenSingleWrapper,
+  sampleQawolfCommittedAt,
+} from "./bundle.js";
 import { writeEnvFile } from "./envVars.js";
 import { extractTarGz } from "./extract.js";
 import {
@@ -34,6 +38,9 @@ export async function stageBundle(
   try {
     await extractTarGz(args.tmpArchive, tmpDir);
     const wrapperName = await flattenSingleWrapper(tmpDir);
+    // Sample mtime before any local rewrite so qawolfCommittedAt reflects
+    // the upstream commit time, not our write time.
+    const qawolfCommittedAt = await sampleQawolfCommittedAt(tmpDir);
     // Overwrites any .env that came in the flows bundle — API is authoritative.
     await writeEnvFile(tmpDir, args.envVars);
     const manifest = await buildManifest({
@@ -43,6 +50,7 @@ export async function stageBundle(
       now: args.now,
       envVarsFetchedAt: args.envVarsFetchedAt,
       wrapperName,
+      qawolfCommittedAt,
     });
     await writeManifest(tmpDir, manifest);
 
