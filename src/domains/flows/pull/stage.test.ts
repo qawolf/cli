@@ -165,4 +165,54 @@ describe("stageBundle", () => {
     }
     expect(manifest.envVarsFetchedAt).toBe(fetchedAt.toISOString());
   });
+
+  it("rewrites literal /home/wolf/team-storage/ references and injects TEAM_STORAGE_DIR", async () => {
+    await buildBundle(bundleArchive, {
+      flows: [
+        {
+          name: "upload.flow.ts",
+          data:
+            "import { flow } from '@qawolf/flows/web';\n" +
+            "export default flow('upload', 'Web - Chrome', async () => {\n" +
+            "  const path = `/home/wolf/team-storage/${dataset}`;\n" +
+            "});\n",
+        },
+        {
+          name: "envvar.flow.ts",
+          data: "const p = `${process.env.TEAM_STORAGE_DIR}/${name}.fig`;\n",
+        },
+      ],
+    });
+    const archive = await prepArchive();
+    const assetsDir = join(workDir, "assets");
+
+    await stageBundle({
+      tmpArchive: archive,
+      destAbs: destDir,
+      assetsAbs: assetsDir,
+      envId: "env-abc",
+      cliFlowsVersion: "0.4.0",
+      now: new Date("2026-05-10T12:00:00.000Z"),
+      envVars: { TEAM_STORAGE_DIR: "/home/wolf/team-storage" },
+      envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+    });
+
+    // The literal-mount-path flow has been rewritten.
+    expect(await readFile(join(destDir, "upload.flow.ts"), "utf8")).toContain(
+      "${process.env.TEAM_STORAGE_DIR}/${dataset}",
+    );
+    expect(
+      await readFile(join(destDir, "upload.flow.ts"), "utf8"),
+    ).not.toContain("/home/wolf/team-storage/");
+    // The env-var-shape flow is untouched.
+    expect(await readFile(join(destDir, "envvar.flow.ts"), "utf8")).toBe(
+      "const p = `${process.env.TEAM_STORAGE_DIR}/${name}.fig`;\n",
+    );
+    // The written .env overrides the API's TEAM_STORAGE_DIR with assetsAbs.
+    const envContents = await readFile(join(destDir, ".env"), "utf8");
+    expect(envContents).toContain(`TEAM_STORAGE_DIR="${assetsDir}"`);
+    expect(envContents).not.toContain(
+      `TEAM_STORAGE_DIR="/home/wolf/team-storage"`,
+    );
+  });
 });
