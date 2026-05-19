@@ -111,10 +111,10 @@ describe("checkFileAssets", () => {
     expect(result?.detail).toContain("flows/upload.flow.ts");
     expect(result?.detail).toContain("QAWOLF_SCREENSHOTS_DIR");
     expect(result?.detail).toContain("QAWOLF_DOWNLOADS_DIR");
-    expect(result?.detail).toContain(fileAssetsWarnReasons["file-asset"]);
+    expect(result?.detail).toContain(fileAssetsWarnReasons["runner-only-dir"]);
   });
 
-  it("emits separate warns per category when a file mixes web and mobile vars", async () => {
+  it("emits separate warns per category when a file mixes runner-output and mobile vars", async () => {
     const results = await checkFileAssets({
       files: ["/repo/flows/mixed.flow.ts"],
       readFile: readerFor({
@@ -126,16 +126,40 @@ describe("checkFileAssets", () => {
       cwd: "/repo",
     });
     expect(results).toHaveLength(2);
-    const fileAsset = results.find((r) =>
-      r.detail?.includes(fileAssetsWarnReasons["file-asset"]),
+    const runnerOnly = results.find((r) =>
+      r.detail?.includes(fileAssetsWarnReasons["runner-only-dir"]),
     );
     const mobileInput = results.find((r) =>
       r.detail?.includes(fileAssetsWarnReasons["mobile-input"]),
     );
-    expect(fileAsset?.detail).toContain("QAWOLF_SCREENSHOTS_DIR");
-    expect(fileAsset?.detail).not.toContain("RUN_INPUTS_EXECUTABLES_DIR");
+    expect(runnerOnly?.detail).toContain("QAWOLF_SCREENSHOTS_DIR");
+    expect(runnerOnly?.detail).not.toContain("RUN_INPUTS_EXECUTABLES_DIR");
     expect(mobileInput?.detail).toContain("RUN_INPUTS_EXECUTABLES_DIR");
     expect(mobileInput?.detail).not.toContain("QAWOLF_SCREENSHOTS_DIR");
+  });
+
+  it("splits team-storage and runner-only-dir into separate warns within one file", async () => {
+    const results = await checkFileAssets({
+      files: ["/repo/flows/both.flow.ts"],
+      readFile: readerFor({
+        "/repo/flows/both.flow.ts": `
+          process.env.TEAM_STORAGE_DIR;
+          process.env.QAWOLF_SCREENSHOTS_DIR;
+        `,
+      }),
+      cwd: "/repo",
+    });
+    expect(results).toHaveLength(2);
+    const teamStorage = results.find((r) =>
+      r.detail?.includes(fileAssetsWarnReasons["team-storage"]),
+    );
+    const runnerOnly = results.find((r) =>
+      r.detail?.includes(fileAssetsWarnReasons["runner-only-dir"]),
+    );
+    expect(teamStorage?.detail).toContain("TEAM_STORAGE_DIR");
+    expect(teamStorage?.detail).not.toContain("QAWOLF_SCREENSHOTS_DIR");
+    expect(runnerOnly?.detail).toContain("QAWOLF_SCREENSHOTS_DIR");
+    expect(runnerOnly?.detail).not.toContain("TEAM_STORAGE_DIR");
   });
 
   it("uses the mobile-input reason for RUN_*_DIR and RUN_INPUT_PATH", async () => {
@@ -150,7 +174,12 @@ describe("checkFileAssets", () => {
     expect(results).toHaveLength(2);
     for (const result of results) {
       expect(result.detail).toContain(fileAssetsWarnReasons["mobile-input"]);
-      expect(result.detail).not.toContain(fileAssetsWarnReasons["file-asset"]);
+      expect(result.detail).not.toContain(
+        fileAssetsWarnReasons["team-storage"],
+      );
+      expect(result.detail).not.toContain(
+        fileAssetsWarnReasons["runner-only-dir"],
+      );
     }
   });
 
