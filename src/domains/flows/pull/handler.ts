@@ -1,5 +1,5 @@
-import { unlink } from "~/shell/fs.js";
-import { join, resolve } from "node:path";
+import { mkdir, unlink } from "~/shell/fs.js";
+import { dirname, join, resolve } from "node:path";
 
 import cliPackageJson from "../../../../package.json" with { type: "json" };
 
@@ -52,6 +52,11 @@ export async function handleFlowsPull(
   }
 
   const destAbs = resolve(opts.out ?? join(".qawolf", opts.env));
+  const assetsAbs = join(dirname(destAbs), "assets");
+  // Shared assets sibling of the env directory. Created unconditionally so
+  // TEAM_STORAGE_DIR resolves to a real path even before any asset is dropped
+  // in. Idempotent across re-pulls.
+  await mkdir(assetsAbs, { recursive: true });
   const yes = opts.yes ?? false;
   const fetch = globalThis.fetch;
   let archive: string | undefined;
@@ -92,6 +97,7 @@ export async function handleFlowsPull(
             stageBundle({
               tmpArchive: fetched.tmpArchive,
               destAbs,
+              assetsAbs,
               envId: opts.env,
               cliFlowsVersion: deps.flowsVersion,
               now: fetched.bundleFetchedAt,

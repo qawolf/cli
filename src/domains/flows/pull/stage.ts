@@ -5,6 +5,7 @@ import {
   flattenSingleWrapper,
   sampleQawolfCommittedAt,
 } from "./bundle.js";
+import { applyTeamStorageRewrite } from "./applyTeamStorageRewrite.js";
 import { writeEnvFile } from "./envVars.js";
 import { extractTarGz } from "./extract.js";
 import {
@@ -16,6 +17,7 @@ import {
 type StageBundleArgs = {
   tmpArchive: string;
   destAbs: string;
+  assetsAbs: string;
   envId: string;
   cliFlowsVersion: string;
   now: Date;
@@ -41,8 +43,20 @@ export async function stageBundle(
     // Sample mtime before any local rewrite so qawolfCommittedAt reflects
     // the upstream commit time, not our write time.
     const qawolfCommittedAt = await sampleQawolfCommittedAt(tmpDir);
-    // Overwrites any .env that came in the flows bundle — API is authoritative.
-    await writeEnvFile(tmpDir, args.envVars);
+    // Rewrite literal /home/wolf/team-storage/ references in source files to
+    // ${process.env.TEAM_STORAGE_DIR}/. Must run before buildManifest so the
+    // content hashes match what's actually on disk.
+    await applyTeamStorageRewrite(tmpDir);
+    // TEAM_STORAGE_DIR is overridden locally: the API ships the runner mount
+    // path (/home/wolf/team-storage) which doesn't exist on this machine. The
+    // rewriter has already normalized literal mount-path references to use
+    // this env var, so all team-storage lookups resolve to the local assets/
+    // directory.
+    const effectiveEnvVars = {
+      ...args.envVars,
+      TEAM_STORAGE_DIR: args.assetsAbs,
+    };
+    await writeEnvFile(tmpDir, effectiveEnvVars);
     const manifest = await buildManifest({
       envId: args.envId,
       bundleDir: tmpDir,
@@ -71,7 +85,7 @@ export async function stageBundle(
     return {
       envDir: args.destAbs,
       flowCount: manifest.flows.length,
-      envVarCount: Object.keys(args.envVars).length,
+      envVarCount: Object.keys(effectiveEnvVars).length,
     };
   } catch (err) {
     await removeTempDir(tmpDir, registry).catch(() => {});

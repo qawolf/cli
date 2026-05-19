@@ -76,6 +76,7 @@ describe("safety + staging integration", () => {
     await stageBundle({
       tmpArchive,
       destAbs: destDir,
+      assetsAbs: join(workDir, "assets"),
       envId: "env-abc",
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),

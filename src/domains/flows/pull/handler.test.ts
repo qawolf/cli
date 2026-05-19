@@ -106,7 +106,7 @@ describe("handleFlowsPull json mode output", () => {
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
       ),
       flowCount: 2,
-      envVarCount: 1,
+      envVarCount: 2,
       manifestPath: join(destDir, manifestFilename),
     });
     expect(JSON.parse(JSON.stringify(payload))).toEqual(payload);

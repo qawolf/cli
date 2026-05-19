@@ -54,6 +54,7 @@ describe("stageBundle", () => {
     const result = await stageBundle({
       tmpArchive: archive,
       destAbs: destDir,
+      assetsAbs: join(workDir, "assets"),
       envId: "env-abc",
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
@@ -64,7 +65,7 @@ describe("stageBundle", () => {
     expect(result).toEqual({
       envDir: destDir,
       flowCount: 2,
-      envVarCount: 0,
+      envVarCount: 1,
     });
     expect(await readFile(join(destDir, "checkout.flow.ts"), "utf8")).toBe(
       "// checkout\n",
@@ -90,6 +91,7 @@ describe("stageBundle", () => {
     const result = await stageBundle({
       tmpArchive: archive,
       destAbs: destDir,
+      assetsAbs: join(workDir, "assets"),
       envId: "env-abc",
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
@@ -113,6 +115,7 @@ describe("stageBundle", () => {
     await stageBundle({
       tmpArchive: archive,
       destAbs: destDir,
+      assetsAbs: join(workDir, "assets"),
       envId: "env-abc",
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
@@ -140,6 +143,7 @@ describe("stageBundle", () => {
     const result = await stageBundle({
       tmpArchive: archive,
       destAbs: destDir,
+      assetsAbs: join(workDir, "assets"),
       envId: "env-abc",
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
@@ -147,9 +151,10 @@ describe("stageBundle", () => {
       envVarsFetchedAt: fetchedAt,
     });
 
-    expect(result.envVarCount).toBe(2);
+    expect(result.envVarCount).toBe(3);
+    const assetsAbs = join(workDir, "assets");
     expect(await readFile(join(destDir, ".env"), "utf8")).toBe(
-      'BASE_URL="https://example.com"\nTOKEN="abc"\n',
+      `BASE_URL="https://example.com"\nTEAM_STORAGE_DIR="${assetsAbs}"\nTOKEN="abc"\n`,
     );
     const stats = await stat(join(destDir, ".env"));
     expect(stats.mode & 0o777).toBe(0o600);
