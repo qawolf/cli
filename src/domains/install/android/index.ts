@@ -1,4 +1,5 @@
 import { isAndroidTarget } from "~/core/flowMeta.js";
+import { pluralize } from "~/core/pluralize.js";
 import { buildSystemImage, makeAvdName } from "~/core/androidTargets.js";
 import { parseExecutionTarget } from "@qawolf/flow-targets";
 import type { AndroidExecutionTarget } from "@qawolf/flow-targets";
@@ -63,7 +64,7 @@ export async function installAndroid(
   });
 
   ctx.ui.success(
-    `Android install complete. ${specs.length} unique AVD(s) ready.`,
+    `Android install complete. ${pluralize(specs.length, "unique AVD")} ready.`,
   );
 }
 
