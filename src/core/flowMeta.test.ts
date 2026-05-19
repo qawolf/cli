@@ -13,8 +13,8 @@ describe("classifyTarget", () => {
     expect(classifyTarget("Android - Pixel")).toEqual({ kind: "android" });
   });
 
-  it("should return undefined for an unsupported target", () => {
-    expect(classifyTarget("iOS - iPad")).toBeUndefined();
+  it("should return { kind: 'ios' } for an iOS preset target", () => {
+    expect(classifyTarget("iOS - iPad")).toEqual({ kind: "ios" });
   });
 
   it("should return undefined for an unrecognised target string", () => {
