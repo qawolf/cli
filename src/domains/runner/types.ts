@@ -36,6 +36,7 @@ export type AsyncStorage<T> = {
 export type RunnerFs = {
   mkdir: (path: string, options?: { recursive?: boolean }) => Promise<void>;
   writeFile: (path: string, data: string) => Promise<void>;
+  unlink: (path: string) => Promise<void>;
 };
 
 export type SpawnResult = {

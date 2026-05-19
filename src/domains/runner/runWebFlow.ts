@@ -27,6 +27,11 @@ import {
   notSupported,
   unsupportedWebDepNames,
 } from "./runWebFlowUtils.js";
+import {
+  buildContextSetup,
+  initHar,
+  maybeCleanupHar,
+} from "./web/contextSetup.js";
 
 export type RunWebFlowDeps = RunnerDeps & WebLaunchDeps;
 // trace is not yet implemented
@@ -63,18 +68,9 @@ export async function runWebFlow({
 
   const openBrowsers: MinimalBrowser[] = [];
   const openContexts: MinimalBrowserContext[] = [];
-
+  const { harMode, harPath } = await initHar(deps.fs, options, flowName);
   const videoSize = { width: 1280, height: 720 };
-  const videosDir =
-    options.artifactDir ?? path.join(options.outputDir, "videos");
-  const contextSetup =
-    options.video !== "off"
-      ? {
-          viewport: videoSize,
-          screen: videoSize,
-          recordVideo: { dir: videosDir, size: videoSize },
-        }
-      : { viewport: videoSize, screen: videoSize };
+  const contextSetup = buildContextSetup(videoSize, options, harPath);
 
   const launchBrowserOpts = {
     headless: !options.headed,
@@ -137,13 +133,18 @@ export async function runWebFlow({
   };
 
   const runner = createRunner({ deps, options });
-
+  let passed = false;
   try {
-    return await runner.run(flowDef);
+    const result = await runner.run(flowDef);
+    passed = result.passed;
+    return result;
   } finally {
     await Promise.allSettled([
       ...openContexts.map((c) => c.close()),
       ...openBrowsers.map((b) => b.close()),
     ]);
+    if (harPath !== undefined) {
+      await maybeCleanupHar(deps.fs, harPath, passed, harMode);
+    }
   }
 }

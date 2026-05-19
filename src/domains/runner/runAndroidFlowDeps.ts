@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { mkdir, writeFile } from "~/shell/fs.js";
+import { mkdir, unlink, writeFile } from "~/shell/fs.js";
 import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import { createAppiumServer } from "~/shell/appium/createAppiumServer.js";
 import { createEmulatorPool } from "~/shell/appium/createEmulatorPool.js";
@@ -48,6 +48,9 @@ function makeRunnerDeps() {
       },
       writeFile: async (p: string, d: string) => {
         await writeFile(p, d);
+      },
+      unlink: async (p: string) => {
+        await unlink(p);
       },
     },
     spawn: (cmd: string, args: string[]) => {

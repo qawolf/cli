@@ -1,4 +1,10 @@
-import type { BrowserName, TraceMode, VideoMode } from "~/core/types.js";
+import type {
+  BrowserName,
+  HarContent,
+  HarMode,
+  TraceMode,
+  VideoMode,
+} from "~/core/types.js";
 
 type BrowserLaunchOptions = {
   headless: boolean;
@@ -10,6 +16,11 @@ export type ContextSetupOptions = {
   viewport?: { width: number; height: number };
   screen?: { width: number; height: number };
   recordVideo?: { dir: string; size: { width: number; height: number } };
+  recordHar?: {
+    path: string;
+    mode?: "full" | "minimal";
+    content?: "omit" | "embed" | "attach";
+  };
 };
 
 type MinimalTracingHandle = {
@@ -63,6 +74,8 @@ export type WebLaunchOptions = {
   outputDir: string;
   timeout: number;
   artifactDir?: string;
+  har?: HarMode;
+  harContent?: HarContent;
 };
 
 export type LaunchCallOptions = {

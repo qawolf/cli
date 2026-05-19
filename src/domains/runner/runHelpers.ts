@@ -28,6 +28,8 @@ export function buildRunOptions(flags: FlowsRunFlags): {
       slowMo: 0,
       video: flags.video,
       timeout: flags.timeout,
+      har: flags.har,
+      harContent: flags.harContent,
     },
     androidOptions: {
       retries: flags.retries,

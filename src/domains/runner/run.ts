@@ -126,7 +126,7 @@ export async function flowsRun(
       headed: flags.headed,
       video: flags.video,
       trace: flags.trace,
-      har: "off",
+      har: flags.har,
     },
   };
   deps.reporter.onRunComplete?.({ summary });

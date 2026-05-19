@@ -42,6 +42,8 @@ function defaultFlags(): FlowsRunFlags {
     timeout: 30_000,
     video: "off",
     trace: "off",
+    har: "off",
+    harContent: "omit",
     outputDir: "/tmp",
     headed: false,
   };
