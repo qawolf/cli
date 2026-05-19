@@ -142,7 +142,8 @@ async function handleEntry(args: HandleArgs): Promise<void> {
 
   await writeFile(target, Buffer.concat(chunks));
   // Preserve the tar entry's mtime so the manifest's `qawolfCommittedAt`
-  // (sampled from any flow file's mtime in buildManifest) reflects the
-  // source commit time rather than the extraction time.
+  // (sampled from any flow file's mtime by sampleQawolfCommittedAt in
+  // bundle.ts, before any local rewrite) reflects the source commit time
+  // rather than the extraction time.
   if (entry.mtime) await utimes(target, entry.mtime, entry.mtime);
 }
