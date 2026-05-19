@@ -7,6 +7,7 @@ function makeDeps(): RunnerDeps {
     fs: {
       mkdir: async () => {},
       writeFile: async () => {},
+      unlink: async () => {},
     },
     spawn: () => ({
       exitCode: Promise.resolve(0),

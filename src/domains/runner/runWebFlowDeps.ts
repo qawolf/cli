@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { mkdir, writeFile } from "~/shell/fs.js";
+import { mkdir, unlink, writeFile } from "~/shell/fs.js";
 import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import { pathToFileURL } from "node:url";
 
@@ -39,6 +39,9 @@ export async function defaultRunWebFlowDeps(
       },
       writeFile: async (p, d) => {
         await writeFile(p, d);
+      },
+      unlink: async (p) => {
+        await unlink(p);
       },
     },
     spawn: (cmd, args) => {

@@ -13,7 +13,13 @@ import type {
   runWebFlow as defaultRunWebFlow,
 } from "./runWebFlow.js";
 import type { FlowRunResult } from "./types.js";
-import type { BrowserName, TraceMode, VideoMode } from "~/core/types.js";
+import type {
+  BrowserName,
+  HarContent,
+  HarMode,
+  TraceMode,
+  VideoMode,
+} from "~/core/types.js";
 
 export type FlowsRunFlags = {
   readonly retries: number;
@@ -22,6 +28,8 @@ export type FlowsRunFlags = {
   readonly timeout: number;
   readonly video: VideoMode;
   readonly trace: TraceMode;
+  readonly har: HarMode;
+  readonly harContent: HarContent;
   readonly outputDir: string;
   readonly headed: boolean;
 };

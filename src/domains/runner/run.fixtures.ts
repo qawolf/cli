@@ -76,6 +76,8 @@ export function defaultFlags(): FlowsRunFlags {
     timeout: 30_000,
     video: "off",
     trace: "off",
+    har: "off",
+    harContent: "omit",
     outputDir: "qawolf-output",
     headed: false,
   };

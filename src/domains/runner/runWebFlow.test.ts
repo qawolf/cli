@@ -18,7 +18,11 @@ afterEach(() => {
 
 function makeRunnerDeps(): RunnerDeps {
   return {
-    fs: { mkdir: async () => {}, writeFile: async () => {} },
+    fs: {
+      mkdir: async () => {},
+      writeFile: async () => {},
+      unlink: async () => {},
+    },
     spawn: () => ({ exitCode: Promise.resolve(0), kill: () => {} }),
     signals: { on: () => () => {} },
     createStorage: <T>() => ({

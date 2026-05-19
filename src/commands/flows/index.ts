@@ -1,7 +1,12 @@
 import type { Command } from "commander";
 
 import { withContext } from "~/commands/context.js";
-import type { TraceMode, VideoMode } from "~/core/types.js";
+import type {
+  HarContent,
+  HarMode,
+  TraceMode,
+  VideoMode,
+} from "~/core/types.js";
 
 import { resolveApiKey } from "~/domains/auth/index.js";
 import { handleFlowsList } from "~/domains/flows/list.js";
@@ -15,8 +20,12 @@ import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
 const videoModes = ["on", "off", "retain-on-failure"] as const;
 const traceModes = ["on", "off", "retain-on-failure"] as const;
+const harModes = ["on", "off", "retain-on-failure"] as const;
+const harContentModes = ["full", "omit"] as const;
 const videoDefault: VideoMode = "off";
 const traceDefault: TraceMode = "off";
+const harDefault: HarMode = "off";
+const harContentDefault: HarContent = "omit";
 
 export function registerFlowsCommand(program: Command): void {
   const flows = program
@@ -56,6 +65,18 @@ export function registerFlowsCommand(program: Command): void {
       "Trace mode: on | off | retain-on-failure (accepted; not yet wired to runner)",
       parseEnum<TraceMode>("--trace", traceModes),
       traceDefault,
+    )
+    .option(
+      "--har <mode>",
+      "HAR capture mode: on | off | retain-on-failure",
+      parseEnum<HarMode>("--har", harModes),
+      harDefault,
+    )
+    .option(
+      "--har-content <mode>",
+      "HAR response body capture: omit (default, memory-safe) | full (embeds bodies; increases memory usage for long flows)",
+      parseEnum<HarContent>("--har-content", harContentModes),
+      harContentDefault,
     )
     .option(
       "--output-dir <path>",
