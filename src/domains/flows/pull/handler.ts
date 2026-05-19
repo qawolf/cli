@@ -38,7 +38,7 @@ function formatPullSummary(
   let summary = `Pulled ${flows}${envVars} into ${result.envDir}`;
   if (result.flowsWithTeamStorageRefs.length > 0) {
     const refs = pluralize(result.flowsWithTeamStorageRefs.length, "flow");
-    summary += `\n${refs} reference team-storage assets — populate ${assetsAbs} before running:`;
+    summary += `\nTeam-storage assets required for ${refs} — populate ${assetsAbs} before running:`;
     for (const path of result.flowsWithTeamStorageRefs) {
       summary += `\n  - ${path}`;
     }
