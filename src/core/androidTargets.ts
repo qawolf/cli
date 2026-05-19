@@ -5,16 +5,17 @@ export function makeAvdName(
   return `qawolf_${deviceModel.toLowerCase().replace(/ /g, "_")}_api${androidVersion}`;
 }
 
+const avdArchByNodeArch: Partial<Record<NodeJS.Architecture, string>> = {
+  arm64: "arm64-v8a",
+  x64: "x86_64",
+};
+
 export function buildSystemImage(
   androidVersion: string,
   arch: NodeJS.Architecture,
 ): string {
-  let archStr: string;
-  if (arch === "arm64") {
-    archStr = "arm64-v8a";
-  } else if (arch === "x64") {
-    archStr = "x86_64";
-  } else {
+  const archStr = avdArchByNodeArch[arch];
+  if (!archStr) {
     throw new Error(`Unsupported host architecture for Android AVD: ${arch}`);
   }
   // API 36 has no Play Store system image; use google_apis instead.
