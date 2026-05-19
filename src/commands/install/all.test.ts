@@ -71,12 +71,14 @@ describe("installAll", () => {
     peekFlowMetaMock
       .mockResolvedValueOnce({ name: undefined, target: "Web - Chrome" })
       .mockResolvedValueOnce({ name: undefined, target: "Android - Pixel 9" });
-    const { ctx } = makeCtx();
+    const { ctx, messages } = makeCtx();
 
-    await installAll(ctx, undefined, makeDeps());
+    const result = await installAll(ctx, undefined, makeDeps());
 
     expect(installBrowsersMock).toHaveBeenCalledTimes(1);
     expect(installAndroidMock).toHaveBeenCalledTimes(1);
+    expect(messages.some((m) => m.method === "success")).toBe(true);
+    expect(result).toBeUndefined();
   });
 
   it("should run only android install when no web flows are present", async () => {
@@ -137,5 +139,52 @@ describe("installAll", () => {
       messages.some((m) => m.method === "warn" && m.text.includes("iOS")),
     ).toBe(true);
     expect(result).toBeUndefined();
+  });
+
+  it("should return firstError and still run android when browsers fails", async () => {
+    expandPatternsMock.mockResolvedValue(["web.flow.ts", "android.flow.ts"]);
+    peekFlowMetaMock
+      .mockResolvedValueOnce({ name: undefined, target: "Web - Chrome" })
+      .mockResolvedValueOnce({ name: undefined, target: "Android - Pixel 9" });
+    installBrowsersMock.mockResolvedValue({
+      error: "playwright missing",
+      exitCode: 1,
+    });
+    const { ctx } = makeCtx();
+
+    const result = await installAll(ctx, undefined, makeDeps());
+
+    expect(installBrowsersMock).toHaveBeenCalledTimes(1);
+    expect(installAndroidMock).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ error: "playwright missing", exitCode: 1 });
+  });
+
+  it("should run android and return error when browsers throws", async () => {
+    expandPatternsMock.mockResolvedValue(["web.flow.ts", "android.flow.ts"]);
+    peekFlowMetaMock
+      .mockResolvedValueOnce({ name: undefined, target: "Web - Chrome" })
+      .mockResolvedValueOnce({ name: undefined, target: "Android - Pixel 9" });
+    installBrowsersMock.mockImplementation(() => {
+      throw new Error("Could not find Playwright");
+    });
+    const { ctx } = makeCtx();
+
+    const result = await installAll(ctx, undefined, makeDeps());
+
+    expect(installAndroidMock).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ error: "Could not find Playwright" });
+  });
+
+  it("should forward pattern to both sub-handlers", async () => {
+    expandPatternsMock.mockResolvedValue(["web.flow.ts", "android.flow.ts"]);
+    peekFlowMetaMock
+      .mockResolvedValueOnce({ name: undefined, target: "Web - Chrome" })
+      .mockResolvedValueOnce({ name: undefined, target: "Android - Pixel 9" });
+    const { ctx } = makeCtx();
+
+    await installAll(ctx, "src/**", makeDeps());
+
+    expect(installBrowsersMock).toHaveBeenCalledWith(ctx, "src/**");
+    expect(installAndroidMock).toHaveBeenCalledWith(ctx, "src/**");
   });
 });

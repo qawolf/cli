@@ -3,6 +3,7 @@ import {
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/domains/flows/expand.js";
 import { classifyTarget } from "~/core/flowMeta.js";
+import { errorMessage } from "~/core/errors.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 
 import { handleInstallAndroid } from "./android.js";
@@ -69,13 +70,21 @@ export async function installAll(
   let firstError: { error: string; exitCode?: number } | undefined;
 
   if (hasWeb) {
-    const result = await deps.installBrowsers(ctx, pattern);
-    if (result && !firstError) firstError = result;
+    try {
+      const result = await deps.installBrowsers(ctx, pattern);
+      if (result && !firstError) firstError = result;
+    } catch (err: unknown) {
+      if (!firstError) firstError = { error: errorMessage(err) };
+    }
   }
 
   if (hasAndroid) {
-    const result = await deps.installAndroid(ctx, pattern);
-    if (result && !firstError) firstError = result;
+    try {
+      const result = await deps.installAndroid(ctx, pattern);
+      if (result && !firstError) firstError = result;
+    } catch (err: unknown) {
+      if (!firstError) firstError = { error: errorMessage(err) };
+    }
   }
 
   if (!firstError) {
