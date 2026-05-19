@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import type { RunnerDeps } from "./types.js";
 import type { WebLaunchDeps } from "./web/types.js";
@@ -47,7 +48,7 @@ const baseOptions: RunWebFlowOptions = {
 };
 
 function fixturePath(name: string): string {
-  return new URL(`./runWebFlow.${name}.fixture.ts`, import.meta.url).pathname;
+  return join(import.meta.dirname, `runWebFlow.${name}.fixture.ts`);
 }
 
 describe("runWebFlow", () => {

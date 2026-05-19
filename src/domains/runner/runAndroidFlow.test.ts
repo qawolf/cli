@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import {
   makeBaseDeps,
@@ -39,8 +40,7 @@ const baseOptions: RunAndroidFlowOptions = {
 };
 
 function fixturePath(name: string): string {
-  return new URL(`./runAndroidFlow.${name}.fixture.ts`, import.meta.url)
-    .pathname;
+  return join(import.meta.dirname, `runAndroidFlow.${name}.fixture.ts`);
 }
 
 describe("runAndroidFlow", () => {
