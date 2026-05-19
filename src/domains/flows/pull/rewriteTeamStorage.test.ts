@@ -28,16 +28,45 @@ describe("rewriteTeamStorage", () => {
     expect(out.rewrites).toBe(0);
   });
 
-  it("rewrites every occurrence in a file", () => {
-    const src =
-      "a('/home/wolf/team-storage/one.csv');\n" +
-      "b('/home/wolf/team-storage/two.csv');\n";
+  it("converts a double-quoted string starting with the prefix to a template literal", () => {
+    const src = 'const p = "/home/wolf/team-storage/baldeagle.jpeg";\n';
     const out = rewriteTeamStorage(src);
     expect(out.source).toBe(
-      "a('${process.env.TEAM_STORAGE_DIR}/one.csv');\n" +
-        "b('${process.env.TEAM_STORAGE_DIR}/two.csv');\n",
+      "const p = `${process.env.TEAM_STORAGE_DIR}/baldeagle.jpeg`;\n",
     );
-    expect(out.rewrites).toBe(2);
+    expect(out.rewrites).toBe(1);
+  });
+
+  it("converts a single-quoted string starting with the prefix to a template literal", () => {
+    const src = "const p = '/home/wolf/team-storage/one.csv';\n";
+    const out = rewriteTeamStorage(src);
+    expect(out.source).toBe(
+      "const p = `${process.env.TEAM_STORAGE_DIR}/one.csv`;\n",
+    );
+    expect(out.rewrites).toBe(1);
+  });
+
+  it("rewrites every occurrence in a file regardless of quote style", () => {
+    const src =
+      "a('/home/wolf/team-storage/one.csv');\n" +
+      'b("/home/wolf/team-storage/two.csv");\n' +
+      "c(`/home/wolf/team-storage/three.csv`);\n";
+    const out = rewriteTeamStorage(src);
+    expect(out.source).toBe(
+      "a(`${process.env.TEAM_STORAGE_DIR}/one.csv`);\n" +
+        "b(`${process.env.TEAM_STORAGE_DIR}/two.csv`);\n" +
+        "c(`${process.env.TEAM_STORAGE_DIR}/three.csv`);\n",
+    );
+    expect(out.rewrites).toBe(3);
+  });
+
+  it("preserves the trailing-slash-only quoted string used in concatenation", () => {
+    const src = 'const p = "/home/wolf/team-storage/" + filename;\n';
+    const out = rewriteTeamStorage(src);
+    expect(out.source).toBe(
+      "const p = `${process.env.TEAM_STORAGE_DIR}/` + filename;\n",
+    );
+    expect(out.rewrites).toBe(1);
   });
 
   it("rewrites only the literal-prefix shape in a mixed file", () => {
