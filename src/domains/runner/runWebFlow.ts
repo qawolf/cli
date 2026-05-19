@@ -27,7 +27,11 @@ import {
   notSupported,
   unsupportedWebDepNames,
 } from "./runWebFlowUtils.js";
-import { buildContextSetup, initHar, maybeCleanupHar } from "./web/har.js";
+import {
+  buildContextSetup,
+  initHar,
+  maybeCleanupHar,
+} from "./web/contextSetup.js";
 
 export type RunWebFlowDeps = RunnerDeps & WebLaunchDeps;
 // trace is not yet implemented
