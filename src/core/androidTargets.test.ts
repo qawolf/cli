@@ -24,6 +24,12 @@ describe("buildSystemImage", () => {
     );
   });
 
+  it("should throw for unsupported architectures", () => {
+    expect(() => buildSystemImage("35", "ia32" as NodeJS.Architecture)).toThrow(
+      "Unsupported host architecture for Android AVD: ia32",
+    );
+  });
+
   it("should use google_apis (no playstore) for API 36 and above", () => {
     expect(buildSystemImage("36", "arm64")).toBe(
       "system-images;android-36;google_apis;arm64-v8a",
