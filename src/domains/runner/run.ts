@@ -93,7 +93,14 @@ export async function flowsRun(
           ),
         ),
       ];
-      await deps.bootAndroid(avdNames);
+      try {
+        await deps.bootAndroid(avdNames);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Android boot failed";
+        ctx.ui.error(message);
+        return { error: message };
+      }
     }
     ({ counts, durationMs } = await runFlows(
       flows,

@@ -110,21 +110,20 @@ describe("flowsRun Android lifecycle", () => {
     expect(shutdownAndroid).toHaveBeenCalledTimes(1);
   });
 
-  it("should call shutdownAndroid when bootAndroid throws after partial startup", async () => {
+  it("should surface boot error via ui.error and call shutdownAndroid when bootAndroid throws", async () => {
     const shutdownAndroid = mock(() => {});
+    const ctx = makeCtx();
     const deps = makeDeps({
       metaByFile: { "/a.ts": { target: "Android - Pixel 9 (Android 15)" } },
       androidFlowDeps: makeFakeRunAndroidFlowDeps(),
       bootAndroid: () => Promise.reject(new Error("avd boot failed")),
       shutdownAndroid,
     });
-    let caught: unknown;
-    try {
-      await flowsRun(makeCtx(), ["/a.ts"], defaultFlags(), deps);
-    } catch (e) {
-      caught = e;
-    }
-    expect((caught as Error).message).toContain("avd boot failed");
+    const result = await flowsRun(ctx, ["/a.ts"], defaultFlags(), deps);
+    expect(ctx.ui.error).toHaveBeenCalledWith(
+      expect.stringContaining("avd boot failed"),
+    );
+    expect((result as { error: string }).error).toContain("avd boot failed");
     expect(shutdownAndroid).toHaveBeenCalledTimes(1);
   });
 });
