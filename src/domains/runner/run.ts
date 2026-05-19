@@ -123,7 +123,7 @@ export async function flowsRun(
     meta: {
       browsers,
       workers: flags.workers,
-      headed: false,
+      headed: flags.headed,
       video: flags.video,
       trace: flags.trace,
       har: "off",

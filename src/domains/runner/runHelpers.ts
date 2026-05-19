@@ -24,7 +24,7 @@ export function buildRunOptions(flags: FlowsRunFlags): {
     webOptions: {
       retries: flags.retries,
       outputDir: flags.outputDir,
-      headed: false,
+      headed: flags.headed,
       slowMo: 0,
       video: flags.video,
       timeout: flags.timeout,

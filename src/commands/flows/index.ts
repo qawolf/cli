@@ -62,6 +62,11 @@ export function registerFlowsCommand(program: Command): void {
       "Output directory for run artifacts",
       "qawolf-output",
     )
+    .option(
+      "--headed",
+      "Open a visible browser window (default: headless)",
+      false,
+    )
     .action(
       (pattern: string | undefined, opts: FlowsRunFlags, command: Command) => {
         return withContext((ctx) => handleFlowsRun(ctx, pattern, opts))(

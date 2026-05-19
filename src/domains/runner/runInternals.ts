@@ -23,6 +23,7 @@ export type FlowsRunFlags = {
   readonly video: VideoMode;
   readonly trace: TraceMode;
   readonly outputDir: string;
+  readonly headed: boolean;
 };
 
 export type FlowsRunDeps = {
