@@ -5,11 +5,11 @@ import {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/domains/flows/expand.js";
+import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
 import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { isNoEntError } from "~/core/errors.js";
-import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { createConsoleReporter } from "~/shell/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
@@ -24,6 +24,7 @@ import {
 } from "~/domains/flows/ensureDeps.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
 import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
+import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
 export function _buildPatternArgs(pattern: string | undefined): string[] {
@@ -103,6 +104,7 @@ export async function handleFlowsRun(
   const resolvedDir = envDir ?? cwd;
 
   await deps.configureTestkit(resolvedDir);
+  const android = createAndroidDeps(resolvedDir);
   return deps.flowsRun(ctx, expandedFiles, flags, {
     peekFlowMeta: defaultPeekFlowMeta,
     installBrowsers: (innerCtx, browsers) =>
@@ -114,13 +116,15 @@ export async function handleFlowsRun(
     runWebFlow: defaultRunWebFlow,
     runWebFlowDeps: await deps.runWebFlowDeps(resolvedDir),
     runAndroidFlow: defaultRunAndroidFlow,
-    runAndroidFlowDeps: "not-wired", // TODO WIZ-10343: wire production Android deps
+    runAndroidFlowDeps: android.deps,
+    bootAndroid: android.boot,
+    shutdownAndroid: android.shutdown,
+    findFlowStamp: defaultFindFlowStamp,
+    warn: (message) => ctx.ui.warn(message),
     reporter: createConsoleReporter({
       stdout: process.stdout,
       stderr: process.stderr,
     }),
     now: () => Date.now(),
-    findFlowStamp: defaultFindFlowStamp,
-    warn: (message) => ctx.ui.warn(message),
   });
 }

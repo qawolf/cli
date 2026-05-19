@@ -10,6 +10,7 @@ import {
   makeFakeRunAndroidFlowDeps,
   makeReporter,
   passResult,
+  failResult,
 } from "./run.fixtures.js";
 import { flowsRun } from "./run.js";
 
@@ -71,5 +72,58 @@ describe("flowsRun Android dispatch", () => {
       summary: RunSummary;
     };
     expect(completeCall.summary.meta.browsers).toEqual(["chromium"]);
+  });
+});
+
+describe("flowsRun Android lifecycle", () => {
+  it("should call bootAndroid with deduplicated avd names before dispatching flows", async () => {
+    const bootAndroid = mock(() => Promise.resolve());
+    const shutdownAndroid = mock(() => {});
+    const deps = makeDeps({
+      metaByFile: {
+        "/a.ts": { target: "Android - Pixel 9 (Android 15)" },
+        "/b.ts": { target: "Android - Pixel 9 (Android 15)" },
+      },
+      runResults: [passResult(), passResult()],
+      androidFlowDeps: makeFakeRunAndroidFlowDeps(),
+      bootAndroid,
+      shutdownAndroid,
+    });
+    await flowsRun(makeCtx(), ["/a.ts", "/b.ts"], defaultFlags(), deps);
+    expect(bootAndroid).toHaveBeenCalledTimes(1);
+    const [avdNames] = callsOf(bootAndroid)[0] as [string[]];
+    expect(avdNames).toHaveLength(1);
+    expect(avdNames[0]).toMatch(/^qawolf_/);
+    expect(shutdownAndroid).toHaveBeenCalledTimes(1);
+  });
+
+  it("should call shutdownAndroid even when runFlows throws", async () => {
+    const shutdownAndroid = mock(() => {});
+    const deps = makeDeps({
+      metaByFile: { "/a.ts": { target: "Android - Pixel 9 (Android 15)" } },
+      runResults: [failResult(new Error("crash"))],
+      androidFlowDeps: makeFakeRunAndroidFlowDeps(),
+      bootAndroid: () => Promise.resolve(),
+      shutdownAndroid,
+    });
+    await flowsRun(makeCtx(), ["/a.ts"], defaultFlags(), deps);
+    expect(shutdownAndroid).toHaveBeenCalledTimes(1);
+  });
+
+  it("should surface boot error via ui.error and call shutdownAndroid when bootAndroid throws", async () => {
+    const shutdownAndroid = mock(() => {});
+    const ctx = makeCtx();
+    const deps = makeDeps({
+      metaByFile: { "/a.ts": { target: "Android - Pixel 9 (Android 15)" } },
+      androidFlowDeps: makeFakeRunAndroidFlowDeps(),
+      bootAndroid: () => Promise.reject(new Error("avd boot failed")),
+      shutdownAndroid,
+    });
+    const result = await flowsRun(ctx, ["/a.ts"], defaultFlags(), deps);
+    expect(ctx.ui.error).toHaveBeenCalledWith(
+      expect.stringContaining("avd boot failed"),
+    );
+    expect((result as { error: string }).error).toContain("avd boot failed");
+    expect(shutdownAndroid).toHaveBeenCalledTimes(1);
   });
 });

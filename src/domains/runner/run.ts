@@ -5,12 +5,14 @@ import type { BrowserName } from "~/core/types.js";
 
 import { buildRunOptions, runFlows } from "./runHelpers.js";
 import {
+  type AndroidResolvedFlow,
   type FlowsRunDeps,
   type FlowsRunFlags,
   type ResolvedFlow,
   type WebResolvedFlow,
   unsupportedTargetMessage,
 } from "./runInternals.js";
+import { resolveAvdName } from "./runAndroidFlowUtils.js";
 
 const batchSize = 32;
 
@@ -75,14 +77,41 @@ export async function flowsRun(
     await deps.installBrowsers(ctx, browsers);
   }
 
-  const { webOptions, androidOptions } = buildRunOptions(flags);
-  const { counts, durationMs } = await runFlows(
-    flows,
-    flags,
-    deps,
-    webOptions,
-    androidOptions,
+  const androidFlows = flows.filter(
+    (f): f is AndroidResolvedFlow => f.kind === "android",
   );
+
+  const { webOptions, androidOptions } = buildRunOptions(flags);
+  let counts: Awaited<ReturnType<typeof runFlows>>["counts"];
+  let durationMs: number;
+  try {
+    if (androidFlows.length > 0 && deps.bootAndroid) {
+      const avdNames = [
+        ...new Set(
+          androidFlows.map((f) =>
+            resolveAvdName(f.target as Parameters<typeof resolveAvdName>[0]),
+          ),
+        ),
+      ];
+      try {
+        await deps.bootAndroid(avdNames);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Android boot failed";
+        ctx.ui.error(message);
+        return { error: message };
+      }
+    }
+    ({ counts, durationMs } = await runFlows(
+      flows,
+      flags,
+      deps,
+      webOptions,
+      androidOptions,
+    ));
+  } finally {
+    deps.shutdownAndroid?.();
+  }
 
   const summary: RunSummary = {
     flowsPassed: counts.flowsPassed,
