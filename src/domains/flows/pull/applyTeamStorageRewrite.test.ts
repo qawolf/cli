@@ -83,4 +83,46 @@ describe("applyTeamStorageRewrite", () => {
       "`${process.env.TEAM_STORAGE_DIR}/z.csv`\n",
     );
   });
+
+  it("returns the list of flow files that reference team-storage after rewrite", async () => {
+    // Shape A flow (env-var template form, already in target shape).
+    await writeFile(
+      join(workDir, "envvar.flow.ts"),
+      "const p = `${process.env.TEAM_STORAGE_DIR}/x.fig`;\n",
+      "utf8",
+    );
+    // Shape B flow (literal mount path, rewritten to Shape A).
+    await writeFile(
+      join(workDir, "literal.flow.ts"),
+      "const p = `/home/wolf/team-storage/y.csv`;\n",
+      "utf8",
+    );
+    // Flow without any team-storage reference.
+    await writeFile(
+      join(workDir, "unrelated.flow.ts"),
+      "const x = 1;\n",
+      "utf8",
+    );
+    // Helper file containing a reference — must NOT appear in the list (only
+    // .flow.ts/.flow.js files are tracked).
+    await mkdir(join(workDir, "utilities"), { recursive: true });
+    await writeFile(
+      join(workDir, "utilities", "helper.js"),
+      "const p = `/home/wolf/team-storage/z.csv`;\n",
+      "utf8",
+    );
+
+    const result = await applyTeamStorageRewrite(workDir);
+
+    expect(result.flowsWithTeamStorageRefs).toEqual([
+      "envvar.flow.ts",
+      "literal.flow.ts",
+    ]);
+  });
+
+  it("returns an empty list when no flow references team-storage", async () => {
+    await writeFile(join(workDir, "a.flow.ts"), "const x = 1;\n", "utf8");
+    const result = await applyTeamStorageRewrite(workDir);
+    expect(result.flowsWithTeamStorageRefs).toEqual([]);
+  });
 });

@@ -66,6 +66,7 @@ describe("stageBundle", () => {
       envDir: destDir,
       flowCount: 2,
       envVarCount: 1,
+      flowsWithTeamStorageRefs: [],
     });
     expect(await readFile(join(destDir, "checkout.flow.ts"), "utf8")).toBe(
       "// checkout\n",
@@ -186,7 +187,7 @@ describe("stageBundle", () => {
     const archive = await prepArchive();
     const assetsDir = join(workDir, "assets");
 
-    await stageBundle({
+    const stageResult = await stageBundle({
       tmpArchive: archive,
       destAbs: destDir,
       assetsAbs: assetsDir,
@@ -196,6 +197,11 @@ describe("stageBundle", () => {
       envVars: { TEAM_STORAGE_DIR: "/home/wolf/team-storage" },
       envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
     });
+
+    expect(stageResult.flowsWithTeamStorageRefs).toEqual([
+      "envvar.flow.ts",
+      "upload.flow.ts",
+    ]);
 
     // The literal-mount-path flow has been rewritten.
     expect(await readFile(join(destDir, "upload.flow.ts"), "utf8")).toContain(

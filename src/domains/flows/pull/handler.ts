@@ -21,17 +21,29 @@ export type FlowsPullOptions = {
   readonly apiKey: string;
 };
 
-function formatPullSummary(result: {
-  envDir: string;
-  flowCount: number;
-  envVarCount: number;
-}): string {
+function formatPullSummary(
+  result: {
+    envDir: string;
+    flowCount: number;
+    envVarCount: number;
+    flowsWithTeamStorageRefs: string[];
+  },
+  assetsAbs: string,
+): string {
   const flows = pluralize(result.flowCount, "flow");
   const envVars =
     result.envVarCount === 0
       ? ""
       : ` and ${pluralize(result.envVarCount, "environment variable")}`;
-  return `Pulled ${flows}${envVars} into ${result.envDir}`;
+  let summary = `Pulled ${flows}${envVars} into ${result.envDir}`;
+  if (result.flowsWithTeamStorageRefs.length > 0) {
+    const refs = pluralize(result.flowsWithTeamStorageRefs.length, "flow");
+    summary += `\n${refs} reference team-storage assets — populate ${assetsAbs} before running:`;
+    for (const path of result.flowsWithTeamStorageRefs) {
+      summary += `\n  - ${path}`;
+    }
+  }
+  return summary;
 }
 
 type HandleFlowsPullDeps = {
@@ -106,7 +118,7 @@ export async function handleFlowsPull(
             }),
         },
       ],
-      (results) => formatPullSummary(results[0]),
+      (results) => formatPullSummary(results[0], assetsAbs),
     );
 
     if (ctx.ui.mode === "json") {
@@ -114,9 +126,11 @@ export async function handleFlowsPull(
         {
           env: opts.env,
           envDir: result.envDir,
+          assetsDir: assetsAbs,
           fetchedAt: fetched.bundleFetchedAt.toISOString(),
           flowCount: result.flowCount,
           envVarCount: result.envVarCount,
+          flowsWithTeamStorageRefs: result.flowsWithTeamStorageRefs,
           manifestPath: join(result.envDir, manifestFilename),
         },
         "",

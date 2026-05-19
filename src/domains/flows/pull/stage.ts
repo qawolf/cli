@@ -29,6 +29,7 @@ type StageBundleResult = {
   envDir: string;
   flowCount: number;
   envVarCount: number;
+  flowsWithTeamStorageRefs: string[];
 };
 
 export async function stageBundle(
@@ -46,7 +47,7 @@ export async function stageBundle(
     // Rewrite literal /home/wolf/team-storage/ references in source files to
     // ${process.env.TEAM_STORAGE_DIR}/. Must run before buildManifest so the
     // content hashes match what's actually on disk.
-    await applyTeamStorageRewrite(tmpDir);
+    const { flowsWithTeamStorageRefs } = await applyTeamStorageRewrite(tmpDir);
     // TEAM_STORAGE_DIR is overridden locally: the API ships the runner mount
     // path (/home/wolf/team-storage) which doesn't exist on this machine. The
     // rewriter has already normalized literal mount-path references to use
@@ -86,6 +87,7 @@ export async function stageBundle(
       envDir: args.destAbs,
       flowCount: manifest.flows.length,
       envVarCount: Object.keys(effectiveEnvVars).length,
+      flowsWithTeamStorageRefs,
     };
   } catch (err) {
     await removeTempDir(tmpDir, registry).catch(() => {});
