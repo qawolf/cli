@@ -1,6 +1,7 @@
 import type { AndroidFlowTargetInput } from "@qawolf/flows/android";
 import type { AndroidExecutionTarget } from "@qawolf/flow-targets";
 import { parseExecutionTarget } from "@qawolf/flow-targets";
+import { makeAvdName } from "~/core/androidTargets.js";
 
 // Matches testContextDependencies from @qawolf/flows/android minus wdio,
 // which is provided by the runner.
@@ -31,7 +32,7 @@ export function resolveAvdName(targetInput: AndroidFlowTargetInput): string {
 
   if (typeof raw !== "string") {
     const { deviceModel, androidVersion } = raw.meta;
-    return `${deviceModel.toLowerCase().replace(/ /g, "_")}_API_${androidVersion}`;
+    return makeAvdName(deviceModel, androidVersion);
   }
 
   // Preset literal string — parse via @qawolf/flow-targets
@@ -45,5 +46,5 @@ export function resolveAvdName(targetInput: AndroidFlowTargetInput): string {
   const { deviceModel, androidVersion } = (
     parsed as unknown as AndroidExecutionTarget
   ).meta;
-  return `${deviceModel.toLowerCase().replace(/ /g, "_")}_API_${androidVersion}`;
+  return makeAvdName(deviceModel, androidVersion);
 }

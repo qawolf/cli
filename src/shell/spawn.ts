@@ -8,11 +8,16 @@ export type SpawnResult = {
   readonly stderr: string;
 };
 
-export type SpawnFn = (cmd: string, args: string[]) => Promise<SpawnResult>;
+export type SpawnFn = (
+  cmd: string,
+  args: string[],
+  opts?: { stdin?: string; env?: Record<string, string | undefined> },
+) => Promise<SpawnResult>;
 
-export const defaultSpawn: SpawnFn = (cmd, args) =>
+export const defaultSpawn: SpawnFn = (cmd, args, opts) =>
   new Promise((resolve) => {
-    const child = spawn(cmd, args);
+    const env = opts?.env ? { ...process.env, ...opts.env } : undefined;
+    const child = spawn(cmd, args, env ? { env } : undefined);
     let stdout = "";
     let stderr = "";
     child.stdout?.on("data", (chunk) => {
@@ -21,7 +26,13 @@ export const defaultSpawn: SpawnFn = (cmd, args) =>
     child.stderr?.on("data", (chunk) => {
       stderr += String(chunk);
     });
-    child.on("error", () => resolve({ exitCode: -1, stdout, stderr }));
+    if (opts?.stdin !== undefined) {
+      child.stdin?.write(opts.stdin);
+      child.stdin?.end();
+    }
+    child.on("error", (err) =>
+      resolve({ exitCode: -1, stdout, stderr: stderr || err.message }),
+    );
     child.on("close", (code) =>
       resolve({ exitCode: code ?? -1, stdout, stderr }),
     );
