@@ -77,6 +77,7 @@ export function defaultFlags(): FlowsRunFlags {
     video: "off",
     trace: "off",
     outputDir: "qawolf-output",
+    headed: false,
   };
 }
 
