@@ -1,4 +1,4 @@
-export const QAWOLF_CONFIG_TS = `export default {
+export const qawolfConfigTs = `export default {
   outputDir: ".qawolf",
   timeout: 60_000,
   retries: 0,
@@ -6,7 +6,7 @@ export const QAWOLF_CONFIG_TS = `export default {
 };
 `;
 
-export const EXAMPLE_FLOW_TS = `import { expect, flow } from "@qawolf/flows/web";
+export const exampleFlowTs = `import { expect, flow } from "@qawolf/flows/web";
 
 export default flow(
   "Example",
@@ -22,7 +22,7 @@ export default flow(
 );
 `;
 
-export const QAWOLF_GITIGNORE = `# QA Wolf output artifacts
+export const qawolfGitignore = `# QA Wolf output artifacts
 *
 !.gitignore
 `;
