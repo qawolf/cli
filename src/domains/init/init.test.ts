@@ -156,6 +156,22 @@ describe("handleInit", () => {
     ).toBe(true);
   });
 
+  it("should add test:e2e to package.json when --yes is set", async () => {
+    const { ctx } = makeCtx(false);
+    await fsWriteFile(
+      join(dir, "package.json"),
+      JSON.stringify({ name: "app" }),
+    );
+
+    await handleInit(ctx, { yes: true }, makeDeps(dir));
+
+    const pkg = JSON.parse(
+      await fsReadFile(join(dir, "package.json"), "utf-8"),
+    ) as Record<string, unknown>;
+    const scripts = pkg["scripts"] as Record<string, string>;
+    expect(scripts["test:e2e"]).toBe("qawolf flows run");
+  });
+
   it("should warn when package.json is not valid JSON", async () => {
     const { ctx, messages } = makeCtx();
     await fsWriteFile(join(dir, "package.json"), "not json {");

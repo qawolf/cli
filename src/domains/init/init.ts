@@ -81,13 +81,7 @@ async function mergePackageJsonScript(
 
   if (!(await deps.pathExists(pkgPath))) return;
 
-  let raw: string;
-  try {
-    raw = await deps.readFile(pkgPath, "utf-8");
-  } catch {
-    ctx.ui.warn("Could not read package.json — skipped adding `test:e2e`");
-    return;
-  }
+  const raw = await deps.readFile(pkgPath, "utf-8");
 
   let pkg: Record<string, unknown>;
   try {
@@ -104,7 +98,7 @@ async function mergePackageJsonScript(
   }
 
   const confirmed = await ctx.ui.confirm(
-    "Add `test:e2e` script to package.json?",
+    "Add `test:e2e: qawolf flows run` to package.json?",
     { yes, destructive: true },
   );
   if (!confirmed.ok || !confirmed.value) {
