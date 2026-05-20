@@ -10,7 +10,8 @@ import {
 } from "./describeErrors.js";
 import { fetchSignedUrl } from "./fetchSignedUrl.js";
 import { getIdentity, type IdentityResponse } from "./getIdentity.js";
-import { defaultSleep, requestWithRetry } from "./requestWithRetry.js";
+import { sleep as defaultSleep } from "~/core/sleep.js";
+import { requestWithRetry } from "./requestWithRetry.js";
 import {
   environmentWithVariablesResponseSchema,
   flowsBundleResponseSchema,

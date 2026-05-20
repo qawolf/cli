@@ -1,3 +1,4 @@
+import { sleep as defaultSleep } from "~/core/sleep.js";
 import type { WireError, WireResult } from "./createTrpcClient.js";
 
 type RequestWithRetryArgs<T> = {
@@ -8,13 +9,10 @@ type RequestWithRetryArgs<T> = {
   backoffMs: readonly number[];
   // Builds the user-facing error message from the WireError.
   describe: (err: WireError) => string;
-  // Override for setTimeout-based sleep (tests pass a no-op). Pass undefined
-  // for production callers; the helper supplies a real setTimeout sleep.
+  // Override for sleep (tests pass a no-op). Pass undefined for production
+  // callers; the helper supplies the real implementation.
   sleep: ((ms: number) => Promise<void>) | undefined;
 };
-
-export const defaultSleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
 
 // Retries `call` on transient network errors only; HTTP/parse errors are
 // deterministic and surface immediately. The infinite loop is bounded by the
