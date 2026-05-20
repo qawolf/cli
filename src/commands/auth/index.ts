@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 
-import { withContext } from "~/commands/context.js";
+import { withAuthContext, withContext } from "~/commands/context.js";
 import { handleLogin } from "./login.js";
 import { handleLogout } from "./logout.js";
 import { handleWhoami } from "./whoami.js";
@@ -23,5 +23,5 @@ export function registerAuthCommand(program: Command): void {
   auth
     .command("whoami")
     .description("Show authentication status")
-    .action(withContext(handleWhoami));
+    .action(withAuthContext(handleWhoami));
 }
