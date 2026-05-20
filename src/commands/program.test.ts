@@ -60,6 +60,12 @@ describe("createProgram", () => {
     expect(browsers).toBeDefined();
   });
 
+  it("registers the init command", () => {
+    const program = createProgram();
+    const init = program.commands.find((c) => c.name() === "init");
+    expect(init).toBeDefined();
+  });
+
   it("registers the flows run subcommand", () => {
     const program = createProgram();
     const flows = program.commands.find((c) => c.name() === "flows");
