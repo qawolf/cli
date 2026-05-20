@@ -6,6 +6,7 @@ import { createEmulatorPool } from "~/shell/appium/createEmulatorPool.js";
 import { defaultAdb } from "~/shell/appium/emulatorSetup.js";
 import type { AppiumDriver } from "~/shell/appium/types.js";
 import type { RunAndroidFlowDeps } from "./runAndroidFlow.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 type WdioRemote = {
   startRecordingScreen(): Promise<void>;
@@ -40,7 +41,7 @@ async function createSession(
   };
 }
 
-function makeRunnerDeps() {
+function makeRunnerDeps(signals: SignalRegistry) {
   return {
     fs: {
       mkdir: async (p: string, opts?: { recursive?: boolean }) => {
@@ -64,8 +65,7 @@ function makeRunnerDeps() {
         },
       };
     },
-    // Temporary no-op; Task 4 replaces this with the registry threaded through ctx.
-    signals: { register: () => () => {}, shutdown: async () => {} },
+    signals,
     createStorage: <T>() => {
       const als = new AsyncLocalStorage<unknown>();
       return {
@@ -83,7 +83,10 @@ function makeRunnerDeps() {
  * The Appium server starts lazily on the first `boot()` call so web-only
  * runs incur no overhead. `shutdown()` is idempotent.
  */
-export function createAndroidDeps(envDir: string): {
+export function createAndroidDeps(
+  envDir: string,
+  signals: SignalRegistry,
+): {
   deps: RunAndroidFlowDeps;
   boot: (avdNames: string[]) => Promise<void>;
   shutdown: () => void;
@@ -94,7 +97,7 @@ export function createAndroidDeps(envDir: string): {
   let serverStarted = false;
 
   const deps: RunAndroidFlowDeps = {
-    ...makeRunnerDeps(),
+    ...makeRunnerDeps(signals),
     appiumServer: serverHandle,
     emulatorPool: pool,
     createSession,

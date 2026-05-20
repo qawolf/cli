@@ -104,7 +104,7 @@ export async function handleFlowsRun(
   const resolvedDir = envDir ?? cwd;
 
   await deps.configureTestkit(resolvedDir);
-  const android = createAndroidDeps(resolvedDir);
+  const android = createAndroidDeps(resolvedDir, ctx.signals);
   return deps.flowsRun(ctx, expandedFiles, flags, {
     peekFlowMeta: defaultPeekFlowMeta,
     installBrowsers: (innerCtx, browsers) =>
@@ -114,7 +114,7 @@ export async function handleFlowsRun(
         playwrightCliPath: resolvePlaywrightCli(resolvedDir),
       }),
     runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: await deps.runWebFlowDeps(resolvedDir),
+    runWebFlowDeps: await deps.runWebFlowDeps(resolvedDir, ctx.signals),
     runAndroidFlow: defaultRunAndroidFlow,
     runAndroidFlowDeps: android.deps,
     bootAndroid: android.boot,

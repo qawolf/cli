@@ -4,9 +4,16 @@ import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import { pathToFileURL } from "node:url";
 
 import type { RunWebFlowDeps } from "./runWebFlow.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+
+const noopSignals: SignalRegistry = {
+  register: () => () => {},
+  shutdown: async () => {},
+};
 
 export async function defaultRunWebFlowDeps(
   cwd = process.cwd(),
+  signals: SignalRegistry = noopSignals,
 ): Promise<RunWebFlowDeps> {
   // Loaded via import.meta.resolve so the binary finds playwright in the
   // project's node_modules rather than alongside the CLI binary. Dynamic
@@ -55,8 +62,7 @@ export async function defaultRunWebFlowDeps(
         },
       };
     },
-    // Temporary no-op; Task 4 replaces this with the registry threaded through ctx.
-    signals: { register: () => () => {}, shutdown: async () => {} },
+    signals,
     createStorage: <T>() => {
       // Stored as `unknown` internally; casts on the boundary keep the outer T
       // contract while sidestepping TS's inability to unify the outer T with
