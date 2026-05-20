@@ -5,7 +5,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = join(import.meta.dirname, "..");
 
 function readVersion(pkgName: string): string {
   const raw = readFileSync(
