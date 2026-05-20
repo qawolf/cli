@@ -46,7 +46,7 @@ export async function requestBundle(
     baseUrl: deps.baseUrl,
     fetch: deps.fetch,
   });
-  const data = await requestWithRetry({
+  const result = await requestWithRetry({
     call: () =>
       trpcClient.mutation(
         "gitwolf.getFlowsBundleUrl",
@@ -57,7 +57,8 @@ export async function requestBundle(
     describe: (err) => describeBundleRequestError(err, deps.baseUrl),
     sleep: deps.sleep,
   });
-  return { signedUrl: data.url };
+  if (!result.ok) throw new Error(result.error);
+  return { signedUrl: result.value.url };
 }
 
 type DownloadBundleDeps = {

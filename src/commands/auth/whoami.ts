@@ -1,8 +1,5 @@
-import {
-  makeDefaultDeps,
-  resolveApiKey,
-  validateApiKey,
-} from "~/domains/auth/index.js";
+import { requireApiKey, validateApiKey } from "~/domains/auth/index.js";
+import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
 import {
   type CommandContext,
   type CommandResult,
@@ -12,20 +9,17 @@ import { authCopy } from "~/core/copy/index.js";
 export async function handleWhoami(
   ctx: CommandContext,
 ): Promise<CommandResult> {
-  const resolved = await resolveApiKey(ctx.configDir);
-
-  if (!resolved) {
-    ctx.ui.error(authCopy.ci.errorTitle, authCopy.ci.errorBody);
-    return { error: "not authenticated" };
-  }
+  const resolved = await requireApiKey(ctx.configDir);
 
   ctx.ui.gap();
   ctx.ui.intro(authCopy.title);
 
-  const validation = await validateApiKey(
-    resolved.key,
-    makeDefaultDeps(ctx.apiBaseUrl),
-  );
+  const validation = await validateApiKey({
+    platform: createPlatformClient(resolved.key, {
+      baseUrl: ctx.apiBaseUrl,
+      fetch: globalThis.fetch,
+    }),
+  });
 
   if (!validation.valid) {
     if (ctx.ui.mode === "human") {

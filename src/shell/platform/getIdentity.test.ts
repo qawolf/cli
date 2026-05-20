@@ -52,7 +52,7 @@ describe("getIdentity", () => {
     expect(result).toEqual({ ok: true, data: { team } });
   });
 
-  it("extracts `error` from JSON body on auth failure", async () => {
+  it("returns http WireError with status on auth failure", async () => {
     const result = await getIdentity("qawolf_badkey", {
       fetch: createFetchMock(
         new Response('{"error":"You are not authenticated."}', {
@@ -65,12 +65,15 @@ describe("getIdentity", () => {
 
     expect(result).toEqual({
       ok: false,
-      status: 401,
-      error: "You are not authenticated.",
+      error: {
+        kind: "http",
+        status: 401,
+        body: '{"error":"You are not authenticated."}',
+      },
     });
   });
 
-  it("falls back to statusText when body is not JSON", async () => {
+  it("returns http WireError with raw body on non-JSON response", async () => {
     const result = await getIdentity("qawolf_key", {
       fetch: createFetchMock(
         new Response("<html>Bad Gateway</html>", {
@@ -84,14 +87,14 @@ describe("getIdentity", () => {
 
     expect(result).toEqual({
       ok: false,
-      status: 502,
-      error: "Bad Gateway",
+      error: { kind: "http", status: 502, body: "<html>Bad Gateway</html>" },
     });
   });
 
-  it("returns error without status on network failure", async () => {
+  it("returns network WireError on fetch failure", async () => {
+    const cause = new Error("fetch failed");
     const mockFetch = mock<typeof fetch>().mockRejectedValue(
-      Error("fetch failed"),
+      cause,
     ) as unknown as typeof fetch;
 
     const result = await getIdentity("qawolf_key", {
@@ -99,23 +102,17 @@ describe("getIdentity", () => {
       baseUrl: "https://test.qawolf.com",
     });
 
-    expect(result).toEqual({
-      ok: false,
-      error: "fetch failed",
-    });
+    expect(result).toEqual({ ok: false, error: { kind: "network", cause } });
   });
 
-  it("returns error when response body does not match schema", async () => {
+  it("returns parse WireError when response body does not match schema", async () => {
     const result = await getIdentity("qawolf_key", {
       fetch: createFetchMock(jsonResponse({ unexpected: "shape" })),
       baseUrl: "https://test.qawolf.com",
     });
 
-    expect(result).toEqual({
-      ok: false,
-      status: 200,
-      error: "Unexpected response format",
-    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.kind).toBe("parse");
   });
 
   it("uses deps.baseUrl in the request URL", async () => {

@@ -22,3 +22,16 @@ export async function resolveApiKey(
 
   return undefined;
 }
+
+export async function requireApiKey(
+  configDir: string,
+  deps: ResolveApiKeyDeps = { loadApiKey, env: process.env },
+): Promise<ApiKeyResult> {
+  const result = await resolveApiKey(configDir, deps);
+  if (!result) {
+    throw new Error(
+      "QAWOLF_API_KEY is not set. Set it in your environment, or run 'qawolf auth login'. See 'qawolf doctor'.",
+    );
+  }
+  return result;
+}
