@@ -4,7 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import cliPackageJson from "../../../../package.json" with { type: "json" };
 
 import {
-  type CommandContext,
+  type AuthCommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
 import { pluralize } from "~/core/pluralize.js";
@@ -17,8 +17,6 @@ export type FlowsPullOptions = {
   readonly env: string;
   readonly out?: string;
   readonly yes?: boolean;
-  /** Resolved API key — must be provided by the command layer. */
-  readonly apiKey: string;
 };
 
 function formatPullSummary(
@@ -51,7 +49,7 @@ type HandleFlowsPullDeps = {
 };
 
 export async function handleFlowsPull(
-  ctx: CommandContext,
+  ctx: AuthCommandContext,
   opts: FlowsPullOptions,
   deps: HandleFlowsPullDeps = {
     flowsVersion: cliPackageJson.dependencies["@qawolf/flows"],
@@ -70,16 +68,10 @@ export async function handleFlowsPull(
   // in. Idempotent across re-pulls.
   await mkdir(assetsAbs, { recursive: true });
   const yes = opts.yes ?? false;
-  const fetch = globalThis.fetch;
   let archive: string | undefined;
 
   try {
-    const fetched = await fetchBundleAndEnvVars(
-      ctx,
-      opts.env,
-      opts.apiKey,
-      fetch,
-    );
+    const fetched = await fetchBundleAndEnvVars(ctx, opts.env);
     archive = fetched.tmpArchive;
 
     const safety = await checkSafety({

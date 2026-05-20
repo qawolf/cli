@@ -3,14 +3,14 @@ import { relative } from "node:path";
 import type { CheckResult } from "~/domains/doctor/types.js";
 import { errorMessage } from "~/core/errors.js";
 
-type FileAssetCategory = "team-storage" | "runner-only-dir" | "mobile-input";
+type FileAssetCategory = "file-asset" | "mobile-input";
 
 const fileAssetVarPatterns: readonly {
   readonly pattern: string;
   readonly category: FileAssetCategory;
 }[] = [
-  { pattern: "TEAM_STORAGE_DIR", category: "team-storage" },
-  { pattern: "QAWOLF_*_DIR", category: "runner-only-dir" },
+  { pattern: "TEAM_STORAGE_DIR", category: "file-asset" },
+  { pattern: "QAWOLF_*_DIR", category: "file-asset" },
   { pattern: "RUN_*_DIR", category: "mobile-input" },
   { pattern: "RUN_INPUT_PATH", category: "mobile-input" },
 ];
@@ -33,10 +33,8 @@ const compiledByCategory = fileAssetVarPatterns.map(
 export const fileAssetsWarnReasons: Readonly<
   Record<FileAssetCategory, string>
 > = {
-  "team-storage":
-    "flow references team-storage assets; ensure required files are present in the local assets/ directory before running",
-  "runner-only-dir":
-    "flow references a runner-only output directory that the local CLI does not configure; set the env var manually if you need to capture output",
+  "file-asset":
+    "file assets aren't pulled in v0.1; this flow can't run locally",
   "mobile-input":
     "mobile build inputs aren't mounted locally; provide the APK path via a local env var",
 };
