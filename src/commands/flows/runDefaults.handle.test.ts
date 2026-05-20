@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { handleFlowsRun, type HandleFlowsRunDeps } from "./runDefaults.js";
+
+const noopSignals: SignalRegistry = {
+  register: () => () => {},
+  shutdown: async () => {},
+};
 
 // handleFlowsRun accepts injectable deps, so no mock.module() is needed.
 
@@ -55,6 +61,7 @@ function makeCtx(): CommandContext {
     apiBaseUrl: "https://app.qawolf.com",
     outputMode: "human",
     isInteractive: false,
+    signals: noopSignals,
     ui: {
       withProgress: async (tasks: { task: () => Promise<void> }[]) => {
         for (const t of tasks) await t.task();

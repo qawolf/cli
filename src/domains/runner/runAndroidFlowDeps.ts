@@ -91,7 +91,7 @@ export function createAndroidDeps(
   boot: (avdNames: string[]) => Promise<void>;
   shutdown: () => void;
 } {
-  const pool = createEmulatorPool({ deps: { adb: defaultAdb } });
+  const pool = createEmulatorPool({ signals, deps: { adb: defaultAdb } });
   // Mutable placeholder populated by boot() before any flow dispatches.
   const serverHandle = { port: 0, home: "", stop: () => {} };
   let serverStarted = false;
