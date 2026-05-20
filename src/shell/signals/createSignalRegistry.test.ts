@@ -103,9 +103,11 @@ describe("createSignalRegistry", () => {
     const elapsed = Date.now() - start;
 
     expect(elapsed).toBeLessThan(200);
-    expect(warnings.some((w) => w.includes("cleanup") && w.includes("1"))).toBe(
-      true,
-    );
+    expect(
+      warnings.some((w) =>
+        w.startsWith("[signals] 1 cleanup(s) did not finish"),
+      ),
+    ).toBe(true);
   });
 
   it("an error in one cleanup does not block other cleanups", async () => {

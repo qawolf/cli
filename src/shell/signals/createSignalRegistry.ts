@@ -35,6 +35,8 @@ export function createSignalRegistry(
       const snapshot = [...cleanups].reverse();
       cleanups.length = 0;
       shutdownPromise = (async () => {
+        // settled is read after the timeout macrotask fires, by which point every
+        // pending settled++ microtask has drained — so the count is reliable.
         let settled = 0;
         const allSettled = Promise.allSettled(
           snapshot.map(async (fn) => {
