@@ -7,11 +7,12 @@ import {
   type CommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
-import { pluralize } from "~/core/pluralize.js";
 import { manifestFilename } from "~/shell/manifest/io.js";
 import { fetchBundleAndEnvVars } from "./fetchPhase.js";
 import { checkSafety, validateEnvId } from "./pull.js";
 import { stageBundle } from "./stage.js";
+import { formatPullSummary } from "./summary.js";
+import { syncTeamStorageAssets } from "./teamStorageAssets.js";
 
 export type FlowsPullOptions = {
   readonly env: string;
@@ -19,32 +20,9 @@ export type FlowsPullOptions = {
   readonly yes?: boolean;
   /** Resolved API key — must be provided by the command layer. */
   readonly apiKey: string;
+  /** Authenticated team id — must be provided by the command layer. */
+  readonly teamId: string;
 };
-
-function formatPullSummary(
-  result: {
-    envDir: string;
-    flowCount: number;
-    envVarCount: number;
-    flowsWithTeamStorageRefs: string[];
-  },
-  assetsAbs: string,
-): string {
-  const flows = pluralize(result.flowCount, "flow");
-  const envVars =
-    result.envVarCount === 0
-      ? ""
-      : ` and ${pluralize(result.envVarCount, "environment variable")}`;
-  let summary = `Pulled ${flows}${envVars} into ${result.envDir}`;
-  if (result.flowsWithTeamStorageRefs.length > 0) {
-    const refs = pluralize(result.flowsWithTeamStorageRefs.length, "flow");
-    summary += `\nTeam-storage assets required for ${refs} — populate ${assetsAbs} before running:`;
-    for (const path of result.flowsWithTeamStorageRefs) {
-      summary += `\n  - ${path}`;
-    }
-  }
-  return summary;
-}
 
 type HandleFlowsPullDeps = {
   readonly flowsVersion: string;
@@ -101,7 +79,7 @@ export async function handleFlowsPull(
       return;
     }
 
-    const [result] = await ctx.ui.withProgress(
+    const [result, assetResult] = await ctx.ui.withProgress(
       [
         {
           message: "Extracting bundle",
@@ -117,8 +95,28 @@ export async function handleFlowsPull(
               envVarsFetchedAt: fetched.envVarsFetchedAt,
             }),
         },
+        {
+          message: "Downloading team-storage assets",
+          task: () =>
+            syncTeamStorageAssets(
+              { assetsAbs, teamId: opts.teamId },
+              {
+                apiKey: opts.apiKey,
+                baseUrl: ctx.apiBaseUrl,
+                fetch,
+              },
+            ),
+        },
       ],
-      (results) => formatPullSummary(results[0], assetsAbs),
+      (results) =>
+        formatPullSummary(
+          {
+            ...results[0],
+            assetDownloadedCount: results[1].downloadedCount,
+            assetSkippedCount: results[1].skippedCount,
+          },
+          assetsAbs,
+        ),
     );
 
     if (ctx.ui.mode === "json") {
@@ -131,6 +129,8 @@ export async function handleFlowsPull(
           flowCount: result.flowCount,
           envVarCount: result.envVarCount,
           flowsWithTeamStorageRefs: result.flowsWithTeamStorageRefs,
+          assetDownloadedCount: assetResult.downloadedCount,
+          assetSkippedCount: assetResult.skippedCount,
           manifestPath: join(result.envDir, manifestFilename),
         },
         "",

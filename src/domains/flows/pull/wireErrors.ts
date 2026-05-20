@@ -43,6 +43,13 @@ export function describeEnvVarsRequestError(
   return describeApiRequestError(err, baseUrl, "env-vars");
 }
 
+export function describeTeamStorageRequestError(
+  err: WireError,
+  baseUrl: string,
+): string {
+  return describeApiRequestError(err, baseUrl, "team-storage assets");
+}
+
 export function describeBundleDownloadError(err: WireError): string {
   if (err.kind === "http") {
     if (err.status === 401 || err.status === 403) {
@@ -54,4 +61,20 @@ export function describeBundleDownloadError(err: WireError): string {
     return `Could not reach the flow bundle storage. Check your network connection and try again.`;
   }
   return `The flow bundle download was malformed. Please run \`qawolf flows pull\` again.`;
+}
+
+export function describeTeamStorageDownloadError(
+  path: string,
+  err: WireError,
+): string {
+  if (err.kind === "http") {
+    if (err.status === 401 || err.status === 403) {
+      return `The team-storage download link for ${path} has expired. Please run \`qawolf flows pull\` again to refresh.`;
+    }
+    return `Could not download team-storage asset ${path} (HTTP ${err.status}).`;
+  }
+  if (err.kind === "network") {
+    return `Could not reach team-storage while downloading ${path}. Check your network connection and try again.`;
+  }
+  return `The team-storage download for ${path} was malformed. Please run \`qawolf flows pull\` again.`;
 }

@@ -85,6 +85,7 @@ describe("handleFlowsPull json mode output", () => {
       env: "env-abc",
       out: destDir,
       apiKey: testApiKey,
+      teamId: "team_123",
     });
 
     expect(ui.output).toHaveBeenCalledTimes(1);
@@ -92,6 +93,8 @@ describe("handleFlowsPull json mode output", () => {
       .calls[0] as [Record<string, unknown>, string];
     expect(humanMessage).toBe("");
     expect(Object.keys(payload).sort()).toEqual([
+      "assetDownloadedCount",
+      "assetSkippedCount",
       "assetsDir",
       "env",
       "envDir",
@@ -103,6 +106,8 @@ describe("handleFlowsPull json mode output", () => {
     ]);
     expect(payload).toEqual({
       assetsDir: expect.stringContaining("/assets"),
+      assetDownloadedCount: 0,
+      assetSkippedCount: 0,
       env: "env-abc",
       envDir: destDir,
       fetchedAt: expect.stringMatching(
@@ -132,6 +137,7 @@ describe("handleFlowsPull json mode output", () => {
       env: "env-abc",
       out: destDir,
       apiKey: testApiKey,
+      teamId: "team_123",
     });
 
     expect(ui.output).not.toHaveBeenCalled();
