@@ -1,11 +1,17 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { PassThrough } from "node:stream";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import type {
   AppiumProcess,
   FindFreePortFn,
   SpawnAppiumFn,
 } from "./createAppiumServer.js";
 import { createAppiumServer } from "./createAppiumServer.js";
+
+const noopSignals: SignalRegistry = {
+  register: () => () => {},
+  shutdown: async () => {},
+};
 
 afterEach(() => {
   mock.restore();
@@ -43,7 +49,7 @@ describe("createAppiumServer", () => {
       10,
     );
 
-    const result = await createAppiumServer("/fake/env", {
+    const result = await createAppiumServer("/fake/env", noopSignals, {
       deps: { spawn: spawnFn, findFreePort, resolveAppiumBin },
       options: { appiumHome: "/tmp/appium-home", startTimeoutMs: 1_000 },
     });
@@ -76,7 +82,7 @@ describe("createAppiumServer", () => {
       10,
     );
 
-    const result = await createAppiumServer("/fake/env", {
+    const result = await createAppiumServer("/fake/env", noopSignals, {
       deps: { spawn: spawnFn, findFreePort, resolveAppiumBin },
       options: { appiumHome: "/tmp/appium-home", startTimeoutMs: 1_000 },
     });
@@ -99,7 +105,7 @@ describe("createAppiumServer", () => {
       10,
     );
 
-    const result = await createAppiumServer("/fake/env", {
+    const result = await createAppiumServer("/fake/env", noopSignals, {
       deps: { spawn: spawnFn, findFreePort, resolveAppiumBin },
       options: { appiumHome: "/tmp/appium-home", startTimeoutMs: 1_000 },
     });
@@ -119,7 +125,7 @@ describe("createAppiumServer", () => {
 
     let caught: unknown;
     try {
-      await createAppiumServer("/fake/env", {
+      await createAppiumServer("/fake/env", noopSignals, {
         deps: { spawn: earlyExitSpawn, findFreePort, resolveAppiumBin },
         options: { startTimeoutMs: 5_000 },
       });
@@ -144,7 +150,7 @@ describe("createAppiumServer", () => {
 
     let caught: unknown;
     try {
-      await createAppiumServer("/fake/env", {
+      await createAppiumServer("/fake/env", noopSignals, {
         deps: { spawn: hangingSpawn, findFreePort, resolveAppiumBin },
         options: { startTimeoutMs: 50 },
       });
@@ -166,7 +172,7 @@ describe("createAppiumServer", () => {
 
     let caught: unknown;
     try {
-      await createAppiumServer("/fake/env", {
+      await createAppiumServer("/fake/env", noopSignals, {
         deps: { spawn: spawnFn, findFreePort, resolveAppiumBin: failResolve },
       });
     } catch (e) {

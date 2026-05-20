@@ -114,7 +114,7 @@ export function createAndroidDeps(
       );
     }
     if (!serverStarted) {
-      const server = await createAppiumServer(envDir);
+      const server = await createAppiumServer(envDir, signals);
       Object.assign(serverHandle, server);
       serverStarted = true;
     }
