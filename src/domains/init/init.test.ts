@@ -135,4 +135,40 @@ describe("handleInit", () => {
 
     expect(await pathExists(join(dir, "package.json"))).toBe(false);
   });
+
+  it("should skip package.json update when confirm returns false", async () => {
+    const { ctx, messages } = makeCtx(false);
+    await fsWriteFile(
+      join(dir, "package.json"),
+      JSON.stringify({ name: "app" }),
+    );
+
+    await handleInit(ctx, { yes: false }, makeDeps(dir));
+
+    const pkg = JSON.parse(
+      await fsReadFile(join(dir, "package.json"), "utf-8"),
+    ) as Record<string, unknown>;
+    expect(pkg["scripts"]).toBeUndefined();
+    expect(
+      messages.some(
+        (m) => m.method === "info" && m.text.includes("package.json"),
+      ),
+    ).toBe(true);
+  });
+
+  it("should warn when package.json is not valid JSON", async () => {
+    const { ctx, messages } = makeCtx();
+    await fsWriteFile(join(dir, "package.json"), "not json {");
+
+    await handleInit(ctx, { yes: false }, makeDeps(dir));
+
+    expect(await fsReadFile(join(dir, "package.json"), "utf-8")).toBe(
+      "not json {",
+    );
+    expect(
+      messages.some(
+        (m) => m.method === "warn" && m.text.includes("not valid JSON"),
+      ),
+    ).toBe(true);
+  });
 });

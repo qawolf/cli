@@ -40,7 +40,7 @@ export async function handleInit(
   await writeWithPrompt(ctx, configPath, qawolfConfigTs, opts.yes, deps);
   await writeWithPrompt(ctx, flowPath, exampleFlowTs, opts.yes, deps);
   await writeWithPrompt(ctx, gitignorePath, qawolfGitignore, opts.yes, deps);
-  await mergePackageJsonScript(ctx, deps);
+  await mergePackageJsonScript(ctx, opts.yes, deps);
 
   ctx.ui.outro(
     "Run `qawolf auth login`, then `qawolf flows pull`, then `qawolf flows run`.",
@@ -57,7 +57,10 @@ async function writeWithPrompt(
   const relPath = relative(deps.cwd, filePath);
 
   if (await deps.pathExists(filePath)) {
-    const confirmed = await ctx.ui.confirm(`Overwrite ${relPath}?`, { yes });
+    const confirmed = await ctx.ui.confirm(`Overwrite ${relPath}?`, {
+      yes,
+      destructive: true,
+    });
     if (!confirmed.ok || !confirmed.value) {
       ctx.ui.info(`Skipped ${relPath}`);
       return;
@@ -71,6 +74,7 @@ async function writeWithPrompt(
 
 async function mergePackageJsonScript(
   ctx: CommandContext,
+  yes: boolean,
   deps: InitDeps,
 ): Promise<void> {
   const pkgPath = join(deps.cwd, "package.json");
@@ -81,6 +85,7 @@ async function mergePackageJsonScript(
   try {
     raw = await deps.readFile(pkgPath, "utf-8");
   } catch {
+    ctx.ui.warn("Could not read package.json — skipped adding `test:e2e`");
     return;
   }
 
@@ -88,12 +93,22 @@ async function mergePackageJsonScript(
   try {
     pkg = JSON.parse(raw) as Record<string, unknown>;
   } catch {
+    ctx.ui.warn("package.json is not valid JSON — skipped adding `test:e2e`");
     return;
   }
 
   const scripts = (pkg["scripts"] ?? {}) as Record<string, string>;
   if (scripts["test:e2e"]) {
     ctx.ui.warn("package.json already has `test:e2e` — skipped");
+    return;
+  }
+
+  const confirmed = await ctx.ui.confirm(
+    "Add `test:e2e` script to package.json?",
+    { yes, destructive: true },
+  );
+  if (!confirmed.ok || !confirmed.value) {
+    ctx.ui.info("Skipped package.json");
     return;
   }
 
