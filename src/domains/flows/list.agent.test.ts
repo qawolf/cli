@@ -1,9 +1,15 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import type { CommandContext } from "~/shell/commandContext.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
 import { callsOf, makeFakeUI } from "~/domains/runner/run.fixtures.js";
+
+const noopSignals: SignalRegistry = {
+  register: () => () => {},
+  shutdown: async () => {},
+};
 
 afterEach(() => {
   mock.restore();
@@ -18,6 +24,7 @@ function makeAgentCtx(ui = makeFakeUI()): CommandContext {
     outputMode: "agent",
     isInteractive: false,
     apiBaseUrl: "https://example.invalid",
+    signals: noopSignals,
   };
 }
 

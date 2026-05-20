@@ -1,4 +1,4 @@
-export type Cleanup = () => void | Promise<void>;
+type Cleanup = () => void | Promise<void>;
 
 export type SignalRegistry = {
   register: (cleanup: Cleanup) => () => void;

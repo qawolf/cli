@@ -1,5 +1,6 @@
 import { Command } from "commander";
 
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { registerAuthCommand } from "./auth/index.js";
 import { registerDoctorCommand } from "./doctor/index.js";
 import { registerFlowsCommand } from "./flows/index.js";
@@ -8,7 +9,11 @@ import { registerInstallCommand } from "./install/index.js";
 import { exitCodes, exit } from "~/shell/exit.js";
 import packageJson from "../../package.json" with { type: "json" };
 
-export function createProgram(): Command {
+export function createProgram({
+  signals,
+}: {
+  signals: SignalRegistry;
+}): Command {
   const program = new Command()
     .name("qawolf")
     .description("Run QA Wolf flows locally")
@@ -19,11 +24,11 @@ export function createProgram(): Command {
       exit(err.exitCode === 0 ? exitCodes.success : exitCodes.invalidArgs);
     });
 
-  registerAuthCommand(program);
-  registerDoctorCommand(program);
-  registerFlowsCommand(program);
-  registerInitCommand(program);
-  registerInstallCommand(program);
+  registerAuthCommand(program, signals);
+  registerDoctorCommand(program, signals);
+  registerFlowsCommand(program, signals);
+  registerInitCommand(program, signals);
+  registerInstallCommand(program, signals);
 
   return program;
 }

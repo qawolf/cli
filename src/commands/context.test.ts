@@ -2,6 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { Command } from "commander";
 
 import { withAuthContext, withContext } from "~/commands/context.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+
+const noopSignals: SignalRegistry = {
+  register: () => () => {},
+  shutdown: async () => {},
+};
 
 function fakeCommand(): Command {
   return {
@@ -29,7 +35,7 @@ describe("withAuthContext exit code plumbing", () => {
   };
 
   it("sets exitCode to 1 when requireApiKey throws", async () => {
-    await withAuthContext(async () => undefined, {
+    await withAuthContext(noopSignals, async () => undefined, {
       requireApiKey: failRequireApiKey,
     })({}, fakeCommand());
 
@@ -42,6 +48,7 @@ describe("withAuthContext exit code plumbing", () => {
       source: "env" as const,
     });
     await withAuthContext(
+      noopSignals,
       async () => {
         throw new Error("handler boom");
       },
@@ -54,28 +61,31 @@ describe("withAuthContext exit code plumbing", () => {
 
 describe("withContext exit code plumbing", () => {
   it("leaves exitCode at 0 when the action returns undefined", async () => {
-    await withContext(async () => undefined)({}, fakeCommand());
+    await withContext(noopSignals, async () => undefined)({}, fakeCommand());
 
     expect(process.exitCode).toBe(0);
   });
 
   it("sets exitCode to 1 when the action returns { error } without exitCode", async () => {
-    await withContext(async () => ({ error: "boom" }))({}, fakeCommand());
+    await withContext(noopSignals, async () => ({ error: "boom" }))(
+      {},
+      fakeCommand(),
+    );
 
     expect(process.exitCode).toBe(1);
   });
 
   it("uses result.exitCode when provided (e.g. 2 for invalid-args)", async () => {
-    await withContext(async () => ({ error: "bad flag", exitCode: 2 }))(
-      {},
-      fakeCommand(),
-    );
+    await withContext(noopSignals, async () => ({
+      error: "bad flag",
+      exitCode: 2,
+    }))({}, fakeCommand());
 
     expect(process.exitCode).toBe(2);
   });
 
   it("sets exitCode to 1 when the action throws", async () => {
-    await withContext(async () => {
+    await withContext(noopSignals, async () => {
       throw new Error("boom");
     })({}, fakeCommand());
 
