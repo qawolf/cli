@@ -1,5 +1,37 @@
 import type { WireError } from "./createTrpcClient.js";
 
+export function describeIdentityError(err: WireError): string {
+  if (err.kind === "http") {
+    if (err.status === 401 || err.status === 403) {
+      return "API key is invalid or unauthorized";
+    }
+    const detail = parseErrorBody(err.body);
+    return `Could not verify API key: ${detail || `HTTP ${err.status}`}`;
+  }
+  if (err.kind === "network") {
+    return `Could not verify API key: ${err.cause.message}`;
+  }
+  return "Could not verify API key: unexpected response format";
+}
+
+function parseErrorBody(body: string): string {
+  if (!body) return "";
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      "error" in parsed &&
+      typeof (parsed as { error: unknown }).error === "string"
+    ) {
+      return (parsed as { error: string }).error;
+    }
+  } catch {
+    // not JSON; fall through
+  }
+  return "";
+}
+
 export function describeRequestError(
   err: WireError,
   baseUrl: string,

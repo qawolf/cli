@@ -6,11 +6,11 @@ import { unlink } from "~/shell/fs.js";
 import { createTrpcClient } from "./createTrpcClient.js";
 import {
   describeBundleDownloadError,
+  describeIdentityError,
   describeRequestError,
 } from "./describeErrors.js";
 import { fetchSignedUrl } from "./fetchSignedUrl.js";
 import { getIdentity, type IdentityResponse } from "./getIdentity.js";
-import { sleep as defaultSleep } from "~/core/sleep.js";
 import { type PlatformResult, requestWithRetry } from "./requestWithRetry.js";
 import {
   environmentWithVariablesResponseSchema,
@@ -43,7 +43,6 @@ export function createPlatformClient(
   deps: Deps,
 ): PlatformClient {
   const trpc = createTrpcClient(apiKey, deps);
-  const sleep = deps.sleep ?? defaultSleep;
 
   async function getFlowsBundleUrlImpl(
     envId: string,
@@ -65,28 +64,12 @@ export function createPlatformClient(
 
   return {
     async getIdentity() {
-      for (let attempt = 0; ; attempt++) {
-        const result = await getIdentity(apiKey, deps);
-        if (result.ok) return { ok: true, value: result.data };
-        if ("status" in result) {
-          if (result.status === 401 || result.status === 403) {
-            return { ok: false, error: "API key is invalid or unauthorized" };
-          }
-          return {
-            ok: false,
-            error: `Could not verify API key: ${result.error}`,
-          };
-        }
-        // Network error — retry if budget remains.
-        const backoff = requestBackoffMs[attempt];
-        if (backoff === undefined) {
-          return {
-            ok: false,
-            error: `Could not verify API key: ${result.error}`,
-          };
-        }
-        await sleep(backoff);
-      }
+      return requestWithRetry({
+        call: () => getIdentity(apiKey, deps),
+        backoffMs: requestBackoffMs,
+        describe: describeIdentityError,
+        sleep: deps.sleep,
+      });
     },
 
     getFlowsBundleUrl: getFlowsBundleUrlImpl,
