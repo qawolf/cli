@@ -13,9 +13,7 @@ function makeDeps(): RunnerDeps {
       exitCode: Promise.resolve(0),
       kill: () => {},
     }),
-    signals: {
-      on: () => () => {},
-    },
+    signals: { register: () => () => {}, shutdown: async () => {} },
     createStorage: <T>() => ({
       run: async (_store: T, callback: () => Promise<void>) => callback(),
       getStore: () => undefined,
@@ -48,10 +46,11 @@ describe("createRunner — guards and edge cases", () => {
       deps: {
         ...makeDeps(),
         signals: {
-          on: (_sig: string, handler: () => void) => {
-            signalHandler = handler;
+          register: (cleanup: () => void) => {
+            signalHandler = cleanup;
             return () => {};
           },
+          shutdown: async () => {},
         },
       },
       options: { retries: 0, outputDir: "/tmp" },

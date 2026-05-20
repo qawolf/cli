@@ -24,9 +24,8 @@ export type FlowDefinition = {
   callback: (deps: FlowDeps) => Promise<void>;
 };
 
-export type SignalRegistry = {
-  on: (signal: NodeJS.Signals, handler: () => void) => () => void;
-};
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+export type { SignalRegistry };
 
 export type AsyncStorage<T> = {
   run: (store: T, callback: () => Promise<void>) => Promise<void>;

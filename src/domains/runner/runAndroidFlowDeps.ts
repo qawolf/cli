@@ -64,14 +64,8 @@ function makeRunnerDeps() {
         },
       };
     },
-    signals: {
-      on: (signal: NodeJS.Signals, handler: () => void) => {
-        process.on(signal, handler);
-        return () => {
-          process.off(signal, handler);
-        };
-      },
-    },
+    // Temporary no-op; Task 4 replaces this with the registry threaded through ctx.
+    signals: { register: () => () => {}, shutdown: async () => {} },
     createStorage: <T>() => {
       const als = new AsyncLocalStorage<unknown>();
       return {

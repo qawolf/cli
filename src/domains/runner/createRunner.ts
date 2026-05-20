@@ -31,7 +31,7 @@ export function createRunner({
       let attempt = 0;
       let aborted = false;
 
-      const deregister = deps.signals.on("SIGTERM", () => {
+      const deregister = deps.signals.register(() => {
         aborted = true;
       });
 

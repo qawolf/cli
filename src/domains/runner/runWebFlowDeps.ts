@@ -55,14 +55,8 @@ export async function defaultRunWebFlowDeps(
         },
       };
     },
-    signals: {
-      on: (signal, handler) => {
-        process.on(signal, handler);
-        return () => {
-          process.off(signal, handler);
-        };
-      },
-    },
+    // Temporary no-op; Task 4 replaces this with the registry threaded through ctx.
+    signals: { register: () => () => {}, shutdown: async () => {} },
     createStorage: <T>() => {
       // Stored as `unknown` internally; casts on the boundary keep the outer T
       // contract while sidestepping TS's inability to unify the outer T with

@@ -18,7 +18,7 @@ export function makeRunnerDeps(): RunnerDeps {
       unlink: async () => {},
     },
     spawn: () => ({ exitCode: Promise.resolve(0), kill: () => {} }),
-    signals: { on: () => () => {} },
+    signals: { register: () => () => {}, shutdown: async () => {} },
     createStorage: <T>() => ({
       run: async (_store: T, callback: () => Promise<void>) => callback(),
       getStore: () => undefined,
