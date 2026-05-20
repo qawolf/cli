@@ -83,10 +83,19 @@ describe("checkAndroid: adb", () => {
     expect(spawn).toHaveBeenCalledWith("adb", ["--version"]);
   });
 
-  it("fails when adb cannot launch", async () => {
-    const spawn = spawnRouter({ [adbPath]: launchFail });
+  it("fails when adb cannot launch, surfacing the spawn error and attempted path", async () => {
+    const spawn = spawnRouter({
+      [adbPath]: {
+        exitCode: -1,
+        stdout: "",
+        stderr: "EACCES: permission denied",
+      },
+    });
     const results = await checkAndroid(baseDeps({ spawn }));
-    expect(findResult(results, "adb")?.status).toBe("fail");
+    const adb = findResult(results, "adb");
+    expect(adb?.status).toBe("fail");
+    expect(adb?.detail).toContain(adbPath);
+    expect(adb?.detail).toContain("EACCES");
   });
 
   it("fails when adb exits non-zero", async () => {
@@ -101,10 +110,19 @@ describe("checkAndroid: adb", () => {
 });
 
 describe("checkAndroid: android-emulator", () => {
-  it("fails when the emulator binary cannot launch", async () => {
-    const spawn = spawnRouter({ [emulatorPath]: launchFail });
+  it("fails when the emulator binary cannot launch, surfacing the spawn error and attempted path", async () => {
+    const spawn = spawnRouter({
+      [emulatorPath]: {
+        exitCode: -1,
+        stdout: "",
+        stderr: "ENOENT: no such file or directory",
+      },
+    });
     const results = await checkAndroid(baseDeps({ spawn }));
-    expect(findResult(results, "android-emulator")?.status).toBe("fail");
+    const emulator = findResult(results, "android-emulator");
+    expect(emulator?.status).toBe("fail");
+    expect(emulator?.detail).toContain(emulatorPath);
+    expect(emulator?.detail).toContain("ENOENT");
   });
 
   it("passes when emulator -version exits 0", async () => {
@@ -114,7 +132,7 @@ describe("checkAndroid: android-emulator", () => {
 });
 
 describe("checkAndroid: android-avd", () => {
-  it("emits one warn per missing AVD when emulator -list-avds doesn't include it", async () => {
+  it("emits a single aggregated warn listing all missing AVDs", async () => {
     const spawn = mock<SpawnFn>((_cmd, args) => {
       if (args[0] === "-list-avds") {
         return Promise.resolve({

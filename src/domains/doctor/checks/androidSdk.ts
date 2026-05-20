@@ -40,7 +40,7 @@ export async function checkAdb(
     return {
       name: "adb",
       status: "fail",
-      detail: `adb not found at ${bin}. Install Android SDK platform-tools.`,
+      detail: `Could not launch adb at ${bin} (${firstLine(result)}). Install Android SDK platform-tools or check the path.`,
     };
   }
   if (result.exitCode !== 0) {
@@ -59,7 +59,7 @@ export async function checkEmulatorBin(
     return {
       name: "android-emulator",
       status: "fail",
-      detail: `emulator not found at ${bin}. Install the Android SDK emulator package.`,
+      detail: `Could not launch emulator at ${bin} (${firstLine(result)}). Install the Android SDK emulator package or check the path.`,
     };
   }
   if (result.exitCode !== 0) {
