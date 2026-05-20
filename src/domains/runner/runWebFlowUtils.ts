@@ -4,23 +4,19 @@ import path from "node:path";
 import type { SignalRegistry } from "./types.js";
 import type {
   BrowserDep,
+  BrowserLaunchOptions,
   ContextSetupOptions,
   MinimalBrowser,
   MinimalBrowserContext,
+  MinimalPage,
 } from "./web/types.js";
-
-type LaunchBrowserOpts = {
-  headless: boolean;
-  slowMo: number;
-  executablePath?: string;
-};
 
 export type LaunchFn = (launchOpts?: {
   browser?: "chrome" | "chromium" | "firefox" | "msedge" | "webkit";
   persistentContext?: boolean;
   userDataDir?: string;
 }) => Promise<
-  | { browserType: string; context: MinimalBrowserContext; page: unknown }
+  | { browserType: string; context: MinimalBrowserContext; page: MinimalPage }
   | {
       browser: MinimalBrowser;
       browserType: string;
@@ -32,27 +28,25 @@ export function createLaunch({
   browsers,
   contextSetup,
   launchBrowserOpts,
-  openBrowsers,
-  openContexts,
   signals,
   timeout,
-  unregisters,
 }: {
   browsers: { chromium: BrowserDep; firefox: BrowserDep; webkit: BrowserDep };
   contextSetup: ContextSetupOptions;
-  launchBrowserOpts: LaunchBrowserOpts;
-  openBrowsers: MinimalBrowser[];
-  openContexts: MinimalBrowserContext[];
+  launchBrowserOpts: BrowserLaunchOptions;
   signals: SignalRegistry;
   timeout: number;
-  unregisters: (() => void)[];
-}): LaunchFn {
+}): { launch: LaunchFn; cleanup: () => Promise<void> } {
+  const openBrowsers: MinimalBrowser[] = [];
+  const openContexts: MinimalBrowserContext[] = [];
+  const unregisters: (() => void)[] = [];
+
   const trackContext = (ctx: MinimalBrowserContext) => {
     openContexts.push(ctx);
     unregisters.push(signals.register(() => ctx.close()));
   };
 
-  return async (launchOpts) => {
+  const launch: LaunchFn = async (launchOpts) => {
     const browserName = normalizeBrowserName(launchOpts?.browser);
     const bt = browsers[browserName];
 
@@ -78,6 +72,16 @@ export function createLaunch({
     trackContext(context);
     return { browser, browserType: browserName, context };
   };
+
+  const cleanup = async () => {
+    for (const unreg of unregisters) unreg();
+    await Promise.allSettled([
+      ...openContexts.map((c) => c.close()),
+      ...openBrowsers.map((b) => b.close()),
+    ]);
+  };
+
+  return { launch, cleanup };
 }
 
 export function normalizeBrowserName(

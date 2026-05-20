@@ -12,12 +12,7 @@ import type {
   RunnerDeps,
   RunnerOptions,
 } from "./types.js";
-import type {
-  MinimalBrowser,
-  MinimalBrowserContext,
-  WebLaunchDeps,
-  WebLaunchOptions,
-} from "./web/types.js";
+import type { WebLaunchDeps, WebLaunchOptions } from "./web/types.js";
 import { FailWithoutRetryError } from "./errors.js";
 import { initFlowRuntime } from "./initFlowRuntime.js";
 import {
@@ -64,9 +59,6 @@ export async function runWebFlow({
     ? (exported as WebFlowDefinition["run"])
     : (exported as WebFlowDefinition).run;
 
-  const openBrowsers: MinimalBrowser[] = [];
-  const openContexts: MinimalBrowserContext[] = [];
-  const unregisters: (() => void)[] = [];
   const { harMode, harPath } = await initHar(deps.fs, options, flowName);
   const videoSize = { width: 1280, height: 720 };
   const contextSetup = buildContextSetup(videoSize, options, harPath);
@@ -79,7 +71,7 @@ export async function runWebFlow({
       : {}),
   };
 
-  const launch = createLaunch({
+  const { launch, cleanup } = createLaunch({
     browsers: {
       chromium: deps.chromium,
       firefox: deps.firefox,
@@ -87,11 +79,8 @@ export async function runWebFlow({
     },
     contextSetup,
     launchBrowserOpts,
-    openBrowsers,
-    openContexts,
     signals: deps.signals,
     timeout: options.timeout,
-    unregisters,
   });
 
   const flowDef: FlowDefinition = {
@@ -123,11 +112,7 @@ export async function runWebFlow({
     passed = result.passed;
     return result;
   } finally {
-    for (const unreg of unregisters) unreg();
-    await Promise.allSettled([
-      ...openContexts.map((c) => c.close()),
-      ...openBrowsers.map((b) => b.close()),
-    ]);
+    await cleanup();
     if (harPath !== undefined) {
       await maybeCleanupHar(deps.fs, harPath, passed, harMode);
     }
