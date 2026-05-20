@@ -1,6 +1,7 @@
-import { basename, dirname, join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { mkdir, pathExists, readFile, writeFile } from "~/shell/fs.js";
+import { flowsVersion } from "~/generated/dependencyVersions.js";
 import { exampleFlowTs, qawolfConfigTs, qawolfGitignore } from "./templates.js";
 
 export type InitOpts = {
@@ -40,7 +41,7 @@ export async function handleInit(
   await writeWithPrompt(ctx, configPath, qawolfConfigTs, opts.yes, deps);
   await writeWithPrompt(ctx, flowPath, exampleFlowTs, opts.yes, deps);
   await writeWithPrompt(ctx, gitignorePath, qawolfGitignore, opts.yes, deps);
-  await mergePackageJsonScript(ctx, opts.yes, deps);
+  await ensurePackageJson(ctx, opts.yes, deps);
 
   ctx.ui.outro(
     "Run `qawolf auth login`, then `qawolf flows pull`, then `qawolf flows run`.",
@@ -72,7 +73,7 @@ async function writeWithPrompt(
   ctx.ui.step(`Created ${relPath}`);
 }
 
-async function mergePackageJsonScript(
+async function ensurePackageJson(
   ctx: CommandContext,
   yes: boolean,
   deps: InitDeps,
@@ -89,9 +90,9 @@ async function mergePackageJsonScript(
       return;
     }
     const pkg = {
-      name: basename(deps.cwd),
-      version: "1.0.0",
+      private: true,
       type: "module",
+      dependencies: { "@qawolf/flows": flowsVersion },
       scripts: { "test:e2e": "qawolf flows run" },
     };
     await deps.writeFile(pkgPath, JSON.stringify(pkg, undefined, 2) + "\n");
