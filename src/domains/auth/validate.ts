@@ -1,25 +1,10 @@
-import {
-  type GetIdentityResult,
-  getIdentity as getIdentityFromPlatform,
-} from "~/shell/platform/getIdentity.js";
+import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
 
 import type { ValidateApiKeyResult } from "./types.js";
 
 type Dependencies = {
-  baseUrl: string;
-  getIdentity: (apiKey: string, baseUrl: string) => Promise<GetIdentityResult>;
+  platform: PlatformClient;
 };
-
-export function makeDefaultDeps(baseUrl: string): Dependencies {
-  return {
-    baseUrl,
-    getIdentity: (apiKey, url) =>
-      getIdentityFromPlatform(apiKey, {
-        baseUrl: url,
-        fetch: globalThis.fetch,
-      }),
-  };
-}
 
 export async function validateApiKey(
   apiKey: string,
@@ -29,26 +14,14 @@ export async function validateApiKey(
     return { valid: false, error: "API key is empty" };
   }
 
-  const result = await deps.getIdentity(apiKey, deps.baseUrl);
+  const result = await deps.platform.getIdentity();
 
   if (!result.ok) {
-    if (
-      "status" in result &&
-      (result.status === 401 || result.status === 403)
-    ) {
-      return {
-        valid: false,
-        error: "API key is invalid or unauthorized",
-      };
-    }
-    return {
-      valid: false,
-      error: `Could not verify API key: ${result.error}`,
-    };
+    return { valid: false, error: result.error };
   }
 
   return {
     valid: true,
-    team: result.data.team,
+    team: result.value.team,
   };
 }

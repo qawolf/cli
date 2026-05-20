@@ -6,6 +6,7 @@ const config: KnipConfig = {
     "src/**/*.test.ts",
     "src/**/*.mock.ts",
     "src/**/*.fixtures.ts",
+    "src/**/*.testUtils.ts",
   ],
   project: ["src/**/*.ts"],
   ignoreDependencies: [

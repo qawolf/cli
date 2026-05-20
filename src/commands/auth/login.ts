@@ -1,9 +1,9 @@
 import {
-  makeDefaultDeps,
   resolveApiKey,
   saveApiKey,
   validateApiKey,
 } from "~/domains/auth/index.js";
+import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
 import {
   type CommandContext,
   type CommandResult,
@@ -42,10 +42,12 @@ export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
       {
         message: authCopy.verifying,
         task: async () => {
-          const v = await validateApiKey(
-            result.value,
-            makeDefaultDeps(ctx.apiBaseUrl),
-          );
+          const v = await validateApiKey(result.value, {
+            platform: createPlatformClient(result.value, {
+              baseUrl: ctx.apiBaseUrl,
+              fetch: globalThis.fetch,
+            }),
+          });
           if (!v.valid) throw Error(v.error);
         },
       },

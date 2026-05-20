@@ -3,9 +3,9 @@
 // ensureDeps.ts. Run automatically via the prepare hook; re-run manually
 // after bumping any of these packages.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
-const root = dirname(import.meta.dirname);
+const root = new URL("..", import.meta.url).pathname;
 
 function readVersion(pkgName: string): string {
   const raw = readFileSync(
