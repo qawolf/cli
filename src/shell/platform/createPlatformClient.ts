@@ -11,15 +11,11 @@ import {
 import { fetchSignedUrl } from "./fetchSignedUrl.js";
 import { getIdentity, type IdentityResponse } from "./getIdentity.js";
 import { sleep as defaultSleep } from "~/core/sleep.js";
-import { requestWithRetry } from "./requestWithRetry.js";
+import { type PlatformResult, requestWithRetry } from "./requestWithRetry.js";
 import {
   environmentWithVariablesResponseSchema,
   flowsBundleResponseSchema,
 } from "./types.js";
-
-export type PlatformResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; error: string };
 
 export type PlatformClient = {
   getIdentity: () => Promise<PlatformResult<IdentityResponse>>;
@@ -52,25 +48,19 @@ export function createPlatformClient(
   async function getFlowsBundleUrlImpl(
     envId: string,
   ): Promise<PlatformResult<{ signedUrl: string }>> {
-    try {
-      const data = await requestWithRetry({
-        call: () =>
-          trpc.mutation(
-            "gitwolf.getFlowsBundleUrl",
-            { envId },
-            flowsBundleResponseSchema,
-          ),
-        backoffMs: requestBackoffMs,
-        describe: (err) => describeRequestError(err, deps.baseUrl),
-        sleep: deps.sleep,
-      });
-      return { ok: true, value: { signedUrl: data.url } };
-    } catch (err: unknown) {
-      return {
-        ok: false,
-        error: err instanceof Error ? err.message : String(err),
-      };
-    }
+    const result = await requestWithRetry({
+      call: () =>
+        trpc.mutation(
+          "gitwolf.getFlowsBundleUrl",
+          { envId },
+          flowsBundleResponseSchema,
+        ),
+      backoffMs: requestBackoffMs,
+      describe: (err) => describeRequestError(err, deps.baseUrl),
+      sleep: deps.sleep,
+    });
+    if (!result.ok) return result;
+    return { ok: true, value: { signedUrl: result.value.url } };
   }
 
   return {
@@ -102,26 +92,19 @@ export function createPlatformClient(
     getFlowsBundleUrl: getFlowsBundleUrlImpl,
 
     async getEnvVars(envId) {
-      try {
-        const data = await requestWithRetry({
-          call: () =>
-            trpc.query(
-              "environment.getEnvironmentWithVariables",
-              { id: envId },
-              environmentWithVariablesResponseSchema,
-            ),
-          backoffMs: requestBackoffMs,
-          describe: (err) =>
-            describeRequestError(err, deps.baseUrl, "env-vars"),
-          sleep: deps.sleep,
-        });
-        return { ok: true, value: data.environmentVariables };
-      } catch (err: unknown) {
-        return {
-          ok: false,
-          error: err instanceof Error ? err.message : String(err),
-        };
-      }
+      const result = await requestWithRetry({
+        call: () =>
+          trpc.query(
+            "environment.getEnvironmentWithVariables",
+            { id: envId },
+            environmentWithVariablesResponseSchema,
+          ),
+        backoffMs: requestBackoffMs,
+        describe: (err) => describeRequestError(err, deps.baseUrl, "env-vars"),
+        sleep: deps.sleep,
+      });
+      if (!result.ok) return result;
+      return { ok: true, value: result.value.environmentVariables };
     },
 
     async downloadBundle(envId) {

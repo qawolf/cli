@@ -1,9 +1,7 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-import type {
-  PlatformClient,
-  PlatformResult,
-} from "~/shell/platform/createPlatformClient.js";
+import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
+import type { PlatformResult } from "~/shell/platform/requestWithRetry.js";
 import type { IdentityResponse } from "~/shell/platform/getIdentity.js";
 import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
 

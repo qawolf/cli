@@ -26,7 +26,7 @@ export async function requestEnvVars(
     baseUrl: deps.baseUrl,
     fetch: deps.fetch,
   });
-  const data = await requestWithRetry({
+  const result = await requestWithRetry({
     call: () =>
       trpcClient.query(
         envVarsTrpcPath,
@@ -37,7 +37,8 @@ export async function requestEnvVars(
     describe: (err) => describeEnvVarsRequestError(err, deps.baseUrl),
     sleep: deps.sleep,
   });
-  return data.environmentVariables;
+  if (!result.ok) throw new Error(result.error);
+  return result.value.environmentVariables;
 }
 
 export async function writeEnvFile(
