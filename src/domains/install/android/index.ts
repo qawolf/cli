@@ -2,7 +2,6 @@ import { isAndroidTarget } from "~/core/flowMeta.js";
 import { pluralize } from "~/core/pluralize.js";
 import { avdNameForTarget, buildSystemImage } from "~/core/androidTargets.js";
 import { parseExecutionTarget } from "@qawolf/flow-targets";
-import type { AndroidExecutionTarget } from "@qawolf/flow-targets";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { SpawnFn } from "~/shell/spawn.js";
 import { installAvds } from "./avd.js";
@@ -103,9 +102,8 @@ function buildAvdSpecs(
     // Re-parse to get systemImage and deviceId. avdNameForTarget already
     // confirmed this is a valid Android target so the parse won't throw here.
     const parsed = parseExecutionTarget(target as ParseArg);
-    const { deviceModel, androidVersion } = (
-      parsed as unknown as AndroidExecutionTarget
-    ).meta;
+    if (parsed.platform !== "android") continue;
+    const { deviceModel, androidVersion } = parsed.meta;
     seen.set(avdName, {
       avdName,
       systemImage: buildSystemImage(androidVersion, arch),

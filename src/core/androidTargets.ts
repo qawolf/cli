@@ -1,5 +1,4 @@
 import { parseExecutionTarget } from "@qawolf/flow-targets";
-import type { AndroidExecutionTarget } from "@qawolf/flow-targets";
 
 export function makeAvdName(
   deviceModel: string,
@@ -21,9 +20,7 @@ export function avdNameForTarget(target: string): string | undefined {
     return undefined;
   }
   if (parsed.platform !== "android") return undefined;
-  const { deviceModel, androidVersion } = (
-    parsed as unknown as AndroidExecutionTarget
-  ).meta;
+  const { deviceModel, androidVersion } = parsed.meta;
   return makeAvdName(deviceModel, androidVersion);
 }
 
