@@ -1,4 +1,4 @@
-import { dirname, join, relative } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { mkdir, pathExists, readFile, writeFile } from "~/shell/fs.js";
 import { exampleFlowTs, qawolfConfigTs, qawolfGitignore } from "./templates.js";
@@ -79,7 +79,25 @@ async function mergePackageJsonScript(
 ): Promise<void> {
   const pkgPath = join(deps.cwd, "package.json");
 
-  if (!(await deps.pathExists(pkgPath))) return;
+  if (!(await deps.pathExists(pkgPath))) {
+    const confirmed = await ctx.ui.confirm(
+      "Create package.json (required to run flows)?",
+      { yes },
+    );
+    if (!confirmed.ok || !confirmed.value) {
+      ctx.ui.info("Skipped package.json");
+      return;
+    }
+    const pkg = {
+      name: basename(deps.cwd),
+      version: "1.0.0",
+      type: "module",
+      scripts: { "test:e2e": "qawolf flows run" },
+    };
+    await deps.writeFile(pkgPath, JSON.stringify(pkg, undefined, 2) + "\n");
+    ctx.ui.step("Created package.json");
+    return;
+  }
 
   const raw = await deps.readFile(pkgPath, "utf-8");
 

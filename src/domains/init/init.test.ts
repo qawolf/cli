@@ -128,8 +128,21 @@ describe("handleInit", () => {
     ).toBe(true);
   });
 
-  it("should not write package.json when none exists", async () => {
-    const { ctx } = makeCtx();
+  it("should create package.json with type:module when none exists", async () => {
+    const { ctx } = makeCtx(true);
+
+    await handleInit(ctx, { yes: false }, makeDeps(dir));
+
+    const pkg = JSON.parse(
+      await fsReadFile(join(dir, "package.json"), "utf-8"),
+    ) as Record<string, unknown>;
+    expect(pkg["type"]).toBe("module");
+    const scripts = pkg["scripts"] as Record<string, string>;
+    expect(scripts["test:e2e"]).toBe("qawolf flows run");
+  });
+
+  it("should skip creating package.json when none exists and confirm returns false", async () => {
+    const { ctx } = makeCtx(false);
 
     await handleInit(ctx, { yes: false }, makeDeps(dir));
 
