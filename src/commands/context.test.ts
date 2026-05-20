@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { Command } from "commander";
 
-import { withContext } from "~/commands/context.js";
+import { withAuthContext, withContext } from "~/commands/context.js";
 
 function fakeCommand(): Command {
   return {
@@ -19,6 +19,37 @@ beforeEach(() => {
 afterEach(() => {
   process.exitCode = 0;
   mock.restore();
+});
+
+describe("withAuthContext exit code plumbing", () => {
+  const failRequireApiKey = async (): Promise<never> => {
+    throw new Error(
+      "QAWOLF_API_KEY is not set. Set it in your environment, or run 'qawolf auth login'.",
+    );
+  };
+
+  it("sets exitCode to 1 when requireApiKey throws", async () => {
+    await withAuthContext(async () => undefined, {
+      requireApiKey: failRequireApiKey,
+    })({}, fakeCommand());
+
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("sets exitCode to 1 when the action throws after auth succeeds", async () => {
+    const okRequireApiKey = async () => ({
+      key: "qawolf_test",
+      source: "env" as const,
+    });
+    await withAuthContext(
+      async () => {
+        throw new Error("handler boom");
+      },
+      { requireApiKey: okRequireApiKey },
+    )({}, fakeCommand());
+
+    expect(process.exitCode).toBe(1);
+  });
 });
 
 describe("withContext exit code plumbing", () => {

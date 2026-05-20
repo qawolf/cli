@@ -8,7 +8,7 @@ afterEach(() => {
   _resetInitCache();
 });
 
-const thisDir = new URL(".", import.meta.url).pathname;
+const thisDir = import.meta.dirname;
 
 describe("initFlowRuntime", () => {
   it("resolves using the CLI's own @qawolf/flows", async () => {

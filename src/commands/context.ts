@@ -65,15 +65,24 @@ export function withContext(
 
 export function withAuthContext(
   fn: AuthContextAction,
+  deps: { requireApiKey?: typeof requireApiKey } = {},
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
     const { ctx, apiBaseUrl } = buildBaseContext(command);
+    const resolved = await (deps.requireApiKey ?? requireApiKey)(
+      ctx.configDir,
+    ).catch((err: unknown) => {
+      ctx.ui.error("Not authenticated", errorMessage(err));
+      process.exitCode = 1;
+      return undefined;
+    });
+    if (resolved === undefined) return;
+
+    const platform = createPlatformClient(resolved.key, {
+      baseUrl: apiBaseUrl,
+      fetch: globalThis.fetch,
+    });
     try {
-      const resolved = await requireApiKey(ctx.configDir);
-      const platform = createPlatformClient(resolved.key, {
-        baseUrl: apiBaseUrl,
-        fetch: globalThis.fetch,
-      });
       const result = await fn({
         ...ctx,
         platform,
