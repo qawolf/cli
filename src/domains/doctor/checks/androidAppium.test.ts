@@ -61,6 +61,45 @@ describe("checkAndroid: appium and uiautomator2-driver", () => {
     expect(driver?.detail).toContain("qawolf install android");
   });
 
+  it("warns uiautomator2-driver with an Appium-failure message when the driver list cannot launch", async () => {
+    const spawn = mock<SpawnFn>((cmd, args) => {
+      if (cmd === appiumBin && args[0] === "driver") {
+        return Promise.resolve({
+          exitCode: -1,
+          stdout: "",
+          stderr: "ENOENT: appium binary corrupt",
+        });
+      }
+      return Promise.resolve(success);
+    });
+    const results = await checkAndroid(baseDeps({ spawn }));
+    const driver = findResult(results, "uiautomator2-driver");
+    expect(driver?.status).toBe("warn");
+    expect(driver?.detail).toContain("appium driver list");
+    expect(driver?.detail).toContain("ENOENT");
+    // Must NOT recommend `qawolf install android` since Appium itself is broken.
+    expect(driver?.detail).not.toContain("qawolf install android");
+  });
+
+  it("warns uiautomator2-driver with an Appium-failure message when the driver list exits non-zero", async () => {
+    const spawn = mock<SpawnFn>((cmd, args) => {
+      if (cmd === appiumBin && args[0] === "driver") {
+        return Promise.resolve({
+          exitCode: 1,
+          stdout: "",
+          stderr: "Unknown command\n",
+        });
+      }
+      return Promise.resolve(success);
+    });
+    const results = await checkAndroid(baseDeps({ spawn }));
+    const driver = findResult(results, "uiautomator2-driver");
+    expect(driver?.status).toBe("warn");
+    expect(driver?.detail).toContain("appium driver list");
+    expect(driver?.detail).toContain("Unknown command");
+    expect(driver?.detail).not.toContain("qawolf install android");
+  });
+
   it("invokes appium driver list with APPIUM_HOME set to the shared qawolf data dir", async () => {
     const spawn = mock<SpawnFn>(() => Promise.resolve(success));
     await checkAndroid(baseDeps({ spawn }));
