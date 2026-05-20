@@ -23,26 +23,6 @@ function makeDeps(result: PlatformResult<IdentityResponse>) {
 }
 
 describe("validateApiKey", () => {
-  it("returns invalid for empty key without calling the API", async () => {
-    const deps = makeDeps({
-      ok: true,
-      value: { team: { createdAt: "", id: "", name: "" } },
-    });
-    const result = await validateApiKey("", deps);
-    expect(result).toEqual({ valid: false, error: "API key is empty" });
-    expect(deps.platform.getIdentity).not.toHaveBeenCalled();
-  });
-
-  it("returns invalid for whitespace-only key without calling the API", async () => {
-    const deps = makeDeps({
-      ok: true,
-      value: { team: { createdAt: "", id: "", name: "" } },
-    });
-    const result = await validateApiKey("   ", deps);
-    expect(result).toEqual({ valid: false, error: "API key is empty" });
-    expect(deps.platform.getIdentity).not.toHaveBeenCalled();
-  });
-
   it("returns valid with team identity on successful verification", async () => {
     const teamData = {
       createdAt: "2024-01-15T00:00:00.000Z",
@@ -51,7 +31,7 @@ describe("validateApiKey", () => {
     };
     const deps = makeDeps({ ok: true, value: { team: teamData } });
 
-    const result = await validateApiKey("qawolf_testapikey123", deps);
+    const result = await validateApiKey(deps);
     expect(result).toEqual({ valid: true, team: teamData });
     expect(deps.platform.getIdentity).toHaveBeenCalled();
   });
@@ -62,7 +42,7 @@ describe("validateApiKey", () => {
       error: "API key is invalid or unauthorized",
     });
 
-    const result = await validateApiKey("qawolf_badkey", deps);
+    const result = await validateApiKey(deps);
     expect(result).toEqual({
       valid: false,
       error: "API key is invalid or unauthorized",
@@ -75,7 +55,7 @@ describe("validateApiKey", () => {
       error: "API key is invalid or unauthorized",
     });
 
-    const result = await validateApiKey("qawolf_disabledteam", deps);
+    const result = await validateApiKey(deps);
     expect(result).toEqual({
       valid: false,
       error: "API key is invalid or unauthorized",
@@ -88,7 +68,7 @@ describe("validateApiKey", () => {
       error: "Could not verify API key: fetch failed",
     });
 
-    const result = await validateApiKey("qawolf_testapikey123", deps);
+    const result = await validateApiKey(deps);
     expect(result).toEqual({
       valid: false,
       error: "Could not verify API key: fetch failed",
@@ -101,7 +81,7 @@ describe("validateApiKey", () => {
       error: "Could not verify API key: Internal Server Error",
     });
 
-    const result = await validateApiKey("qawolf_testapikey123", deps);
+    const result = await validateApiKey(deps);
     expect(result).toEqual({
       valid: false,
       error: "Could not verify API key: Internal Server Error",

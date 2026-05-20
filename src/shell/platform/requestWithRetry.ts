@@ -13,7 +13,7 @@ type RequestWithRetryArgs<T> = {
   sleep: ((ms: number) => Promise<void>) | undefined;
 };
 
-const defaultSleep = (ms: number): Promise<void> =>
+export const defaultSleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 // Retries `call` on transient network errors only; HTTP/parse errors are

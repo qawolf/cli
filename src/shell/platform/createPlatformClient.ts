@@ -10,7 +10,7 @@ import {
 } from "./describeErrors.js";
 import { fetchSignedUrl } from "./fetchSignedUrl.js";
 import { getIdentity, type IdentityResponse } from "./getIdentity.js";
-import { requestWithRetry } from "./requestWithRetry.js";
+import { defaultSleep, requestWithRetry } from "./requestWithRetry.js";
 import {
   environmentWithVariablesResponseSchema,
   flowsBundleResponseSchema,
@@ -40,8 +40,6 @@ type Deps = {
 };
 
 const requestBackoffMs = [500, 1500] as const;
-const defaultSleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
 
 export function createPlatformClient(
   apiKey: string,

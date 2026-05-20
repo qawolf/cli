@@ -14,7 +14,7 @@ export async function handleWhoami(
   ctx.ui.gap();
   ctx.ui.intro(authCopy.title);
 
-  const validation = await validateApiKey(resolved.key, {
+  const validation = await validateApiKey({
     platform: createPlatformClient(resolved.key, {
       baseUrl: ctx.apiBaseUrl,
       fetch: globalThis.fetch,
