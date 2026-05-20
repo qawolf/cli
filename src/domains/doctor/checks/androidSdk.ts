@@ -17,7 +17,7 @@ export function checkHome(
       name: "android-home",
       status: "fail",
       detail:
-        "ANDROID_HOME is not set. Install Android Studio and set ANDROID_HOME to the SDK path.",
+        "ANDROID_HOME (or ANDROID_SDK_ROOT) is not set. Install Android Studio and set ANDROID_HOME to the SDK path.",
     };
   }
   if (!checkExists(androidHome)) {

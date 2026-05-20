@@ -49,6 +49,7 @@ describe("checkAndroid: android-home", () => {
     const home = findResult(results, "android-home");
     expect(home?.status).toBe("fail");
     expect(home?.detail).toContain("ANDROID_HOME");
+    expect(home?.detail).toContain("ANDROID_SDK_ROOT");
   });
 
   it("fails when ANDROID_HOME points at a non-existent dir", async () => {
