@@ -1,50 +1,42 @@
-import { requireApiKey, validateApiKey } from "~/domains/auth/index.js";
-import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
 import {
-  type CommandContext,
+  type AuthCommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
 import { authCopy } from "~/core/copy/index.js";
 
 export async function handleWhoami(
-  ctx: CommandContext,
+  ctx: AuthCommandContext,
 ): Promise<CommandResult> {
-  const resolved = await requireApiKey(ctx.configDir);
-
   ctx.ui.gap();
   ctx.ui.intro(authCopy.title);
 
-  const validation = await validateApiKey({
-    platform: createPlatformClient(resolved.key, {
-      baseUrl: ctx.apiBaseUrl,
-      fetch: globalThis.fetch,
-    }),
-  });
+  const identity = await ctx.platform.getIdentity();
 
-  if (!validation.valid) {
+  if (!identity.ok) {
     if (ctx.ui.mode === "human") {
-      ctx.ui.note(`Source: ${resolved.source}`, authCopy.whoamiFailed);
-      ctx.ui.warn(validation.error);
+      ctx.ui.note(`Source: ${ctx.apiKeySource}`, authCopy.whoamiFailed);
+      ctx.ui.warn(identity.error);
     } else {
       ctx.ui.output(
         {
           authenticated: false,
-          error: validation.error,
-          source: resolved.source,
+          error: identity.error,
+          source: ctx.apiKeySource,
           valid: false,
         },
-        `Authentication failed (source: ${resolved.source}): ${validation.error}`,
+        `Authentication failed (source: ${ctx.apiKeySource}): ${identity.error}`,
       );
     }
     return { error: "invalid key" };
   }
 
+  const { team } = identity.value;
   if (ctx.ui.mode === "human") {
     ctx.ui.note(
       [
-        `Team:   ${validation.team.name}`,
-        `ID:     ${validation.team.id}`,
-        `Source: ${resolved.source}`,
+        `Team:   ${team.name}`,
+        `ID:     ${team.id}`,
+        `Source: ${ctx.apiKeySource}`,
       ].join("\n"),
       authCopy.whoamiAuthenticated,
     );
@@ -53,10 +45,10 @@ export async function handleWhoami(
     ctx.ui.output(
       {
         authenticated: true,
-        source: resolved.source,
-        team: validation.team,
+        source: ctx.apiKeySource,
+        team,
       },
-      `Authenticated as ${validation.team.name} (source: ${resolved.source})`,
+      `Authenticated as ${team.name} (source: ${ctx.apiKeySource})`,
     );
   }
 }
