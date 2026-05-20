@@ -3,23 +3,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-import type { CommandContext } from "~/shell/commandContext.js";
+import type { AuthCommandContext } from "~/shell/commandContext.js";
 import type { UI } from "~/shell/ui/index.js";
+import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
 
 import { makeFakeUI } from "~/domains/runner/run.fixtures.js";
 import { handleFlowsPull } from "./handler.js";
 import { manifestFilename } from "~/shell/manifest/io.js";
-import {
-  buildBundle,
-  makeFakeFetch,
-  testApiKey,
-  testBaseUrl,
-} from "./pull.fixtures.js";
+import { buildBundle } from "./pull.fixtures.js";
 
 let workDir = "";
 let destDir = "";
 let bundleArchive = "";
-const originalFetch = globalThis.fetch;
 
 beforeEach(async () => {
   workDir = await mkdtemp(join(tmpdir(), "qawolf-pull-handler-"));
@@ -29,7 +24,6 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
-  globalThis.fetch = originalFetch;
   mock.restore();
 });
 
@@ -54,38 +48,43 @@ function makeJsonUi(): UI {
   };
 }
 
-function makeCtx(ui: UI): CommandContext {
+function makeCtx(
+  ui: UI,
+  bundlePath: string,
+  envVars: Record<string, string> = {},
+): AuthCommandContext {
   return {
     ui,
     configDir: "/tmp/test-config",
     outputMode: "json",
     isInteractive: false,
-    apiBaseUrl: testBaseUrl,
+    apiBaseUrl: "https://test.qawolf.com",
+    apiKeySource: "env",
+    platform: makeMockPlatformClient({
+      downloadBundle: mock().mockResolvedValue({
+        ok: true,
+        value: { tmpArchive: bundlePath },
+      }),
+      getEnvVars: mock().mockResolvedValue({
+        ok: true,
+        value: envVars,
+      }),
+    }),
   };
 }
 
 describe("handleFlowsPull json mode output", () => {
-  it("emits env, envDir, fetchedAt, flowCount, envVarCount, manifestPath", async () => {
+  it("emits env, envDir, assetsDir, fetchedAt, flowCount, envVarCount, flowsWithTeamStorageRefs, manifestPath", async () => {
     await buildBundle(bundleArchive, {
       flows: [
         { name: "login.flow.ts", data: "// login\n" },
         { name: "checkout.flow.ts", data: "// checkout\n" },
       ],
     });
-    const fakeFetch = makeFakeFetch({
-      kind: "ok",
-      sourceArchive: bundleArchive,
-      envVars: { BASE_URL: "https://example.com" },
-    });
-    globalThis.fetch = fakeFetch.fetch;
     const ui = makeJsonUi();
-    const ctx = makeCtx(ui);
+    const ctx = makeCtx(ui, bundleArchive, { BASE_URL: "https://example.com" });
 
-    await handleFlowsPull(ctx, {
-      env: "env-abc",
-      out: destDir,
-      apiKey: testApiKey,
-    });
+    await handleFlowsPull(ctx, { env: "env-abc", out: destDir });
 
     expect(ui.output).toHaveBeenCalledTimes(1);
     const [payload, humanMessage] = (ui.output as ReturnType<typeof mock>).mock
@@ -120,19 +119,13 @@ describe("handleFlowsPull json mode output", () => {
     await buildBundle(bundleArchive, {
       flows: [{ name: "a.flow.ts", data: "// a\n" }],
     });
-    const fakeFetch = makeFakeFetch({
-      kind: "ok",
-      sourceArchive: bundleArchive,
-    });
-    globalThis.fetch = fakeFetch.fetch;
     const ui: UI = { ...makeJsonUi(), mode: "human" };
-    const ctx: CommandContext = { ...makeCtx(ui), outputMode: "human" };
+    const ctx: AuthCommandContext = {
+      ...makeCtx(ui, bundleArchive),
+      outputMode: "human",
+    };
 
-    await handleFlowsPull(ctx, {
-      env: "env-abc",
-      out: destDir,
-      apiKey: testApiKey,
-    });
+    await handleFlowsPull(ctx, { env: "env-abc", out: destDir });
 
     expect(ui.output).not.toHaveBeenCalled();
   });
