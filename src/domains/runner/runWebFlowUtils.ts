@@ -1,3 +1,5 @@
+import { unsupportedSharedDepNames } from "./unsupportedDepNames.js";
+
 export function normalizeBrowserName(
   browser?: "chrome" | "chromium" | "firefox" | "msedge" | "webkit",
 ): "chromium" | "firefox" | "webkit" {
@@ -14,19 +16,10 @@ export function notSupported(name: string): () => never {
 }
 
 export const unsupportedWebDepNames = [
+  ...unsupportedSharedDepNames,
   "launchElectron",
-  "getInbox",
-  "getOTP",
-  "OTPAuth",
-  "qawolf",
   "readQRCode",
-  "runCommand",
   "saveBaselineScreenshot",
   "selectors",
   "devices",
-  "fetchLatestEnvironmentVariables",
-  "setEnvironmentVariable",
-  "mountCifsShare",
-  "startOpenVpn",
-  "startWireGuard",
 ] as const;
