@@ -22,6 +22,7 @@ describe("getIdentity", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
       id: "team_1",
       name: "Test Team",
+      slug: "acme",
     };
     const mockFetch = createFetchMock(jsonResponse({ team }));
 
@@ -43,6 +44,7 @@ describe("getIdentity", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
       id: "team_1",
       name: "My Team",
+      slug: "acme",
     };
     const result = await getIdentity("qawolf_key", {
       fetch: createFetchMock(jsonResponse({ team })),
@@ -120,6 +122,7 @@ describe("getIdentity", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
       id: "team_1",
       name: "Test Team",
+      slug: "acme",
     };
     const mockFetch = createFetchMock(jsonResponse({ team }));
 
@@ -132,5 +135,23 @@ describe("getIdentity", () => {
       "https://app.qawolf.com/api/v0/identity",
       expect.anything(),
     );
+  });
+
+  it("returns parse WireError when team slug is absent", async () => {
+    const result = await getIdentity("qawolf_key", {
+      fetch: createFetchMock(
+        jsonResponse({
+          team: {
+            createdAt: "2024-01-01T00:00:00.000Z",
+            id: "t1",
+            name: "Test Team",
+          },
+        }),
+      ),
+      baseUrl: "https://test.qawolf.com",
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.kind).toBe("parse");
   });
 });

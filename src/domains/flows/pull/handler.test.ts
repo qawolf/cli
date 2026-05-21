@@ -66,6 +66,12 @@ function makeCtx(
     apiKeySource: "env",
     signals: noopSignals,
     log: () => makeNoopLogger(),
+    team: {
+      id: "t1",
+      name: "Test Team",
+      slug: "test-team",
+      createdAt: "2024-01-01T00:00:00.000Z",
+    },
     platform: makeMockPlatformClient({
       downloadBundle: mock().mockResolvedValue({
         ok: true,

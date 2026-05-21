@@ -10,32 +10,19 @@ export async function handleWhoami(
   ctx.ui.gap();
   ctx.ui.intro(authMessages.title);
 
-  const identity = await ctx.platform.getIdentity();
+  const { team } = ctx;
+  const teamUrl = new URL(
+    "/" + encodeURIComponent(team.slug),
+    ctx.apiBaseUrl,
+  ).toString();
 
-  if (!identity.ok) {
-    if (ctx.ui.mode === "human") {
-      ctx.ui.note(`Source: ${ctx.apiKeySource}`, authMessages.whoamiFailed);
-      ctx.ui.warn(identity.error);
-    } else {
-      ctx.ui.output(
-        {
-          authenticated: false,
-          error: identity.error,
-          source: ctx.apiKeySource,
-          valid: false,
-        },
-        `Authentication failed (source: ${ctx.apiKeySource}): ${identity.error}`,
-      );
-    }
-    return { error: "invalid key" };
-  }
-
-  const { team } = identity.value;
   if (ctx.ui.mode === "human") {
     ctx.ui.note(
       [
         `Team:   ${team.name}`,
         `ID:     ${team.id}`,
+        `Slug:   ${team.slug}`,
+        `URL:    ${teamUrl}`,
         `Source: ${ctx.apiKeySource}`,
       ].join("\n"),
       authMessages.whoamiAuthenticated,
@@ -47,6 +34,7 @@ export async function handleWhoami(
         authenticated: true,
         source: ctx.apiKeySource,
         team,
+        teamUrl,
       },
       `Authenticated as ${team.name} (source: ${ctx.apiKeySource})`,
     );

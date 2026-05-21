@@ -95,7 +95,10 @@ export function withContext(
 export function withAuthContext(
   signals: SignalRegistry,
   fn: AuthContextAction,
-  deps: { requireApiKey?: typeof requireApiKey } = {},
+  deps: {
+    requireApiKey?: typeof requireApiKey;
+    createPlatform?: typeof createPlatformClient;
+  } = {},
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
     const { ctx, apiBaseUrl, loggingSystem } = buildBaseContext(
@@ -114,16 +117,26 @@ export function withAuthContext(
       return;
     }
 
-    const platform = createPlatformClient(resolved.key, {
-      baseUrl: apiBaseUrl,
-      fetch: globalThis.fetch,
-      logger: ctx.log("trpc"),
-    });
+    const platform = (deps.createPlatform ?? createPlatformClient)(
+      resolved.key,
+      { baseUrl: apiBaseUrl, fetch: globalThis.fetch, logger: ctx.log("trpc") },
+    );
+
+    const identityResult = await platform.getIdentity();
+    if (!identityResult.ok) {
+      ctx.ui.error("Could not verify identity", identityResult.error);
+      process.exitCode = 1;
+      loggingSystem.flush();
+      return;
+    }
+
+
     try {
       const result = await fn({
         ...ctx,
         platform,
         apiKeySource: resolved.source,
+        team: identityResult.value.team,
       });
       if (result !== undefined) {
         ctx.ui.error(result.error);
