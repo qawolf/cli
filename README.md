@@ -120,6 +120,10 @@ This checks your Node.js version, Playwright installation, browser availability,
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup. To report a bug or request a feature, open an issue on [GitHub](https://github.com/qawolf/cli/issues).
 
+## Security
+
+To report a vulnerability, see [SECURITY.md](SECURITY.md).
+
 ## License
 
 [Apache-2.0](LICENSE)
