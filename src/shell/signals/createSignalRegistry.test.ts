@@ -127,11 +127,12 @@ describe("createSignalRegistry", () => {
     expect(errors.some((m) => m.includes("boom"))).toBe(true);
   });
 
-  it("registering during shutdown does not affect the in-flight shutdown", async () => {
+  it("registering during shutdown is dropped and returns a benign unregister", async () => {
     const reg = createSignalRegistry();
     let lateRan = false;
+    let lateUnregister: (() => void) | undefined;
     reg.register(() => {
-      reg.register(() => {
+      lateUnregister = reg.register(() => {
         lateRan = true;
       });
     });
@@ -139,5 +140,7 @@ describe("createSignalRegistry", () => {
     await reg.shutdown("test");
 
     expect(lateRan).toBe(false);
+    expect(lateUnregister).toBeDefined();
+    expect(() => lateUnregister?.()).not.toThrow();
   });
 });

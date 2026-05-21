@@ -22,6 +22,9 @@ export function createSignalRegistry(
 
   return {
     register(cleanup) {
+      // Drop late registrations: shutdown has already snapshotted+cleared
+      // cleanups, so pushing here would retain a reference that never fires.
+      if (shutdownPromise !== undefined) return () => {};
       cleanups.push(cleanup);
       return () => {
         if (shutdownPromise !== undefined) return;
