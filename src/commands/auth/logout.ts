@@ -3,7 +3,7 @@ import {
   type CommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
-import { authCopy } from "~/core/copy/index.js";
+import { authCopy } from "~/core/messages/index.js";
 
 export async function handleLogout(
   ctx: CommandContext,
