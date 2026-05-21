@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { PassThrough } from "node:stream";
-import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import type {
   AppiumProcess,
   FindFreePortFn,
@@ -8,10 +8,7 @@ import type {
 } from "./createAppiumServer.js";
 import { createAppiumServer } from "./createAppiumServer.js";
 
-const noopSignals: SignalRegistry = {
-  register: () => () => {},
-  shutdown: async () => {},
-};
+const noopSignals = makeNoopSignals();
 
 afterEach(() => {
   mock.restore();

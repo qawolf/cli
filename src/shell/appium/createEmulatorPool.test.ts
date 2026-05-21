@@ -1,12 +1,9 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import type { AdbFn, SpawnFn } from "./createAndroidEmulator.js";
 import { createEmulatorPool } from "./createEmulatorPool.js";
-import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 
-const noopSignals: SignalRegistry = {
-  register: () => () => {},
-  shutdown: async () => {},
-};
+const noopSignals = makeNoopSignals();
 
 afterEach(() => {
   mock.restore();

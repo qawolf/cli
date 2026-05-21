@@ -1,13 +1,10 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
-import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { handleFlowsRun, type HandleFlowsRunDeps } from "./runDefaults.js";
 
-const noopSignals: SignalRegistry = {
-  register: () => () => {},
-  shutdown: async () => {},
-};
+const noopSignals = makeNoopSignals();
 
 // handleFlowsRun accepts injectable deps, so no mock.module() is needed.
 

@@ -2,12 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { Command } from "commander";
 
 import { withAuthContext, withContext } from "~/commands/context.js";
-import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 
-const noopSignals: SignalRegistry = {
-  register: () => () => {},
-  shutdown: async () => {},
-};
+const noopSignals = makeNoopSignals();
 
 function fakeCommand(): Command {
   return {

@@ -1,15 +1,12 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import type { CommandContext } from "~/shell/commandContext.js";
-import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
 import { callsOf, makeFakeUI } from "~/domains/runner/run.fixtures.js";
 
-const noopSignals: SignalRegistry = {
-  register: () => () => {},
-  shutdown: async () => {},
-};
+const noopSignals = makeNoopSignals();
 
 afterEach(() => {
   mock.restore();

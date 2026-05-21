@@ -2,13 +2,10 @@ import { CommanderError } from "commander";
 import { describe, expect, it } from "bun:test";
 
 import packageJson from "../../package.json" with { type: "json" };
-import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { createProgram } from "./program.js";
 
-const noopSignals: SignalRegistry = {
-  register: () => () => {},
-  shutdown: async () => {},
-};
+const noopSignals = makeNoopSignals();
 
 function silentProgram() {
   return createProgram({ signals: noopSignals })

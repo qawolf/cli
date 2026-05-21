@@ -2,7 +2,7 @@ import { mock } from "bun:test";
 
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext } from "~/shell/commandContext.js";
-import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import type { UI } from "~/shell/ui/index.js";
 
 import type { InstallBrowsersDeps } from "~/domains/install/browsers.js";
@@ -50,10 +50,7 @@ export function makeFakeUI(): UI {
   };
 }
 
-const noopSignals: SignalRegistry = {
-  register: () => () => {},
-  shutdown: async () => {},
-};
+const noopSignals = makeNoopSignals();
 
 export const makeCtx = (ui: UI): CommandContext => ({
   ui,

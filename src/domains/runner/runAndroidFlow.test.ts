@@ -4,6 +4,7 @@ import {
   makeBaseDeps,
   makePool,
 } from "~/shell/appium/createAndroidLaunchContext.fixtures.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import type {
   RunAndroidFlowDeps,
   RunAndroidFlowOptions,
@@ -22,7 +23,7 @@ function makeRunnerDeps() {
       unlink: async () => {},
     },
     spawn: () => ({ exitCode: Promise.resolve(0), kill: () => {} }),
-    signals: { register: () => () => {}, shutdown: async () => {} },
+    signals: makeNoopSignals(),
     createStorage: <T>() => ({
       run: async (_store: T, callback: () => Promise<void>) => callback(),
       getStore: () => undefined,
