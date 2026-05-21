@@ -5,10 +5,11 @@ const signals = createSignalRegistry();
 
 let forced = false;
 const onSignal = (sig: "SIGINT" | "SIGTERM") => () => {
-  if (forced) process.exit(1);
+  const code = sig === "SIGINT" ? 130 : 143;
+  if (forced) process.exit(code);
   forced = true;
   void signals.shutdown(sig).finally(() => {
-    process.exit(sig === "SIGINT" ? 130 : 143);
+    process.exit(code);
   });
 };
 process.on("SIGINT", onSignal("SIGINT"));
