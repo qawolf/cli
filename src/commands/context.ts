@@ -123,18 +123,10 @@ export function withAuthContext(
     );
 
     try {
-      const identityResult = await platform.getIdentity();
-      if (!identityResult.ok) {
-        ctx.ui.error("Could not verify identity", identityResult.error);
-        process.exitCode = 1;
-        return;
-      }
-
       const result = await fn({
         ...ctx,
         platform,
         apiKeySource: resolved.source,
-        team: identityResult.value.team,
       });
       if (result !== undefined) {
         ctx.ui.error(result.error);

@@ -11,7 +11,6 @@ const identityResponseSchema = z.object({
 });
 
 export type IdentityResponse = z.infer<typeof identityResponseSchema>;
-export type Team = IdentityResponse["team"];
 
 type GetIdentityDeps = {
   fetch: typeof globalThis.fetch;

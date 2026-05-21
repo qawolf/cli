@@ -29,20 +29,9 @@ afterEach(() => {
   mock.restore();
 });
 
-function makeTeam() {
+function mockPlatform(): PlatformClient {
   return {
-    id: "t1",
-    name: "Test Team",
-    slug: "test-team",
-    createdAt: "2024-01-01T00:00:00.000Z",
-  };
-}
-
-function mockPlatform(
-  identityResult: Awaited<ReturnType<PlatformClient["getIdentity"]>>,
-): PlatformClient {
-  return {
-    getIdentity: async () => identityResult,
+    getIdentity: async () => ({ ok: false as const, error: "not used" }),
     getFlowsBundleUrl: async (_envId: string) => ({
       ok: false as const,
       error: "not used",
@@ -86,56 +75,11 @@ describe("withAuthContext exit code plumbing", () => {
       },
       {
         requireApiKey: okRequireApiKey,
-        createPlatform: () =>
-          mockPlatform({ ok: true, value: { team: makeTeam() } }),
+        createPlatform: () => mockPlatform(),
       },
     )({}, fakeCommand());
 
     expect(process.exitCode).toBe(1);
-  });
-
-  it("sets exitCode to 1 when getIdentity returns an error", async () => {
-    await withAuthContext(noopSignals, async () => undefined, {
-      requireApiKey: okRequireApiKey,
-      createPlatform: () =>
-        mockPlatform({
-          ok: false,
-          error: "API key is invalid or unauthorized",
-        }),
-    })({}, fakeCommand());
-
-    expect(process.exitCode).toBe(1);
-  });
-
-  it("does not call action when getIdentity fails", async () => {
-    const action = mock();
-    await withAuthContext(noopSignals, action, {
-      requireApiKey: okRequireApiKey,
-      createPlatform: () =>
-        mockPlatform({
-          ok: false,
-          error: "API key is invalid or unauthorized",
-        }),
-    })({}, fakeCommand());
-
-    expect(action).not.toHaveBeenCalled();
-  });
-
-  it("injects team into context when getIdentity succeeds", async () => {
-    const team = makeTeam();
-    let capturedTeam: unknown;
-    await withAuthContext(
-      noopSignals,
-      async (ctx) => {
-        capturedTeam = ctx.team;
-      },
-      {
-        requireApiKey: okRequireApiKey,
-        createPlatform: () => mockPlatform({ ok: true, value: { team } }),
-      },
-    )({}, fakeCommand());
-
-    expect(capturedTeam).toEqual(team);
   });
 });
 

@@ -11,6 +11,7 @@ export const authMessages = {
   cancelled: "Setup cancelled.",
   notAuthenticated: "Not authenticated",
   whoamiAuthenticated: "Authenticated",
+  whoamiFailed: "Not authenticated",
   validationRequired: "API key is required",
   login: {
     nonInteractive:
