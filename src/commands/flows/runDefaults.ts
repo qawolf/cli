@@ -44,7 +44,7 @@ export async function loadEnvFile(envDir: string): Promise<void> {
 }
 
 export type HandleFlowsRunDeps = {
-  expandPatterns: (patterns: string[], cwd?: string) => Promise<string[]>;
+  expandPatterns: typeof defaultExpandPatterns;
   resolveUniqueEnvDir: (files: string[]) => string | undefined;
   ensureFlowDeps: (envDir: string) => Promise<void>;
   configureTestkit: (dir: string) => Promise<void>;
@@ -74,6 +74,7 @@ export async function handleFlowsRun(
   const expandedFiles = await deps.expandPatterns(
     buildPatternArgs(pattern),
     cwd,
+    ctx.log("flows"),
   );
 
   let envDir: string | undefined;
@@ -119,6 +120,7 @@ export async function handleFlowsRun(
     shutdownAndroid: android.shutdown,
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
+    logger: ctx.log("runner"),
     reporter: createConsoleReporter({
       stdout: process.stdout,
       stderr: process.stderr,

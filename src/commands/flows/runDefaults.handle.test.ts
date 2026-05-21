@@ -2,14 +2,14 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
+import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { handleFlowsRun, type HandleFlowsRunDeps } from "./runDefaults.js";
 
 const noopSignals = makeNoopSignals();
 
 // handleFlowsRun accepts injectable deps, so no mock.module() is needed.
 
-const expandPatternsMock =
-  mock<(patterns: string[], cwd?: string) => Promise<string[]>>();
+const expandPatternsMock = mock<HandleFlowsRunDeps["expandPatterns"]>();
 const resolveUniqueEnvDirMock = mock<(files: string[]) => string | undefined>();
 const ensureFlowDepsMock = mock<(envDir: string) => Promise<void>>();
 const configureTestkitMock = mock<(dir: string) => Promise<void>>();
@@ -59,11 +59,14 @@ function makeCtx(): CommandContext {
     outputMode: "human",
     isInteractive: false,
     signals: noopSignals,
+    logger: makeNoopLogger(),
+    log: () => makeNoopLogger(),
     ui: {
       withProgress: async (tasks: { task: () => Promise<void> }[]) => {
         for (const t of tasks) await t.task();
         return [];
       },
+      warn: () => {},
     },
   } as unknown as CommandContext;
 }

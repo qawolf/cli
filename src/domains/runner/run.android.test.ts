@@ -47,7 +47,7 @@ describe("flowsRun Android dispatch", () => {
       flowPath: string;
       options: unknown;
     };
-    expect(arg.deps).toBe(deps.runAndroidFlowDeps);
+    expect(arg.deps).toMatchObject(deps.runAndroidFlowDeps as object);
     expect(arg.flowPath).toBe("/a.ts");
     expect(arg.options).toMatchObject({ retries: 0, recordVideo: false });
     expect(reporter.onFlowPass).toHaveBeenCalledTimes(1);

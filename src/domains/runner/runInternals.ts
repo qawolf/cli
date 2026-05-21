@@ -1,5 +1,6 @@
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
+import type { Logger } from "~/shell/logger.js";
 import type { Reporter } from "~/shell/reporter/types.js";
 import { FlowRunError } from "./errors.js";
 import type {
@@ -49,6 +50,7 @@ export type FlowsRunDeps = {
   readonly now: () => number;
   readonly findFlowStamp: typeof defaultFindFlowStamp;
   readonly warn: (message: string) => void;
+  readonly logger?: Logger;
   /** Boots the AVDs for the given names before any android flows are dispatched. */
   readonly bootAndroid?: (avdNames: string[]) => Promise<void>;
   /** Stops the Appium server and emulator pool after all flows complete. */
@@ -86,13 +88,16 @@ export async function dispatchFlow({
   webOptions: RunWebFlowOptions;
   androidOptions: RunAndroidFlowOptions;
 }): Promise<{ run: FlowRunResult; durationMs: number }> {
+  deps.logger?.info(`run: ${flow.name}`);
   deps.reporter.onFlowStart?.({ name: flow.name, path: flow.file });
   const flowStart = deps.now();
   let run: FlowRunResult;
   try {
+    const loggerPatch =
+      deps.logger !== undefined ? { logger: deps.logger } : {};
     if (flow.kind === "web") {
       run = await deps.runWebFlow({
-        deps: deps.runWebFlowDeps,
+        deps: { ...deps.runWebFlowDeps, ...loggerPatch },
         options: webOptions,
         flowPath: flow.file,
       });
@@ -105,7 +110,7 @@ export async function dispatchFlow({
         );
       }
       run = await deps.runAndroidFlow({
-        deps: deps.runAndroidFlowDeps,
+        deps: { ...deps.runAndroidFlowDeps, ...loggerPatch },
         options: androidOptions,
         flowPath: flow.file,
       });
@@ -129,5 +134,6 @@ export async function dispatchFlow({
     deps.warn(`failed to read manifest stamp for ${flow.file}: ${message}`);
   }
   if (stamp) run = { ...run, manifest: stamp };
+  deps.logger?.info(`done: ${flow.name} (${run.attempts} attempts)`);
   return { run, durationMs: deps.now() - flowStart };
 }

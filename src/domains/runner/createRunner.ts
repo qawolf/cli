@@ -40,6 +40,7 @@ export function createRunner({
           attempt++;
           testCounts.passed = 0;
           testCounts.total = 0;
+          deps.logger?.debug(`attempt ${attempt}/${maxAttempts}`);
 
           try {
             const flowInputs = structuredClone(options.flowInputs ?? {});

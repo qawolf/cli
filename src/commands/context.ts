@@ -108,6 +108,7 @@ export function withAuthContext(
     const platform = createPlatformClient(resolved.key, {
       baseUrl: apiBaseUrl,
       fetch: globalThis.fetch,
+      logger: ctx.log("trpc"),
     });
     try {
       const result = await fn({
