@@ -13,20 +13,24 @@ export function notSupported(name: string): () => never {
   };
 }
 
-export const unsupportedWebDepNames = [
-  "launchElectron",
+export const unsupportedSharedDepNames = [
+  "fetchLatestEnvironmentVariables",
   "getInbox",
   "getOTP",
+  "mountCifsShare",
   "OTPAuth",
   "qawolf",
-  "readQRCode",
   "runCommand",
+  "setEnvironmentVariable",
+  "startOpenVpn",
+  "startWireGuard",
+] as const;
+
+export const unsupportedWebDepNames = [
+  ...unsupportedSharedDepNames,
+  "launchElectron",
+  "readQRCode",
   "saveBaselineScreenshot",
   "selectors",
   "devices",
-  "fetchLatestEnvironmentVariables",
-  "setEnvironmentVariable",
-  "mountCifsShare",
-  "startOpenVpn",
-  "startWireGuard",
 ] as const;
