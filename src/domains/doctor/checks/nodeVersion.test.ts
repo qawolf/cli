@@ -15,13 +15,14 @@ describe("checkNodeVersion", () => {
     });
   });
 
-  it("fails when version is below minimum", async () => {
+  it("fails when version is below minimum and includes version string", async () => {
     const r = await checkNodeVersion({
       processVersion: "v18.0.0",
       enginesNode: ">=24",
     });
     expect(r.status).toBe("fail");
     expect(r.detail).toContain("v18.0.0");
+    expect(r.version).toBe("18.0.0");
   });
 
   it("fails when engines.node is not parseable", async () => {

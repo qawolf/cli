@@ -31,6 +31,7 @@ export async function checkNodeVersion(
       name: "node-version",
       status: "fail",
       detail: `Node ${deps.processVersion} is below required ${deps.enginesNode}`,
+      version: deps.processVersion.replace(/^v/, ""),
     };
   }
 
