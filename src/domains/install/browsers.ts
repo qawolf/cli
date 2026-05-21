@@ -3,6 +3,7 @@ import { buildPatternArgs } from "~/core/patternArgs.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { BrowserName } from "~/core/types.js";
+import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 
 export type InstallBrowsersDeps = {
   readonly cwd: string;
@@ -60,8 +61,6 @@ export async function installBrowsers(
   await installBrowserList(ctx, browsers, deps);
 }
 
-const batchSize = 32;
-
 async function collectBrowsers(
   files: readonly string[],
   peekFlowMeta: (
@@ -69,14 +68,10 @@ async function collectBrowsers(
   ) => Promise<{ name: string | undefined; target: string | undefined }>,
 ): Promise<BrowserName[]> {
   const seen = new Set<BrowserName>();
-  for (let i = 0; i < files.length; i += batchSize) {
-    const batch = files.slice(i, i + batchSize);
-    const metas = await Promise.all(batch.map(peekFlowMeta));
-    for (const meta of metas) {
-      if (!meta.target) continue;
-      const browser = targetToBrowser(meta.target);
-      if (browser) seen.add(browser);
-    }
+  for await (const meta of batchMap(files, peekFlowMeta, flowBatchSize)) {
+    if (!meta.target) continue;
+    const browser = targetToBrowser(meta.target);
+    if (browser) seen.add(browser);
   }
   return [...seen].sort();
 }

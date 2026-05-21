@@ -6,6 +6,7 @@ import { classifyTarget } from "~/core/flowMeta.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { errorMessage } from "~/core/errors.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
+import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 
 import { handleInstallAndroid } from "./android.js";
 import { handleInstallBrowsers } from "./browsers.js";
@@ -29,8 +30,6 @@ export type InstallAllDeps = {
   ) => Promise<CommandResult>;
 };
 
-const batchSize = 32;
-
 export async function installAll(
   ctx: CommandContext,
   pattern: string | undefined,
@@ -43,16 +42,12 @@ export async function installAll(
   let hasAndroid = false;
   let hasIos = false;
 
-  for (let i = 0; i < files.length; i += batchSize) {
-    const batch = files.slice(i, i + batchSize);
-    const metas = await Promise.all(batch.map(deps.peekFlowMeta));
-    for (const meta of metas) {
-      if (!meta.target) continue;
-      const classified = classifyTarget(meta.target);
-      if (classified?.kind === "web") hasWeb = true;
-      else if (classified?.kind === "android") hasAndroid = true;
-      else if (classified?.kind === "ios") hasIos = true;
-    }
+  for await (const meta of batchMap(files, deps.peekFlowMeta, flowBatchSize)) {
+    if (!meta.target) continue;
+    const classified = classifyTarget(meta.target);
+    if (classified?.kind === "web") hasWeb = true;
+    else if (classified?.kind === "android") hasAndroid = true;
+    else if (classified?.kind === "ios") hasIos = true;
   }
 
   if (!hasWeb && !hasAndroid && !hasIos) {
