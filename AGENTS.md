@@ -2,6 +2,8 @@
 
 CLI for agents, CI, and humans to interact with QA Wolf. TypeScript, Bun runtime, Commander.js framework.
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for human contributor setup.
+
 ## Commands
 
 ```bash

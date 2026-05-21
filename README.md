@@ -71,7 +71,7 @@ Your API key is in your workspace settings on the QA Wolf platform.
 An environment in QA Wolf groups a set of flows and their configuration. Use `flows pull` to download flows from a specific environment:
 
 ```bash
-qawolf flows pull --env <env_id>
+qawolf flows pull --env <env-id>
 ```
 
 Your environment IDs are in workspace settings on the QA Wolf platform.
