@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
+import { runnerMessages } from "~/core/messages/index.js";
 import { defaultFlags, makeCtx, makeDeps, makeFakeUI } from "./run.fixtures.js";
 import { flowsRun } from "./run.js";
 
@@ -16,12 +17,10 @@ describe("flowsRun pre-flight", () => {
     const result = await flowsRun(makeCtx(ui), [], flags, deps);
 
     expect(result).toEqual({
-      error: "--workers > 1 is deferred to v0.2; current cap is 1.",
+      error: runnerMessages.workersCapError,
       exitCode: 2,
     });
-    expect(ui.error).toHaveBeenCalledWith(
-      "--workers > 1 is deferred to v0.2; current cap is 1.",
-    );
+    expect(ui.error).toHaveBeenCalledWith(runnerMessages.workersCapError);
   });
 
   it("prints 'No flows matched.' and exits 0 when files is empty", async () => {
@@ -31,7 +30,7 @@ describe("flowsRun pre-flight", () => {
     const result = await flowsRun(makeCtx(ui), [], defaultFlags(), deps);
 
     expect(result).toBeUndefined();
-    expect(ui.info).toHaveBeenCalledWith("No flows matched.");
+    expect(ui.info).toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
     expect(deps.installBrowsers).not.toHaveBeenCalled();
   });
 
