@@ -8,9 +8,9 @@ export const testBaseUrl = "https://test.qawolf.com";
 export const testApiKey = "qawolf_test";
 export const testSignedUrl = "https://gcs.example.com/bundle.tar.gz?sig=abc";
 const testExpiresAt = "2099-12-31T00:00:00.000Z";
-export const flowsBundlePath = "gitwolf.getFlowsBundleUrl";
-export const envVarsPath = "environment.getEnvironmentWithVariables";
-export const teamStoragePath = "team.listStorageFiles";
+const flowsBundlePath = "gitwolf.getFlowsBundleUrl";
+const envVarsPath = "environment.getEnvironmentWithVariables";
+const teamStoragePath = "team.listStorageFiles";
 export const testEnvVars: Record<string, string> = {
   BASE_URL: "https://example.com",
   PASSWORD: "p@ss\"w'd",

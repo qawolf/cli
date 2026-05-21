@@ -1,6 +1,4 @@
-import type { CommandContext } from "~/shell/commandContext.js";
-import { requestEnvVars } from "./envVars.js";
-import { downloadBundle, requestBundle } from "./pull.js";
+import type { AuthCommandContext } from "~/shell/commandContext.js";
 
 type FetchedBundle = {
   tmpArchive: string;
@@ -10,13 +8,10 @@ type FetchedBundle = {
 };
 
 export async function fetchBundleAndEnvVars(
-  ctx: CommandContext,
+  ctx: AuthCommandContext,
   envId: string,
-  apiKey: string,
-  fetch: typeof globalThis.fetch,
 ): Promise<FetchedBundle> {
-  const deps = { apiKey, baseUrl: ctx.apiBaseUrl, fetch };
-  let signedUrl: string | undefined;
+  const { platform } = ctx;
   let tmpArchive: string | undefined;
   let bundleFetchedAt: Date | undefined;
   let envVars: Record<string, string> | undefined;
@@ -25,25 +20,20 @@ export async function fetchBundleAndEnvVars(
   await ctx.ui.withProgress(
     [
       {
-        message: "Resolving flows bundle download URL",
-        task: async () => {
-          signedUrl = (await requestBundle(deps, envId)).signedUrl;
-        },
-      },
-      {
         message: "Downloading flows bundle",
         task: async () => {
-          if (signedUrl === undefined) {
-            throw new Error("internal: signedUrl not set");
-          }
-          tmpArchive = (await downloadBundle({ fetch }, signedUrl)).tmpArchive;
+          const result = await platform.downloadBundle(envId);
+          if (!result.ok) throw new Error(result.error);
+          tmpArchive = result.value.tmpArchive;
           bundleFetchedAt = new Date();
         },
       },
       {
         message: "Fetching environment variables",
         task: async () => {
-          envVars = await requestEnvVars(deps, envId);
+          const result = await platform.getEnvVars(envId);
+          if (!result.ok) throw new Error(result.error);
+          envVars = result.value;
           envVarsFetchedAt = new Date();
         },
       },

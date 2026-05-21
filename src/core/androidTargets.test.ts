@@ -1,5 +1,9 @@
 import { describe, expect, it } from "bun:test";
-import { buildSystemImage, makeAvdName } from "./androidTargets.js";
+import {
+  avdNameForTarget,
+  buildSystemImage,
+  makeAvdName,
+} from "./androidTargets.js";
 
 describe("makeAvdName", () => {
   it("should produce qawolf-prefixed avd name with underscored model", () => {
@@ -34,5 +38,25 @@ describe("buildSystemImage", () => {
     expect(buildSystemImage("36", "arm64")).toBe(
       "system-images;android-36;google_apis;arm64-v8a",
     );
+  });
+});
+
+describe("avdNameForTarget", () => {
+  it("should return the AVD name for a fully-qualified Android target", () => {
+    expect(avdNameForTarget("Android - Pixel 9 (Android 15)")).toBe(
+      "qawolf_pixel_9_api35",
+    );
+  });
+
+  it("should return the AVD name for the bare 'Android - Pixel' preset", () => {
+    expect(avdNameForTarget("Android - Pixel")).toBe("qawolf_pixel_2_api34");
+  });
+
+  it("should return undefined for a non-Android target", () => {
+    expect(avdNameForTarget("Web - Chrome")).toBeUndefined();
+  });
+
+  it("should return undefined for an unparseable string", () => {
+    expect(avdNameForTarget("not-a-real-target")).toBeUndefined();
   });
 });

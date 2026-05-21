@@ -2,6 +2,7 @@ import type { SpawnFn } from "~/shell/spawn.js";
 
 import type { CheckResult } from "~/domains/doctor/types.js";
 
+import { checkAndroid } from "./android.js";
 import { checkApiKey } from "./apiKey.js";
 import { checkApiUrl } from "./apiUrl.js";
 import { checkFileAssets } from "./fileAssets.js";
@@ -20,27 +21,58 @@ type CheckDeps = {
   readonly readFile: (path: string) => Promise<string>;
   readonly cwd: string;
   readonly playwrightCliPath: string | undefined;
+  readonly runAndroidChecks: boolean;
+  readonly androidHome: string | undefined;
+  readonly checkExists: (path: string) => boolean;
+  readonly envDir: string | undefined;
+  readonly resolveAppiumBin: (envDir: string) => string;
+  readonly requiredAvds: readonly string[];
 };
 
 export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
-  const [nodeVer, playwright, apiKey, apiUrl, npmRegistry, fileAssets] =
-    await Promise.all([
-      checkNodeVersion({
-        processVersion: deps.processVersion,
-        enginesNode: deps.enginesNode,
-      }),
-      checkPlaywright({
-        spawn: deps.spawn,
-        playwrightCliPath: deps.playwrightCliPath,
-      }),
-      checkApiKey({ apiKey: deps.apiKey }),
-      checkApiUrl({ fetch: deps.fetch, apiBaseUrl: deps.apiBaseUrl }),
-      checkNpmRegistry({ spawn: deps.spawn }),
-      checkFileAssets({
-        files: deps.flowFiles,
-        readFile: deps.readFile,
-        cwd: deps.cwd,
-      }),
-    ]);
-  return [nodeVer, playwright, apiKey, apiUrl, npmRegistry, ...fileAssets];
+  const [
+    nodeVer,
+    playwright,
+    apiKey,
+    apiUrl,
+    npmRegistry,
+    fileAssets,
+    android,
+  ] = await Promise.all([
+    checkNodeVersion({
+      processVersion: deps.processVersion,
+      enginesNode: deps.enginesNode,
+    }),
+    checkPlaywright({
+      spawn: deps.spawn,
+      playwrightCliPath: deps.playwrightCliPath,
+    }),
+    checkApiKey({ apiKey: deps.apiKey }),
+    checkApiUrl({ fetch: deps.fetch, apiBaseUrl: deps.apiBaseUrl }),
+    checkNpmRegistry({ spawn: deps.spawn }),
+    checkFileAssets({
+      files: deps.flowFiles,
+      readFile: deps.readFile,
+      cwd: deps.cwd,
+    }),
+    deps.runAndroidChecks
+      ? checkAndroid({
+          spawn: deps.spawn,
+          androidHome: deps.androidHome,
+          checkExists: deps.checkExists,
+          envDir: deps.envDir,
+          resolveAppiumBin: deps.resolveAppiumBin,
+          requiredAvds: deps.requiredAvds,
+        })
+      : Promise.resolve<CheckResult[]>([]),
+  ]);
+  return [
+    nodeVer,
+    playwright,
+    apiKey,
+    apiUrl,
+    npmRegistry,
+    ...fileAssets,
+    ...android,
+  ];
 }

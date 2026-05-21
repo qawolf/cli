@@ -45,5 +45,5 @@ export async function checkPlaywright(
     };
   }
 
-  return { name: "playwright", status: "pass" };
+  return { name: "playwright", status: "pass", version };
 }

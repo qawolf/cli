@@ -31,10 +31,15 @@ export async function checkNodeVersion(
       name: "node-version",
       status: "fail",
       detail: `Node ${deps.processVersion} is below required ${deps.enginesNode}`,
+      version: deps.processVersion.replace(/^v/, ""),
     };
   }
 
-  return { name: "node-version", status: "pass" };
+  return {
+    name: "node-version",
+    status: "pass",
+    version: deps.processVersion.replace(/^v/, ""),
+  };
 }
 
 function extractMajor(input: string, pattern: RegExp): number | undefined {
