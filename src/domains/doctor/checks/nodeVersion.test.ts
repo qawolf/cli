@@ -11,7 +11,7 @@ describe("checkNodeVersion", () => {
     expect(r).toEqual({
       name: "node-version",
       status: "pass",
-      version: "v24.1.0",
+      version: "24.1.0",
     });
   });
 

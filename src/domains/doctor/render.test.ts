@@ -29,7 +29,7 @@ const results: CheckResult[] = [
 
 const resultsWithVersions: CheckResult[] = [
   { name: "qawolf", status: "pass", version: "0.1.0" },
-  { name: "node-version", status: "pass", version: "v24.0.0" },
+  { name: "node-version", status: "pass", version: "24.0.0" },
   { name: "playwright", status: "pass", version: "1.59.1" },
 ];
 
@@ -77,7 +77,7 @@ describe("renderResults", () => {
     const ui = makeUi("human");
     renderResults(ui, resultsWithVersions);
     expect(ui.success).toHaveBeenNthCalledWith(1, "qawolf  0.1.0");
-    expect(ui.success).toHaveBeenNthCalledWith(2, "node-version  v24.0.0");
+    expect(ui.success).toHaveBeenNthCalledWith(2, "node-version  24.0.0");
     expect(ui.success).toHaveBeenNthCalledWith(3, "playwright  1.59.1");
   });
 
@@ -85,7 +85,7 @@ describe("renderResults", () => {
     const ui = makeUi("agent");
     renderResults(ui, resultsWithVersions);
     expect(ui.write).toHaveBeenNthCalledWith(1, "PASS qawolf  0.1.0\n");
-    expect(ui.write).toHaveBeenNthCalledWith(2, "PASS node-version  v24.0.0\n");
+    expect(ui.write).toHaveBeenNthCalledWith(2, "PASS node-version  24.0.0\n");
     expect(ui.write).toHaveBeenNthCalledWith(3, "PASS playwright  1.59.1\n");
   });
 
