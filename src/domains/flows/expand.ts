@@ -1,14 +1,12 @@
 import { readFile, readdir } from "~/shell/fs.js";
 import { join } from "node:path";
 import { glob } from "tinyglobby";
-import { extractFlowMeta } from "~/core/flowMeta.js";
+import { extractFlowMeta, type PeekFlowMetaFn } from "~/core/flowMeta.js";
 
-export async function peekFlowMeta(
-  filePath: string,
-): Promise<{ name: string | undefined; target: string | undefined }> {
+export const peekFlowMeta: PeekFlowMetaFn = async (filePath) => {
   const source = await readFile(filePath, "utf-8");
   return extractFlowMeta(source);
-}
+};
 
 // Globs run from cwd *and* from each `.qawolf/<env>/` subdir so a
 // freshly-pulled `.qawolf/<env>/src/flows/...` layout is discoverable
