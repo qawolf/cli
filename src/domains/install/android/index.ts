@@ -1,6 +1,7 @@
 import { isAndroidTarget } from "~/core/flowMeta.js";
 import { pluralize } from "~/core/pluralize.js";
 import { avdNameForTarget, buildSystemImage } from "~/core/androidTargets.js";
+import { buildPatternArgs } from "~/core/patternArgs.js";
 import { parseExecutionTarget } from "@qawolf/flow-targets";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { SpawnFn } from "~/shell/spawn.js";
@@ -37,7 +38,7 @@ export async function installAndroid(
   pattern: string | undefined,
   deps: InstallAndroidDeps,
 ): Promise<CommandResult> {
-  const patterns = pattern ? [pattern] : [];
+  const patterns = buildPatternArgs(pattern);
   const files = await deps.expandPatterns(patterns, deps.cwd);
 
   const targets = await collectAndroidTargets(files, deps.peekFlowMeta);

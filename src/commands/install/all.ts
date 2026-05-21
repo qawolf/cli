@@ -3,6 +3,7 @@ import {
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/domains/flows/expand.js";
 import { classifyTarget } from "~/core/flowMeta.js";
+import { buildPatternArgs } from "~/core/patternArgs.js";
 import { errorMessage } from "~/core/errors.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 
@@ -35,7 +36,7 @@ export async function installAll(
   pattern: string | undefined,
   deps: InstallAllDeps,
 ): Promise<CommandResult> {
-  const patterns = pattern ? [pattern] : [];
+  const patterns = buildPatternArgs(pattern);
   const files = await deps.expandPatterns(patterns, deps.cwd);
 
   let hasWeb = false;
