@@ -1,5 +1,5 @@
 import { targetToBrowser } from "~/core/flowMeta.js";
-import { buildPatternArgs } from "~/core/patterns.js";
+import { buildPatternArgs } from "~/core/patternArgs.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { BrowserName } from "~/core/types.js";

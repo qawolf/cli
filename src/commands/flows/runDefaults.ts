@@ -10,7 +10,7 @@ import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { isNoEntError } from "~/core/errors.js";
-import { buildPatternArgs } from "~/core/patterns.js";
+import { buildPatternArgs } from "~/core/patternArgs.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { createConsoleReporter } from "~/shell/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";

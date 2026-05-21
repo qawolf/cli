@@ -1,8 +1,8 @@
 import { isAndroidTarget } from "~/core/flowMeta.js";
 import { pluralize } from "~/core/pluralize.js";
 import { avdNameForTarget, buildSystemImage } from "~/core/androidTargets.js";
+import { buildPatternArgs } from "~/core/patternArgs.js";
 import { parseExecutionTarget } from "@qawolf/flow-targets";
-import { buildPatternArgs } from "~/core/patterns.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { SpawnFn } from "~/shell/spawn.js";
 import { installAvds } from "./avd.js";

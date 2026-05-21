@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { buildPatternArgs } from "./patterns.js";
+import { buildPatternArgs } from "./patternArgs.js";
 
 describe("buildPatternArgs", () => {
   it("wraps a pattern string in an array", () => {
