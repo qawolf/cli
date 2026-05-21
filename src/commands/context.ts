@@ -122,16 +122,14 @@ export function withAuthContext(
       { baseUrl: apiBaseUrl, fetch: globalThis.fetch, logger: ctx.log("trpc") },
     );
 
-    const identityResult = await platform.getIdentity();
-    if (!identityResult.ok) {
-      ctx.ui.error("Could not verify identity", identityResult.error);
-      process.exitCode = 1;
-      loggingSystem.flush();
-      return;
-    }
-
-
     try {
+      const identityResult = await platform.getIdentity();
+      if (!identityResult.ok) {
+        ctx.ui.error("Could not verify identity", identityResult.error);
+        process.exitCode = 1;
+        return;
+      }
+
       const result = await fn({
         ...ctx,
         platform,

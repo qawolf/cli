@@ -1,6 +1,6 @@
 import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
 import type { Logger } from "~/shell/logger.js";
-import type { IdentityResponse } from "~/shell/platform/getIdentity.js";
+import type { Team } from "~/shell/platform/getIdentity.js";
 import type { OutputMode } from "~/shell/ui/env.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import type { UI } from "~/shell/ui/index.js";
@@ -18,7 +18,7 @@ export type CommandContext = {
 export type AuthCommandContext = CommandContext & {
   readonly platform: PlatformClient;
   readonly apiKeySource: string;
-  readonly team: IdentityResponse["team"];
+  readonly team: Team;
 };
 
 export type CommandResult = {
