@@ -2,7 +2,7 @@ import { appendFile, appendFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import envPaths from "env-paths";
 
-export type LogLevel = "error" | "warn" | "info" | "debug" | "trace";
+type LogLevel = "error" | "warn" | "info" | "debug" | "trace";
 type LevelOrSilent = LogLevel | "silent";
 
 export type Logger = {

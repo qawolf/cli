@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, mock } from "bun:test";
 import type { CommandContext } from "~/shell/commandContext.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import type { OutputMode } from "~/shell/ui/env.js";
+import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
 import { makeFakeUI } from "~/domains/runner/run.fixtures.js";
@@ -26,6 +27,8 @@ function makeCtx(
     isInteractive: false,
     apiBaseUrl: "https://example.invalid",
     signals: noopSignals,
+    logger: makeNoopLogger(),
+    log: () => makeNoopLogger(),
   };
 }
 

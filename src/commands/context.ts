@@ -3,6 +3,12 @@ import { errorMessage } from "~/core/errors.js";
 import { authMessages } from "~/core/messages/index.js";
 import { getConfigDir } from "~/core/paths.js";
 import { requireApiKey } from "~/domains/auth/index.js";
+import {
+  createLoggingSystem,
+  defaultLogPath,
+  resolveStderrLevel,
+  type LoggingSystem,
+} from "~/shell/logger.js";
 import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import {
@@ -20,16 +26,26 @@ import type {
 type ContextAction = (ctx: CommandContext) => Promise<CommandResult>;
 type AuthContextAction = (ctx: AuthCommandContext) => Promise<CommandResult>;
 
-function buildBaseContext(
+type GlobalFlags = OutputFlags & { verbose?: boolean };
+
+export function buildBaseContext(
   command: Command,
   signals: SignalRegistry,
 ): {
   ctx: CommandContext;
   apiBaseUrl: string;
+  loggingSystem: LoggingSystem;
 } {
   const env = process.env;
+  const flags = command.optsWithGlobals<GlobalFlags>();
+  const stderrLevel = resolveStderrLevel(env, Boolean(flags.verbose));
+  const loggingSystem = createLoggingSystem({
+    stderrLevel,
+    logPath: defaultLogPath(),
+  });
+
   const outputMode = detectOutputMode({
-    flags: command.optsWithGlobals<OutputFlags>(),
+    flags,
     env,
     stdoutIsTTY: Boolean(process.stdout.isTTY),
   });
@@ -46,8 +62,11 @@ function buildBaseContext(
       }),
       apiBaseUrl,
       signals,
+      logger: loggingSystem.createLogger("cli"),
+      log: (scope) => loggingSystem.createLogger(scope),
     },
     apiBaseUrl,
+    loggingSystem,
   };
 }
 

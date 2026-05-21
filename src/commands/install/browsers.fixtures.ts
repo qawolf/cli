@@ -4,6 +4,7 @@ import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext } from "~/shell/commandContext.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import type { UI } from "~/shell/ui/index.js";
+import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 
 import type { InstallBrowsersDeps } from "~/domains/install/browsers.js";
 
@@ -59,6 +60,8 @@ export const makeCtx = (ui: UI): CommandContext => ({
   isInteractive: false,
   apiBaseUrl: "https://example.invalid",
   signals: noopSignals,
+  logger: makeNoopLogger(),
+  log: () => makeNoopLogger(),
 });
 
 export type FakeMeta = { name?: string; target?: string };

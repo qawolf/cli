@@ -18,6 +18,7 @@ export function createProgram({
     .name("qawolf")
     .description("Run QA Wolf flows locally")
     .version(packageJson.version)
+    .option("--verbose", "Enable debug logging to stderr")
     .option("--json", "Output as JSON")
     .option("--agent", "Output for agent consumption")
     .exitOverride((err) => {
