@@ -1,4 +1,3 @@
-import { pathToFileURL } from "node:url";
 import type {
   AndroidFlowApiReturnValue,
   AndroidFlowDefinition,
@@ -9,6 +8,7 @@ import type {
   AndroidLaunchDeps,
   AndroidLaunchOptions,
 } from "~/shell/appium/types.js";
+import { loadFlowDefault } from "./loadFlowModule.js";
 import { createRunner } from "./createRunner.js";
 import type {
   FlowDefinition,
@@ -41,14 +41,7 @@ export async function runAndroidFlow({
   options: RunAndroidFlowOptions;
   flowPath: string;
 }): Promise<FlowRunResult> {
-  const mod = (await import(pathToFileURL(flowPath).href)) as Record<
-    string,
-    unknown
-  >;
-  const exported = mod["default"] as AndroidFlowApiReturnValue | undefined;
-  if (exported === undefined) {
-    throw new Error(`No default export found in "${flowPath}"`);
-  }
+  const exported = await loadFlowDefault<AndroidFlowApiReturnValue>(flowPath);
   if (typeof exported === "function") {
     // (D2) Android legacy flows have no target; AVD derivation is impossible.
     throw new Error(
