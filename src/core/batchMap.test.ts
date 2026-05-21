@@ -29,4 +29,15 @@ describe("batchMap", () => {
       expect(result[i]).toBe(i);
     }
   });
+
+  it("should throw when size is 0", async () => {
+    const items = ["a", "b", "c"];
+    let caughtError: unknown;
+    try {
+      await batchMap(items, async (x) => x, 0);
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(caughtError).toBeInstanceOf(Error);
+  });
 });
