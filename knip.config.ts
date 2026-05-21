@@ -6,6 +6,7 @@ const config: KnipConfig = {
     "src/**/*.test.ts",
     "src/**/*.mock.ts",
     "src/**/*.fixtures.ts",
+    "src/**/*.testUtils.ts",
   ],
   project: ["src/**/*.ts"],
   ignoreDependencies: [
@@ -23,6 +24,8 @@ const config: KnipConfig = {
     "src/shell/reporter/*.ts",
     // TODO WIZ-10355: remove once flows pull consumes the flowsBundle schema
     "src/shell/platform/types.ts",
+    // TODO WIZ-10339 follow-up: consumed once wireErrors is called from the pull handler
+    "src/domains/flows/pull/wireErrors.ts",
   ],
 };
 

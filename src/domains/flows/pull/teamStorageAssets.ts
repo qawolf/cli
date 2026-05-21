@@ -1,23 +1,13 @@
 import { mkdir } from "~/shell/fs.js";
 import { dirname, join, normalize, sep } from "node:path";
 
-import { createTrpcClient } from "~/shell/platform/createTrpcClient.js";
 import { fetchSignedUrl } from "~/shell/platform/fetchSignedUrl.js";
-import { requestWithRetry } from "~/shell/platform/requestWithRetry.js";
-import {
-  type TeamStorageFile,
-  teamStorageListResponseSchema,
-} from "~/shell/platform/types.js";
-import {
-  describeTeamStorageDownloadError,
-  describeTeamStorageRequestError,
-} from "./wireErrors.js";
+import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
+import type { TeamStorageFile } from "~/shell/platform/types.js";
+import { describeTeamStorageDownloadError } from "./wireErrors.js";
 
 type RequestTeamStorageFilesDeps = {
-  apiKey: string;
-  baseUrl: string;
-  fetch: typeof globalThis.fetch;
-  sleep?: (ms: number) => Promise<void>;
+  platform: PlatformClient;
 };
 
 type DownloadTeamStorageAssetsArgs = {
@@ -36,41 +26,14 @@ type DownloadTeamStorageAssetsDeps = {
 
 type SyncTeamStorageAssetsArgs = {
   assetsAbs: string;
-  teamId: string;
 };
-
-const requestBackoffMs = [500, 1500];
 
 export async function requestTeamStorageFiles(
   deps: RequestTeamStorageFilesDeps,
-  teamId: string,
 ): Promise<TeamStorageFile[]> {
-  const client = createTrpcClient(deps.apiKey, {
-    baseUrl: deps.baseUrl,
-    fetch: deps.fetch,
-  });
-  const files: TeamStorageFile[] = [];
-  let nextPageToken: string | undefined;
-
-  do {
-    const input =
-      nextPageToken === undefined ? { teamId } : { teamId, nextPageToken };
-    const page = await requestWithRetry({
-      call: () =>
-        client.query(
-          "team.listStorageFiles",
-          input,
-          teamStorageListResponseSchema,
-        ),
-      backoffMs: requestBackoffMs,
-      describe: (err) => describeTeamStorageRequestError(err, deps.baseUrl),
-      sleep: deps.sleep,
-    });
-    files.push(...page.files);
-    nextPageToken = page.nextPageToken;
-  } while (nextPageToken !== undefined);
-
-  return files;
+  const result = await deps.platform.listTeamStorageFiles();
+  if (!result.ok) throw new Error(result.error);
+  return result.value;
 }
 
 export async function downloadTeamStorageAssets(
@@ -106,9 +69,9 @@ export async function downloadTeamStorageAssets(
 
 export async function syncTeamStorageAssets(
   args: SyncTeamStorageAssetsArgs,
-  deps: RequestTeamStorageFilesDeps,
+  deps: RequestTeamStorageFilesDeps & DownloadTeamStorageAssetsDeps,
 ): Promise<DownloadTeamStorageAssetsResult> {
-  const files = await requestTeamStorageFiles(deps, args.teamId);
+  const files = await requestTeamStorageFiles(deps);
   return downloadTeamStorageAssets(
     { assetsAbs: args.assetsAbs, files },
     { fetch: deps.fetch },

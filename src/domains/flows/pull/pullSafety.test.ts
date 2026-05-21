@@ -5,14 +5,13 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 import { hashFile, writeManifest } from "~/shell/manifest/io.js";
 import type { Manifest } from "~/shell/manifest/types.js";
-import { buildBundle, makeFakeFetch } from "./pull.fixtures.js";
-import { checkSafety, downloadBundle, requestBundle } from "./pull.js";
+import { buildBundle } from "./pull.fixtures.js";
+import { checkSafety } from "./pull.js";
 import { stageBundle } from "./stage.js";
 
 let workDir = "";
 let bundleArchive = "";
 let destDir = "";
-const tmpArchives: string[] = [];
 
 beforeEach(async () => {
   workDir = await mkdtemp(join(tmpdir(), "qawolf-pull-safety-"));
@@ -22,7 +21,6 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
-  await Promise.all(tmpArchives.splice(0).map((a) => rm(a, { force: true })));
 });
 
 describe("safety + staging integration", () => {
@@ -59,24 +57,10 @@ describe("safety + staging integration", () => {
     });
     expect(safety).toBe("proceed");
 
-    const fakeFetch = makeFakeFetch({
-      kind: "ok",
-      sourceArchive: bundleArchive,
-    });
-    const { signedUrl } = await requestBundle(
-      { apiKey: "k", baseUrl: "https://t.x", fetch: fakeFetch.fetch },
-      "env-abc",
-    );
-    const { tmpArchive } = await downloadBundle(
-      { fetch: fakeFetch.fetch },
-      signedUrl,
-    );
-    tmpArchives.push(tmpArchive);
-
     await stageBundle({
-      tmpArchive,
+      tmpArchive: bundleArchive,
       destAbs: destDir,
-      assetsAbs: join(workDir, "assets"),
+      assetsAbs: join(destDir, "..", "assets"),
       envId: "env-abc",
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),

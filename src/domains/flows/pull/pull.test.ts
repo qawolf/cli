@@ -1,34 +1,18 @@
-import { mkdir, mkdtemp, rm, stat, unlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-import {
-  flowsBundlePath,
-  testApiKey,
-  testBaseUrl,
-  buildBundle,
-  makeFakeFetch,
-} from "./pull.fixtures.js";
-import {
-  checkSafety,
-  downloadBundle,
-  requestBundle,
-  validateEnvId,
-} from "./pull.js";
-import { expectRejects } from "./pull.testUtils.js";
+import { checkSafety, validateEnvId } from "./pull.js";
 
 let workDir = "";
-let bundleArchive = "";
-const deps = (fetch: typeof globalThis.fetch) => ({
-  apiKey: testApiKey,
-  baseUrl: testBaseUrl,
-  fetch,
+
+afterEach(() => {
+  mock.restore();
 });
 
 beforeEach(async () => {
   workDir = await mkdtemp(join(tmpdir(), "qawolf-pull-"));
-  bundleArchive = join(workDir, "bundle.tar.gz");
 });
 
 afterEach(async () => {
@@ -49,90 +33,6 @@ describe("validateEnvId", () => {
     const r = validateEnvId("Bad Env!");
     expect(r).not.toBe("ok");
     if (r !== "ok") expect(r.error).toMatch(/UUID|kebab/i);
-  });
-});
-
-describe("requestBundle", () => {
-  it("sends a Bearer-authed POST to gitwolf.getFlowsBundleUrl", async () => {
-    const fakeFetch = makeFakeFetch({
-      kind: "ok",
-      sourceArchive: bundleArchive,
-    });
-
-    const result = await requestBundle(deps(fakeFetch.fetch), "env-abc");
-
-    const call = fakeFetch.calls[0];
-    expect(call?.url).toContain(`${testBaseUrl}/api/trpc/${flowsBundlePath}`);
-    expect(call?.init?.method).toBe("POST");
-    const headers = call?.init?.headers as Record<string, string> | undefined;
-    expect(headers?.["Authorization"]).toBe(`Bearer ${testApiKey}`);
-    expect(result.signedUrl).toMatch(/^https:\/\//);
-  });
-
-  it("surfaces a 404 as a not-found message naming --env", async () => {
-    const fakeFetch = makeFakeFetch({
-      kind: "bundleError",
-      status: 404,
-      body: "env not found",
-    });
-
-    await expectRejects(
-      requestBundle(deps(fakeFetch.fetch), "env-abc"),
-      /could not find that environment|--env/i,
-    );
-  });
-
-  it("surfaces a 401 as an API-key message", async () => {
-    const fakeFetch = makeFakeFetch({
-      kind: "bundleError",
-      status: 401,
-      body: "unauthorized",
-    });
-
-    await expectRejects(
-      requestBundle(deps(fakeFetch.fetch), "env-abc"),
-      /API key/i,
-    );
-  });
-});
-
-describe("downloadBundle", () => {
-  it("writes the signed-URL response to a tmp .tar.gz file", async () => {
-    await buildBundle(bundleArchive, {
-      flows: [{ name: "a.flow.ts", data: "ok" }],
-    });
-    const fakeFetch = makeFakeFetch({
-      kind: "ok",
-      sourceArchive: bundleArchive,
-    });
-
-    // requestBundle is what produces the signed URL in real flow; here we
-    // can call the fake fetch helper directly with the canonical URL since
-    // the fixture routes by URL.
-    const { signedUrl } = await requestBundle(deps(fakeFetch.fetch), "env-abc");
-
-    const result = await downloadBundle({ fetch: fakeFetch.fetch }, signedUrl);
-    try {
-      expect(result.tmpArchive).toMatch(/qawolf-pull-[0-9a-f]+\.tar\.gz$/);
-      const s = await stat(result.tmpArchive);
-      expect(s.size).toBeGreaterThan(0);
-    } finally {
-      await unlink(result.tmpArchive).catch(() => {});
-    }
-  });
-
-  it("throws an expired-URL message on 403 from the signed URL", async () => {
-    const fakeFetch = makeFakeFetch({
-      kind: "downloadError",
-      status: 403,
-      body: "<Error>SignatureExpired</Error>",
-    });
-    const { signedUrl } = await requestBundle(deps(fakeFetch.fetch), "env-abc");
-
-    await expectRejects(
-      downloadBundle({ fetch: fakeFetch.fetch }, signedUrl),
-      /expired|run.+pull.+again/i,
-    );
   });
 });
 

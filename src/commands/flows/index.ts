@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 
-import { withContext } from "~/commands/context.js";
+import { withAuthContext, withContext } from "~/commands/context.js";
 import type {
   HarContent,
   HarMode,
@@ -8,17 +8,13 @@ import type {
   VideoMode,
 } from "~/core/types.js";
 
-import {
-  makeDefaultDeps,
-  resolveApiKey,
-  validateApiKey,
-} from "~/domains/auth/index.js";
 import { handleFlowsList } from "~/domains/flows/list.js";
 import {
   type FlowsPullOptions,
   handleFlowsPull,
 } from "~/domains/flows/pull/handler.js";
 import { handleFlowsRun } from "./runDefaults.js";
+import { handleHybridFlowsRun } from "./hybridRunDefaults.js";
 import { parseEnum, parseInteger } from "~/domains/runner/runFlagParsers.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
@@ -92,8 +88,22 @@ export function registerFlowsCommand(program: Command): void {
       "Open a visible browser window (default: headless)",
       false,
     )
+    .option(
+      "--env <env>",
+      "Pull and run a flow from this environment (UUID or slug) if not already cached",
+    )
     .action(
-      (pattern: string | undefined, opts: FlowsRunFlags, command: Command) => {
+      (
+        pattern: string | undefined,
+        opts: FlowsRunFlags & { env?: string },
+        command: Command,
+      ) => {
+        if (opts.env !== undefined) {
+          const hybridFlags = { ...opts, env: opts.env };
+          return withAuthContext((ctx) =>
+            handleHybridFlowsRun(ctx, pattern, hybridFlags),
+          )(opts, command);
+        }
         return withContext((ctx) => handleFlowsRun(ctx, pattern, opts))(
           opts,
           command,
@@ -116,31 +126,10 @@ export function registerFlowsCommand(program: Command): void {
     .requiredOption("--env <env>", "Environment ID (UUID or kebab-case slug)")
     .option("--out <path>", "Override the .qawolf/<env>/ destination")
     .option("--yes", "Skip the overwrite prompt for locally-modified files")
-    .action(
-      (opts: Omit<FlowsPullOptions, "apiKey" | "teamId">, command: Command) => {
-        return withContext(async (ctx) => {
-          const resolved = await resolveApiKey(ctx.configDir);
-          if (!resolved) {
-            ctx.ui.error(
-              "Not authenticated",
-              "Run `qawolf auth login` or set QAWOLF_API_KEY.",
-            );
-            return { error: "not authenticated" };
-          }
-          const validation = await validateApiKey(
-            resolved.key,
-            makeDefaultDeps(ctx.apiBaseUrl),
-          );
-          if (!validation.valid) {
-            ctx.ui.error(validation.error);
-            return { error: validation.error };
-          }
-          return handleFlowsPull(ctx, {
-            ...opts,
-            apiKey: resolved.key,
-            teamId: validation.team.id,
-          });
-        })(opts, command);
-      },
-    );
+    .action((opts: FlowsPullOptions, command: Command) => {
+      return withAuthContext((ctx) => handleFlowsPull(ctx, opts))(
+        opts,
+        command,
+      );
+    });
 }
