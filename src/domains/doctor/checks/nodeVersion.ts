@@ -34,7 +34,7 @@ export async function checkNodeVersion(
     };
   }
 
-  return { name: "node-version", status: "pass" };
+  return { name: "node-version", status: "pass", version: deps.processVersion };
 }
 
 function extractMajor(input: string, pattern: RegExp): number | undefined {

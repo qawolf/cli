@@ -6,6 +6,7 @@ import { avdNameForTarget } from "~/core/androidTargets.js";
 import { resolveApiKey } from "~/domains/auth/resolve.js";
 import { runChecks } from "~/domains/doctor/checks/index.js";
 import { renderResults } from "~/domains/doctor/render.js";
+import type { CheckResult } from "~/domains/doctor/types.js";
 import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
 import { expandPatterns, peekFlowMeta } from "~/domains/flows/expand.js";
 import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
@@ -64,6 +65,12 @@ export async function handleDoctor(
   const requiredAvds = await collectRequiredAvds(flowFiles);
   const runAndroidChecks = opts.all || requiredAvds.length > 0;
 
+  const cliCheck: CheckResult = {
+    name: "qawolf",
+    status: "pass",
+    version: packageJson.version,
+  };
+
   const results = await runChecks({
     apiKey: resolved?.key,
     fetch: globalThis.fetch,
@@ -82,7 +89,8 @@ export async function handleDoctor(
     resolveAppiumBin,
     requiredAvds,
   });
-  renderResults(ctx.ui, results);
-  const fails = results.filter((result) => result.status === "fail");
+  const allResults = [cliCheck, ...results];
+  renderResults(ctx.ui, allResults);
+  const fails = allResults.filter((result) => result.status === "fail");
   if (fails.length > 0) return { error: `${fails.length} check(s) failed` };
 }

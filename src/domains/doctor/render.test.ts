@@ -27,6 +27,12 @@ const results: CheckResult[] = [
   { name: "c", status: "fail", detail: "hard" },
 ];
 
+const resultsWithVersions: CheckResult[] = [
+  { name: "qawolf", status: "pass", version: "0.1.0" },
+  { name: "node-version", status: "pass", version: "v24.0.0" },
+  { name: "playwright", status: "pass", version: "1.59.1" },
+];
+
 describe("renderResults", () => {
   it("emits a single ui.json payload in json mode", () => {
     const ui = makeUi("json");
@@ -65,5 +71,30 @@ describe("renderResults", () => {
     expect(ui.write).toHaveBeenNthCalledWith(3, "FAIL c: hard\n");
     expect(ui.intro).not.toHaveBeenCalled();
     expect(ui.success).not.toHaveBeenCalled();
+  });
+
+  it("includes version in human mode output", () => {
+    const ui = makeUi("human");
+    renderResults(ui, resultsWithVersions);
+    expect(ui.success).toHaveBeenNthCalledWith(1, "qawolf  0.1.0");
+    expect(ui.success).toHaveBeenNthCalledWith(2, "node-version  v24.0.0");
+    expect(ui.success).toHaveBeenNthCalledWith(3, "playwright  1.59.1");
+  });
+
+  it("includes version in agent mode output", () => {
+    const ui = makeUi("agent");
+    renderResults(ui, resultsWithVersions);
+    expect(ui.write).toHaveBeenNthCalledWith(1, "PASS qawolf  0.1.0\n");
+    expect(ui.write).toHaveBeenNthCalledWith(2, "PASS node-version  v24.0.0\n");
+    expect(ui.write).toHaveBeenNthCalledWith(3, "PASS playwright  1.59.1\n");
+  });
+
+  it("includes version in json mode output", () => {
+    const ui = makeUi("json");
+    renderResults(ui, resultsWithVersions);
+    expect(ui.json).toHaveBeenCalledWith({
+      checks: resultsWithVersions,
+      ok: true,
+    });
   });
 });
