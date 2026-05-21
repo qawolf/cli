@@ -97,4 +97,34 @@ describe("renderResults", () => {
       ok: true,
     });
   });
+
+  it("renders version before detail when both are present in human mode", () => {
+    const ui = makeUi("human");
+    renderResults(ui, [
+      {
+        name: "node-version",
+        status: "warn",
+        version: "v18.0.0",
+        detail: "below minimum",
+      },
+    ]);
+    expect(ui.warn).toHaveBeenCalledWith(
+      "node-version  v18.0.0: below minimum",
+    );
+  });
+
+  it("renders version before detail when both are present in agent mode", () => {
+    const ui = makeUi("agent");
+    renderResults(ui, [
+      {
+        name: "node-version",
+        status: "warn",
+        version: "v18.0.0",
+        detail: "below minimum",
+      },
+    ]);
+    expect(ui.write).toHaveBeenCalledWith(
+      "WARN node-version  v18.0.0: below minimum\n",
+    );
+  });
 });
