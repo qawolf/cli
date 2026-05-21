@@ -1,4 +1,11 @@
-import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
@@ -99,6 +106,9 @@ describe("requestTeamStorageFiles", () => {
       `${testBaseUrl}/api/trpc/team.listStorageFiles`,
     );
     expect(call?.url).toContain(encodeURIComponent('"teamId":"team_123"'));
+    expect(call?.url).toContain(
+      encodeURIComponent('"excludePrefixes":["_screenshots_/"]'),
+    );
     expect(call?.init?.method).toBe("GET");
     const headers = call?.init?.headers as Record<string, string> | undefined;
     expect(headers?.["Authorization"]).toBe(`Bearer ${testApiKey}`);
@@ -123,6 +133,35 @@ describe("downloadTeamStorageAssets", () => {
     );
 
     expect(result).toEqual({ downloadedCount: 2, skippedCount: 0 });
+    expect(await readFile(join(assetsDir, "root.txt"), "utf8")).toBe("root");
+    expect(await readFile(join(assetsDir, "nested", "data.csv"), "utf8")).toBe(
+      "nested",
+    );
+  });
+
+  it("replaces stale assets with the current storage snapshot", async () => {
+    await writeFile(join(assetsDir, "stale.txt"), "old");
+    await mkdir(join(assetsDir, "stale-dir"), { recursive: true });
+    await writeFile(join(assetsDir, "stale-dir", "old.txt"), "old");
+
+    const fakeFetch = makeFetch();
+    const files = await requestTeamStorageFiles(
+      {
+        apiKey: testApiKey,
+        baseUrl: testBaseUrl,
+        fetch: fakeFetch.fetch,
+      },
+      "team_123",
+    );
+
+    const result = await downloadTeamStorageAssets(
+      { assetsAbs: assetsDir, files },
+      { fetch: fakeFetch.fetch },
+    );
+
+    expect(result).toEqual({ downloadedCount: 2, skippedCount: 0 });
+    expect(await exists(join(assetsDir, "stale.txt"))).toBe(false);
+    expect(await exists(join(assetsDir, "stale-dir"))).toBe(false);
     expect(await readFile(join(assetsDir, "root.txt"), "utf8")).toBe("root");
     expect(await readFile(join(assetsDir, "nested", "data.csv"), "utf8")).toBe(
       "nested",
@@ -181,3 +220,12 @@ describe("downloadTeamStorageAssets", () => {
     expect(await readFile(join(assetsDir, "safe.txt"), "utf8")).toBe("safe");
   });
 });
+
+async function exists(path: string): Promise<boolean> {
+  try {
+    await stat(path);
+    return true;
+  } catch {
+    return false;
+  }
+}

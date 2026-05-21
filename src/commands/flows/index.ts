@@ -121,10 +121,6 @@ export function registerFlowsCommand(program: Command): void {
         return withContext(async (ctx) => {
           const resolved = await resolveApiKey(ctx.configDir);
           if (!resolved) {
-            ctx.ui.error(
-              "Not authenticated",
-              "Run `qawolf auth login` or set QAWOLF_API_KEY.",
-            );
             return { error: "not authenticated" };
           }
           const validation = await validateApiKey(
@@ -132,7 +128,6 @@ export function registerFlowsCommand(program: Command): void {
             makeDefaultDeps(ctx.apiBaseUrl),
           );
           if (!validation.valid) {
-            ctx.ui.error(validation.error);
             return { error: validation.error };
           }
           return handleFlowsPull(ctx, {

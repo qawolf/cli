@@ -1,8 +1,18 @@
 import { CommanderError } from "commander";
-import { describe, expect, it } from "bun:test";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "bun:test";
 
 import packageJson from "../../package.json" with { type: "json" };
 import { createProgram } from "./program.js";
+
+let tempHome = "";
+
+afterEach(async () => {
+  if (tempHome) await rm(tempHome, { recursive: true, force: true });
+  tempHome = "";
+});
 
 function silentProgram() {
   return createProgram()
@@ -77,5 +87,28 @@ describe("createProgram", () => {
     }
     expect(err).toBeInstanceOf(CommanderError);
     expect((err as CommanderError).code).toBe("commander.unknownOption");
+  });
+
+  it("emits one error when flows pull is unauthenticated", async () => {
+    tempHome = await mkdtemp(join(tmpdir(), "qawolf-cli-home-"));
+    const env = { ...process.env, HOME: tempHome, QAWOLF_API_KEY: undefined };
+    const proc = Bun.spawn(
+      ["bun", "src/main.ts", "--json", "flows", "pull", "--env", "env-abc"],
+      {
+        cwd: process.cwd(),
+        env,
+        stderr: "pipe",
+        stdout: "pipe",
+      },
+    );
+
+    const stderr = await new Response(proc.stderr).text();
+    await proc.exited;
+
+    const errors = stderr
+      .split("\n")
+      .filter((line) => line.includes('"type":"error"'));
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('"title":"not authenticated"');
   });
 });

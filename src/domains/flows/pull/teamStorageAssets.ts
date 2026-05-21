@@ -1,5 +1,5 @@
 import { mkdir } from "~/shell/fs.js";
-import { dirname, join, normalize, sep } from "node:path";
+import { dirname, join } from "node:path";
 
 import { createTrpcClient } from "~/shell/platform/createTrpcClient.js";
 import { fetchSignedUrl } from "~/shell/platform/fetchSignedUrl.js";
@@ -12,6 +12,9 @@ import {
   describeTeamStorageDownloadError,
   describeTeamStorageRequestError,
 } from "./wireErrors.js";
+import { cleanupTempDir, replaceAssetsDir } from "./assetSnapshot.js";
+import { createTempPathRegistry, mintTempPath } from "./safeRemove.js";
+import { safeAssetPath } from "./safeAssetPath.js";
 
 type RequestTeamStorageFilesDeps = {
   apiKey: string;
@@ -41,6 +44,8 @@ type SyncTeamStorageAssetsArgs = {
 
 const requestBackoffMs = [500, 1500];
 
+const excludePrefixes = ["_screenshots_/"];
+
 export async function requestTeamStorageFiles(
   deps: RequestTeamStorageFilesDeps,
   teamId: string,
@@ -54,7 +59,9 @@ export async function requestTeamStorageFiles(
 
   do {
     const input =
-      nextPageToken === undefined ? { teamId } : { teamId, nextPageToken };
+      nextPageToken === undefined
+        ? { teamId, excludePrefixes }
+        : { teamId, excludePrefixes, nextPageToken };
     const page = await requestWithRetry({
       call: () =>
         client.query(
@@ -77,31 +84,41 @@ export async function downloadTeamStorageAssets(
   args: DownloadTeamStorageAssetsArgs,
   deps: DownloadTeamStorageAssetsDeps = { fetch: globalThis.fetch },
 ): Promise<DownloadTeamStorageAssetsResult> {
+  const registry = createTempPathRegistry();
+  const tmpAssets = mintTempPath(args.assetsAbs, "pull", registry);
   let downloadedCount = 0;
   let skippedCount = 0;
 
-  for (const file of args.files) {
-    const relativePath = safeAssetPath(file.path);
-    if (relativePath === undefined) {
-      skippedCount++;
-      continue;
-    }
+  try {
+    await mkdir(tmpAssets, { recursive: true });
 
-    const dest = join(args.assetsAbs, relativePath);
-    await mkdir(dirname(dest), { recursive: true });
-    const result = await fetchSignedUrl(
-      { url: file.signedUrl, dest },
-      { fetch: deps.fetch },
-    );
-    if (!result.ok) {
-      throw new Error(
-        describeTeamStorageDownloadError(file.path, result.error),
+    for (const file of args.files) {
+      const relativePath = safeAssetPath(file.path);
+      if (relativePath === undefined) {
+        skippedCount++;
+        continue;
+      }
+
+      const dest = join(tmpAssets, relativePath);
+      await mkdir(dirname(dest), { recursive: true });
+      const result = await fetchSignedUrl(
+        { url: file.signedUrl, dest },
+        { fetch: deps.fetch },
       );
+      if (!result.ok) {
+        throw new Error(
+          describeTeamStorageDownloadError(file.path, result.error),
+        );
+      }
+      downloadedCount++;
     }
-    downloadedCount++;
-  }
 
-  return { downloadedCount, skippedCount };
+    await replaceAssetsDir(args.assetsAbs, tmpAssets, registry);
+    return { downloadedCount, skippedCount };
+  } catch (err) {
+    await cleanupTempDir(tmpAssets, registry);
+    throw err;
+  }
 }
 
 export async function syncTeamStorageAssets(
@@ -113,32 +130,4 @@ export async function syncTeamStorageAssets(
     { assetsAbs: args.assetsAbs, files },
     { fetch: deps.fetch },
   );
-}
-
-function safeAssetPath(path: string): string | undefined {
-  if (!path || path.endsWith("/") || path.includes("\\")) return undefined;
-
-  const segments = path.split("/");
-  if (
-    segments.some((segment) => {
-      const normalized = segment.toLowerCase();
-      return (
-        segment === "" ||
-        segment === "." ||
-        segment === ".." ||
-        normalized === "_screenshots_" ||
-        normalized === "screenshots" ||
-        normalized === "ovpn" ||
-        normalized.endsWith(".ovpn")
-      );
-    })
-  ) {
-    return undefined;
-  }
-
-  const normalized = normalize(path);
-  if (normalized.startsWith(`..${sep}`) || normalized === "..") {
-    return undefined;
-  }
-  return normalized;
 }
