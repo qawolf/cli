@@ -43,11 +43,11 @@ export function createTrpcClient(apiKey: string, deps: Deps): TrpcClient {
     logger?.debug(`→ ${path}`);
     const result = await call();
     if (result.ok) {
-      logger?.info(`← ${path} ok`);
+      logger?.debug(`← ${path} ok`);
     } else {
       const e = result.error;
       const msg = e.kind === "http" ? `${e.status} ${e.body}` : e.cause.message;
-      logger?.error(`← ${path} error: ${msg}`);
+      logger?.warn(`← ${path} error (${e.kind}): ${msg}`);
     }
     return result;
   }

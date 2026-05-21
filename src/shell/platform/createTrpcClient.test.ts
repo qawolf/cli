@@ -213,38 +213,38 @@ describe("createTrpcClient.mutation", () => {
 });
 
 describe("createTrpcClient logger", () => {
-  const noop = () => {};
   const makeLogger = (): Logger => ({
-    debug: mock(noop),
-    info: mock(noop),
-    warn: mock(noop),
-    error: mock(noop),
-    trace: mock(noop),
+    debug: mock(() => {}),
+    info: mock(() => {}),
+    warn: mock(() => {}),
+    error: mock(() => {}),
+    trace: mock(() => {}),
   });
+  const lp = "env";
 
-  it("emits debug → info on success", async () => {
+  it("emits debug → debug on success", async () => {
     const logger = makeLogger();
     const client = createTrpcClient(apiKey, {
       baseUrl,
       fetch: asFetch(createFetchMock(jsonResponse(wrapped({ ok: true })))),
       logger,
     });
-    await client.query(path, {}, z.object({ ok: z.boolean() }));
-    expect(logger.debug).toHaveBeenCalledWith(`→ ${path}`);
-    expect(logger.info).toHaveBeenCalledWith(`← ${path} ok`);
+    await client.query(lp, {}, z.object({ ok: z.boolean() }));
+    expect(logger.debug).toHaveBeenCalledWith(`→ ${lp}`);
+    expect(logger.debug).toHaveBeenCalledWith(`← ${lp} ok`);
     expect(logger.error).not.toHaveBeenCalled();
   });
 
-  it("emits debug → error on http failure", async () => {
+  it("emits debug → warn on http failure with kind label", async () => {
     const logger = makeLogger();
     const client = createTrpcClient(apiKey, {
       baseUrl,
       fetch: asFetch(createFetchMock(new Response("nope", { status: 403 }))),
       logger,
     });
-    await client.query(path, {}, z.unknown());
-    expect(logger.debug).toHaveBeenCalledWith(`→ ${path}`);
-    expect(logger.error).toHaveBeenCalledWith(`← ${path} error: 403 nope`);
-    expect(logger.info).not.toHaveBeenCalled();
+    await client.query(lp, {}, z.unknown());
+    expect(logger.debug).toHaveBeenCalledWith(`→ ${lp}`);
+    expect(logger.warn).toHaveBeenCalledWith(`← ${lp} error (http): 403 nope`);
+    expect(logger.error).not.toHaveBeenCalled();
   });
 });
