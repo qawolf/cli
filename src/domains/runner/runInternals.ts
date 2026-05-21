@@ -134,6 +134,11 @@ export async function dispatchFlow({
     deps.warn(`failed to read manifest stamp for ${flow.file}: ${message}`);
   }
   if (stamp) run = { ...run, manifest: stamp };
-  deps.logger?.info(`done: ${flow.name} (${run.attempts} attempts)`);
-  return { run, durationMs: deps.now() - flowStart };
+  const durationMs = deps.now() - flowStart;
+  const outcome = run.passed ? "pass" : "fail";
+  const attempts = run.attempts;
+  deps.logger?.info(
+    `${outcome}: ${flow.name} (${durationMs}ms, ${attempts} attempt${attempts === 1 ? "" : "s"})`,
+  );
+  return { run, durationMs };
 }
