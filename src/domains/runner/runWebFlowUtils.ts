@@ -1,3 +1,5 @@
+import { unsupportedSharedDepNames } from "./unsupportedDepNames.js";
+
 export function normalizeBrowserName(
   browser?: "chrome" | "chromium" | "firefox" | "msedge" | "webkit",
 ): "chromium" | "firefox" | "webkit" {
@@ -12,19 +14,6 @@ export function notSupported(name: string): () => never {
     throw new Error(`${name} is not supported in the CLI runner`);
   };
 }
-
-export const unsupportedSharedDepNames = [
-  "fetchLatestEnvironmentVariables",
-  "getInbox",
-  "getOTP",
-  "mountCifsShare",
-  "OTPAuth",
-  "qawolf",
-  "runCommand",
-  "setEnvironmentVariable",
-  "startOpenVpn",
-  "startWireGuard",
-] as const;
 
 export const unsupportedWebDepNames = [
   ...unsupportedSharedDepNames,

@@ -2,7 +2,7 @@ import type { AndroidFlowTargetInput } from "@qawolf/flows/android";
 import type { AndroidExecutionTarget } from "@qawolf/flow-targets";
 import { parseExecutionTarget } from "@qawolf/flow-targets";
 import { makeAvdName } from "~/core/androidTargets.js";
-import { unsupportedSharedDepNames } from "./runWebFlowUtils.js";
+import { unsupportedSharedDepNames } from "./unsupportedDepNames.js";
 
 // Matches testContextDependencies from @qawolf/flows/android minus wdio,
 // which is provided by the runner.
