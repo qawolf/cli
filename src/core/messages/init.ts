@@ -3,7 +3,8 @@ export const initMessages = {
   outro:
     "Run `qawolf auth login`, then `qawolf flows pull`, then `qawolf flows run`.",
   createPackageJsonPrompt: "Create package.json (required to run flows)?",
-  skippedPackageJson: "Skipped package.json",
+  skippedCreatingPackageJson: "Skipped package.json",
+  skippedAddingTestE2e: "Skipped adding test:e2e to package.json",
   createdPackageJson: "Created package.json",
   packageJsonInvalidJson:
     "package.json is not valid JSON — skipped adding `test:e2e`",

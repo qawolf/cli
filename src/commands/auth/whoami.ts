@@ -2,19 +2,19 @@ import {
   type AuthCommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
-import { authCopy } from "~/core/messages/index.js";
+import { authMessages } from "~/core/messages/index.js";
 
 export async function handleWhoami(
   ctx: AuthCommandContext,
 ): Promise<CommandResult> {
   ctx.ui.gap();
-  ctx.ui.intro(authCopy.title);
+  ctx.ui.intro(authMessages.title);
 
   const identity = await ctx.platform.getIdentity();
 
   if (!identity.ok) {
     if (ctx.ui.mode === "human") {
-      ctx.ui.note(`Source: ${ctx.apiKeySource}`, authCopy.whoamiFailed);
+      ctx.ui.note(`Source: ${ctx.apiKeySource}`, authMessages.whoamiFailed);
       ctx.ui.warn(identity.error);
     } else {
       ctx.ui.output(
@@ -38,9 +38,9 @@ export async function handleWhoami(
         `ID:     ${team.id}`,
         `Source: ${ctx.apiKeySource}`,
       ].join("\n"),
-      authCopy.whoamiAuthenticated,
+      authMessages.whoamiAuthenticated,
     );
-    ctx.ui.outro(authCopy.outroReady);
+    ctx.ui.outro(authMessages.outroReady);
   } else {
     ctx.ui.output(
       {

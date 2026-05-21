@@ -1,4 +1,4 @@
-export const authCopy = {
+export const authMessages = {
   title: "QA Wolf Authentication",
   promptApiKey: "Paste your QA Wolf API Key",
   verifying: "Verifying API key",

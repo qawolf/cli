@@ -85,7 +85,7 @@ async function ensurePackageJson(
       { yes },
     );
     if (!confirmed.ok || !confirmed.value) {
-      ctx.ui.info(initMessages.skippedPackageJson);
+      ctx.ui.info(initMessages.skippedCreatingPackageJson);
       return;
     }
     const pkg = {
@@ -120,7 +120,7 @@ async function ensurePackageJson(
     destructive: true,
   });
   if (!confirmed.ok || !confirmed.value) {
-    ctx.ui.info(initMessages.skippedPackageJson);
+    ctx.ui.info(initMessages.skippedAddingTestE2e);
     return;
   }
 

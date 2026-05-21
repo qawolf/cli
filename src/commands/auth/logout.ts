@@ -3,7 +3,7 @@ import {
   type CommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
-import { authCopy } from "~/core/messages/index.js";
+import { authMessages } from "~/core/messages/index.js";
 
 export async function handleLogout(
   ctx: CommandContext,
@@ -11,21 +11,21 @@ export async function handleLogout(
   const resolved = await resolveApiKey(ctx.configDir);
 
   if (!resolved) {
-    ctx.ui.info(authCopy.logout.notAuthenticated);
+    ctx.ui.info(authMessages.logout.notAuthenticated);
     return;
   }
 
   if (resolved.source === "env") {
-    ctx.ui.warn(authCopy.logout.envVarWarning);
+    ctx.ui.warn(authMessages.logout.envVarWarning);
   }
 
   if (ctx.ui.mode === "human") {
     ctx.ui.gap();
-    ctx.ui.intro(authCopy.logout.title);
+    ctx.ui.intro(authMessages.logout.title);
 
-    const result = await ctx.ui.confirm(authCopy.logout.confirmPrompt);
+    const result = await ctx.ui.confirm(authMessages.logout.confirmPrompt);
     if (!result.ok || !result.value) {
-      ctx.ui.cancel(authCopy.logout.cancelled);
+      ctx.ui.cancel(authMessages.logout.cancelled);
       return;
     }
   }
@@ -33,7 +33,7 @@ export async function handleLogout(
   await ctx.ui.withProgress(
     [
       {
-        message: authCopy.logout.deleting,
+        message: authMessages.logout.deleting,
         task: () => deleteApiKey(ctx.configDir),
       },
     ],
@@ -41,8 +41,8 @@ export async function handleLogout(
   );
 
   if (ctx.ui.mode === "human") {
-    ctx.ui.outro(authCopy.logout.success);
+    ctx.ui.outro(authMessages.logout.success);
   } else {
-    ctx.ui.output({ loggedOut: true }, authCopy.logout.success);
+    ctx.ui.output({ loggedOut: true }, authMessages.logout.success);
   }
 }
