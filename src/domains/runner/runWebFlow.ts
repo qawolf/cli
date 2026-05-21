@@ -5,7 +5,7 @@ import type {
   WebFlowApiReturnValue,
   WebFlowDefinition,
 } from "@qawolf/flows/web";
-import { loadFlowDefault } from "./loadFlowModule.js";
+import { loadFlowDefault } from "./loadFlowDefault.js";
 import { createRunner } from "./createRunner.js";
 import type {
   FlowDefinition,

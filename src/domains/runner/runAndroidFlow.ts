@@ -8,7 +8,7 @@ import type {
   AndroidLaunchDeps,
   AndroidLaunchOptions,
 } from "~/shell/appium/types.js";
-import { loadFlowDefault } from "./loadFlowModule.js";
+import { loadFlowDefault } from "./loadFlowDefault.js";
 import { createRunner } from "./createRunner.js";
 import type {
   FlowDefinition,

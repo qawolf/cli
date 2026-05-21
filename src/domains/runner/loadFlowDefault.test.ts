@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "bun:test";
-import { loadFlowDefault } from "./loadFlowModule.js";
+import { loadFlowDefault } from "./loadFlowDefault.js";
 
 describe("loadFlowDefault", () => {
   it("should return the default export when present", async () => {
