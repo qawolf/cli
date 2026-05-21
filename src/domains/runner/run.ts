@@ -1,4 +1,9 @@
-import { classifyTarget, flowBasename } from "~/core/flowMeta.js";
+import {
+  classifyTarget,
+  flowBasename,
+  flowBatchSize,
+} from "~/core/flowMeta.js";
+import { batchMap } from "~/core/batchMap.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
@@ -14,8 +19,6 @@ import {
 } from "./runInternals.js";
 import { resolveAvdName } from "./runAndroidFlowUtils.js";
 
-const batchSize = 32;
-
 export async function flowsRun(
   ctx: CommandContext,
   files: readonly string[],
@@ -28,33 +31,34 @@ export async function flowsRun(
     return { error: message, exitCode: 2 };
   }
 
+  const metas = await batchMap(
+    files,
+    (f) => deps.peekFlowMeta(f),
+    flowBatchSize,
+  );
   const flows: ResolvedFlow[] = [];
-  for (let i = 0; i < files.length; i += batchSize) {
-    const batch = files.slice(i, i + batchSize);
-    const metas = await Promise.all(batch.map((f) => deps.peekFlowMeta(f)));
-    for (const [j, meta] of metas.entries()) {
-      const file = batch[j]!;
-      if (!meta.target) continue;
-      const classified = classifyTarget(meta.target);
-      if (classified?.kind === "web") {
-        flows.push({
-          kind: "web",
-          file,
-          name: meta.name ?? flowBasename(file),
-          browser: classified.browser,
-        });
-      } else if (classified?.kind === "android") {
-        flows.push({
-          kind: "android",
-          file,
-          name: meta.name ?? flowBasename(file),
-          target: meta.target,
-        });
-      } else {
-        const message = unsupportedTargetMessage(meta.target);
-        ctx.ui.error(message);
-        return { error: message, exitCode: 2 };
-      }
+  for (const [i, meta] of metas.entries()) {
+    const file = files[i]!;
+    if (!meta.target) continue;
+    const classified = classifyTarget(meta.target);
+    if (classified?.kind === "web") {
+      flows.push({
+        kind: "web",
+        file,
+        name: meta.name ?? flowBasename(file),
+        browser: classified.browser,
+      });
+    } else if (classified?.kind === "android") {
+      flows.push({
+        kind: "android",
+        file,
+        name: meta.name ?? flowBasename(file),
+        target: meta.target,
+      });
+    } else {
+      const message = unsupportedTargetMessage(meta.target);
+      ctx.ui.error(message);
+      return { error: message, exitCode: 2 };
     }
   }
 

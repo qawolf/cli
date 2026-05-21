@@ -1,7 +1,8 @@
-import { targetToBrowser } from "~/core/flowMeta.js";
+import { targetToBrowser, flowBatchSize } from "~/core/flowMeta.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { BrowserName } from "~/core/types.js";
+import { batchMap } from "~/core/batchMap.js";
 
 export type InstallBrowsersDeps = {
   readonly cwd: string;
@@ -59,23 +60,18 @@ export async function installBrowsers(
   await installBrowserList(ctx, browsers, deps);
 }
 
-const batchSize = 32;
-
 async function collectBrowsers(
   files: readonly string[],
   peekFlowMeta: (
     filePath: string,
   ) => Promise<{ name: string | undefined; target: string | undefined }>,
 ): Promise<BrowserName[]> {
+  const metas = await batchMap(files, peekFlowMeta, flowBatchSize);
   const seen = new Set<BrowserName>();
-  for (let i = 0; i < files.length; i += batchSize) {
-    const batch = files.slice(i, i + batchSize);
-    const metas = await Promise.all(batch.map(peekFlowMeta));
-    for (const meta of metas) {
-      if (!meta.target) continue;
-      const browser = targetToBrowser(meta.target);
-      if (browser) seen.add(browser);
-    }
+  for (const meta of metas) {
+    if (!meta.target) continue;
+    const browser = targetToBrowser(meta.target);
+    if (browser) seen.add(browser);
   }
   return [...seen].sort();
 }
