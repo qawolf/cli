@@ -79,6 +79,10 @@ const nameRe = /\bflow\s*\(\s*["']([^"'\n]+)["']/;
 const flowTargetRe =
   /\bflow\s*\(\s*["'][^"'\n]*["']\s*,\s*(?:["']([^"'\n]+)["']|\{[^{}]*\btarget\s*:\s*["']([^"'\n]+)["'])/;
 
+export type PeekFlowMetaFn = (
+  filePath: string,
+) => Promise<{ name: string | undefined; target: string | undefined }>;
+
 export function extractFlowMeta(source: string): {
   name: string | undefined;
   target: string | undefined;
