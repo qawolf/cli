@@ -26,15 +26,7 @@ qawolf flows pull --env <env-id>
 
 Your environment ID and API key are in your workspace settings on the QA Wolf platform. The `--env` flag accepts either the full UUID or the kebab-case slug.
 
-**3. Install dependencies**
-
-```bash
-qawolf install
-```
-
-This detects which browsers or Android tooling your flows need and installs them.
-
-**4. Run**
+**3. Run**
 
 ```bash
 qawolf flows run
@@ -89,6 +81,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
       - name: Install QA Wolf CLI
         run: npm install -g @qawolf/cli
       - name: Install browsers
