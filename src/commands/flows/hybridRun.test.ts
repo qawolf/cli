@@ -118,6 +118,10 @@ describe("handleHybridFlowsRun", () => {
     );
 
     expect(pullEnvMock).not.toHaveBeenCalled();
+    expect(globMock).toHaveBeenCalledWith(
+      ["**/login.flow.ts"],
+      expect.anything(),
+    );
     expect(flowsRunMock).toHaveBeenCalledWith(
       expect.anything(),
       ["/mock/.qawolf/my-env/login.flow.ts"],
@@ -215,5 +219,25 @@ describe("handleHybridFlowsRun", () => {
       ["**/*.flow.{ts,js}"],
       expect.anything(),
     );
+  });
+
+  it("returns error when no flows found in env after pull (pattern undefined)", async () => {
+    const ctx = makeCtx();
+    const deps = makeDeps();
+    globMock.mockResolvedValue([]);
+    pullEnvMock.mockResolvedValue(undefined);
+
+    const result = await handleHybridFlowsRun(
+      ctx,
+      undefined,
+      { ...defaultFlags(), env: "my-env" },
+      deps,
+    );
+
+    expect(result).toEqual({
+      error: "No flows found in env 'my-env'",
+      exitCode: 2,
+    });
+    expect(flowsRunMock).not.toHaveBeenCalled();
   });
 });
