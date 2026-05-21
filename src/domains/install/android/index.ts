@@ -1,4 +1,4 @@
-import { isAndroidTarget, flowBatchSize } from "~/core/flowMeta.js";
+import { isAndroidTarget } from "~/core/flowMeta.js";
 import { pluralize } from "~/core/pluralize.js";
 import { avdNameForTarget, buildSystemImage } from "~/core/androidTargets.js";
 import { parseExecutionTarget } from "@qawolf/flow-targets";
@@ -7,7 +7,7 @@ import type { SpawnFn } from "~/shell/spawn.js";
 import { installAvds } from "./avd.js";
 import type { AvdSpec } from "./avd.js";
 import { installUiautomator2Driver } from "./driver.js";
-import { batchMap } from "~/core/batchMap.js";
+import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 
 type PeekFlowMetaFn = (
   filePath: string,

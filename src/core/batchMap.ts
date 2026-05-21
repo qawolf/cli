@@ -1,3 +1,5 @@
+export const flowBatchSize = 32;
+
 export async function batchMap<T, R>(
   items: readonly T[],
   fn: (item: T) => Promise<R>,

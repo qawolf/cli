@@ -2,10 +2,10 @@ import {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/domains/flows/expand.js";
-import { classifyTarget, flowBatchSize } from "~/core/flowMeta.js";
+import { classifyTarget } from "~/core/flowMeta.js";
 import { errorMessage } from "~/core/errors.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
-import { batchMap } from "~/core/batchMap.js";
+import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 
 import { handleInstallAndroid } from "./android.js";
 import { handleInstallBrowsers } from "./browsers.js";

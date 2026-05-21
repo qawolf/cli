@@ -2,8 +2,6 @@ import { getWebBrowserInfo, parseExecutionTarget } from "@qawolf/flow-targets";
 import { basename } from "node:path";
 import type { BrowserName } from "~/core/types.js";
 
-export const flowBatchSize = 32;
-
 export function flowBasename(file: string): string {
   return basename(file).replace(/\.flow\.(ts|js)$/, "");
 }

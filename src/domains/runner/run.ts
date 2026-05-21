@@ -1,9 +1,5 @@
-import {
-  classifyTarget,
-  flowBasename,
-  flowBatchSize,
-} from "~/core/flowMeta.js";
-import { batchMap } from "~/core/batchMap.js";
+import { classifyTarget, flowBasename } from "~/core/flowMeta.js";
+import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";

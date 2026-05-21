@@ -1,8 +1,8 @@
-import { targetToBrowser, flowBatchSize } from "~/core/flowMeta.js";
+import { targetToBrowser } from "~/core/flowMeta.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { BrowserName } from "~/core/types.js";
-import { batchMap } from "~/core/batchMap.js";
+import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 
 export type InstallBrowsersDeps = {
   readonly cwd: string;
