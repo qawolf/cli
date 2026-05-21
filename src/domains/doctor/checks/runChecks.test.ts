@@ -8,6 +8,15 @@ afterEach(() => {
   mock.restore();
 });
 
+const androidDeps = {
+  runAndroidChecks: false,
+  androidHome: undefined,
+  checkExists: () => true,
+  envDir: undefined,
+  resolveAppiumBin: (dir: string) => `${dir}/node_modules/.bin/appium`,
+  requiredAvds: [] as readonly string[],
+};
+
 describe("runChecks", () => {
   it("runs the standard checks in order with no flow files", async () => {
     const spawn = mock<SpawnFn>(() =>
@@ -32,6 +41,7 @@ describe("runChecks", () => {
       readFile: () => Promise.resolve(""),
       cwd: "/repo",
       playwrightCliPath: "/fake/node_modules/.bin/playwright",
+      ...androidDeps,
     });
 
     expect(results.map((result) => result.name)).toEqual([
@@ -42,6 +52,49 @@ describe("runChecks", () => {
       "npm-registry",
     ]);
     expect(results.every((result) => result.status === "pass")).toBe(true);
+  });
+
+  it("includes android checks when runAndroidChecks is true", async () => {
+    const spawn = mock<SpawnFn>(() =>
+      Promise.resolve<SpawnResult>({
+        exitCode: 0,
+        stdout: "Version 1.49.1\n- uiautomator2@3.7.0 [installed]\n",
+        stderr: "",
+      }),
+    );
+    const fetch = mock<typeof globalThis.fetch>().mockResolvedValue(
+      new Response(undefined, { status: 200 }),
+    ) as unknown as typeof globalThis.fetch;
+
+    const results = await runChecks({
+      apiKey: "qawolf_test_key",
+      fetch,
+      spawn,
+      apiBaseUrl: "https://app.qawolf.com",
+      enginesNode: ">=24",
+      processVersion: "v24.0.0",
+      flowFiles: [],
+      readFile: () => Promise.resolve(""),
+      cwd: "/repo",
+      playwrightCliPath: "/fake/node_modules/.bin/playwright",
+      ...androidDeps,
+      runAndroidChecks: true,
+      androidHome: "/sdk",
+      envDir: "/proj",
+    });
+
+    expect(results.map((result) => result.name)).toEqual([
+      "node-version",
+      "playwright",
+      "api-key",
+      "api-url",
+      "npm-registry",
+      "android-home",
+      "adb",
+      "android-emulator",
+      "appium",
+      "uiautomator2-driver",
+    ]);
   });
 
   it("appends one warn per flow file referencing QAWOLF_*_DIR", async () => {
@@ -76,6 +129,7 @@ describe("runChecks", () => {
       },
       cwd: "/repo",
       playwrightCliPath: "/fake/node_modules/.bin/playwright",
+      ...androidDeps,
     });
 
     const warns = results.filter((r) => r.name === "file-assets");

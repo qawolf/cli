@@ -1,17 +1,12 @@
-import {
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  stat,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import superjson from "superjson";
 
+import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
 import { testApiKey, testBaseUrl } from "./pull.fixtures.js";
+import { exists } from "./teamStorageAssets.fixtures.js";
 import {
   downloadTeamStorageAssets,
   requestTeamStorageFiles,
@@ -45,6 +40,19 @@ function makeFetch(): { calls: FetchCall[]; fetch: typeof globalThis.fetch } {
           ? input.toString()
           : input.url;
     calls.push({ url, init });
+
+    if (url.includes("/api/v0/identity")) {
+      return new Response(
+        JSON.stringify({
+          team: {
+            createdAt: "2024-01-01T00:00:00.000Z",
+            id: "team_123",
+            name: "Test Team",
+          },
+        }),
+        { headers: { "content-type": "application/json" } },
+      );
+    }
 
     if (url.includes("/api/trpc/team.listStorageFiles")) {
       const body = {
@@ -88,20 +96,20 @@ describe("requestTeamStorageFiles", () => {
   it("requests team.listStorageFiles with the team id", async () => {
     const fakeFetch = makeFetch();
 
-    const files = await requestTeamStorageFiles(
-      {
-        apiKey: testApiKey,
+    const files = await requestTeamStorageFiles({
+      platform: createPlatformClient(testApiKey, {
         baseUrl: testBaseUrl,
         fetch: fakeFetch.fetch,
-      },
-      "team_123",
-    );
+      }),
+    });
 
     expect(files.map((file) => file.path)).toEqual([
       "root.txt",
       "nested/data.csv",
     ]);
-    const call = fakeFetch.calls[0];
+    const call = fakeFetch.calls.find((c) =>
+      c.url.includes("/api/trpc/team.listStorageFiles"),
+    );
     expect(call?.url).toContain(
       `${testBaseUrl}/api/trpc/team.listStorageFiles`,
     );
@@ -118,14 +126,12 @@ describe("requestTeamStorageFiles", () => {
 describe("downloadTeamStorageAssets", () => {
   it("writes files under assets using the storage path layout", async () => {
     const fakeFetch = makeFetch();
-    const files = await requestTeamStorageFiles(
-      {
-        apiKey: testApiKey,
+    const files = await requestTeamStorageFiles({
+      platform: createPlatformClient(testApiKey, {
         baseUrl: testBaseUrl,
         fetch: fakeFetch.fetch,
-      },
-      "team_123",
-    );
+      }),
+    });
 
     const result = await downloadTeamStorageAssets(
       { assetsAbs: assetsDir, files },
@@ -149,14 +155,12 @@ describe("downloadTeamStorageAssets", () => {
     await writeFile(join(assetsDir, "stale-dir", "old.txt"), "old");
 
     const fakeFetch = makeFetch();
-    const files = await requestTeamStorageFiles(
-      {
-        apiKey: testApiKey,
+    const files = await requestTeamStorageFiles({
+      platform: createPlatformClient(testApiKey, {
         baseUrl: testBaseUrl,
         fetch: fakeFetch.fetch,
-      },
-      "team_123",
-    );
+      }),
+    });
 
     const result = await downloadTeamStorageAssets(
       { assetsAbs: assetsDir, files },
@@ -232,12 +236,3 @@ describe("downloadTeamStorageAssets", () => {
     expect(await readFile(join(assetsDir, "safe.txt"), "utf8")).toBe("safe");
   });
 });
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await stat(path);
-    return true;
-  } catch {
-    return false;
-  }
-}

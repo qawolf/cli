@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
+import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
 import { testApiKey, testBaseUrl } from "./pull.fixtures.js";
 import { exists, inputToUrl, makeFetch } from "./teamStorageAssets.fixtures.js";
 import {
@@ -33,14 +34,12 @@ afterEach(async () => {
 describe("downloadTeamStorageAssets etag reuse", () => {
   it("keeps matching assets in place when etags are unchanged", async () => {
     const fakeFetch = makeFetch();
-    const files = await requestTeamStorageFiles(
-      {
-        apiKey: testApiKey,
+    const files = await requestTeamStorageFiles({
+      platform: createPlatformClient(testApiKey, {
         baseUrl: testBaseUrl,
         fetch: fakeFetch.fetch,
-      },
-      "team_123",
-    );
+      }),
+    });
     await downloadTeamStorageAssets(
       { assetsAbs: assetsDir, files },
       { fetch: fakeFetch.fetch },
@@ -70,14 +69,12 @@ describe("downloadTeamStorageAssets etag reuse", () => {
 
   it("downloads only changed etags while pruning stale paths", async () => {
     const fakeFetch = makeFetch();
-    const files = await requestTeamStorageFiles(
-      {
-        apiKey: testApiKey,
+    const files = await requestTeamStorageFiles({
+      platform: createPlatformClient(testApiKey, {
         baseUrl: testBaseUrl,
         fetch: fakeFetch.fetch,
-      },
-      "team_123",
-    );
+      }),
+    });
     await downloadTeamStorageAssets(
       { assetsAbs: assetsDir, files },
       { fetch: fakeFetch.fetch },

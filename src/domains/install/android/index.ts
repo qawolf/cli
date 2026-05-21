@@ -1,13 +1,14 @@
 import { isAndroidTarget } from "~/core/flowMeta.js";
 import { pluralize } from "~/core/pluralize.js";
-import { buildSystemImage, makeAvdName } from "~/core/androidTargets.js";
+import { avdNameForTarget, buildSystemImage } from "~/core/androidTargets.js";
+import { buildPatternArgs } from "~/core/patternArgs.js";
 import { parseExecutionTarget } from "@qawolf/flow-targets";
-import type { AndroidExecutionTarget } from "@qawolf/flow-targets";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { SpawnFn } from "~/shell/spawn.js";
 import { installAvds } from "./avd.js";
 import type { AvdSpec } from "./avd.js";
 import { installUiautomator2Driver } from "./driver.js";
+import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 
 type PeekFlowMetaFn = (
   filePath: string,
@@ -38,7 +39,7 @@ export async function installAndroid(
   pattern: string | undefined,
   deps: InstallAndroidDeps,
 ): Promise<CommandResult> {
-  const patterns = pattern ? [pattern] : [];
+  const patterns = buildPatternArgs(pattern);
   const files = await deps.expandPatterns(patterns, deps.cwd);
 
   const targets = await collectAndroidTargets(files, deps.peekFlowMeta);
@@ -68,20 +69,14 @@ export async function installAndroid(
   );
 }
 
-const batchSize = 32;
-
 async function collectAndroidTargets(
   files: readonly string[],
   peekFlowMeta: PeekFlowMetaFn,
 ): Promise<string[]> {
   const seen = new Set<string>();
-  for (let i = 0; i < files.length; i += batchSize) {
-    const batch = files.slice(i, i + batchSize);
-    const metas = await Promise.all(batch.map(peekFlowMeta));
-    for (const meta of metas) {
-      if (meta.target && isAndroidTarget(meta.target)) {
-        seen.add(meta.target);
-      }
+  for await (const meta of batchMap(files, peekFlowMeta, flowBatchSize)) {
+    if (meta.target && isAndroidTarget(meta.target)) {
+      seen.add(meta.target);
     }
   }
   return [...seen];
@@ -98,24 +93,18 @@ function buildAvdSpecs(
 ): AvdSpec[] {
   const seen = new Map<string, AvdSpec>();
   for (const target of targets) {
-    let parsed: ReturnType<typeof parseExecutionTarget>;
-    try {
-      parsed = parseExecutionTarget(target as ParseArg);
-    } catch {
-      continue;
-    }
+    const avdName = avdNameForTarget(target);
+    if (!avdName || seen.has(avdName)) continue;
+    // Re-parse to get systemImage and deviceId. avdNameForTarget already
+    // confirmed this is a valid Android target so the parse won't throw here.
+    const parsed = parseExecutionTarget(target as ParseArg);
     if (parsed.platform !== "android") continue;
-    const { deviceModel, androidVersion } = (
-      parsed as unknown as AndroidExecutionTarget
-    ).meta;
-    const avdName = makeAvdName(deviceModel, androidVersion);
-    if (!seen.has(avdName)) {
-      seen.set(avdName, {
-        avdName,
-        systemImage: buildSystemImage(androidVersion, arch),
-        deviceId: deviceModel,
-      });
-    }
+    const { deviceModel, androidVersion } = parsed.meta;
+    seen.set(avdName, {
+      avdName,
+      systemImage: buildSystemImage(androidVersion, arch),
+      deviceId: deviceModel,
+    });
   }
   return [...seen.values()];
 }

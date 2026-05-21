@@ -5,14 +5,12 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 import { pathExists } from "~/shell/fs.js";
 import { readManifest } from "~/shell/manifest/io.js";
-import { buildBundle, makeFakeFetch } from "./pull.fixtures.js";
-import { downloadBundle, requestBundle } from "./pull.js";
+import { buildBundle } from "./pull.fixtures.js";
 import { stageBundle } from "./stage.js";
 
 let workDir = "";
 let bundleArchive = "";
 let destDir = "";
-const tmpArchives: string[] = [];
 
 beforeEach(async () => {
   workDir = await mkdtemp(join(tmpdir(), "qawolf-stage-"));
@@ -22,24 +20,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
-  await Promise.all(tmpArchives.splice(0).map((a) => rm(a, { force: true })));
 });
-
-// stageBundle expects a real tmp archive on disk. The simplest path to one
-// is to drive the fixture's fake fetch through requestBundle + downloadBundle.
-async function prepArchive(): Promise<string> {
-  const fakeFetch = makeFakeFetch({ kind: "ok", sourceArchive: bundleArchive });
-  const { signedUrl } = await requestBundle(
-    { apiKey: "k", baseUrl: "https://t.x", fetch: fakeFetch.fetch },
-    "env-abc",
-  );
-  const { tmpArchive } = await downloadBundle(
-    { fetch: fakeFetch.fetch },
-    signedUrl,
-  );
-  tmpArchives.push(tmpArchive);
-  return tmpArchive;
-}
 
 describe("stageBundle", () => {
   it("extracts flows, writes manifest, and atomically swaps into destDir", async () => {
@@ -49,10 +30,9 @@ describe("stageBundle", () => {
         { name: "nested/login.flow.ts", data: "// login\n" },
       ],
     });
-    const archive = await prepArchive();
 
     const result = await stageBundle({
-      tmpArchive: archive,
+      tmpArchive: bundleArchive,
       destAbs: destDir,
       assetsAbs: join(workDir, "assets"),
       envId: "env-abc",
@@ -87,10 +67,9 @@ describe("stageBundle", () => {
       flows: [{ name: "a.flow.js", data: "// a\n" }],
       wrapInDir: "garden-x-y-abc123",
     });
-    const archive = await prepArchive();
 
     const result = await stageBundle({
-      tmpArchive: archive,
+      tmpArchive: bundleArchive,
       destAbs: destDir,
       assetsAbs: join(workDir, "assets"),
       envId: "env-abc",
@@ -111,10 +90,9 @@ describe("stageBundle", () => {
       flows: [{ name: "a.flow.ts", data: "// a\n" }],
       wrapInDir: `chases-code-and-audio-jam-chases-code-and-audio-jam-${sha}`,
     });
-    const archive = await prepArchive();
 
     await stageBundle({
-      tmpArchive: archive,
+      tmpArchive: bundleArchive,
       destAbs: destDir,
       assetsAbs: join(workDir, "assets"),
       envId: "env-abc",
@@ -138,13 +116,13 @@ describe("stageBundle", () => {
     await buildBundle(bundleArchive, {
       flows: [{ name: "a.flow.ts", data: "// a\n" }],
     });
-    const archive = await prepArchive();
     const fetchedAt = new Date("2026-05-10T12:30:00.000Z");
+    const assetsAbs = join(workDir, "assets");
 
     const result = await stageBundle({
-      tmpArchive: archive,
+      tmpArchive: bundleArchive,
       destAbs: destDir,
-      assetsAbs: join(workDir, "assets"),
+      assetsAbs,
       envId: "env-abc",
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
@@ -153,7 +131,6 @@ describe("stageBundle", () => {
     });
 
     expect(result.envVarCount).toBe(3);
-    const assetsAbs = join(workDir, "assets");
     expect(await readFile(join(destDir, ".env"), "utf8")).toBe(
       `BASE_URL="https://example.com"\nTEAM_STORAGE_DIR="${assetsAbs}"\nTOKEN="abc"\n`,
     );
@@ -184,11 +161,10 @@ describe("stageBundle", () => {
         },
       ],
     });
-    const archive = await prepArchive();
     const assetsDir = join(workDir, "assets");
 
     const stageResult = await stageBundle({
-      tmpArchive: archive,
+      tmpArchive: bundleArchive,
       destAbs: destDir,
       assetsAbs: assetsDir,
       envId: "env-abc",

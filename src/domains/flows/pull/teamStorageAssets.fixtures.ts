@@ -15,6 +15,19 @@ export function makeFetch(): {
     const url = inputToUrl(input);
     calls.push({ url, init });
 
+    if (url.includes("/api/v0/identity")) {
+      return new Response(
+        JSON.stringify({
+          team: {
+            createdAt: "2024-01-01T00:00:00.000Z",
+            id: "team_123",
+            name: "Test Team",
+          },
+        }),
+        { headers: { "content-type": "application/json" } },
+      );
+    }
+
     if (url.includes("/api/trpc/team.listStorageFiles")) {
       return teamStorageFilesResponse();
     }

@@ -24,7 +24,7 @@ type DownloadTeamStorageAssetsArgs = {
   files: readonly TeamStorageFile[];
 };
 
-type DownloadTeamStorageAssetsDeps = {
+export type DownloadTeamStorageAssetsDeps = {
   fetch: typeof globalThis.fetch;
 };
 
