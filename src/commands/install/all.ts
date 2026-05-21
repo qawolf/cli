@@ -41,8 +41,7 @@ export async function installAll(
   let hasAndroid = false;
   let hasIos = false;
 
-  const metas = await batchMap(files, deps.peekFlowMeta, flowBatchSize);
-  for (const meta of metas) {
+  for await (const meta of batchMap(files, deps.peekFlowMeta, flowBatchSize)) {
     if (!meta.target) continue;
     const classified = classifyTarget(meta.target);
     if (classified?.kind === "web") hasWeb = true;

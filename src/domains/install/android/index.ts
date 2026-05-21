@@ -72,9 +72,8 @@ async function collectAndroidTargets(
   files: readonly string[],
   peekFlowMeta: PeekFlowMetaFn,
 ): Promise<string[]> {
-  const metas = await batchMap(files, peekFlowMeta, flowBatchSize);
   const seen = new Set<string>();
-  for (const meta of metas) {
+  for await (const meta of batchMap(files, peekFlowMeta, flowBatchSize)) {
     if (meta.target && isAndroidTarget(meta.target)) {
       seen.add(meta.target);
     }

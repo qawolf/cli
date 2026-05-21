@@ -27,14 +27,12 @@ export async function flowsRun(
     return { error: message, exitCode: 2 };
   }
 
-  const metas = await batchMap(
-    files,
-    (f) => deps.peekFlowMeta(f),
-    flowBatchSize,
-  );
   const flows: ResolvedFlow[] = [];
-  for (const [i, meta] of metas.entries()) {
-    const file = files[i]!;
+  for await (const { file, ...meta } of batchMap(
+    files,
+    async (file) => ({ file, ...(await deps.peekFlowMeta(file)) }),
+    flowBatchSize,
+  )) {
     if (!meta.target) continue;
     const classified = classifyTarget(meta.target);
     if (classified?.kind === "web") {
