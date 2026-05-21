@@ -132,7 +132,11 @@ describe("downloadTeamStorageAssets", () => {
       { fetch: fakeFetch.fetch },
     );
 
-    expect(result).toEqual({ downloadedCount: 2, skippedCount: 0 });
+    expect(result).toEqual({
+      downloadedCount: 2,
+      reusedCount: 0,
+      skippedCount: 0,
+    });
     expect(await readFile(join(assetsDir, "root.txt"), "utf8")).toBe("root");
     expect(await readFile(join(assetsDir, "nested", "data.csv"), "utf8")).toBe(
       "nested",
@@ -159,7 +163,11 @@ describe("downloadTeamStorageAssets", () => {
       { fetch: fakeFetch.fetch },
     );
 
-    expect(result).toEqual({ downloadedCount: 2, skippedCount: 0 });
+    expect(result).toEqual({
+      downloadedCount: 2,
+      reusedCount: 0,
+      skippedCount: 0,
+    });
     expect(await exists(join(assetsDir, "stale.txt"))).toBe(false);
     expect(await exists(join(assetsDir, "stale-dir"))).toBe(false);
     expect(await readFile(join(assetsDir, "root.txt"), "utf8")).toBe("root");
@@ -215,7 +223,11 @@ describe("downloadTeamStorageAssets", () => {
       { fetch },
     );
 
-    expect(result).toEqual({ downloadedCount: 1, skippedCount: 4 });
+    expect(result).toEqual({
+      downloadedCount: 1,
+      reusedCount: 0,
+      skippedCount: 4,
+    });
     expect(calls).toEqual(["https://storage.example.com/safe"]);
     expect(await readFile(join(assetsDir, "safe.txt"), "utf8")).toBe("safe");
   });

@@ -1,5 +1,6 @@
 import { createReadStream, existsSync, mkdirSync, readFileSync } from "node:fs";
 import {
+  copyFile,
   mkdir,
   readFile,
   readdir,
@@ -16,6 +17,7 @@ import { isNoEntError } from "~/core/errors.js";
 
 export {
   createReadStream,
+  copyFile,
   existsSync,
   mkdir,
   mkdirSync,

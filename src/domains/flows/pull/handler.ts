@@ -113,6 +113,7 @@ export async function handleFlowsPull(
           {
             ...results[0],
             assetDownloadedCount: results[1].downloadedCount,
+            assetReusedCount: results[1].reusedCount,
             assetSkippedCount: results[1].skippedCount,
           },
           assetsAbs,
@@ -130,6 +131,7 @@ export async function handleFlowsPull(
           envVarCount: result.envVarCount,
           flowsWithTeamStorageRefs: result.flowsWithTeamStorageRefs,
           assetDownloadedCount: assetResult.downloadedCount,
+          assetReusedCount: assetResult.reusedCount,
           assetSkippedCount: assetResult.skippedCount,
           manifestPath: join(result.envDir, manifestFilename),
         },

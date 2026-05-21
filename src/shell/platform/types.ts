@@ -28,9 +28,11 @@ export const flowsBundleResponseSchema = z.object({
 export type FlowsBundleResponse = z.infer<typeof flowsBundleResponseSchema>;
 
 export const teamStorageFileSchema = z.object({
+  etag: z.string().optional(),
   path: z.string(),
   signedUrl: z.url(),
   size: z.number(),
+  updatedAt: z.union([z.string(), z.date()]).optional(),
 });
 export type TeamStorageFile = z.infer<typeof teamStorageFileSchema>;
 

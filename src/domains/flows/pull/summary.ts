@@ -6,6 +6,7 @@ type PullSummaryResult = {
   envVarCount: number;
   flowsWithTeamStorageRefs: string[];
   assetDownloadedCount: number;
+  assetReusedCount: number;
   assetSkippedCount: number;
 };
 
@@ -29,7 +30,14 @@ export function formatPullSummary(
   summary += `\nDownloaded ${pluralize(
     result.assetDownloadedCount,
     "team-storage asset",
-  )} into ${assetsAbs}`;
+  )}`;
+  if (result.assetReusedCount > 0) {
+    summary += ` and reused ${pluralize(
+      result.assetReusedCount,
+      "team-storage asset",
+    )}`;
+  }
+  summary += ` into ${assetsAbs}`;
   if (result.assetSkippedCount > 0) {
     summary += ` (${pluralize(
       result.assetSkippedCount,

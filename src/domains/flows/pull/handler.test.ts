@@ -94,6 +94,7 @@ describe("handleFlowsPull json mode output", () => {
     expect(humanMessage).toBe("");
     expect(Object.keys(payload).sort()).toEqual([
       "assetDownloadedCount",
+      "assetReusedCount",
       "assetSkippedCount",
       "assetsDir",
       "env",
@@ -107,6 +108,7 @@ describe("handleFlowsPull json mode output", () => {
     expect(payload).toEqual({
       assetsDir: expect.stringContaining("/assets"),
       assetDownloadedCount: 0,
+      assetReusedCount: 0,
       assetSkippedCount: 0,
       env: "env-abc",
       envDir: destDir,
