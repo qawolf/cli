@@ -76,9 +76,11 @@ export async function handleFlowsRun(
     cwd,
     ctx.log("flows"),
   );
-  ctx.logger.debug(
-    `discovered ${expandedFiles.length} flow${expandedFiles.length === 1 ? "" : "s"}`,
-  );
+  ctx
+    .log("flows")
+    .debug(
+      `discovered ${expandedFiles.length} flow${expandedFiles.length === 1 ? "" : "s"}`,
+    );
 
   let envDir: string | undefined;
   try {

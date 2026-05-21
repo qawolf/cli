@@ -61,7 +61,7 @@ describe("withAuthContext exit code plumbing", () => {
 });
 
 describe("buildBaseContext", () => {
-  it("should include logger and log factory in CommandContext", () => {
+  it("should include log factory in CommandContext", () => {
     const cmd = new Command();
     cmd
       .option("--verbose", "Enable debug logging to stderr")
@@ -70,12 +70,6 @@ describe("buildBaseContext", () => {
     cmd.parse([], { from: "user" });
 
     const { ctx } = buildBaseContext(cmd);
-
-    expect(typeof ctx.logger.error).toBe("function");
-    expect(typeof ctx.logger.warn).toBe("function");
-    expect(typeof ctx.logger.info).toBe("function");
-    expect(typeof ctx.logger.debug).toBe("function");
-    expect(typeof ctx.logger.trace).toBe("function");
 
     const scopedLogger = ctx.log("test");
     expect(typeof scopedLogger.error).toBe("function");

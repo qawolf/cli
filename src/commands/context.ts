@@ -62,7 +62,6 @@ export function buildBaseContext(
       }),
       apiBaseUrl,
       signals,
-      logger: loggingSystem.createLogger("cli"),
       log: (scope) => loggingSystem.createLogger(scope),
     },
     apiBaseUrl,

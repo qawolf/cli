@@ -65,7 +65,6 @@ function makeCtx(
     apiBaseUrl: "https://test.qawolf.com",
     apiKeySource: "env",
     signals: noopSignals,
-    logger: makeNoopLogger(),
     log: () => makeNoopLogger(),
     platform: makeMockPlatformClient({
       downloadBundle: mock().mockResolvedValue({

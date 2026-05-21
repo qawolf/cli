@@ -11,7 +11,6 @@ export type CommandContext = {
   readonly isInteractive: boolean;
   readonly apiBaseUrl: string;
   readonly signals: SignalRegistry;
-  readonly logger: Logger;
   readonly log: (scope: string) => Logger;
 };
 

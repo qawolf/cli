@@ -51,7 +51,6 @@ export const makeCtx = (ui: UI = makeFakeUI()): CommandContext => ({
   isInteractive: false,
   apiBaseUrl: "https://example.invalid",
   signals: noopSignals,
-  logger: makeNoopLogger(),
   log: () => makeNoopLogger(),
 });
 
