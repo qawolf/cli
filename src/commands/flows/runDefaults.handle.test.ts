@@ -59,7 +59,6 @@ function makeCtx(): CommandContext {
     outputMode: "human",
     isInteractive: false,
     signals: noopSignals,
-    logger: makeNoopLogger(),
     log: () => makeNoopLogger(),
     ui: {
       withProgress: async (tasks: { task: () => Promise<void> }[]) => {
