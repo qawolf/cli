@@ -34,6 +34,8 @@ qawolf flows run
 
 Run `qawolf flows run --help` for the full list of flags (retries, timeouts, artifact capture, and more).
 
+To write flows from scratch without the platform, run `qawolf init` instead of pulling.
+
 ## Platform requirements
 
 The CLI runs on any platform that supports Playwright or Appium. Some flow types have additional requirements:
