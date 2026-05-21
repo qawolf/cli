@@ -6,14 +6,9 @@ import { pathToFileURL } from "node:url";
 import type { RunWebFlowDeps } from "./runWebFlow.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
-const noopSignals: SignalRegistry = {
-  register: () => () => {},
-  shutdown: async () => {},
-};
-
 export async function defaultRunWebFlowDeps(
   cwd = process.cwd(),
-  signals: SignalRegistry = noopSignals,
+  signals: SignalRegistry,
 ): Promise<RunWebFlowDeps> {
   // Loaded via import.meta.resolve so the binary finds playwright in the
   // project's node_modules rather than alongside the CLI binary. Dynamic
