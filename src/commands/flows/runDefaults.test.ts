@@ -2,9 +2,9 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-import { _loadEnvFile } from "./runDefaults.js";
+import { loadEnvFile } from "./runDefaults.js";
 
-describe("_loadEnvFile", () => {
+describe("loadEnvFile", () => {
   let dir: string;
   const savedEnv: Record<string, string | undefined> = {};
 
@@ -34,7 +34,7 @@ describe("_loadEnvFile", () => {
   it("loads vars from .env into process.env", async () => {
     track("LOAD_A", "LOAD_B");
     await writeFile(join(dir, ".env"), 'LOAD_A="hello"\nLOAD_B="world"\n');
-    await _loadEnvFile(dir);
+    await loadEnvFile(dir);
     expect(process.env["LOAD_A"]).toBe("hello");
     expect(process.env["LOAD_B"]).toBe("world");
   });
@@ -43,16 +43,16 @@ describe("_loadEnvFile", () => {
     track("LOAD_EXISTING");
     process.env["LOAD_EXISTING"] = "original";
     await writeFile(join(dir, ".env"), 'LOAD_EXISTING="from-file"\n');
-    await _loadEnvFile(dir);
+    await loadEnvFile(dir);
     expect(process.env["LOAD_EXISTING"]).toBe("original");
   });
 
   it("silently skips when .env does not exist", async () => {
-    expect(_loadEnvFile(dir)).resolves.toBeUndefined();
+    expect(loadEnvFile(dir)).resolves.toBeUndefined();
   });
 
   it("throws when .env exists but contains an invalid line", async () => {
     await writeFile(join(dir, ".env"), "not-valid\n");
-    expect(_loadEnvFile(dir)).rejects.toThrow(/Cannot parse/i);
+    expect(loadEnvFile(dir)).rejects.toThrow(/Cannot parse/i);
   });
 });

@@ -21,7 +21,7 @@ import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
 import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
-import { _buildPatternArgs, _loadEnvFile } from "./runDefaults.js";
+import { buildPatternArgs, loadEnvFile } from "./runDefaults.js";
 
 export type HandleHybridFlowsRunDeps = {
   glob: (
@@ -58,7 +58,7 @@ export async function handleHybridFlowsRun(
   }
 
   const envDir = resolve(join(".qawolf", flags.env));
-  const patterns = _buildPatternArgs(pattern);
+  const patterns = buildPatternArgs(pattern);
   const effectivePatterns =
     patterns.length > 0 ? patterns : ["**/*.flow.{ts,js}"];
 
@@ -95,7 +95,7 @@ export async function handleHybridFlowsRun(
     ],
     () => "Environment ready",
   );
-  await _loadEnvFile(envDir);
+  await loadEnvFile(envDir);
   await deps.configureTestkit(envDir);
   const android = createAndroidDeps(envDir);
 

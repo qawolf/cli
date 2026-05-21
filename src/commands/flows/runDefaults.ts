@@ -28,7 +28,7 @@ import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
-export async function _loadEnvFile(envDir: string): Promise<void> {
+export async function loadEnvFile(envDir: string): Promise<void> {
   let content: string;
   try {
     content = await readFile(join(envDir, ".env"), "utf8");
@@ -94,7 +94,7 @@ export async function handleFlowsRun(
       ],
       () => "Environment ready",
     );
-    await _loadEnvFile(dir);
+    await loadEnvFile(dir);
   }
 
   // Resolve playwright from the env dir; falls back to CWD for local flows.
