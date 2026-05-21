@@ -1,4 +1,5 @@
 import { targetToBrowser } from "~/core/flowMeta.js";
+import { buildPatternArgs } from "~/core/patterns.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { BrowserName } from "~/core/types.js";
@@ -47,7 +48,7 @@ export async function installBrowsers(
   pattern: string | undefined,
   deps: InstallBrowsersDeps,
 ): Promise<CommandResult> {
-  const patterns = pattern ? [pattern] : [];
+  const patterns = buildPatternArgs(pattern);
   const files = await deps.expandPatterns(patterns, deps.cwd);
 
   const browsers = await collectBrowsers(files, deps.peekFlowMeta);

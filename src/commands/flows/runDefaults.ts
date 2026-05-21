@@ -10,6 +10,7 @@ import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { isNoEntError } from "~/core/errors.js";
+import { buildPatternArgs } from "~/core/patterns.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { createConsoleReporter } from "~/shell/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
@@ -26,10 +27,6 @@ import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
 import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
-
-export function _buildPatternArgs(pattern: string | undefined): string[] {
-  return pattern ? [pattern] : [];
-}
 
 export async function _loadEnvFile(envDir: string): Promise<void> {
   let content: string;
@@ -74,7 +71,7 @@ export async function handleFlowsRun(
   const cwd = process.cwd();
 
   const expandedFiles = await deps.expandPatterns(
-    _buildPatternArgs(pattern),
+    buildPatternArgs(pattern),
     cwd,
   );
 
