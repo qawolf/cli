@@ -8,7 +8,6 @@ import {
   baseDeps,
   emulatorPath,
   findResult,
-  launchFail,
   sdk,
   spawnRouter,
   success,
@@ -135,9 +134,15 @@ describe("checkAndroid: android-avd", () => {
     expect(results.filter((r) => r.name === "android-avd")).toHaveLength(0);
   });
 
-  it("warns when emulator -list-avds fails to launch", async () => {
+  it("warns with a launch-failure message when emulator -list-avds cannot launch", async () => {
     const spawn = mock<SpawnFn>((_cmd, args) => {
-      if (args[0] === "-list-avds") return Promise.resolve(launchFail);
+      if (args[0] === "-list-avds") {
+        return Promise.resolve({
+          exitCode: -1,
+          stdout: "",
+          stderr: "ENOENT: emulator binary missing",
+        });
+      }
       return Promise.resolve(success);
     });
     const results = await checkAndroid(
@@ -145,10 +150,14 @@ describe("checkAndroid: android-avd", () => {
     );
     const avd = findResult(results, "android-avd");
     expect(avd?.status).toBe("warn");
-    expect(avd?.detail).toContain("Could not list AVDs");
+    expect(avd?.detail).toContain("Could not launch emulator");
+    expect(avd?.detail).toContain(emulatorPath);
+    expect(avd?.detail).toContain("ENOENT");
+    // Distinct from the runtime-error branch — must not use that wording.
+    expect(avd?.detail).not.toMatch(/^Could not list AVDs/);
   });
 
-  it("warns when emulator -list-avds exits non-zero, surfacing the stderr", async () => {
+  it("warns with a runtime-error message when emulator -list-avds exits non-zero", async () => {
     const spawn = mock<SpawnFn>((_cmd, args) => {
       if (args[0] === "-list-avds") {
         return Promise.resolve({
@@ -166,5 +175,7 @@ describe("checkAndroid: android-avd", () => {
     expect(avd?.status).toBe("warn");
     expect(avd?.detail).toContain("Could not list AVDs");
     expect(avd?.detail).toContain("PANIC: Broken AVD system path");
+    // Distinct from the launch-failure branch — must not use that wording.
+    expect(avd?.detail).not.toContain("Could not launch emulator");
   });
 });

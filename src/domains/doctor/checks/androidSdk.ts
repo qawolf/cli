@@ -80,12 +80,21 @@ export async function checkAvds(
   if (requiredAvds.length === 0) return [];
   const bin = androidHome ? `${androidHome}/emulator/emulator` : "emulator";
   const result = await spawn(bin, ["-list-avds"]);
+  if (result.exitCode < 0) {
+    return [
+      {
+        name: "android-avd",
+        status: "warn",
+        detail: `Could not launch emulator at ${bin} to list AVDs (${firstLine(result)}).`,
+      },
+    ];
+  }
   if (result.exitCode !== 0) {
     return [
       {
         name: "android-avd",
         status: "warn",
-        detail: `Could not list AVDs (${firstLine(result)})`,
+        detail: `Could not list AVDs (${firstLine(result)}).`,
       },
     ];
   }
