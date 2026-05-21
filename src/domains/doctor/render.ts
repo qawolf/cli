@@ -11,8 +11,11 @@ export function renderResults(ui: UI, results: CheckResult[]): void {
 
   if (ui.mode === "agent") {
     for (const result of results) {
+      const base = result.version
+        ? `${result.name}  ${result.version}`
+        : result.name;
       const tail = result.detail ? `: ${result.detail}` : "";
-      ui.write(`${result.status.toUpperCase()} ${result.name}${tail}\n`);
+      ui.write(`${result.status.toUpperCase()} ${base}${tail}\n`);
     }
     return;
   }
@@ -20,9 +23,10 @@ export function renderResults(ui: UI, results: CheckResult[]): void {
   ui.intro("qawolf doctor");
 
   for (const result of results) {
-    const line = result.detail
-      ? `${result.name}: ${result.detail}`
+    const base = result.version
+      ? `${result.name}  ${result.version}`
       : result.name;
+    const line = result.detail ? `${base}: ${result.detail}` : base;
     if (result.status === "pass") ui.success(line);
     else if (result.status === "warn") ui.warn(line);
     else ui.error(line);
