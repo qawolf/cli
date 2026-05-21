@@ -24,18 +24,15 @@ import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { _buildPatternArgs, _loadEnvFile } from "./runDefaults.js";
 
 export type HandleHybridFlowsRunDeps = {
-  readonly glob: (
+  glob: (
     patterns: string[],
     opts: { cwd: string; absolute: boolean },
   ) => Promise<string[]>;
-  readonly pullEnv: (
-    ctx: AuthCommandContext,
-    envId: string,
-  ) => Promise<CommandResult>;
-  readonly ensureFlowDeps: (envDir: string) => Promise<void>;
-  readonly configureTestkit: (dir: string) => Promise<void>;
-  readonly flowsRun: typeof defaultFlowsRun;
-  readonly runWebFlowDeps: typeof defaultRunWebFlowDeps;
+  pullEnv: (ctx: AuthCommandContext, envId: string) => Promise<CommandResult>;
+  ensureFlowDeps: (envDir: string) => Promise<void>;
+  configureTestkit: (dir: string) => Promise<void>;
+  flowsRun: typeof defaultFlowsRun;
+  runWebFlowDeps: typeof defaultRunWebFlowDeps;
 };
 
 function makeDefaultHybridDeps(): HandleHybridFlowsRunDeps {
@@ -79,9 +76,11 @@ export async function handleHybridFlowsRun(
       absolute: true,
     });
     if (files.length === 0) {
-      const desc = pattern ?? "(all flows)";
       return {
-        error: `No flows matched '${desc}' in env '${flags.env}'`,
+        error:
+          pattern !== undefined
+            ? `No flows matched '${pattern}' in env '${flags.env}'`
+            : `No flows found in env '${flags.env}'`,
         exitCode: 2,
       };
     }
