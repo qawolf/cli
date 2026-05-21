@@ -1,13 +1,15 @@
 import { join, resolve } from "node:path";
 
-import { glob as globFn } from "tinyglobby";
 import { validateEnvId } from "~/domains/flows/pull/pull.js";
 import { handleFlowsPull } from "~/domains/flows/pull/handler.js";
 import type {
   AuthCommandContext,
   CommandResult,
 } from "~/shell/commandContext.js";
-import { peekFlowMeta as defaultPeekFlowMeta } from "~/domains/flows/expand.js";
+import {
+  expandPatterns as defaultExpandPatterns,
+  peekFlowMeta as defaultPeekFlowMeta,
+} from "~/domains/flows/expand.js";
 import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
 import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
@@ -21,13 +23,11 @@ import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
 import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
-import { buildPatternArgs, loadEnvFile } from "./runDefaults.js";
+import { buildPatternArgs } from "~/core/patternArgs.js";
+import { loadEnvFile } from "./runDefaults.js";
 
 export type HandleHybridFlowsRunDeps = {
-  glob: (
-    patterns: string[],
-    opts: { cwd: string; absolute: boolean },
-  ) => Promise<string[]>;
+  expandPatterns: (patterns: string[], cwd?: string) => Promise<string[]>;
   pullEnv: (ctx: AuthCommandContext, envId: string) => Promise<CommandResult>;
   ensureFlowDeps: (envDir: string) => Promise<void>;
   configureTestkit: (dir: string) => Promise<void>;
@@ -37,7 +37,7 @@ export type HandleHybridFlowsRunDeps = {
 
 function makeDefaultHybridDeps(): HandleHybridFlowsRunDeps {
   return {
-    glob: (patterns, opts) => globFn(patterns, opts),
+    expandPatterns: defaultExpandPatterns,
     pullEnv: (ctx, envId) => handleFlowsPull(ctx, { env: envId, yes: true }),
     ensureFlowDeps: defaultEnsureFlowDeps,
     configureTestkit: defaultConfigureTestkit,
@@ -58,23 +58,15 @@ export async function handleHybridFlowsRun(
   }
 
   const envDir = resolve(join(".qawolf", flags.env));
-  const patterns = buildPatternArgs(pattern);
-  const effectivePatterns =
-    patterns.length > 0 ? patterns : ["**/*.flow.{ts,js}"];
+  const patternArgs = buildPatternArgs(pattern);
 
-  let files = await deps.glob(effectivePatterns, {
-    cwd: envDir,
-    absolute: true,
-  });
+  let files = await deps.expandPatterns(patternArgs, envDir);
 
   if (files.length === 0) {
     const pullResult = await deps.pullEnv(ctx, flags.env);
     if (pullResult !== undefined) return pullResult;
 
-    files = await deps.glob(effectivePatterns, {
-      cwd: envDir,
-      absolute: true,
-    });
+    files = await deps.expandPatterns(patternArgs, envDir);
     if (files.length === 0) {
       return {
         error:

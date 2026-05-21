@@ -10,13 +10,8 @@ afterEach(() => {
   mock.restore();
 });
 
-const globMock =
-  mock<
-    (
-      patterns: string[],
-      opts: { cwd: string; absolute: boolean },
-    ) => Promise<string[]>
-  >();
+const expandPatternsMock =
+  mock<(patterns: string[], cwd?: string) => Promise<string[]>>();
 const pullEnvMock = mock<HandleHybridFlowsRunDeps["pullEnv"]>();
 const ensureFlowDepsMock = mock<(envDir: string) => Promise<void>>();
 const configureTestkitMock = mock<(dir: string) => Promise<void>>();
@@ -24,7 +19,7 @@ const flowsRunMock = mock<HandleHybridFlowsRunDeps["flowsRun"]>();
 const runWebFlowDepsMock = mock<() => Promise<unknown>>();
 
 const trackedMocks = [
-  globMock,
+  expandPatternsMock,
   pullEnvMock,
   ensureFlowDepsMock,
   configureTestkitMock,
@@ -34,7 +29,7 @@ const trackedMocks = [
 
 beforeEach(() => {
   for (const m of trackedMocks) m.mockClear();
-  globMock.mockResolvedValue([]);
+  expandPatternsMock.mockResolvedValue([]);
   pullEnvMock.mockResolvedValue(undefined);
   ensureFlowDepsMock.mockResolvedValue(undefined);
   configureTestkitMock.mockResolvedValue(undefined);
@@ -79,7 +74,7 @@ function defaultFlags(): FlowsRunFlags {
 
 function makeDeps(): HandleHybridFlowsRunDeps {
   return {
-    glob: globMock,
+    expandPatterns: expandPatternsMock,
     pullEnv: pullEnvMock,
     ensureFlowDeps: ensureFlowDepsMock,
     configureTestkit: configureTestkitMock,
@@ -102,13 +97,15 @@ describe("handleHybridFlowsRun", () => {
       error: "--env must be a UUID or kebab-case slug (got: INVALID ENV ID)",
       exitCode: 2,
     });
-    expect(globMock).not.toHaveBeenCalled();
+    expect(expandPatternsMock).not.toHaveBeenCalled();
   });
 
   it("runs files from envDir directly when already cached", async () => {
     const ctx = makeCtx();
     const deps = makeDeps();
-    globMock.mockResolvedValue(["/mock/.qawolf/my-env/login.flow.ts"]);
+    expandPatternsMock.mockResolvedValue([
+      "/mock/.qawolf/my-env/login.flow.ts",
+    ]);
 
     await handleHybridFlowsRun(
       ctx,
@@ -118,9 +115,9 @@ describe("handleHybridFlowsRun", () => {
     );
 
     expect(pullEnvMock).not.toHaveBeenCalled();
-    expect(globMock).toHaveBeenCalledWith(
+    expect(expandPatternsMock).toHaveBeenCalledWith(
       ["**/login.flow.ts"],
-      expect.anything(),
+      expect.any(String),
     );
     expect(flowsRunMock).toHaveBeenCalledWith(
       expect.anything(),
@@ -133,7 +130,7 @@ describe("handleHybridFlowsRun", () => {
   it("pulls env on cache miss and runs matched files", async () => {
     const ctx = makeCtx();
     const deps = makeDeps();
-    globMock
+    expandPatternsMock
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce(["/mock/.qawolf/my-env/login.flow.ts"]);
     pullEnvMock.mockResolvedValue(undefined);
@@ -146,7 +143,7 @@ describe("handleHybridFlowsRun", () => {
     );
 
     expect(pullEnvMock).toHaveBeenCalledWith(ctx, "my-env");
-    expect(globMock).toHaveBeenCalledTimes(2);
+    expect(expandPatternsMock).toHaveBeenCalledTimes(2);
     expect(flowsRunMock).toHaveBeenCalledWith(
       expect.anything(),
       ["/mock/.qawolf/my-env/login.flow.ts"],
@@ -158,7 +155,7 @@ describe("handleHybridFlowsRun", () => {
   it("returns error when no flows match after pull", async () => {
     const ctx = makeCtx();
     const deps = makeDeps();
-    globMock.mockResolvedValue([]);
+    expandPatternsMock.mockResolvedValue([]);
     pullEnvMock.mockResolvedValue(undefined);
 
     const result = await handleHybridFlowsRun(
@@ -178,7 +175,7 @@ describe("handleHybridFlowsRun", () => {
   it("propagates pull error and skips re-glob and run", async () => {
     const ctx = makeCtx();
     const deps = makeDeps();
-    globMock.mockResolvedValue([]);
+    expandPatternsMock.mockResolvedValue([]);
     pullEnvMock.mockResolvedValue({ error: "network error" });
 
     const result = await handleHybridFlowsRun(
@@ -189,14 +186,14 @@ describe("handleHybridFlowsRun", () => {
     );
 
     expect(result).toEqual({ error: "network error" });
-    expect(globMock).toHaveBeenCalledTimes(1);
+    expect(expandPatternsMock).toHaveBeenCalledTimes(1);
     expect(flowsRunMock).not.toHaveBeenCalled();
   });
 
   it("runs all flows from envDir when pattern is undefined (cache hit)", async () => {
     const ctx = makeCtx();
     const deps = makeDeps();
-    globMock.mockResolvedValue([
+    expandPatternsMock.mockResolvedValue([
       "/mock/.qawolf/my-env/a.flow.ts",
       "/mock/.qawolf/my-env/b.flow.ts",
     ]);
@@ -215,16 +212,13 @@ describe("handleHybridFlowsRun", () => {
       expect.anything(),
       expect.anything(),
     );
-    expect(globMock).toHaveBeenCalledWith(
-      ["**/*.flow.{ts,js}"],
-      expect.anything(),
-    );
+    expect(expandPatternsMock).toHaveBeenCalledWith([], expect.any(String));
   });
 
   it("returns error when no flows found in env after pull (pattern undefined)", async () => {
     const ctx = makeCtx();
     const deps = makeDeps();
-    globMock.mockResolvedValue([]);
+    expandPatternsMock.mockResolvedValue([]);
     pullEnvMock.mockResolvedValue(undefined);
 
     const result = await handleHybridFlowsRun(
