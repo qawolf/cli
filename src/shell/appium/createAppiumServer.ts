@@ -99,27 +99,27 @@ export async function createAppiumServer(
     ...process.env,
     APPIUM_HOME: appiumHome,
   });
-  await waitForBanner(proc.output, proc.exitCode, timeoutMs).catch(
-    (err: unknown) => {
-      proc.kill();
-      throw err;
-    },
-  );
   let stopped = false;
-  const unregister = signals.register(() => {
+  const stop = () => {
     if (stopped) return;
     stopped = true;
     proc.kill();
-  });
+  };
+  const unregister = signals.register(stop);
+  await waitForBanner(proc.output, proc.exitCode, timeoutMs).catch(
+    (err: unknown) => {
+      unregister();
+      stop();
+      throw err;
+    },
+  );
   return {
     port,
     home: appiumHome,
     exited: proc.exitCode,
     stop: () => {
-      if (stopped) return;
-      stopped = true;
       unregister();
-      proc.kill();
+      stop();
     },
   };
 }
