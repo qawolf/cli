@@ -1,8 +1,7 @@
 import { isAndroidTarget } from "~/core/flowMeta.js";
 import { pluralize } from "~/core/pluralize.js";
-import { buildSystemImage, makeAvdName } from "~/core/androidTargets.js";
+import { avdNameForTarget, buildSystemImage } from "~/core/androidTargets.js";
 import { parseExecutionTarget } from "@qawolf/flow-targets";
-import type { AndroidExecutionTarget } from "@qawolf/flow-targets";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { SpawnFn } from "~/shell/spawn.js";
 import { installAvds } from "./avd.js";
@@ -98,24 +97,18 @@ function buildAvdSpecs(
 ): AvdSpec[] {
   const seen = new Map<string, AvdSpec>();
   for (const target of targets) {
-    let parsed: ReturnType<typeof parseExecutionTarget>;
-    try {
-      parsed = parseExecutionTarget(target as ParseArg);
-    } catch {
-      continue;
-    }
+    const avdName = avdNameForTarget(target);
+    if (!avdName || seen.has(avdName)) continue;
+    // Re-parse to get systemImage and deviceId. avdNameForTarget already
+    // confirmed this is a valid Android target so the parse won't throw here.
+    const parsed = parseExecutionTarget(target as ParseArg);
     if (parsed.platform !== "android") continue;
-    const { deviceModel, androidVersion } = (
-      parsed as unknown as AndroidExecutionTarget
-    ).meta;
-    const avdName = makeAvdName(deviceModel, androidVersion);
-    if (!seen.has(avdName)) {
-      seen.set(avdName, {
-        avdName,
-        systemImage: buildSystemImage(androidVersion, arch),
-        deviceId: deviceModel,
-      });
-    }
+    const { deviceModel, androidVersion } = parsed.meta;
+    seen.set(avdName, {
+      avdName,
+      systemImage: buildSystemImage(androidVersion, arch),
+      deviceId: deviceModel,
+    });
   }
   return [...seen.values()];
 }
