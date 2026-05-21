@@ -83,7 +83,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
       - name: Install QA Wolf CLI
         run: npm install -g @qawolf/cli
       - name: Install browsers
