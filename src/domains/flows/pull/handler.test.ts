@@ -69,9 +69,9 @@ function makeCtx(
         ok: true,
         value: envVars,
       }),
-      listTeamStorageFiles: mock().mockResolvedValue({
+      syncTeamStorageAssets: mock().mockResolvedValue({
         ok: true,
-        value: [],
+        value: { downloadedCount: 0, skippedCount: 0 },
       }),
     }),
   };
