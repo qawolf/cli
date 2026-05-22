@@ -1,4 +1,4 @@
-import { mkdir, unlink } from "~/shell/fs.js";
+import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import { dirname, join, resolve } from "node:path";
 
 import cliPackageJson from "../../../../package.json" with { type: "json" };
@@ -47,6 +47,7 @@ function formatPullSummary(
 
 type HandleFlowsPullDeps = {
   readonly flowsVersion: string;
+  readonly fs: Fs;
 };
 
 export async function handleFlowsPull(
@@ -54,6 +55,7 @@ export async function handleFlowsPull(
   opts: FlowsPullOptions,
   deps: HandleFlowsPullDeps = {
     flowsVersion: cliPackageJson.dependencies["@qawolf/flows"],
+    fs: makeDefaultFs(),
   },
 ): Promise<CommandResult> {
   const validation = validateEnvId(opts.env);
@@ -67,7 +69,7 @@ export async function handleFlowsPull(
   // Shared assets sibling of the env directory. Created unconditionally so
   // TEAM_STORAGE_DIR resolves to a real path even before any asset is dropped
   // in. Idempotent across re-pulls.
-  await mkdir(assetsAbs, { recursive: true });
+  await deps.fs.mkdir(assetsAbs, { recursive: true });
   const yes = opts.yes ?? false;
   let archive: string | undefined;
 
@@ -130,6 +132,6 @@ export async function handleFlowsPull(
       );
     }
   } finally {
-    if (archive !== undefined) await unlink(archive).catch(() => {});
+    if (archive !== undefined) await deps.fs.unlink(archive).catch(() => {});
   }
 }
