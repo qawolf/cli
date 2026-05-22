@@ -46,10 +46,9 @@ export function createTrpcClient(apiKey: string, deps: Deps): TrpcClient {
       logger?.debug(`← ${path} ok`);
     } else {
       const e = result.error;
-      const msg =
-        e.kind === "http"
-          ? `${e.status} ${e.body.length > 200 ? `${e.body.slice(0, 200)}… (${e.body.length} chars)` : e.body}`
-          : e.cause.message;
+      const raw = e.kind === "http" ? e.body : e.cause.message;
+      const clipped = raw.length > 200 ? raw.slice(0, 200) + "…" : raw;
+      const msg = e.kind === "http" ? `${e.status} ${clipped}` : clipped;
       logger?.warn(`← ${path} error (${e.kind}): ${msg}`);
     }
     return result;
@@ -141,13 +140,9 @@ function unwrap(body: unknown): unknown {
   return data;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-function isSuperJSONResult(value: unknown): value is SuperJSONResult {
-  return isRecord(value) && "json" in value;
-}
-
-function toError(value: unknown): Error {
-  return value instanceof Error ? value : new Error(String(value));
-}
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null;
+const isSuperJSONResult = (v: unknown): v is SuperJSONResult =>
+  isRecord(v) && "json" in v;
+const toError = (v: unknown): Error =>
+  v instanceof Error ? v : new Error(String(v));
