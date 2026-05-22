@@ -10,10 +10,11 @@ export type { RendererSet } from "./types.js";
 export function pickRenderers(
   mode: OutputMode,
   clack: StyledClack,
+  verboseTarget?: { write: ((msg: string) => void) | undefined },
 ): RendererSet {
   switch (mode) {
     case "human":
-      return createHumanRenderers(clack);
+      return createHumanRenderers(clack, verboseTarget);
     case "agent":
       return createAgentRenderers();
     case "json":

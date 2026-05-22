@@ -142,3 +142,97 @@ describe("human renderers — withProgress", () => {
     expect(s.message).toHaveBeenCalledWith("[2/2] process data");
   });
 });
+
+describe("human renderers — withProgress — verboseTarget", () => {
+  afterEach(() => {
+    mock.restore();
+  });
+
+  it("should use clack.log.step per step when verboseTarget is provided", async () => {
+    const clack = makeClack();
+    const verboseTarget: { write: ((msg: string) => void) | undefined } = {
+      write: undefined,
+    };
+    const { withProgress } = createHumanRenderers(clack, verboseTarget);
+
+    await withProgress(
+      [
+        { message: "Step 1", task: async () => undefined },
+        { message: "Step 2", task: async () => undefined },
+      ],
+      "Done",
+    );
+
+    expect(clack.log.step).toHaveBeenNthCalledWith(1, "[1/2] Step 1");
+    expect(clack.log.step).toHaveBeenNthCalledWith(2, "[2/2] Step 2");
+    expect(clack.log.success).toHaveBeenCalledWith("Done");
+    expect(clack.createdSpinners).toHaveLength(0);
+    expect(clack.createdTaskLogs).toHaveLength(0);
+  });
+
+  it("should call clack.log.error with the failing step label when a step throws", async () => {
+    const clack = makeClack();
+    const verboseTarget: { write: ((msg: string) => void) | undefined } = {
+      write: undefined,
+    };
+    const { withProgress } = createHumanRenderers(clack, verboseTarget);
+
+    let caughtError: unknown;
+    try {
+      await withProgress(
+        [
+          {
+            message: "Step 1",
+            task: async () => {
+              throw new Error("fail");
+            },
+          },
+        ],
+        "Done",
+      );
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeInstanceOf(Error);
+    expect(clack.log.error).toHaveBeenCalledWith("[1/1] Step 1");
+  });
+
+  it("should not set verboseTarget.write (output routes through clack.log directly)", async () => {
+    const clack = makeClack();
+    const verboseTarget: { write: ((msg: string) => void) | undefined } = {
+      write: undefined,
+    };
+    const { withProgress } = createHumanRenderers(clack, verboseTarget);
+
+    let writeWasSet = false;
+    await withProgress(
+      [
+        {
+          message: "Step 1",
+          task: async () => {
+            writeWasSet = verboseTarget.write !== undefined;
+          },
+        },
+      ],
+      "Done",
+    );
+
+    expect(writeWasSet).toBe(false);
+    expect(verboseTarget.write).toBeUndefined();
+  });
+
+  it("should use spinner (not clack.log.step) when verboseTarget is absent", async () => {
+    const clack = makeClack();
+    const { withProgress } = createHumanRenderers(clack);
+
+    await withProgress(
+      [{ message: "Step 1", task: async () => undefined }],
+      "Done",
+    );
+
+    expect(clack.createdSpinners).toHaveLength(1);
+    expect(clack.createdTaskLogs).toHaveLength(0);
+    expect(clack.log.step).not.toHaveBeenCalled();
+  });
+});

@@ -17,6 +17,7 @@ import {
   isInteractive,
 } from "~/shell/ui/env.js";
 import { createUI } from "~/shell/ui/index.js";
+import { createVerboseContext } from "~/shell/ui/createVerboseContext.js";
 import type {
   AuthCommandContext,
   CommandContext,
@@ -25,7 +26,6 @@ import type {
 
 type ContextAction = (ctx: CommandContext) => Promise<CommandResult>;
 type AuthContextAction = (ctx: AuthCommandContext) => Promise<CommandResult>;
-
 type GlobalFlags = OutputFlags & { verbose?: boolean };
 
 export function buildBaseContext(
@@ -47,15 +47,23 @@ export function buildBaseContext(
     outputMode === "agent"
       ? "silent"
       : resolveStderrLevel(env, Boolean(flags.verbose));
+  const { clack, verboseTarget, verboseWrite } = createVerboseContext(
+    outputMode,
+    stderrLevel !== "silent",
+  );
   const loggingSystem = createLoggingSystem({
     stderrLevel,
     logPath: defaultLogPath(),
+    ...(verboseWrite ? { verboseWrite } : {}),
   });
   const apiBaseUrl =
     env["QAWOLF_API_URL"]?.replace(/\/+$/, "") || "https://app.qawolf.com";
   return {
     ctx: {
-      ui: createUI(outputMode),
+      ui: createUI(outputMode, {
+        clack,
+        ...(verboseTarget ? { verboseTarget } : {}),
+      }),
       configDir: getConfigDir(),
       outputMode,
       isInteractive: isInteractive({

@@ -3,7 +3,10 @@ import { writeStdoutRaw } from "~/shell/ui/renderers/write.js";
 import { finalizeResults } from "./progress.js";
 import type { RendererSet } from "./types.js";
 
-export function createHumanRenderers(clack: StyledClack): RendererSet {
+export function createHumanRenderers(
+  clack: StyledClack,
+  verboseTarget?: { write: ((msg: string) => void) | undefined },
+): RendererSet {
   return {
     intro: (title) => clack.intro(title),
     note: (message, title) => clack.note(message, title),
@@ -27,10 +30,31 @@ export function createHumanRenderers(clack: StyledClack): RendererSet {
     write: (text) => writeStdoutRaw(text),
     withProgress: async (steps, done) => {
       const results: unknown[] = [];
-      const s = clack.spinner();
       const total = steps.length;
-      let currentLabel = "";
 
+      if (verboseTarget) {
+        // In verbose mode skip the spinner — use clack.log.step per step so output
+        // persists after completion. taskLog collapses on tl.success(), which hides
+        // the verbose logs the user asked to see.
+        let currentLabel = "";
+        try {
+          for (const [i, step] of steps.entries()) {
+            currentLabel = `[${String(i + 1)}/${String(total)}] ${step.message}`;
+            clack.log.step(currentLabel);
+            results.push(await step.task());
+          }
+          const { typed, doneMessage } = finalizeResults(results, done);
+          clack.log.success(doneMessage);
+          return typed;
+        } catch (err) {
+          clack.log.error(currentLabel);
+          throw err;
+        }
+      }
+
+      // existing spinner path — unchanged
+      const s = clack.spinner();
+      let currentLabel = "";
       try {
         for (const [i, step] of steps.entries()) {
           currentLabel = `[${String(i + 1)}/${String(total)}] ${step.message}`;
@@ -41,7 +65,6 @@ export function createHumanRenderers(clack: StyledClack): RendererSet {
           }
           results.push(await step.task());
         }
-
         const { typed, doneMessage } = finalizeResults(results, done);
         s.stop(doneMessage);
         return typed;

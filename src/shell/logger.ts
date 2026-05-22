@@ -38,40 +38,57 @@ export function resolveStderrLevel(
 export function createLoggingSystem(opts: {
   stderrLevel: LevelOrSilent;
   logPath: string;
+  verboseWrite?: (level: string, scope: string, msg: string) => void;
 }): LoggingSystem {
   const { stderrLevel, logPath } = opts;
 
   const dest = pino.destination({ dest: logPath, mkdir: true, sync: false });
   const fileLogger = pino({ level: "debug" }, dest);
-  const stderrLogger =
-    stderrLevel !== "silent"
-      ? pino({ level: stderrLevel }, process.stderr)
-      : undefined;
+
+  const levelNums = {
+    trace: 10,
+    debug: 20,
+    info: 30,
+    warn: 40,
+    error: 50,
+    fatal: 60,
+  } as const;
+  const stderrLevelNum =
+    stderrLevel === "silent" ? Infinity : (levelNums[stderrLevel] ?? Infinity);
 
   return {
     createLogger(scope: string): Logger {
       const file = fileLogger.child({ scope });
-      const stderr = stderrLogger?.child({ scope });
       return {
         error: (msg) => {
           file.error(msg);
-          stderr?.error(msg);
+          if (opts.verboseWrite && levelNums["error"] >= stderrLevelNum) {
+            opts.verboseWrite("error", scope, msg);
+          }
         },
         warn: (msg) => {
           file.warn(msg);
-          stderr?.warn(msg);
+          if (opts.verboseWrite && levelNums["warn"] >= stderrLevelNum) {
+            opts.verboseWrite("warn", scope, msg);
+          }
         },
         info: (msg) => {
           file.info(msg);
-          stderr?.info(msg);
+          if (opts.verboseWrite && levelNums["info"] >= stderrLevelNum) {
+            opts.verboseWrite("info", scope, msg);
+          }
         },
         debug: (msg) => {
           file.debug(msg);
-          stderr?.debug(msg);
+          if (opts.verboseWrite && levelNums["debug"] >= stderrLevelNum) {
+            opts.verboseWrite("debug", scope, msg);
+          }
         },
         trace: (msg) => {
           file.trace(msg);
-          stderr?.trace(msg);
+          if (opts.verboseWrite && levelNums["trace"] >= stderrLevelNum) {
+            opts.verboseWrite("trace", scope, msg);
+          }
         },
       };
     },
