@@ -2,6 +2,7 @@ import {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/domains/flows/expand.js";
+import { resolveUniqueEnvDir as defaultResolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
 import { classifyTarget } from "~/core/flowMeta.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { errorMessage } from "~/core/errors.js";
@@ -20,13 +21,16 @@ export type InstallAllDeps = {
   readonly peekFlowMeta: (
     filePath: string,
   ) => Promise<{ name: string | undefined; target: string | undefined }>;
+  readonly resolveUniqueEnvDir: (files: string[]) => string | undefined;
   readonly installBrowsers: (
     ctx: CommandContext,
     pattern: string | undefined,
+    envDir: string,
   ) => Promise<CommandResult>;
   readonly installAndroid: (
     ctx: CommandContext,
     pattern: string | undefined,
+    envDir: string,
   ) => Promise<CommandResult>;
 };
 
@@ -37,6 +41,13 @@ export async function installAll(
 ): Promise<CommandResult> {
   const patterns = buildPatternArgs(pattern);
   const files = await deps.expandPatterns(patterns, deps.cwd);
+
+  let envDir: string;
+  try {
+    envDir = deps.resolveUniqueEnvDir(files) ?? deps.cwd;
+  } catch (err: unknown) {
+    return { error: errorMessage(err), exitCode: 2 };
+  }
 
   let hasWeb = false;
   let hasAndroid = false;
@@ -67,7 +78,7 @@ export async function installAll(
 
   if (hasWeb) {
     try {
-      const result = await deps.installBrowsers(ctx, pattern);
+      const result = await deps.installBrowsers(ctx, pattern, envDir);
       if (result) firstError = result;
     } catch (err: unknown) {
       if (!firstError) firstError = { error: errorMessage(err) };
@@ -76,7 +87,7 @@ export async function installAll(
 
   if (hasAndroid) {
     try {
-      const result = await deps.installAndroid(ctx, pattern);
+      const result = await deps.installAndroid(ctx, pattern, envDir);
       if (result && !firstError) firstError = result;
     } catch (err: unknown) {
       if (!firstError) firstError = { error: errorMessage(err) };
@@ -98,7 +109,8 @@ export async function handleInstall(
     cwd: process.cwd(),
     expandPatterns: defaultExpandPatterns,
     peekFlowMeta: defaultPeekFlowMeta,
-    installBrowsers: (c, p) => handleInstallBrowsers(c, p),
-    installAndroid: (c, p) => handleInstallAndroid(c, p),
+    resolveUniqueEnvDir: defaultResolveUniqueEnvDir,
+    installBrowsers: handleInstallBrowsers,
+    installAndroid: handleInstallAndroid,
   });
 }
