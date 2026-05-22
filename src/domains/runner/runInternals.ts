@@ -20,6 +20,7 @@ import type {
   TraceMode,
   VideoMode,
 } from "~/core/types.js";
+import type { PeekFlowMetaFn } from "~/core/flowMeta.js";
 
 export type FlowsRunFlags = {
   readonly retries: number;
@@ -35,9 +36,7 @@ export type FlowsRunFlags = {
 };
 
 export type FlowsRunDeps = {
-  readonly peekFlowMeta: (
-    filePath: string,
-  ) => Promise<{ name: string | undefined; target: string | undefined }>;
+  readonly peekFlowMeta: PeekFlowMetaFn;
   readonly installBrowsers: (
     ctx: CommandContext,
     browsers: BrowserName[],

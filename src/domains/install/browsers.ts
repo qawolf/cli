@@ -1,4 +1,4 @@
-import { targetToBrowser } from "~/core/flowMeta.js";
+import { targetToBrowser, type PeekFlowMetaFn } from "~/core/flowMeta.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
@@ -13,9 +13,7 @@ export type InstallBrowsersDeps = {
     patterns: string[],
     cwd?: string,
   ) => Promise<string[]>;
-  readonly peekFlowMeta: (
-    filePath: string,
-  ) => Promise<{ name: string | undefined; target: string | undefined }>;
+  readonly peekFlowMeta: PeekFlowMetaFn;
   readonly playwrightCliPath: string;
 };
 
@@ -63,9 +61,7 @@ export async function installBrowsers(
 
 async function collectBrowsers(
   files: readonly string[],
-  peekFlowMeta: (
-    filePath: string,
-  ) => Promise<{ name: string | undefined; target: string | undefined }>,
+  peekFlowMeta: PeekFlowMetaFn,
 ): Promise<BrowserName[]> {
   const seen = new Set<BrowserName>();
   for await (const meta of batchMap(files, peekFlowMeta, flowBatchSize)) {

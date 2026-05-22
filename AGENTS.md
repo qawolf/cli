@@ -2,6 +2,8 @@
 
 CLI for agents, CI, and humans to interact with QA Wolf. TypeScript, Bun runtime, Commander.js framework.
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for human contributor setup.
+
 ## Commands
 
 ```bash
@@ -33,7 +35,7 @@ src/
 │   ├── errors.ts        # errorMessage, isNoEntError
 │   ├── paths.ts         # getConfigDir
 │   ├── flowMeta.ts      # extractFlowMeta, targetToBrowser, flowBasename
-│   ├── copy/            # copyFile, copyDir
+│   ├── messages/        # authCopy — user-facing strings for auth commands
 │   ├── pluralize.ts     # pluralize
 │   └── types.ts         # BrowserName, VideoMode, TraceMode, HarMode, TestCounts
 ├── shell/               # I/O executors — process spawning, UI, API clients
