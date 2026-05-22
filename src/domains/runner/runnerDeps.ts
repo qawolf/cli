@@ -1,20 +1,12 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { mkdir, unlink, writeFile } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
 import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import type { RunnerDeps } from "./types.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 export function createRunnerDeps(signals: SignalRegistry): RunnerDeps {
   return {
-    fs: {
-      // mkdir wraps to drop node:fs/promises' Promise<string | undefined>
-      // return; writeFile and unlink already match RunnerFs's shape.
-      mkdir: async (p, opts) => {
-        await mkdir(p, opts);
-      },
-      writeFile,
-      unlink,
-    },
+    fs: makeDefaultFs(),
     spawn: (cmd, args) => {
       const child = nodeSpawn(cmd, args);
       const exitCode = new Promise<number>((resolve) => {
