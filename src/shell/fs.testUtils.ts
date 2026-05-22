@@ -34,7 +34,7 @@ export function makeMemoryFs(): Fs {
     async pathExists(path) {
       return files.has(path) || dirs.has(path);
     },
-    async readFile(path) {
+    async readFile(path: string) {
       const data = files.get(path);
       if (data === undefined) throwNoEntError(path, "open");
       return textDecoder.decode(data);

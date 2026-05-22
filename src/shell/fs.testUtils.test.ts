@@ -6,7 +6,7 @@ describe("makeMemoryFs", () => {
   it("should write and read back file content", async () => {
     const fs = makeMemoryFs();
     await fs.writeFile("/test/file.txt", "hello");
-    const result = await fs.readFile("/test/file.txt", "utf-8");
+    const result = await fs.readFile("/test/file.txt");
     expect(result).toBe("hello");
   });
 
@@ -14,7 +14,7 @@ describe("makeMemoryFs", () => {
     const fs = makeMemoryFs();
     let caughtError: unknown;
     try {
-      await fs.readFile("/missing.txt", "utf-8");
+      await fs.readFile("/missing.txt");
     } catch (e) {
       caughtError = e;
     }
@@ -114,5 +114,21 @@ describe("makeMemoryFs", () => {
       caughtError = e;
     }
     expect(isNoEntError(caughtError)).toBe(true);
+  });
+
+  it("should auto-create parent directories when writing a nested file", async () => {
+    const fs = makeMemoryFs();
+    await fs.writeFile("/a/b/c.txt", "data");
+    expect(await fs.pathExists("/a/b/c.txt")).toBe(true);
+    expect(await fs.pathExists("/a/b")).toBe(true);
+    expect(await fs.pathExists("/a")).toBe(true);
+  });
+
+  it("should create ancestor directories when recursive mkdir is called", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/x/y/z", { recursive: true });
+    expect(await fs.pathExists("/x/y/z")).toBe(true);
+    expect(await fs.pathExists("/x/y")).toBe(true);
+    expect(await fs.pathExists("/x")).toBe(true);
   });
 });

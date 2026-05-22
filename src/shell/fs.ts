@@ -42,17 +42,15 @@ export async function pathExists(p: string): Promise<boolean> {
   }
 }
 
-/** @public */
-export type FsStat = Pick<
+type FsStat = Pick<
   fs.Stats,
   "isFile" | "isDirectory" | "size" | "mtimeMs" | "mtime"
 >;
 
-/** @public */
 export type Fs = {
   mkdir(path: string, options?: { recursive?: boolean }): Promise<void>;
   pathExists(path: string): Promise<boolean>;
-  readFile(path: string, encoding: BufferEncoding): Promise<string>;
+  readFile(path: string): Promise<string>;
   rm(
     path: string,
     options?: { recursive?: boolean; force?: boolean },
@@ -62,15 +60,14 @@ export type Fs = {
   writeFile(path: string, data: string | Uint8Array): Promise<void>;
 };
 
-/** @public */
 export function makeDefaultFs(): Fs {
   return {
     async mkdir(path, options) {
       await fs.promises.mkdir(path, options);
     },
     pathExists,
-    readFile(path, encoding) {
-      return fs.promises.readFile(path, encoding);
+    readFile(path) {
+      return fs.promises.readFile(path, "utf-8");
     },
     async rm(path, options) {
       await fs.promises.rm(path, options);
