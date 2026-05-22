@@ -19,6 +19,7 @@ function findSub(parent: Command, name: string): Command {
 function helpFor(...path: string[]): string {
   let cmd = buildProgram();
   for (const segment of path) cmd = findSub(cmd, segment);
+  cmd.configureHelp({ helpWidth: 80 });
   let buf = "";
   cmd.configureOutput({
     writeOut: (s) => {
