@@ -14,12 +14,25 @@ import { installAndroid } from "~/domains/install/android/index.js";
 export async function handleInstallAndroid(
   ctx: CommandContext,
   pattern: string | undefined,
+  envDir?: string,
 ): Promise<CommandResult> {
   const androidHome =
     process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"];
   if (!androidHome) {
     return { error: installMessages.androidSdkNotFound };
   }
+
+  // When envDir is pre-resolved (composite `qawolf install` path), use it
+  // directly. Otherwise let installAndroid resolve from matched files.
+  const resolveEnvDir = envDir
+    ? () => envDir
+    : (files: string[]) => {
+        try {
+          return resolveUniqueEnvDir(files);
+        } catch {
+          return undefined;
+        }
+      };
 
   return installAndroid(ctx, pattern, {
     cwd: process.cwd(),
@@ -43,13 +56,7 @@ export async function handleInstallAndroid(
     ),
     expandPatterns: defaultExpandPatterns,
     peekFlowMeta: defaultPeekFlowMeta,
-    resolveEnvDir: (files) => {
-      try {
-        return resolveUniqueEnvDir(files);
-      } catch {
-        return undefined;
-      }
-    },
+    resolveEnvDir,
     resolveAppiumBin,
   });
 }
