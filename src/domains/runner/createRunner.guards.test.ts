@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { runnerMessages } from "~/core/messages/index.js";
 import { createRunner } from "./createRunner.js";
 import type { FlowDefinition, RunnerDeps } from "./types.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
@@ -29,7 +30,7 @@ describe("createRunner — guards and edge cases", () => {
         deps: makeDeps(),
         options: { retries: -1, outputDir: "/tmp" },
       }),
-    ).toThrow("retries must be a non-negative integer, got -1");
+    ).toThrow(runnerMessages.invalidRetries(-1));
   });
 
   it("throws synchronously when retries is NaN", () => {
@@ -38,7 +39,7 @@ describe("createRunner — guards and edge cases", () => {
         deps: makeDeps(),
         options: { retries: NaN, outputDir: "/tmp" },
       }),
-    ).toThrow("retries must be a non-negative integer, got NaN");
+    ).toThrow(runnerMessages.invalidRetries(NaN));
   });
 
   it("reports failure (not pass) when SIGTERM fires during flow execution", async () => {

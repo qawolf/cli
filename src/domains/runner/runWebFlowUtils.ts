@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import type { SignalRegistry } from "./types.js";
+import { runnerMessages } from "~/core/messages/index.js";
 import { unsupportedSharedDepNames } from "./unsupportedDepNames.js";
 import type {
   BrowserDep,
@@ -96,7 +97,7 @@ export function normalizeBrowserName(
 
 export function notSupported(name: string): () => never {
   return () => {
-    throw new Error(`${name} is not supported in the CLI runner`);
+    throw new Error(runnerMessages.notSupportedInCli(name));
   };
 }
 

@@ -1,4 +1,5 @@
 import { errorMessage } from "~/core/errors.js";
+import { doctorMessages } from "~/core/messages/index.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
 
 type ApiUrlDeps = {
@@ -20,7 +21,10 @@ export async function checkApiUrl(deps: ApiUrlDeps): Promise<CheckResult> {
     return {
       name: "api-url",
       status: "warn",
-      detail: `${deps.apiBaseUrl} unreachable: ${errorMessage(error)}`,
+      detail: doctorMessages.apiUrl.unreachable(
+        deps.apiBaseUrl,
+        errorMessage(error),
+      ),
     };
   }
 
@@ -28,7 +32,7 @@ export async function checkApiUrl(deps: ApiUrlDeps): Promise<CheckResult> {
     return {
       name: "api-url",
       status: "warn",
-      detail: `${deps.apiBaseUrl} returned ${response.status}`,
+      detail: doctorMessages.apiUrl.badStatus(deps.apiBaseUrl, response.status),
     };
   }
 

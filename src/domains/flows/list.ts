@@ -1,7 +1,6 @@
 import path from "node:path";
 
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
-import { pluralize } from "~/core/pluralize.js";
 import { flowsMessages, runnerMessages } from "~/core/messages/index.js";
 import type { BrowserName } from "~/core/types.js";
 
@@ -61,7 +60,7 @@ export async function flowsList(
   ctx.ui.gap();
   ctx.ui.intro(flowsMessages.title);
   ctx.ui.write(renderTable(items, true));
-  ctx.ui.outro(pluralize(items.length, "flow"));
+  ctx.ui.outro(flowsMessages.flowCount(items.length));
 }
 
 export function handleFlowsList(

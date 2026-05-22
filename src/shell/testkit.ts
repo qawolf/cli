@@ -3,13 +3,15 @@ import { pathToFileURL } from "node:url";
 import type { createTestkitClient } from "@qawolf/testkit/client";
 import type { configureTestkitClient } from "@qawolf/testkit";
 
+import { runnerMessages } from "~/core/messages/index.js";
+
 type TestkitModule = {
   createTestkitClient: typeof createTestkitClient;
   configureTestkitClient: typeof configureTestkitClient;
 };
 
 function notAvailableLocally(name: string): never {
-  throw new Error(`${name} is not available in local runs yet.`);
+  throw new Error(runnerMessages.notAvailableLocally(name));
 }
 
 // Loaded via import.meta.resolve so the binary finds the packages in the

@@ -2,6 +2,7 @@ import type { CommandContext } from "~/shell/commandContext.js";
 import type { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
 import type { Logger } from "~/shell/logger.js";
 import type { Reporter } from "~/shell/reporter/types.js";
+import { runnerMessages } from "~/core/messages/index.js";
 import { FlowRunError } from "./errors.js";
 import type {
   RunAndroidFlowDeps,
@@ -127,7 +128,7 @@ export async function dispatchFlow({
     stamp = await deps.findFlowStamp(flow.file);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    deps.warn(`failed to read manifest stamp for ${flow.file}: ${message}`);
+    deps.warn(runnerMessages.manifestStampReadFailed(flow.file, message));
   }
   if (stamp) run = { ...run, manifest: stamp };
   const durationMs = deps.now() - flowStart;

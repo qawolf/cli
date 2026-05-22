@@ -4,7 +4,6 @@ import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
 import { runnerMessages } from "~/core/messages/index.js";
-import { pluralize } from "~/core/pluralize.js";
 
 import { buildRunOptions, runFlows } from "./runHelpers.js";
 import {
@@ -51,7 +50,7 @@ export async function flowsRun(
         target: meta.target,
       });
     } else if (classified.kind === "unrecognized") {
-      ctx.ui.error(`Unrecognized flow target: "${meta.target}"`);
+      ctx.ui.error(runnerMessages.unrecognizedTarget(meta.target));
       return { error: "unrecognized flow target", exitCode: 2 };
     } else {
       const typeName = classified.kind === "ios" ? "iOS" : meta.target;
@@ -60,7 +59,7 @@ export async function flowsRun(
   }
 
   for (const [type, count] of skippedByType) {
-    ctx.ui.warn(`${pluralize(count, `${type} flow`)} skipped`);
+    ctx.ui.warn(runnerMessages.flowsSkipped(type, count));
   }
 
   flows.sort((a, b) => a.file.localeCompare(b.file));
@@ -139,6 +138,6 @@ export async function flowsRun(
   deps.reporter.onRunComplete?.({ summary });
 
   if (counts.flowsFailed > 0) {
-    return { error: `${counts.flowsFailed} flow(s) failed` };
+    return { error: runnerMessages.flowsFailed(counts.flowsFailed) };
   }
 }

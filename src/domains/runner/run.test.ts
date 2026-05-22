@@ -35,9 +35,9 @@ describe("flowsRun pre-flight", () => {
   });
 
   it.each([
-    ["iOS - iPad", "1 iOS flow skipped"],
-    ["Basic", "1 Basic flow skipped"],
-    ["Electron", "1 Electron flow skipped"],
+    ["iOS - iPad", runnerMessages.flowsSkipped("iOS", 1)],
+    ["Basic", runnerMessages.flowsSkipped("Basic", 1)],
+    ["Electron", runnerMessages.flowsSkipped("Electron", 1)],
   ] as const)(
     "warns and skips unsupported target %p without aborting",
     async (target, expectedWarning) => {
@@ -68,7 +68,9 @@ describe("flowsRun pre-flight", () => {
     await flowsRun(ctx, ["/a", "/b"], defaultFlags(), deps);
 
     expect(ctx.ui.warn).toHaveBeenCalledTimes(1);
-    expect(ctx.ui.warn).toHaveBeenCalledWith("2 Basic flows skipped");
+    expect(ctx.ui.warn).toHaveBeenCalledWith(
+      runnerMessages.flowsSkipped("Basic", 2),
+    );
     expect(ctx.ui.info).not.toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
   });
 
@@ -85,7 +87,9 @@ describe("flowsRun pre-flight", () => {
 
     expect(result).toBeUndefined();
     expect(ctx.ui.warn).toHaveBeenCalledTimes(1);
-    expect(ctx.ui.warn).toHaveBeenCalledWith("2 iOS flows skipped");
+    expect(ctx.ui.warn).toHaveBeenCalledWith(
+      runnerMessages.flowsSkipped("iOS", 2),
+    );
     expect(ctx.ui.info).not.toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
   });
 
@@ -102,7 +106,7 @@ describe("flowsRun pre-flight", () => {
       exitCode: 2,
     });
     expect(ctx.ui.error).toHaveBeenCalledWith(
-      `Unrecognized flow target: "Web - Chorme"`,
+      runnerMessages.unrecognizedTarget("Web - Chorme"),
     );
     expect(ctx.ui.warn).not.toHaveBeenCalled();
   });
@@ -128,7 +132,7 @@ describe("flowsRun pre-flight", () => {
       exitCode: 2,
     });
     expect(ctx.ui.error).toHaveBeenCalledWith(
-      `Unrecognized flow target: "Web - Chorme"`,
+      runnerMessages.unrecognizedTarget("Web - Chorme"),
     );
   });
 
@@ -150,7 +154,9 @@ describe("flowsRun pre-flight", () => {
     );
 
     expect(result).toBeUndefined();
-    expect(ctx.ui.warn).toHaveBeenCalledWith("1 iOS flow skipped");
+    expect(ctx.ui.warn).toHaveBeenCalledWith(
+      runnerMessages.flowsSkipped("iOS", 1),
+    );
     expect(deps.installBrowsers).toHaveBeenCalled();
   });
 

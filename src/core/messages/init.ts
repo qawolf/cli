@@ -11,4 +11,7 @@ export const initMessages = {
   packageJsonHasTestE2e: "package.json already has `test:e2e` — skipped",
   addTestE2ePrompt: "Add `test:e2e: qawolf flows run` to package.json?",
   updatedPackageJson: "Updated package.json",
+  overwritePrompt: (relPath: string) => `Overwrite ${relPath}?`,
+  skippedFile: (relPath: string) => `Skipped ${relPath}`,
+  createdFile: (relPath: string) => `Created ${relPath}`,
 } as const;

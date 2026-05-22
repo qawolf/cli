@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "~/shell/fs.js";
 import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import { dirname, join } from "node:path";
+import { flowsMessages } from "~/core/messages/index.js";
 import {
   appiumUiautomator2DriverVersion,
   appiumVersion,
@@ -90,7 +91,7 @@ export function resolveUniqueEnvDir(files: string[]): string | undefined {
   if (dirs.size > 1) {
     const listed = [...dirs].map((d) => `  - ${d}`).join("\n");
     throw new Error(
-      `Pattern matches flows from ${dirs.size} packages — narrow it to a single package:\n${listed}\n\nHint: pass a pattern scoped to one package, e.g \`qawolf flows run '.qawolf/<env>/**'\`.`,
+      flowsMessages.ensureDeps.multiPackagePattern(dirs.size, listed),
     );
   }
   return dirs.size === 1 ? [...dirs][0] : undefined;
@@ -117,7 +118,11 @@ export async function ensureFlowDeps(envDir: string): Promise<void> {
     const install = await spawnPm(pm, ["install"], envDir);
     if (install.exitCode !== 0) {
       throw new Error(
-        `${pm} install failed in ${envDir}:\n${install.stderr.trim()}`,
+        flowsMessages.ensureDeps.installFailed(
+          pm,
+          envDir,
+          install.stderr.trim(),
+        ),
       );
     }
   }
@@ -135,6 +140,8 @@ export async function ensureFlowDeps(envDir: string): Promise<void> {
     pm === "npm" ? ["install", "--no-save", ...pkgSpecs] : ["add", ...pkgSpecs];
   const r = await spawnPm(pm, installCmd, envDir);
   if (r.exitCode !== 0) {
-    throw new Error(`${pm} install failed in ${envDir}:\n${r.stderr.trim()}`);
+    throw new Error(
+      flowsMessages.ensureDeps.installFailed(pm, envDir, r.stderr.trim()),
+    );
   }
 }
