@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import {
   hashFile,
   manifestFilename,
@@ -11,15 +12,7 @@ import {
 } from "./io.js";
 import type { Manifest } from "./types.js";
 
-let workDir = "";
-
-beforeEach(async () => {
-  workDir = await mkdtemp(join(tmpdir(), "qawolf-manifest-"));
-});
-
-afterEach(async () => {
-  await rm(workDir, { recursive: true, force: true });
-});
+const envDir = "/qawolf/manifest-test";
 
 const sample: Manifest = {
   envId: "env-abc",
@@ -34,38 +27,52 @@ const sample: Manifest = {
 
 describe("readManifest", () => {
   it("returns 'missing' when no manifest file exists", async () => {
-    expect(await readManifest(workDir)).toBe("missing");
+    const memFs = makeMemoryFs();
+    const result = await readManifest(envDir, memFs);
+    expect(result).toBe("missing");
   });
 
   it("returns the parsed manifest after writeManifest", async () => {
-    await writeManifest(workDir, sample);
-    expect(await readManifest(workDir)).toEqual(sample);
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
+    await writeManifest(envDir, sample, memFs);
+    const result = await readManifest(envDir, memFs);
+    expect(result).toEqual(sample);
   });
 
   it("returns 'malformed' on invalid JSON", async () => {
-    await writeFile(join(workDir, manifestFilename), "{not json", "utf8");
-    expect(await readManifest(workDir)).toBe("malformed");
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
+    await memFs.writeFile(join(envDir, manifestFilename), "{not json");
+    const result = await readManifest(envDir, memFs);
+    expect(result).toBe("malformed");
   });
 
   it("returns 'malformed' when JSON shape does not match", async () => {
-    await writeFile(
-      join(workDir, manifestFilename),
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
+    await memFs.writeFile(
+      join(envDir, manifestFilename),
       JSON.stringify({ envId: 7 }),
-      "utf8",
     );
-    expect(await readManifest(workDir)).toBe("malformed");
+    const result = await readManifest(envDir, memFs);
+    expect(result).toBe("malformed");
   });
 });
 
 describe("writeManifest", () => {
   it("writes pretty-printed JSON to .manifest.json", async () => {
-    await writeManifest(workDir, sample);
-    const raw = await Bun.file(join(workDir, manifestFilename)).text();
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
+    await writeManifest(envDir, sample, memFs);
+    const raw = await memFs.readFile(join(envDir, manifestFilename));
     expect(raw).toContain("\n");
     expect(JSON.parse(raw)).toEqual(sample);
   });
 
   it("preserves optional fields as undefined when absent", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
     const minimal: Manifest = {
       envId: "env-min",
       envSlug: undefined,
@@ -76,13 +83,23 @@ describe("writeManifest", () => {
       envVarsFetchedAt: undefined,
       flows: [],
     };
-    await writeManifest(workDir, minimal);
-    const round = await readManifest(workDir);
+    await writeManifest(envDir, minimal, memFs);
+    const round = await readManifest(envDir, memFs);
     expect(round).toEqual(minimal);
   });
 });
 
 describe("hashFile", () => {
+  let workDir = "";
+
+  beforeEach(async () => {
+    workDir = await mkdtemp(join(tmpdir(), "qawolf-manifest-"));
+  });
+
+  afterEach(async () => {
+    await rm(workDir, { recursive: true, force: true });
+  });
+
   it("returns a stable hex sha256 of file bytes", async () => {
     const f = join(workDir, "a.txt");
     await writeFile(f, "hello world", "utf8");

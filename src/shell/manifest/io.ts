@@ -3,7 +3,8 @@ import { join } from "node:path";
 import { z } from "zod";
 
 import { isNoEntError } from "~/core/errors.js";
-import { createReadStream, readFile, writeFile } from "~/shell/fs.js";
+import { createReadStream, makeDefaultFs } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import type { Manifest } from "./types.js";
 
 export const manifestFilename = ".manifest.json";
@@ -28,10 +29,11 @@ type ReadManifestResult = Manifest | "missing" | "malformed";
 
 export async function readManifest(
   envDir: string,
+  fs: Fs = makeDefaultFs(),
 ): Promise<ReadManifestResult> {
   let raw: string;
   try {
-    raw = await readFile(join(envDir, manifestFilename), "utf8");
+    raw = await fs.readFile(join(envDir, manifestFilename));
   } catch (err: unknown) {
     if (isNoEntError(err)) return "missing";
     // EACCES / EISDIR / other I/O errors aren't the same as "missing" or
@@ -64,9 +66,10 @@ export async function readManifest(
 export async function writeManifest(
   envDir: string,
   manifest: Manifest,
+  fs: Fs = makeDefaultFs(),
 ): Promise<void> {
   const body = JSON.stringify(manifest, undefined, 2);
-  await writeFile(join(envDir, manifestFilename), `${body}\n`, "utf8");
+  await fs.writeFile(join(envDir, manifestFilename), `${body}\n`);
 }
 
 export function hashFile(absPath: string): Promise<string> {

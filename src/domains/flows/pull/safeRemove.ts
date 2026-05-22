@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
-import { rm } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import { isAbsolute } from "node:path";
 
 type TempPathKind = "pull" | "old";
@@ -31,6 +32,7 @@ export function mintTempPath(
 export async function removeTempDir(
   absPath: string,
   registry: TempPathRegistry,
+  fs: Fs = makeDefaultFs(),
 ): Promise<void> {
   if (!absPath || !isAbsolute(absPath)) {
     throw new Error(`removeTempDir refused: not an absolute path (${absPath})`);
@@ -41,6 +43,6 @@ export async function removeTempDir(
   if (!registry.minted.has(absPath)) {
     throw new Error(`removeTempDir refused: not minted in this registry`);
   }
-  await rm(absPath, { recursive: true, force: true });
+  await fs.rm(absPath, { recursive: true, force: true });
   registry.minted.delete(absPath);
 }
