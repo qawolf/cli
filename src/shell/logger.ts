@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import pino from "pino";
 import envPaths from "env-paths";
 
@@ -17,7 +18,7 @@ export type LoggingSystem = {
 };
 
 export function defaultLogPath(): string {
-  return envPaths("qawolf", { suffix: "" }).log + "/cli.log";
+  return join(envPaths("qawolf", { suffix: "" }).log, "cli.log");
 }
 
 export function resolveStderrLevel(
