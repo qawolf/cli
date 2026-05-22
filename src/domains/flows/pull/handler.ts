@@ -9,6 +9,7 @@ import {
 } from "~/shell/commandContext.js";
 import { pluralize } from "~/core/pluralize.js";
 import { manifestFilename } from "~/shell/manifest/io.js";
+import { flowsMessages } from "~/core/messages/index.js";
 import { fetchBundleAndEnvVars } from "./fetchPhase.js";
 import { checkSafety, validateEnvId } from "./pull.js";
 import { stageBundle } from "./stage.js";
@@ -85,18 +86,18 @@ export async function handleFlowsPull(
       },
     });
     if (safety === "needs-yes") {
-      ctx.ui.error("Re-run with --yes to overwrite locally-modified files");
+      ctx.ui.error(flowsMessages.pull.needsYesError);
       return { error: "local modifications require --yes" };
     }
     if (safety === "abort") {
-      ctx.ui.info("Aborted; no changes.");
+      ctx.ui.info(flowsMessages.pull.aborted);
       return;
     }
 
     const [result] = await ctx.ui.withProgress(
       [
         {
-          message: "Extracting bundle",
+          message: flowsMessages.pull.extractingBundle,
           task: () =>
             stageBundle({
               tmpArchive: fetched.tmpArchive,

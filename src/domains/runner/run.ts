@@ -95,7 +95,7 @@ export async function flowsRun(
         await deps.bootAndroid(avdNames);
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Android boot failed";
+          err instanceof Error ? err.message : runnerMessages.androidBootFailed;
         ctx.ui.error(message);
         return { error: message };
       }

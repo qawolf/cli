@@ -9,6 +9,7 @@ export const authMessages = {
   alreadyConfigured: "API key configured.",
   outroReady: "Ready.",
   cancelled: "Setup cancelled.",
+  notAuthenticated: "Not authenticated",
   whoamiAuthenticated: "Authenticated",
   whoamiFailed: "Authentication failed",
   login: {
@@ -23,6 +24,7 @@ export const authMessages = {
     envVarWarning:
       "Credentials set via QAWOLF_API_KEY env var cannot be removed by this command. Unset the variable to log out.",
     deleting: "Removing stored credentials",
+    credentialsRemoved: "Credentials removed",
     success: "Logged out successfully.",
     cancelled: "Logout cancelled.",
   },

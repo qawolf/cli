@@ -9,6 +9,7 @@ import { installAvds } from "./avd.js";
 import type { AvdSpec } from "./avd.js";
 import { installUiautomator2Driver } from "./driver.js";
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
+import { installMessages } from "~/core/messages/index.js";
 
 export type InstallAndroidDeps = {
   readonly cwd: string;
@@ -40,7 +41,7 @@ export async function installAndroid(
 
   const targets = await collectAndroidTargets(files, deps.peekFlowMeta);
   if (targets.length === 0) {
-    ctx.ui.info("No Android flows found. Nothing to install.");
+    ctx.ui.info(installMessages.android.noFlowsFound);
     return;
   }
 

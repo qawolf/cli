@@ -2,6 +2,7 @@ import { join } from "node:path";
 import envPaths from "env-paths";
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { SpawnFn } from "~/shell/spawn.js";
+import { installMessages } from "~/core/messages/index.js";
 import { appiumUiautomator2DriverVersion } from "~/generated/dependencyVersions.js";
 
 export type InstallDriverDeps = {
@@ -27,11 +28,11 @@ export async function installUiautomator2Driver(
   );
   // Appium writes driver list output to stderr on some versions.
   if ((listResult.stdout + listResult.stderr).includes("uiautomator2")) {
-    ctx.ui.info("uiautomator2 driver already installed.");
+    ctx.ui.info(installMessages.android.uiautomator2AlreadyInstalled);
     return;
   }
 
-  ctx.ui.step("Installing uiautomator2 driver");
+  ctx.ui.step(installMessages.android.installingUiautomator2);
   const installResult = await deps.spawn(
     deps.appiumBinPath,
     ["driver", "install", `uiautomator2@${appiumUiautomator2DriverVersion}`],
@@ -42,7 +43,7 @@ export async function installUiautomator2Driver(
     // Treat "already installed" as success — can happen when the list check
     // missed the driver due to output format differences.
     if (output.includes("already installed")) {
-      ctx.ui.info("uiautomator2 driver already installed.");
+      ctx.ui.info(installMessages.android.uiautomator2AlreadyInstalled);
       return;
     }
     const detail =

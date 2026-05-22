@@ -37,7 +37,7 @@ export async function handleLogout(
         task: () => deleteApiKey(ctx.configDir),
       },
     ],
-    () => "Credentials removed",
+    () => authMessages.logout.credentialsRemoved,
   );
 
   if (ctx.ui.mode === "human") {
