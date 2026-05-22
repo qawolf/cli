@@ -11,12 +11,13 @@ type EmailsModule = {
 // project's node_modules rather than alongside the CLI binary. Tests always
 // inject deps so this path only runs in production.
 async function loadSdkDeps(cwd: string): Promise<EmailsModule> {
+  // Point to a file inside cwd so import.meta.resolve starts node_modules
+  // lookup from cwd/ rather than its parent (pathToFileURL of a directory
+  // produces a URL without trailing slash, which is treated as a file).
+  const base = pathToFileURL(join(cwd, "package.json"));
   try {
     return (await import(
-      import.meta.resolve(
-        "@qawolf/emails",
-        pathToFileURL(join(cwd, "package.json")),
-      )
+      import.meta.resolve("@qawolf/emails", base)
     )) as EmailsModule;
   } catch (err) {
     throw new Error(

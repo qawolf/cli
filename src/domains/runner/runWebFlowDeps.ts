@@ -18,13 +18,14 @@ export async function defaultRunWebFlowDeps(
   // newContext() returns Page[].video() = Video | null while MinimalPage
   // expects MinimalVideo | undefined. Runtime values are interchangeable
   // (the runner only reads .path() / .delete() on the video).
+  // Point to a file inside cwd so import.meta.resolve starts node_modules
+  // lookup from cwd/ rather than its parent (pathToFileURL of a directory
+  // produces a URL without trailing slash, which is treated as a file).
+  const base = pathToFileURL(join(cwd, "package.json"));
   let playwright: Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
   try {
     playwright = (await import(
-      import.meta.resolve(
-        "playwright",
-        pathToFileURL(join(cwd, "package.json")),
-      )
+      import.meta.resolve("playwright", base)
     )) as Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
   } catch (err) {
     throw new Error(
