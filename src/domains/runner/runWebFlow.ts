@@ -1,9 +1,9 @@
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import type {
   WebFlowApiReturnValue,
   WebFlowDefinition,
 } from "@qawolf/flows/web";
+import { loadFlowDefault } from "./loadFlowDefault.js";
 import { createRunner } from "./createRunner.js";
 import type {
   FlowDefinition,
@@ -42,14 +42,7 @@ export async function runWebFlow({
 }): Promise<FlowRunResult> {
   await initFlowRuntime(flowPath);
 
-  const mod = (await import(pathToFileURL(flowPath).href)) as Record<
-    string,
-    unknown
-  >;
-  const exported = mod["default"] as WebFlowApiReturnValue | undefined;
-  if (exported === undefined) {
-    throw new Error(`No default export found in "${flowPath}"`);
-  }
+  const exported = await loadFlowDefault<WebFlowApiReturnValue>(flowPath);
 
   const isLegacy = typeof exported === "function";
   const flowName = isLegacy
