@@ -115,8 +115,8 @@ This checks your Node.js version, Playwright installation, browser availability,
 - **File assets not pulled** — `flows pull` does not download file attachments in v0.1.
 - **Mobile flows require a local APK or IPA path** — set the path via an environment variable in your flow config.
 - **`--har` captures headers and timing only by default** — use `--har-content full` for response bodies (increases memory usage).
-- **Dynamic `target` flows** — flows with a runtime-resolved target cannot be pre-flight-detected and are included in all runs.
-- **`Basic` target flows** — pull correctly but cannot be executed with the CLI in v0.1.
+- **Dynamic-target flows** — flows where target is a computed value rather than a string literal. The CLI can't determine the platform ahead of time, so these flows are included in every run.
+- **`Basic` flows** — a legacy flow type that will download successfully but can't be executed by the CLI in v0.1..
 
 ## Contributing
 
