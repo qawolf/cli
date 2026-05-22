@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { describe, expect, it } from "bun:test";
 import { isNoEntError } from "~/core/errors.js";
 import { makeMemoryFs } from "./fs.testUtils.js";
