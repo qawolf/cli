@@ -14,6 +14,10 @@ import { getIdentity, type IdentityResponse } from "./getIdentity.js";
 import { type PlatformResult, requestWithRetry } from "./requestWithRetry.js";
 import { listTeamStorageFiles } from "./teamStorage.js";
 import {
+  downloadTeamStorageAssets,
+  type SyncTeamStorageAssetsResult,
+} from "./teamStorageAssets.js";
+import {
   environmentWithVariablesResponseSchema,
   flowsBundleResponseSchema,
   type TeamStorageFile,
@@ -28,6 +32,9 @@ export type PlatformClient = {
     envId: string,
   ) => Promise<PlatformResult<Record<string, string>>>;
   listTeamStorageFiles: () => Promise<PlatformResult<TeamStorageFile[]>>;
+  syncTeamStorageAssets: (
+    assetsAbs: string,
+  ) => Promise<PlatformResult<SyncTeamStorageAssetsResult>>;
   downloadBundle: (
     envId: string,
   ) => Promise<PlatformResult<{ tmpArchive: string }>>;
@@ -100,6 +107,15 @@ export function createPlatformClient(
         trpc,
         { teamId: identity.value.team.id },
         deps,
+      );
+    },
+
+    async syncTeamStorageAssets(assetsAbs) {
+      const files = await this.listTeamStorageFiles();
+      if (!files.ok) return files;
+      return downloadTeamStorageAssets(
+        { assetsAbs, files: files.value },
+        { fetch: deps.fetch },
       );
     },
 

@@ -12,7 +12,6 @@ import { fetchBundleAndEnvVars } from "./fetchPhase.js";
 import { checkSafety, validateEnvId } from "./pull.js";
 import { stageBundle } from "./stage.js";
 import { formatPullSummary } from "./summary.js";
-import { syncTeamStorageAssets } from "./teamStorageAssets.js";
 
 export type FlowsPullOptions = {
   readonly env: string;
@@ -87,14 +86,11 @@ export async function handleFlowsPull(
         },
         {
           message: "Downloading team-storage assets",
-          task: () =>
-            syncTeamStorageAssets(
-              { assetsAbs },
-              {
-                fetch,
-                platform: ctx.platform,
-              },
-            ),
+          task: async () => {
+            const result = await ctx.platform.syncTeamStorageAssets(assetsAbs);
+            if (!result.ok) throw new Error(result.error);
+            return result.value;
+          },
         },
       ],
       (results) =>

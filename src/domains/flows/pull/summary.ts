@@ -18,23 +18,26 @@ export function formatPullSummary(
     result.envVarCount === 0
       ? ""
       : ` and ${pluralize(result.envVarCount, "environment variable")}`;
-  let summary = `Pulled ${flows}${envVars} into ${result.envDir}`;
+  const lines = [`Pulled ${flows}${envVars} into ${result.envDir}`];
   if (result.flowsWithTeamStorageRefs.length > 0) {
     const refs = pluralize(result.flowsWithTeamStorageRefs.length, "flow");
-    summary += `\nTeam-storage assets referenced by ${refs}:`;
+    lines.push(`Team-storage assets referenced by ${refs}:`);
     for (const path of result.flowsWithTeamStorageRefs) {
-      summary += `\n  - ${path}`;
+      lines.push(`  - ${path}`);
     }
   }
-  summary += `\nDownloaded ${pluralize(
-    result.assetDownloadedCount,
-    "team-storage asset",
-  )} into ${assetsAbs}`;
-  if (result.assetSkippedCount > 0) {
-    summary += ` (${pluralize(
-      result.assetSkippedCount,
-      "unsafe or unsupported asset",
-    )} skipped)`;
+  if (result.assetDownloadedCount > 0 || result.assetSkippedCount > 0) {
+    let assetSummary = `Downloaded ${pluralize(
+      result.assetDownloadedCount,
+      "team-storage asset",
+    )} into ${assetsAbs}`;
+    if (result.assetSkippedCount > 0) {
+      assetSummary += ` (${pluralize(
+        result.assetSkippedCount,
+        "unsafe or unsupported asset",
+      )} skipped)`;
+    }
+    lines.push(assetSummary);
   }
-  return summary;
+  return lines.join("\n");
 }
