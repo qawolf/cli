@@ -23,6 +23,12 @@ jobs:
       - run: bun run knip
       - run: bun run test
       - run: bun run build
+      - name: Verify tarball contents
+        run: |
+          output=$(bun pm pack --dry-run 2>&1)
+          echo "$output"
+          echo "$output" | grep -qE '^dist/cli\.js$'
+          echo "$output" | grep -qE '^dist/cli\.js\.map$'
       # - name: PR size check
       #   if: github.event_name == 'pull_request'
       #   env:
