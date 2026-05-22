@@ -142,3 +142,92 @@ describe("human renderers — withProgress", () => {
     expect(s.message).toHaveBeenCalledWith("[2/2] process data");
   });
 });
+
+describe("human renderers — withProgress — verboseTarget", () => {
+  afterEach(() => {
+    mock.restore();
+  });
+
+  it("should use taskLog when verboseTarget is provided", async () => {
+    const clack = makeClack();
+    const verboseTarget: { write: ((msg: string) => void) | undefined } = {
+      write: undefined,
+    };
+    const { withProgress } = createHumanRenderers(clack, verboseTarget);
+
+    await withProgress(
+      [{ message: "Step 1", task: async () => undefined }],
+      "Done",
+    );
+
+    expect(clack.createdTaskLogs).toHaveLength(1);
+    expect(clack.createdTaskLogs[0]!.success).toHaveBeenCalledWith("Done");
+    expect(clack.createdTaskLogs[0]!.message).toHaveBeenCalledWith("Step 1");
+  });
+
+  it("should set verboseTarget.write during task and clear it after completion", async () => {
+    const clack = makeClack();
+    const verboseTarget: { write: ((msg: string) => void) | undefined } = {
+      write: undefined,
+    };
+    const { withProgress } = createHumanRenderers(clack, verboseTarget);
+
+    let capturedWrite: ((msg: string) => void) | undefined;
+    await withProgress(
+      [
+        {
+          message: "Step 1",
+          task: async () => {
+            capturedWrite = verboseTarget.write;
+          },
+        },
+      ],
+      "Done",
+    );
+
+    expect(capturedWrite).toBeTypeOf("function");
+    expect(verboseTarget.write).toBeUndefined();
+  });
+
+  it("should clear verboseTarget.write after step throws", async () => {
+    const clack = makeClack();
+    const verboseTarget: { write: ((msg: string) => void) | undefined } = {
+      write: undefined,
+    };
+    const { withProgress } = createHumanRenderers(clack, verboseTarget);
+
+    let caughtError: unknown;
+    try {
+      await withProgress(
+        [
+          {
+            message: "Step 1",
+            task: async () => {
+              throw new Error("fail");
+            },
+          },
+        ],
+        "Done",
+      );
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeInstanceOf(Error);
+    expect(verboseTarget.write).toBeUndefined();
+    expect(clack.createdTaskLogs[0]!.error).toHaveBeenCalledWith("Step 1");
+  });
+
+  it("should use spinner (not taskLog) when verboseTarget is absent", async () => {
+    const clack = makeClack();
+    const { withProgress } = createHumanRenderers(clack);
+
+    await withProgress(
+      [{ message: "Step 1", task: async () => undefined }],
+      "Done",
+    );
+
+    expect(clack.createdTaskLogs).toHaveLength(0);
+    expect(clack.createdSpinners).toHaveLength(1);
+  });
+});

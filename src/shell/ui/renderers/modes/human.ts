@@ -3,7 +3,10 @@ import { writeStdoutRaw } from "~/shell/ui/renderers/write.js";
 import { finalizeResults } from "./progress.js";
 import type { RendererSet } from "./types.js";
 
-export function createHumanRenderers(clack: StyledClack): RendererSet {
+export function createHumanRenderers(
+  clack: StyledClack,
+  verboseTarget?: { write: ((msg: string) => void) | undefined },
+): RendererSet {
   return {
     intro: (title) => clack.intro(title),
     note: (message, title) => clack.note(message, title),
@@ -27,10 +30,37 @@ export function createHumanRenderers(clack: StyledClack): RendererSet {
     write: (text) => writeStdoutRaw(text),
     withProgress: async (steps, done) => {
       const results: unknown[] = [];
-      const s = clack.spinner();
       const total = steps.length;
-      let currentLabel = "";
 
+      if (verboseTarget) {
+        // limit: 20 — cap the scrollback window to 20 lines to avoid flooding the terminal
+        const tl = clack.taskLog({
+          title: steps[0]?.message ?? "Running",
+          limit: 20,
+        });
+        // NOTE: assumes sequential withProgress calls — concurrent calls would overwrite this ref
+        verboseTarget.write = (msg) => tl.message(msg);
+        let currentLabel = steps[0]?.message ?? "Running";
+        try {
+          for (const step of steps) {
+            currentLabel = step.message; // set before await so error path names the failing step
+            tl.message(step.message);
+            results.push(await step.task());
+          }
+          verboseTarget.write = undefined;
+          const { typed, doneMessage } = finalizeResults(results, done);
+          tl.success(doneMessage);
+          return typed;
+        } catch (err) {
+          verboseTarget.write = undefined;
+          tl.error(currentLabel);
+          throw err;
+        }
+      }
+
+      // existing spinner path — unchanged
+      const s = clack.spinner();
+      let currentLabel = "";
       try {
         for (const [i, step] of steps.entries()) {
           currentLabel = `[${String(i + 1)}/${String(total)}] ${step.message}`;
@@ -41,7 +71,6 @@ export function createHumanRenderers(clack: StyledClack): RendererSet {
           }
           results.push(await step.task());
         }
-
         const { typed, doneMessage } = finalizeResults(results, done);
         s.stop(doneMessage);
         return typed;
