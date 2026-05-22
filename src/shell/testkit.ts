@@ -13,12 +13,12 @@ function notAvailableLocally(name: string): never {
 }
 
 // Loaded via import.meta.resolve so the binary finds the packages in the
-// project's node_modules rather than alongside the CLI binary. Tests always
-// inject deps.
+// project's node_modules rather than alongside the CLI binary. The base URL
+// points to a file inside cwd (not the directory itself) because pathToFileURL
+// on a directory produces a URL without trailing slash, which import.meta.resolve
+// treats as a file — causing lookup to start from the parent directory instead.
+// Tests always inject deps.
 async function loadSdkDeps(cwd: string): Promise<TestkitModule> {
-  // Point to a file inside cwd so import.meta.resolve starts node_modules
-  // lookup from cwd/ rather than its parent (pathToFileURL of a directory
-  // produces a URL without trailing slash, which is treated as a file).
   const base = pathToFileURL(join(cwd, "package.json"));
   try {
     const clientMod = (await import(
