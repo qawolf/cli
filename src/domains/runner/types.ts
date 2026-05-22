@@ -1,3 +1,4 @@
+import type { Fs } from "~/shell/fs.js";
 import type { FlowStamp } from "~/shell/manifest/types.js";
 import type { Logger } from "~/shell/logger.js";
 import type { TestCounts } from "~/core/types.js";
@@ -33,11 +34,7 @@ export type AsyncStorage<T> = {
   getStore: () => T | undefined;
 };
 
-export type RunnerFs = {
-  mkdir: (path: string, options?: { recursive?: boolean }) => Promise<void>;
-  writeFile: (path: string, data: string) => Promise<void>;
-  unlink: (path: string) => Promise<void>;
-};
+export type RunnerFs = Pick<Fs, "mkdir" | "writeFile" | "unlink">;
 
 export type RunnerSpawnResult = {
   exitCode: Promise<number>;

@@ -43,6 +43,12 @@ export async function pathExists(p: string): Promise<boolean> {
 }
 
 /** @public */
+export type FsStat = Pick<
+  fs.Stats,
+  "isFile" | "isDirectory" | "size" | "mtimeMs" | "mtime"
+>;
+
+/** @public */
 export type Fs = {
   mkdir(path: string, options?: { recursive?: boolean }): Promise<void>;
   pathExists(path: string): Promise<boolean>;
@@ -51,7 +57,7 @@ export type Fs = {
     path: string,
     options?: { recursive?: boolean; force?: boolean },
   ): Promise<void>;
-  stat(path: string): Promise<fs.Stats>;
+  stat(path: string): Promise<FsStat>;
   unlink(path: string): Promise<void>;
   writeFile(path: string, data: string | Uint8Array): Promise<void>;
 };
