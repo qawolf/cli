@@ -50,7 +50,7 @@ export async function handleDoctor(
   }
   let playwrightCliPath: string | undefined;
   try {
-    playwrightCliPath = resolvePlaywrightCli(envDir ?? cwd);
+    playwrightCliPath = resolvePlaywrightCli(envDir ?? cwd, process.platform);
   } catch {
     playwrightCliPath = undefined;
   }

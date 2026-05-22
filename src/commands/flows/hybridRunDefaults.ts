@@ -98,7 +98,7 @@ export async function handleHybridFlowsRun(
       installBrowserList(innerCtx, browsers, {
         spawn: defaultSpawn,
         platform: process.platform,
-        playwrightCliPath: resolvePlaywrightCli(envDir),
+        playwrightCliPath: resolvePlaywrightCli(envDir, process.platform),
       }),
     runWebFlow: defaultRunWebFlow,
     runWebFlowDeps: await deps.runWebFlowDeps(envDir, ctx.signals),
