@@ -2,7 +2,7 @@ import { createStyledClack, type StyledClack } from "./clack/index.js";
 import type { OutputMode } from "./env.js";
 import { writeJsonDiagnostic } from "./renderers/write.js";
 
-export type VerboseTarget = { write: ((msg: string) => void) | undefined };
+type VerboseTarget = { write: ((msg: string) => void) | undefined };
 
 /**
  * Builds the clack instance, verboseTarget ref, and verboseWrite callback
