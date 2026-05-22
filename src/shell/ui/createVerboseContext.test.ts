@@ -37,6 +37,7 @@ describe("createVerboseContext", () => {
     expect(spy).toHaveBeenCalledWith(
       JSON.stringify({
         type: "log",
+        level: "debug",
         scope: "my-scope",
         message: "hello world",
       }) + "\n",

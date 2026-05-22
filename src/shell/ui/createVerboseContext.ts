@@ -29,8 +29,8 @@ export function createVerboseContext(
     | undefined;
   if (isVerbose) {
     if (outputMode === "json") {
-      verboseWrite = (_level, scope, msg) =>
-        writeJsonDiagnostic({ type: "log", scope, message: msg });
+      verboseWrite = (level, scope, msg) =>
+        writeJsonDiagnostic({ type: "log", level, scope, message: msg });
     } else if (outputMode === "human") {
       verboseWrite = (level, scope, msg) => {
         if (verboseTarget?.write) {

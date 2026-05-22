@@ -70,6 +70,6 @@ describe("createLoggingSystem — verboseWrite", () => {
       logPath: "/dev/null",
     });
     const logger = sys.createLogger("test-scope");
-    logger.debug("hello");
+    expect(() => logger.debug("hello")).not.toThrow();
   });
 });
