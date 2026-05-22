@@ -4,6 +4,7 @@ import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
 import { runnerMessages } from "~/core/messages/index.js";
+import { pluralize } from "~/core/pluralize.js";
 
 import { buildRunOptions, runFlows } from "./runHelpers.js";
 import {
@@ -12,7 +13,6 @@ import {
   type FlowsRunFlags,
   type ResolvedFlow,
   type WebResolvedFlow,
-  unsupportedTargetMessage,
 } from "./runInternals.js";
 import { resolveAvdName } from "./runAndroidFlowUtils.js";
 
@@ -28,6 +28,7 @@ export async function flowsRun(
   }
 
   const flows: ResolvedFlow[] = [];
+  const skippedByType = new Map<string, number>();
   for await (const { file, ...meta } of batchMap(
     files,
     async (file) => ({ file, ...(await deps.peekFlowMeta(file)) }),
@@ -50,10 +51,13 @@ export async function flowsRun(
         target: meta.target,
       });
     } else {
-      const message = unsupportedTargetMessage(meta.target);
-      ctx.ui.error(message);
-      return { error: message, exitCode: 2 };
+      const typeName = classified?.kind === "ios" ? "iOS" : meta.target;
+      skippedByType.set(typeName, (skippedByType.get(typeName) ?? 0) + 1);
     }
+  }
+
+  for (const [type, count] of skippedByType) {
+    ctx.ui.warn(`${pluralize(count, `${type} flow`)} skipped`);
   }
 
   flows.sort((a, b) => a.file.localeCompare(b.file));

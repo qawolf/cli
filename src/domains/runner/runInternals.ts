@@ -73,10 +73,6 @@ export type AndroidResolvedFlow = {
 
 export type ResolvedFlow = WebResolvedFlow | AndroidResolvedFlow;
 
-export function unsupportedTargetMessage(target: string): string {
-  return `${target} targets aren't supported in v0.1. Run them on app.qawolf.com or wait for v0.2.`;
-}
-
 export async function dispatchFlow({
   deps,
   flow,
