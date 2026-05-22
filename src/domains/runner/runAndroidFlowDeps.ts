@@ -1,11 +1,9 @@
-import { AsyncLocalStorage } from "node:async_hooks";
-import { mkdir, unlink, writeFile } from "~/shell/fs.js";
-import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import { createAppiumServer } from "~/shell/appium/createAppiumServer.js";
 import { createEmulatorPool } from "~/shell/appium/createEmulatorPool.js";
 import { defaultAdb } from "~/shell/appium/emulatorSetup.js";
 import type { AppiumDriver } from "~/shell/appium/types.js";
 import type { RunAndroidFlowDeps } from "./runAndroidFlow.js";
+import { createRunnerDeps } from "./runnerDeps.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 type WdioRemote = {
@@ -41,42 +39,6 @@ async function createSession(
   };
 }
 
-function makeRunnerDeps(signals: SignalRegistry) {
-  return {
-    fs: {
-      mkdir: async (p: string, opts?: { recursive?: boolean }) => {
-        await mkdir(p, opts);
-      },
-      writeFile: async (p: string, d: string) => {
-        await writeFile(p, d);
-      },
-      unlink: async (p: string) => {
-        await unlink(p);
-      },
-    },
-    spawn: (cmd: string, args: string[]) => {
-      const child = nodeSpawn(cmd, args);
-      return {
-        exitCode: new Promise<number>((resolve) =>
-          child.on("close", (code) => resolve(code ?? -1)),
-        ),
-        kill: () => {
-          child.kill();
-        },
-      };
-    },
-    signals,
-    createStorage: <T>() => {
-      const als = new AsyncLocalStorage<unknown>();
-      return {
-        run: async (store: T, callback: () => Promise<void>) =>
-          als.run(store, callback),
-        getStore: () => als.getStore() as T | undefined,
-      };
-    },
-  };
-}
-
 /**
  * Creates Android runner deps and lifecycle hooks for a flow run.
  *
@@ -97,7 +59,7 @@ export function createAndroidDeps(
   let serverStarted = false;
 
   const deps: RunAndroidFlowDeps = {
-    ...makeRunnerDeps(signals),
+    ...createRunnerDeps(signals),
     appiumServer: serverHandle,
     emulatorPool: pool,
     createSession,

@@ -1,8 +1,6 @@
-import { AsyncLocalStorage } from "node:async_hooks";
-import { mkdir, unlink, writeFile } from "~/shell/fs.js";
-import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import { pathToFileURL } from "node:url";
 
+import { createRunnerDeps } from "./runnerDeps.js";
 import type { RunWebFlowDeps } from "./runWebFlow.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
@@ -35,40 +33,6 @@ export async function defaultRunWebFlowDeps(
     chromium,
     firefox,
     webkit,
-    fs: {
-      mkdir: async (p, opts) => {
-        await mkdir(p, opts);
-      },
-      writeFile: async (p, d) => {
-        await writeFile(p, d);
-      },
-      unlink: async (p) => {
-        await unlink(p);
-      },
-    },
-    spawn: (cmd, args) => {
-      const child = nodeSpawn(cmd, args);
-      return {
-        exitCode: new Promise((resolve) =>
-          child.on("close", (code) => resolve(code ?? -1)),
-        ),
-        kill: () => {
-          child.kill();
-        },
-      };
-    },
-    signals,
-    createStorage: <T>() => {
-      // Stored as `unknown` internally; casts on the boundary keep the outer T
-      // contract while sidestepping TS's inability to unify the outer T with
-      // AsyncLocalStorage's instance method generic.
-      const als = new AsyncLocalStorage<unknown>();
-      return {
-        run: async (store, callback) => {
-          await als.run(store, callback);
-        },
-        getStore: () => als.getStore() as T | undefined,
-      };
-    },
+    ...createRunnerDeps(signals),
   };
 }
