@@ -1,10 +1,7 @@
 import { mock } from "bun:test";
 
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
-import type { CommandContext } from "~/shell/commandContext.js";
-import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
-import type { UI } from "~/shell/ui/index.js";
-import { makeNoopLogger } from "~/shell/logger.testUtils.js";
+import { makeCtx, makeFakeUI } from "~/shell/commandContext.testUtils.js";
 
 import type { InstallBrowsersDeps } from "~/domains/install/browsers.js";
 
@@ -21,47 +18,7 @@ export function spawnSequence(...results: SpawnResult[]): SpawnFn {
   );
 }
 
-export function makeFakeUI(): UI {
-  return {
-    mode: "human",
-    gap: mock(() => {}),
-    intro: mock(() => {}),
-    note: mock(() => {}),
-    outro: mock(() => {}),
-    confirm: mock(() => Promise.resolve({ ok: false } as const)),
-    password: mock(() => Promise.resolve({ ok: false } as const)),
-    withProgress: mock(
-      async (steps: { message: string; task: () => Promise<unknown> }[]) => {
-        const results: unknown[] = [];
-        for (const step of steps) {
-          results.push(await step.task());
-        }
-        return results;
-      },
-    ) as unknown as UI["withProgress"],
-    step: mock(() => {}),
-    success: mock(() => {}),
-    warn: mock(() => {}),
-    cancel: mock(() => {}),
-    json: mock(() => {}),
-    output: mock(() => {}),
-    error: mock(() => {}),
-    info: mock(() => {}),
-    write: mock(() => {}),
-  };
-}
-
-const noopSignals = makeNoopSignals();
-
-export const makeCtx = (ui: UI): CommandContext => ({
-  ui,
-  configDir: "/tmp/test-config",
-  outputMode: "human",
-  isInteractive: false,
-  apiBaseUrl: "https://example.invalid",
-  signals: noopSignals,
-  log: () => makeNoopLogger(),
-});
+export { makeCtx, makeFakeUI };
 
 export type FakeMeta = { name?: string; target?: string };
 
@@ -96,13 +53,13 @@ export function setup(
   target: string,
   overrides: Omit<DepsOverrides, "files" | "metaByFile"> = {},
 ) {
-  const ui = makeFakeUI();
+  const ctx = makeCtx();
   const deps = makeDeps({
     files: ["/a"],
     metaByFile: { "/a": { target } },
     ...overrides,
   });
-  return { ui, deps, ctx: makeCtx(ui) };
+  return { ui: ctx.ui, deps, ctx };
 }
 
 export const callsOf = (s: SpawnFn) =>

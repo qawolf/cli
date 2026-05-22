@@ -3,7 +3,7 @@ import type { ApiKeyResult } from "~/domains/auth/types.js";
 import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
 import type { IdentityResponse } from "~/shell/platform/getIdentity.js";
 import type { PlatformResult } from "~/shell/platform/requestWithRetry.js";
-import type { CommandContext } from "~/shell/commandContext.js";
+import { makeCtx } from "~/shell/commandContext.testUtils.js";
 import { handleWhoami } from "./whoami.js";
 
 afterEach(() => {
@@ -17,35 +17,6 @@ function makeTeam(): IdentityResponse["team"] {
     slug: "acme",
     createdAt: "2024-01-01T00:00:00.000Z",
   };
-}
-
-function makeCtx(mode: "human" | "json" | "agent" = "human"): CommandContext {
-  return {
-    apiBaseUrl: "https://app.qawolf.com",
-    outputMode: mode,
-    isInteractive: false,
-    configDir: "/mock/config",
-    ui: {
-      mode,
-      gap: mock(),
-      intro: mock(),
-      note: mock(),
-      outro: mock(),
-      output: mock(),
-      error: mock(),
-      info: mock(),
-      warn: mock(),
-      write: mock(),
-      json: mock(),
-      cancel: mock(),
-      step: mock(),
-      success: mock(),
-      confirm: mock(),
-      password: mock(),
-      withProgress: mock(),
-    },
-    log: mock(),
-  } as unknown as CommandContext;
 }
 
 function makeDeps(
@@ -73,7 +44,7 @@ function makeDeps(
 describe("handleWhoami", () => {
   describe("human mode — authenticated", () => {
     it("includes team slug in the note message", async () => {
-      const ctx = makeCtx("human");
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
       await handleWhoami(ctx, makeDeps());
 
       expect(ctx.ui.note).toHaveBeenCalledWith(
@@ -83,7 +54,7 @@ describe("handleWhoami", () => {
     });
 
     it("includes team page URL in the note message", async () => {
-      const ctx = makeCtx("human");
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
       await handleWhoami(ctx, makeDeps());
 
       expect(ctx.ui.note).toHaveBeenCalledWith(
@@ -93,7 +64,7 @@ describe("handleWhoami", () => {
     });
 
     it("includes team name, ID, and source in the note message", async () => {
-      const ctx = makeCtx("human");
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
       await handleWhoami(ctx, makeDeps());
 
       const [message] = (ctx.ui.note as ReturnType<typeof mock>).mock
@@ -104,7 +75,7 @@ describe("handleWhoami", () => {
     });
 
     it("calls outro to signal completion", async () => {
-      const ctx = makeCtx("human");
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
       await handleWhoami(ctx, makeDeps());
 
       expect(ctx.ui.outro).toHaveBeenCalled();
@@ -113,7 +84,7 @@ describe("handleWhoami", () => {
 
   describe("non-human mode — authenticated", () => {
     it("outputs teamUrl in JSON output", async () => {
-      const ctx = makeCtx("json");
+      const ctx = makeCtx("json", { apiBaseUrl: "https://app.qawolf.com" });
       await handleWhoami(ctx, makeDeps());
 
       expect(ctx.ui.output).toHaveBeenCalledWith(
@@ -125,7 +96,7 @@ describe("handleWhoami", () => {
     });
 
     it("outputs team object with slug in JSON output", async () => {
-      const ctx = makeCtx("json");
+      const ctx = makeCtx("json", { apiBaseUrl: "https://app.qawolf.com" });
       await handleWhoami(ctx, makeDeps());
 
       expect(ctx.ui.output).toHaveBeenCalledWith(
@@ -138,7 +109,7 @@ describe("handleWhoami", () => {
     });
 
     it("outputs authenticated: true and source in JSON output", async () => {
-      const ctx = makeCtx("json");
+      const ctx = makeCtx("json", { apiBaseUrl: "https://app.qawolf.com" });
       await handleWhoami(ctx, makeDeps());
 
       expect(ctx.ui.output).toHaveBeenCalledWith(
@@ -159,7 +130,7 @@ describe("handleWhoami", () => {
     });
 
     it("shows whoamiFailed note in human mode", async () => {
-      const ctx = makeCtx("human");
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
       await handleWhoami(ctx, failDeps);
 
       expect(ctx.ui.note).toHaveBeenCalledWith(
@@ -170,7 +141,7 @@ describe("handleWhoami", () => {
     });
 
     it("outputs authenticated: false in JSON mode", async () => {
-      const ctx = makeCtx("json");
+      const ctx = makeCtx("json", { apiBaseUrl: "https://app.qawolf.com" });
       await handleWhoami(ctx, failDeps);
 
       expect(ctx.ui.output).toHaveBeenCalledWith(
@@ -185,7 +156,7 @@ describe("handleWhoami", () => {
     });
 
     it("returns an error result", async () => {
-      const ctx = makeCtx("human");
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
       const result = await handleWhoami(ctx, failDeps);
       expect(result).toEqual({ error: "invalid key" });
     });
@@ -199,7 +170,7 @@ describe("handleWhoami", () => {
     });
 
     it("shows whoamiFailed note in human mode", async () => {
-      const ctx = makeCtx("human");
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
       await handleWhoami(ctx, noDeps);
 
       expect(ctx.ui.note).toHaveBeenCalledWith(
@@ -209,7 +180,7 @@ describe("handleWhoami", () => {
     });
 
     it("outputs authenticated: false with null source in JSON mode", async () => {
-      const ctx = makeCtx("json");
+      const ctx = makeCtx("json", { apiBaseUrl: "https://app.qawolf.com" });
       await handleWhoami(ctx, noDeps);
 
       expect(ctx.ui.output).toHaveBeenCalledWith(
@@ -222,7 +193,7 @@ describe("handleWhoami", () => {
     });
 
     it("returns an error result", async () => {
-      const ctx = makeCtx("human");
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
       const result = await handleWhoami(ctx, noDeps);
       expect(result).toEqual({ error: "not authenticated" });
     });
