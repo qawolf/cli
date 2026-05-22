@@ -31,6 +31,7 @@ function makeCtx(confirmValue = true) {
 describe("handleInit", () => {
   it("should create all four artifacts in an empty directory", async () => {
     const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx } = makeCtx();
     await memFs.writeFile(
       join(cwd, "package.json"),
@@ -56,6 +57,7 @@ describe("handleInit", () => {
 
   it("should skip qawolf.config.ts when it exists and confirm returns false", async () => {
     const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx, messages } = makeCtx(false);
     await memFs.writeFile(join(cwd, "qawolf.config.ts"), "// existing");
 
@@ -73,6 +75,7 @@ describe("handleInit", () => {
 
   it("should overwrite qawolf.config.ts when --yes is set", async () => {
     const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx } = makeCtx(false);
     await memFs.writeFile(join(cwd, "qawolf.config.ts"), "// existing");
 
@@ -85,6 +88,7 @@ describe("handleInit", () => {
 
   it("should warn and skip test:e2e when already in package.json scripts", async () => {
     const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx, messages } = makeCtx();
     await memFs.writeFile(
       join(cwd, "package.json"),
@@ -148,6 +152,7 @@ describe("handleInit", () => {
 
   it("should skip package.json update when confirm returns false", async () => {
     const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx, messages } = makeCtx(false);
     await memFs.writeFile(
       join(cwd, "package.json"),
@@ -169,6 +174,7 @@ describe("handleInit", () => {
 
   it("should add test:e2e to package.json when --yes is set", async () => {
     const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx } = makeCtx(false);
     await memFs.writeFile(
       join(cwd, "package.json"),
@@ -186,6 +192,7 @@ describe("handleInit", () => {
 
   it("should warn when package.json is not valid JSON", async () => {
     const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx, messages } = makeCtx();
     await memFs.writeFile(join(cwd, "package.json"), "not json {");
 

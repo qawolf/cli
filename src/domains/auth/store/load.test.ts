@@ -43,6 +43,7 @@ describe("loadApiKey", () => {
   it("falls back to file when keychain throws", async () => {
     const EntryClass = makeThrowingEntryClass("keychain unavailable");
     const memFs = makeMemoryFs();
+    await memFs.mkdir(configDir, { recursive: true });
     await memFs.writeFile(
       join(configDir, credentialsFile),
       JSON.stringify({ apiKey: "qaw_file_key" }),
@@ -60,6 +61,7 @@ describe("loadApiKey", () => {
   it("falls through to file when keychain returns empty string", async () => {
     const EntryClass = makeEntryClass(() => "");
     const memFs = makeMemoryFs();
+    await memFs.mkdir(configDir, { recursive: true });
     await memFs.writeFile(
       join(configDir, credentialsFile),
       JSON.stringify({ apiKey: "qaw_file_key" }),
@@ -92,6 +94,7 @@ describe("loadApiKey", () => {
   it("returns found: false with file error when schema validation fails", async () => {
     const EntryClass = makeEntryClass(() => "");
     const memFs = makeMemoryFs();
+    await memFs.mkdir(configDir, { recursive: true });
     await memFs.writeFile(
       join(configDir, credentialsFile),
       JSON.stringify({ wrongField: "bad-data" }),
