@@ -69,7 +69,7 @@ describe("buildBaseContext", () => {
       .option("--agent", "Output for agent consumption");
     cmd.parse([], { from: "user" });
 
-    const { ctx } = buildBaseContext(cmd);
+    const { ctx } = buildBaseContext(cmd, noopSignals);
 
     const scopedLogger = ctx.log("test");
     expect(typeof scopedLogger.error).toBe("function");

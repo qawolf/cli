@@ -38,16 +38,18 @@ export function buildBaseContext(
 } {
   const env = process.env;
   const flags = command.optsWithGlobals<GlobalFlags>();
-  const stderrLevel = resolveStderrLevel(env, Boolean(flags.verbose));
-  const loggingSystem = createLoggingSystem({
-    stderrLevel,
-    logPath: defaultLogPath(),
-  });
-
   const outputMode = detectOutputMode({
     flags,
     env,
     stdoutIsTTY: Boolean(process.stdout.isTTY),
+  });
+  const stderrLevel =
+    outputMode === "agent"
+      ? "silent"
+      : resolveStderrLevel(env, Boolean(flags.verbose));
+  const loggingSystem = createLoggingSystem({
+    stderrLevel,
+    logPath: defaultLogPath(),
   });
   const apiBaseUrl =
     env["QAWOLF_API_URL"]?.replace(/\/+$/, "") || "https://app.qawolf.com";
