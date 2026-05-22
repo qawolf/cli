@@ -137,21 +137,17 @@ describe("getIdentity", () => {
     );
   });
 
-  it("returns parse WireError when team slug is absent", async () => {
+  it("returns ok with slug undefined when team slug is absent (pre-platform-update)", async () => {
+    const team = {
+      createdAt: "2024-01-01T00:00:00.000Z",
+      id: "t1",
+      name: "Test Team",
+    };
     const result = await getIdentity("qawolf_key", {
-      fetch: createFetchMock(
-        jsonResponse({
-          team: {
-            createdAt: "2024-01-01T00:00:00.000Z",
-            id: "t1",
-            name: "Test Team",
-          },
-        }),
-      ),
+      fetch: createFetchMock(jsonResponse({ team })),
       baseUrl: "https://test.qawolf.com",
     });
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.kind).toBe("parse");
+    expect(result).toEqual({ ok: true, data: { team } });
   });
 });

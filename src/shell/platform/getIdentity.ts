@@ -6,7 +6,7 @@ const identityResponseSchema = z.object({
     createdAt: z.string(),
     id: z.string(),
     name: z.string(),
-    slug: z.string(),
+    slug: z.string().optional(),
   }),
 });
 

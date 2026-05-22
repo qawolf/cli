@@ -58,20 +58,21 @@ export async function handleWhoami(
   }
 
   const { team } = identity.value;
-  const teamUrl = new URL(
-    "/" + encodeURIComponent(team.slug),
-    ctx.apiBaseUrl,
-  ).toString();
+  const teamUrl = team.slug
+    ? new URL("/" + encodeURIComponent(team.slug), ctx.apiBaseUrl).toString()
+    : undefined;
 
   if (ctx.ui.mode === "human") {
     ctx.ui.note(
       [
         `Team:   ${team.name}`,
         `ID:     ${team.id}`,
-        `Slug:   ${team.slug}`,
-        `URL:    ${teamUrl}`,
+        team.slug && `Slug:   ${team.slug}`,
+        teamUrl && `URL:    ${teamUrl}`,
         `Source: ${resolved.source}`,
-      ].join("\n"),
+      ]
+        .filter(Boolean)
+        .join("\n"),
       authMessages.whoamiAuthenticated,
     );
     ctx.ui.outro(authMessages.outroReady);
