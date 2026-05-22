@@ -14,8 +14,15 @@ export function registerInitCommand(
 ): void {
   program
     .command("init")
-    .description("Scaffold a new QA Wolf project")
-    .option("--yes", "Skip overwrite prompts", false)
+    .description("Scaffold a QA Wolf project in the current directory")
+    .option("--yes", "Overwrite existing files without prompting", false)
+    .addHelpText(
+      "after",
+      `
+Examples:
+  $ qawolf init
+  $ qawolf init --yes`,
+    )
     .action((opts: InitFlags, command: Command) => {
       return withContext(signals, (ctx) =>
         handleInit(ctx, opts, makeDefaultInitDeps()),
