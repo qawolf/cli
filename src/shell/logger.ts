@@ -45,14 +45,14 @@ export function createLoggingSystem(opts: {
   const dest = pino.destination({ dest: logPath, mkdir: true, sync: false });
   const fileLogger = pino({ level: "debug" }, dest);
 
-  const levelNums: Record<string, number> = {
+  const levelNums = {
     trace: 10,
     debug: 20,
     info: 30,
     warn: 40,
     error: 50,
     fatal: 60,
-  };
+  } as const;
   const stderrLevelNum =
     stderrLevel === "silent" ? Infinity : (levelNums[stderrLevel] ?? Infinity);
 
@@ -62,31 +62,31 @@ export function createLoggingSystem(opts: {
       return {
         error: (msg) => {
           file.error(msg);
-          if (opts.verboseWrite && levelNums["error"]! >= stderrLevelNum) {
+          if (opts.verboseWrite && levelNums["error"] >= stderrLevelNum) {
             opts.verboseWrite("error", scope, msg);
           }
         },
         warn: (msg) => {
           file.warn(msg);
-          if (opts.verboseWrite && levelNums["warn"]! >= stderrLevelNum) {
+          if (opts.verboseWrite && levelNums["warn"] >= stderrLevelNum) {
             opts.verboseWrite("warn", scope, msg);
           }
         },
         info: (msg) => {
           file.info(msg);
-          if (opts.verboseWrite && levelNums["info"]! >= stderrLevelNum) {
+          if (opts.verboseWrite && levelNums["info"] >= stderrLevelNum) {
             opts.verboseWrite("info", scope, msg);
           }
         },
         debug: (msg) => {
           file.debug(msg);
-          if (opts.verboseWrite && levelNums["debug"]! >= stderrLevelNum) {
+          if (opts.verboseWrite && levelNums["debug"] >= stderrLevelNum) {
             opts.verboseWrite("debug", scope, msg);
           }
         },
         trace: (msg) => {
           file.trace(msg);
-          if (opts.verboseWrite && levelNums["trace"]! >= stderrLevelNum) {
+          if (opts.verboseWrite && levelNums["trace"] >= stderrLevelNum) {
             opts.verboseWrite("trace", scope, msg);
           }
         },
