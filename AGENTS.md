@@ -35,7 +35,7 @@ src/
 │   ├── errors.ts        # errorMessage, isNoEntError
 │   ├── paths.ts         # getConfigDir
 │   ├── flowMeta.ts      # extractFlowMeta, targetToBrowser, flowBasename
-│   ├── copy/            # copyFile, copyDir
+│   ├── messages/        # authCopy — user-facing strings for auth commands
 │   ├── pluralize.ts     # pluralize
 │   └── types.ts         # BrowserName, VideoMode, TraceMode, HarMode, TestCounts
 ├── shell/               # I/O executors — process spawning, UI, API clients

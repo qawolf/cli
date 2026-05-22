@@ -8,7 +8,7 @@ import {
   type CommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
-import { authCopy } from "~/core/copy/index.js";
+import { authCopy } from "~/core/messages/index.js";
 
 export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
   if (ctx.ui.mode !== "human") {

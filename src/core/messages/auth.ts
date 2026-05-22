@@ -11,7 +11,6 @@ export const authCopy = {
   cancelled: "Setup cancelled.",
   whoamiAuthenticated: "Authenticated",
   whoamiFailed: "Authentication failed",
-  validationRequired: "API key is required",
   login: {
     nonInteractive:
       "auth login requires an interactive terminal. Set the QAWOLF_API_KEY environment variable for CI authentication.",
@@ -26,16 +25,5 @@ export const authCopy = {
     deleting: "Removing stored credentials",
     success: "Logged out successfully.",
     cancelled: "Logout cancelled.",
-  },
-  ci: {
-    errorTitle: "QA Wolf API key not found.",
-    errorBody: [
-      "Set the QAWOLF_API_KEY environment variable to authenticate.",
-      "",
-      "Example:",
-      "  export QAWOLF_API_KEY=qaw_your_api_key",
-      "",
-      "Get your API key at https://app.qawolf.com/settings/integrations",
-    ].join("\n"),
   },
 } as const;
