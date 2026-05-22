@@ -33,27 +33,21 @@ export function createHumanRenderers(
       const total = steps.length;
 
       if (verboseTarget) {
-        // limit: 20 — cap the scrollback window to 20 lines to avoid flooding the terminal
-        const tl = clack.taskLog({
-          title: steps[0]?.message ?? "Running",
-          limit: 20,
-        });
-        // NOTE: assumes sequential withProgress calls — concurrent calls would overwrite this ref
-        verboseTarget.write = (msg) => tl.message(msg);
-        let currentLabel = steps[0]?.message ?? "Running";
+        // In verbose mode skip the spinner — use clack.log.step per step so output
+        // persists after completion. taskLog collapses on tl.success(), which hides
+        // the verbose logs the user asked to see.
+        let currentLabel = "";
         try {
           for (const step of steps) {
-            currentLabel = step.message; // set before await so error path names the failing step
-            tl.message(step.message);
+            currentLabel = step.message;
+            clack.log.step(step.message);
             results.push(await step.task());
           }
-          verboseTarget.write = undefined;
           const { typed, doneMessage } = finalizeResults(results, done);
-          tl.success(doneMessage);
+          clack.log.success(doneMessage);
           return typed;
         } catch (err) {
-          verboseTarget.write = undefined;
-          tl.error(currentLabel);
+          clack.log.error(currentLabel);
           throw err;
         }
       }
