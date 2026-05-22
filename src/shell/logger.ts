@@ -76,7 +76,12 @@ export function createLoggingSystem(opts: {
       };
     },
     flush() {
-      dest.flushSync();
+      try {
+        dest.flushSync();
+      } catch {
+        // SonicBoom throws if the fd hasn't opened yet (async destination).
+        // Nothing is buffered in that case, so this is safe to ignore.
+      }
     },
   };
 }
