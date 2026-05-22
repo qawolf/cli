@@ -12,7 +12,6 @@ export const authMessages = {
   notAuthenticated: "Not authenticated",
   whoamiAuthenticated: "Authenticated",
   whoamiFailed: "Not authenticated",
-  validationRequired: "API key is required",
   login: {
     nonInteractive:
       "auth login requires an interactive terminal. Set the QAWOLF_API_KEY environment variable for CI authentication.",

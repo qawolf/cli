@@ -102,6 +102,13 @@ describe("handleWhoami", () => {
       expect(message).toContain("t1");
       expect(message).toContain("env");
     });
+
+    it("calls outro to signal completion", async () => {
+      const ctx = makeCtx("human");
+      await handleWhoami(ctx, makeDeps());
+
+      expect(ctx.ui.outro).toHaveBeenCalled();
+    });
   });
 
   describe("non-human mode — authenticated", () => {
