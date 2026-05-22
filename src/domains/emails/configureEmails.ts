@@ -1,4 +1,5 @@
 import type { configureEmailsClient, createEmailsClient } from "@qawolf/emails";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 type EmailsModule = {
@@ -7,12 +8,16 @@ type EmailsModule = {
 };
 
 // Loaded via import.meta.resolve so the binary finds the package in the
-// project's node_modules rather than alongside the CLI binary. Tests always
-// inject deps so this path only runs in production.
+// project's node_modules rather than alongside the CLI binary. The base URL
+// points to a file inside cwd (not the directory itself) because pathToFileURL
+// on a directory produces a URL without trailing slash, which import.meta.resolve
+// treats as a file — causing lookup to start from the parent directory instead.
+// Tests always inject deps so this path only runs in production.
 async function loadSdkDeps(cwd: string): Promise<EmailsModule> {
+  const base = pathToFileURL(join(cwd, "package.json"));
   try {
     return (await import(
-      import.meta.resolve("@qawolf/emails", pathToFileURL(cwd))
+      import.meta.resolve("@qawolf/emails", base)
     )) as EmailsModule;
   } catch (err) {
     throw new Error(
