@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import { runnerMessages } from "~/core/messages/index.js";
-import { defaultFlags, makeCtx, makeDeps, makeFakeUI } from "./run.fixtures.js";
+import {
+  defaultFlags,
+  makeCtx,
+  makeDeps,
+  makeFakeUI,
+  passResult,
+} from "./run.fixtures.js";
 import { flowsRun } from "./run.js";
 
 afterEach(() => {
@@ -35,31 +41,127 @@ describe("flowsRun pre-flight", () => {
   });
 
   it.each([
-    [
-      "iOS - iPad",
-      "iOS - iPad targets aren't supported in v0.1. Run them on app.qawolf.com or wait for v0.2.",
-    ],
-    [
-      "Basic",
-      "Basic targets aren't supported in v0.1. Run them on app.qawolf.com or wait for v0.2.",
-    ],
-    [
-      "Electron",
-      "Electron targets aren't supported in v0.1. Run them on app.qawolf.com or wait for v0.2.",
-    ],
+    ["iOS - iPad", "1 iOS flow skipped"],
+    ["Basic", "1 Basic flow skipped"],
+    ["Electron", "1 Electron flow skipped"],
   ] as const)(
-    "rejects unsupported target %p with exit-2 message",
-    async (target, expectedMessage) => {
+    "warns and skips unsupported target %p without aborting",
+    async (target, expectedWarning) => {
       const ui = makeFakeUI();
       const deps = makeDeps({ metaByFile: { "/a": { target } } });
 
       const result = await flowsRun(makeCtx(ui), ["/a"], defaultFlags(), deps);
 
-      expect(result).toEqual({ error: expectedMessage, exitCode: 2 });
-      expect(ui.error).toHaveBeenCalledWith(expectedMessage);
+      expect(result).toBeUndefined();
+      expect(ui.warn).toHaveBeenCalledWith(expectedWarning);
+      expect(ui.error).not.toHaveBeenCalled();
+      expect(ui.info).not.toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
       expect(deps.installBrowsers).not.toHaveBeenCalled();
     },
   );
+
+  it("groups multiple same-type unsupported flows into one warning", async () => {
+    const ui = makeFakeUI();
+    const deps = makeDeps({
+      metaByFile: {
+        "/a": { target: "Basic" },
+        "/b": { target: "Basic" },
+      },
+    });
+
+    await flowsRun(makeCtx(ui), ["/a", "/b"], defaultFlags(), deps);
+
+    expect(ui.warn).toHaveBeenCalledTimes(1);
+    expect(ui.warn).toHaveBeenCalledWith("2 Basic flows skipped");
+    expect(ui.info).not.toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
+  });
+
+  it("groups multiple iOS flows into one warning without emitting noFlowsMatched", async () => {
+    const ui = makeFakeUI();
+    const deps = makeDeps({
+      metaByFile: {
+        "/a": { target: "iOS - iPad" },
+        "/b": { target: "iOS - iPad" },
+      },
+    });
+
+    const result = await flowsRun(
+      makeCtx(ui),
+      ["/a", "/b"],
+      defaultFlags(),
+      deps,
+    );
+
+    expect(result).toBeUndefined();
+    expect(ui.warn).toHaveBeenCalledTimes(1);
+    expect(ui.warn).toHaveBeenCalledWith("2 iOS flows skipped");
+    expect(ui.info).not.toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
+  });
+
+  it("exits 2 with an error for an unrecognized target string", async () => {
+    const ui = makeFakeUI();
+    const deps = makeDeps({
+      metaByFile: { "/a": { target: "Web - Chorme" } },
+    });
+
+    const result = await flowsRun(makeCtx(ui), ["/a"], defaultFlags(), deps);
+
+    expect(result).toEqual({
+      error: "unrecognized flow target",
+      exitCode: 2,
+    });
+    expect(ui.error).toHaveBeenCalledWith(
+      `Unrecognized flow target: "Web - Chorme"`,
+    );
+    expect(ui.warn).not.toHaveBeenCalled();
+  });
+
+  it("exits 2 on the first unrecognized target in a mixed batch", async () => {
+    const ui = makeFakeUI();
+    const deps = makeDeps({
+      metaByFile: {
+        "/ios.flow.ts": { target: "iOS - iPad" },
+        "/bad.flow.ts": { target: "Web - Chorme" },
+      },
+    });
+
+    const result = await flowsRun(
+      makeCtx(ui),
+      ["/ios.flow.ts", "/bad.flow.ts"],
+      defaultFlags(),
+      deps,
+    );
+
+    expect(result).toEqual({
+      error: "unrecognized flow target",
+      exitCode: 2,
+    });
+    expect(ui.error).toHaveBeenCalledWith(
+      `Unrecognized flow target: "Web - Chorme"`,
+    );
+  });
+
+  it("warns per type and continues with supported flows in a mixed batch", async () => {
+    const ui = makeFakeUI();
+    const deps = makeDeps({
+      metaByFile: {
+        "/ios.flow.ts": { target: "iOS - iPad" },
+        "/web.flow.ts": { target: "Web - Chrome" },
+      },
+      runResults: [passResult()],
+    });
+
+    const result = await flowsRun(
+      makeCtx(ui),
+      ["/ios.flow.ts", "/web.flow.ts"],
+      defaultFlags(),
+      deps,
+    );
+
+    expect(result).toBeUndefined();
+    expect(ui.warn).toHaveBeenCalledWith("1 iOS flow skipped");
+    expect(deps.installBrowsers).toHaveBeenCalled();
+  });
 
   it("throws when installBrowsers fails", async () => {
     const deps = makeDeps({
