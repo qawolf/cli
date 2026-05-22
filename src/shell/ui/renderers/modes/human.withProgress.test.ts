@@ -1,16 +1,16 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import { makeClack } from "~/shell/ui/clack/styledClack.mock.js";
-import { createWithProgress } from "./withProgress.js";
+import { createHumanRenderers } from "./human.js";
 
-describe("createWithProgress — human mode", () => {
+describe("human renderers — withProgress", () => {
   afterEach(() => {
     mock.restore();
   });
 
   it("calls spinner.start on first step", async () => {
     const clack = makeClack();
-    const withProgress = createWithProgress({ mode: "human", clack });
+    const { withProgress } = createHumanRenderers(clack);
 
     await withProgress(
       [{ message: "first step", task: async () => undefined }],
@@ -25,7 +25,7 @@ describe("createWithProgress — human mode", () => {
 
   it("calls spinner.message on subsequent steps", async () => {
     const clack = makeClack();
-    const withProgress = createWithProgress({ mode: "human", clack });
+    const { withProgress } = createHumanRenderers(clack);
 
     await withProgress(
       [
@@ -45,7 +45,7 @@ describe("createWithProgress — human mode", () => {
 
   it("calls spinner.stop with static done string", async () => {
     const clack = makeClack();
-    const withProgress = createWithProgress({ mode: "human", clack });
+    const { withProgress } = createHumanRenderers(clack);
 
     await withProgress(
       [{ message: "step", task: async () => undefined }],
@@ -59,7 +59,7 @@ describe("createWithProgress — human mode", () => {
 
   it("calls spinner.stop with done function result", async () => {
     const clack = makeClack();
-    const withProgress = createWithProgress({ mode: "human", clack });
+    const { withProgress } = createHumanRenderers(clack);
 
     const doneFn = mock(
       (results: unknown[]) => `Finished with ${String(results.length)} results`,
@@ -81,7 +81,7 @@ describe("createWithProgress — human mode", () => {
 
   it("collects and returns results from all tasks", async () => {
     const clack = makeClack();
-    const withProgress = createWithProgress({ mode: "human", clack });
+    const { withProgress } = createHumanRenderers(clack);
 
     const results = await withProgress(
       [
@@ -97,7 +97,7 @@ describe("createWithProgress — human mode", () => {
 
   it("marks spinner as errored with the current step label when a task throws", async () => {
     const clack = makeClack();
-    const withProgress = createWithProgress({ mode: "human", clack });
+    const { withProgress } = createHumanRenderers(clack);
 
     let caughtError: unknown;
     try {
@@ -127,7 +127,7 @@ describe("createWithProgress — human mode", () => {
 
   it("labels include step numbering", async () => {
     const clack = makeClack();
-    const withProgress = createWithProgress({ mode: "human", clack });
+    const { withProgress } = createHumanRenderers(clack);
 
     await withProgress(
       [
