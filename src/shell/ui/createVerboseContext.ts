@@ -39,7 +39,7 @@ export function createVerboseContext(
         }
         const text = `[${scope}] ${msg}`;
         if (level === "warn") clack.log.warn(text);
-        else if (level === "error" || level === "fatal") clack.log.error(text);
+        else if (level === "error") clack.log.error(text);
         else clack.log.info(text);
       };
     }

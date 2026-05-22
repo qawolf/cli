@@ -38,9 +38,9 @@ export function createHumanRenderers(
         // the verbose logs the user asked to see.
         let currentLabel = "";
         try {
-          for (const step of steps) {
-            currentLabel = step.message;
-            clack.log.step(step.message);
+          for (const [i, step] of steps.entries()) {
+            currentLabel = `[${String(i + 1)}/${String(total)}] ${step.message}`;
+            clack.log.step(currentLabel);
             results.push(await step.task());
           }
           const { typed, doneMessage } = finalizeResults(results, done);

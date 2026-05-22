@@ -163,8 +163,8 @@ describe("human renderers — withProgress — verboseTarget", () => {
       "Done",
     );
 
-    expect(clack.log.step).toHaveBeenNthCalledWith(1, "Step 1");
-    expect(clack.log.step).toHaveBeenNthCalledWith(2, "Step 2");
+    expect(clack.log.step).toHaveBeenNthCalledWith(1, "[1/2] Step 1");
+    expect(clack.log.step).toHaveBeenNthCalledWith(2, "[2/2] Step 2");
     expect(clack.log.success).toHaveBeenCalledWith("Done");
     expect(clack.createdSpinners).toHaveLength(0);
     expect(clack.createdTaskLogs).toHaveLength(0);
@@ -195,7 +195,7 @@ describe("human renderers — withProgress — verboseTarget", () => {
     }
 
     expect(caughtError).toBeInstanceOf(Error);
-    expect(clack.log.error).toHaveBeenCalledWith("Step 1");
+    expect(clack.log.error).toHaveBeenCalledWith("[1/1] Step 1");
   });
 
   it("should not set verboseTarget.write (output routes through clack.log directly)", async () => {
