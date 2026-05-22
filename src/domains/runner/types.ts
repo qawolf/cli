@@ -38,16 +38,19 @@ export type RunnerFs = {
   unlink: (path: string) => Promise<void>;
 };
 
-export type SpawnResult = {
+export type RunnerSpawnResult = {
   exitCode: Promise<number>;
   kill: () => void;
 };
 
-export type SpawnFn = (command: string, args: string[]) => SpawnResult;
+export type RunnerSpawnFn = (
+  command: string,
+  args: string[],
+) => RunnerSpawnResult;
 
 export type RunnerDeps = {
   fs: RunnerFs;
-  spawn: SpawnFn;
+  spawn: RunnerSpawnFn;
   signals: SignalRegistry;
   createStorage: <T>() => AsyncStorage<T>;
 };
