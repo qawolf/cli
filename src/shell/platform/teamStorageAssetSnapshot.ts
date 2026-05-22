@@ -1,41 +1,42 @@
+import { randomBytes } from "node:crypto";
 import { join, sep } from "node:path";
 
-import { pathExists, readdir, rename } from "~/shell/fs.js";
+import { pathExists, readdir, rename, rm } from "~/shell/fs.js";
 
-import type { createTempPathRegistry } from "./safeRemove.js";
-import { mintTempPath, removeTempDir } from "./safeRemove.js";
-
-type TempPathRegistry = ReturnType<typeof createTempPathRegistry>;
+export function mintAssetSnapshotPath(
+  assetsAbs: string,
+  label: string,
+): string {
+  return `${assetsAbs}.${label}-${randomBytes(8).toString("hex")}`;
+}
 
 export async function replaceAssetsDir(
   assetsAbs: string,
   tmpAssets: string,
-  registry: TempPathRegistry,
 ): Promise<void> {
-  let oldAssets: string | undefined;
+  const oldAssets = mintAssetSnapshotPath(assetsAbs, "old");
+  let movedOldAssets = false;
+
   try {
     if (await pathExists(assetsAbs)) {
-      oldAssets = mintTempPath(assetsAbs, "old", registry);
       await rename(assetsAbs, oldAssets);
+      movedOldAssets = true;
     }
     await rename(tmpAssets, assetsAbs);
-  } catch (err) {
-    if (oldAssets !== undefined) {
+  } catch (error: unknown) {
+    if (movedOldAssets) {
       await rename(oldAssets, assetsAbs).catch(() => {});
     }
-    throw err;
+    throw error;
   }
 
-  if (oldAssets !== undefined) {
-    await cleanupTempDir(oldAssets, registry);
+  if (movedOldAssets) {
+    await cleanupAssetSnapshot(oldAssets);
   }
 }
 
-export async function cleanupTempDir(
-  absPath: string,
-  registry: TempPathRegistry,
-): Promise<void> {
-  await removeTempDir(absPath, registry).catch(() => {});
+export async function cleanupAssetSnapshot(absPath: string): Promise<void> {
+  await rm(absPath, { recursive: true, force: true }).catch(() => {});
 }
 
 export async function hasExactAssetSnapshot(

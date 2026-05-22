@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { isNoEntError } from "~/core/errors.js";
 import { mkdir, readFile, writeFile } from "~/shell/fs.js";
-import type { TeamStorageFile } from "~/shell/platform/types.js";
+import type { TeamStorageFile } from "./types.js";
 
 const assetManifestSchema = z.object({
   version: z.literal(1),

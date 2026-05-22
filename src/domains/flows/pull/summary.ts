@@ -19,30 +19,47 @@ export function formatPullSummary(
     result.envVarCount === 0
       ? ""
       : ` and ${pluralize(result.envVarCount, "environment variable")}`;
-  let summary = `Pulled ${flows}${envVars} into ${result.envDir}`;
+  const lines = [`Pulled ${flows}${envVars} into ${result.envDir}`];
   if (result.flowsWithTeamStorageRefs.length > 0) {
     const refs = pluralize(result.flowsWithTeamStorageRefs.length, "flow");
-    summary += `\nTeam-storage assets referenced by ${refs}:`;
+    lines.push(`Team-storage assets referenced by ${refs}:`);
     for (const path of result.flowsWithTeamStorageRefs) {
-      summary += `\n  - ${path}`;
+      lines.push(`  - ${path}`);
     }
   }
-  summary += `\nDownloaded ${pluralize(
-    result.assetDownloadedCount,
-    "team-storage asset",
-  )}`;
-  if (result.assetReusedCount > 0) {
-    summary += ` and reused ${pluralize(
-      result.assetReusedCount,
-      "team-storage asset",
-    )}`;
+  if (
+    result.assetDownloadedCount > 0 ||
+    result.assetReusedCount > 0 ||
+    result.assetSkippedCount > 0
+  ) {
+    const assetParts: string[] = [];
+    if (result.assetDownloadedCount > 0) {
+      assetParts.push(
+        `Downloaded ${pluralize(
+          result.assetDownloadedCount,
+          "team-storage asset",
+        )}`,
+      );
+    }
+    if (result.assetReusedCount > 0) {
+      assetParts.push(
+        `reused ${pluralize(result.assetReusedCount, "team-storage asset")}`,
+      );
+    }
+    let assetSummary =
+      assetParts.length > 0
+        ? `${assetParts.join(" and ")} into ${assetsAbs}`
+        : `Skipped ${pluralize(
+            result.assetSkippedCount,
+            "unsafe or unsupported asset",
+          )}`;
+    if (assetParts.length > 0 && result.assetSkippedCount > 0) {
+      assetSummary += ` (${pluralize(
+        result.assetSkippedCount,
+        "unsafe or unsupported asset",
+      )} skipped)`;
+    }
+    lines.push(assetSummary);
   }
-  summary += ` into ${assetsAbs}`;
-  if (result.assetSkippedCount > 0) {
-    summary += ` (${pluralize(
-      result.assetSkippedCount,
-      "unsafe or unsupported asset",
-    )} skipped)`;
-  }
-  return summary;
+  return lines.join("\n");
 }

@@ -1,19 +1,28 @@
 import { dirname, join } from "node:path";
 
-import { copyFile, mkdir, pathExists } from "~/shell/fs.js";
-import { fetchSignedUrl } from "~/shell/platform/fetchSignedUrl.js";
-import type { TeamStorageFile } from "~/shell/platform/types.js";
+import { errorMessage } from "~/core/errors.js";
+import { copyFile, mkdir } from "~/shell/fs.js";
+import { describeTeamStorageDownloadError } from "./describeErrors.js";
+import { fetchSignedUrl } from "./fetchSignedUrl.js";
+import type { PlatformResult } from "./requestWithRetry.js";
 import {
-  cleanupTempDir,
+  readAssetManifest,
+  writeAssetManifest,
+} from "./teamStorageAssetManifest.js";
+import { safeAssetPath } from "./teamStorageAssetPath.js";
+import {
+  cleanupAssetSnapshot,
   hasExactAssetSnapshot,
+  mintAssetSnapshotPath,
   replaceAssetsDir,
-} from "./assetSnapshot.js";
-import { readAssetManifest, writeAssetManifest } from "./assetManifest.js";
-import { createTempPathRegistry, mintTempPath } from "./safeRemove.js";
-import { safeAssetPath } from "./safeAssetPath.js";
-import { describeTeamStorageDownloadError } from "./wireErrors.js";
+} from "./teamStorageAssetSnapshot.js";
+import {
+  reusableAssetPaths,
+  type ReusableAssetFile,
+} from "./teamStorageAssetReuse.js";
+import type { TeamStorageFile } from "./types.js";
 
-export type DownloadTeamStorageAssetsResult = {
+export type SyncTeamStorageAssetsResult = {
   downloadedCount: number;
   reusedCount: number;
   skippedCount: number;
@@ -24,20 +33,37 @@ type DownloadTeamStorageAssetsArgs = {
   files: readonly TeamStorageFile[];
 };
 
-export type DownloadTeamStorageAssetsDeps = {
+type DownloadTeamStorageAssetsDeps = {
   fetch: typeof globalThis.fetch;
 };
 
 export async function downloadTeamStorageAssets(
   args: DownloadTeamStorageAssetsArgs,
   deps: DownloadTeamStorageAssetsDeps = { fetch: globalThis.fetch },
-): Promise<DownloadTeamStorageAssetsResult> {
-  const registry = createTempPathRegistry();
-  const tmpAssets = mintTempPath(args.assetsAbs, "pull", registry);
+): Promise<PlatformResult<SyncTeamStorageAssetsResult>> {
+  try {
+    return {
+      ok: true,
+      value: await writeTeamStorageAssets(args, deps),
+    };
+  } catch (error: unknown) {
+    return { ok: false, error: errorMessage(error) };
+  }
+}
+
+async function writeTeamStorageAssets(
+  args: DownloadTeamStorageAssetsArgs,
+  deps: DownloadTeamStorageAssetsDeps,
+): Promise<SyncTeamStorageAssetsResult> {
+  const tmpAssets = mintAssetSnapshotPath(args.assetsAbs, "pull");
   const manifest = await readAssetManifest(args.assetsAbs);
   const safeFiles = collectSafeFiles(args.files);
   const skippedCount = args.files.length - safeFiles.length;
-  const reusable = await reusablePaths(args.assetsAbs, safeFiles, manifest);
+  const reusable = await reusableAssetPaths(
+    args.assetsAbs,
+    safeFiles,
+    manifest,
+  );
   const reusedCount = reusable.size;
 
   if (
@@ -58,7 +84,7 @@ export async function downloadTeamStorageAssets(
       safeFiles,
       tmpAssets,
     });
-    await replaceAssetsDir(args.assetsAbs, tmpAssets, registry);
+    await replaceAssetsDir(args.assetsAbs, tmpAssets);
     await writeAssetManifest(
       args.assetsAbs,
       safeFiles.map(({ file, relativePath }) => ({
@@ -67,16 +93,16 @@ export async function downloadTeamStorageAssets(
       })),
     );
     return { downloadedCount, reusedCount, skippedCount };
-  } catch (err) {
-    await cleanupTempDir(tmpAssets, registry);
-    throw err;
+  } catch (error: unknown) {
+    await cleanupAssetSnapshot(tmpAssets);
+    throw error;
   }
 }
 
-type SafeFile = { file: TeamStorageFile; relativePath: string };
-
-function collectSafeFiles(files: readonly TeamStorageFile[]): SafeFile[] {
-  const safeFiles: SafeFile[] = [];
+function collectSafeFiles(
+  files: readonly TeamStorageFile[],
+): ReusableAssetFile[] {
+  const safeFiles: ReusableAssetFile[] = [];
   for (const file of files) {
     const relativePath = safeAssetPath(file.path);
     if (relativePath !== undefined) safeFiles.push({ file, relativePath });
@@ -84,25 +110,11 @@ function collectSafeFiles(files: readonly TeamStorageFile[]): SafeFile[] {
   return safeFiles;
 }
 
-async function reusablePaths(
-  assetsAbs: string,
-  safeFiles: readonly SafeFile[],
-  manifest: Map<string, { etag?: string | undefined }>,
-): Promise<Set<string>> {
-  const reusable = new Set<string>();
-  for (const { file, relativePath } of safeFiles) {
-    if (await canReuseAsset(assetsAbs, relativePath, file, manifest)) {
-      reusable.add(relativePath);
-    }
-  }
-  return reusable;
-}
-
 type WriteAssetSnapshotArgs = {
   assetsAbs: string;
   deps: DownloadTeamStorageAssetsDeps;
   reusable: ReadonlySet<string>;
-  safeFiles: readonly SafeFile[];
+  safeFiles: readonly ReusableAssetFile[];
   tmpAssets: string;
 };
 
@@ -133,16 +145,4 @@ async function writeAssetSnapshot(
   }
 
   return downloadedCount;
-}
-
-async function canReuseAsset(
-  assetsAbs: string,
-  relativePath: string,
-  file: TeamStorageFile,
-  manifest: Map<string, { etag?: string | undefined }>,
-): Promise<boolean> {
-  if (file.etag === undefined) return false;
-  const previous = manifest.get(relativePath);
-  if (previous?.etag !== file.etag) return false;
-  return pathExists(join(assetsAbs, relativePath));
 }
