@@ -25,8 +25,10 @@ describe("classifyTarget", () => {
     expect(classifyTarget("Basic")).toEqual({ kind: "unsupported" });
   });
 
-  it("should return undefined for an unrecognised target string (e.g. a typo)", () => {
-    expect(classifyTarget("not-a-real-target")).toBeUndefined();
+  it("should return { kind: 'unrecognized' } for an unrecognised target string (e.g. a typo)", () => {
+    expect(classifyTarget("not-a-real-target")).toEqual({
+      kind: "unrecognized",
+    });
   });
 });
 

@@ -27,13 +27,13 @@ export function classifyTarget(
   | { kind: "android" }
   | { kind: "ios" }
   | { kind: "unsupported" }
-  | undefined {
+  | { kind: "unrecognized" } {
   let parsed: ReturnType<typeof parseExecutionTarget>;
   try {
     parsed = parseExecutionTarget(target as ParseExecutionTargetArg);
   } catch {
-    // Zod validation failed — unrecognized target string (e.g. a typo)
-    return undefined;
+    // Zod validation failed — not a known target string (e.g. a typo)
+    return { kind: "unrecognized" };
   }
   if (parsed.platform === "android") return { kind: "android" };
   if (parsed.platform === "ios") return { kind: "ios" };

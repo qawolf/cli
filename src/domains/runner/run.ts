@@ -36,26 +36,26 @@ export async function flowsRun(
   )) {
     if (!meta.target) continue;
     const classified = classifyTarget(meta.target);
-    if (classified?.kind === "web") {
+    if (classified.kind === "web") {
       flows.push({
         kind: "web",
         file,
         name: meta.name ?? flowBasename(file),
         browser: classified.browser,
       });
-    } else if (classified?.kind === "android") {
+    } else if (classified.kind === "android") {
       flows.push({
         kind: "android",
         file,
         name: meta.name ?? flowBasename(file),
         target: meta.target,
       });
-    } else if (classified) {
-      const typeName = classified.kind === "ios" ? "iOS" : meta.target;
-      skippedByType.set(typeName, (skippedByType.get(typeName) ?? 0) + 1);
-    } else {
+    } else if (classified.kind === "unrecognized") {
       ctx.ui.error(`Unrecognized flow target: "${meta.target}"`);
       return { error: "unrecognized flow target", exitCode: 2 };
+    } else {
+      const typeName = classified.kind === "ios" ? "iOS" : meta.target;
+      skippedByType.set(typeName, (skippedByType.get(typeName) ?? 0) + 1);
     }
   }
 
