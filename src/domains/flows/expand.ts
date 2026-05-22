@@ -43,8 +43,9 @@ export async function expandPatterns(
     });
     for (const file of matches) {
       seen.add(file);
-      logger?.debug(`found: ${file}`);
+      logger?.trace(`found: ${file}`);
     }
   }
+  logger?.debug(`expandPatterns: ${seen.size} files matched`);
   return [...seen];
 }
