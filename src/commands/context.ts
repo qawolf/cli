@@ -3,6 +3,12 @@ import { errorMessage } from "~/core/errors.js";
 import { authMessages } from "~/core/messages/index.js";
 import { getConfigDir } from "~/core/paths.js";
 import { requireApiKey } from "~/domains/auth/index.js";
+import {
+  createLoggingSystem,
+  defaultLogPath,
+  resolveStderrLevel,
+  type LoggingSystem,
+} from "~/shell/logger.js";
 import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import {
@@ -20,18 +26,30 @@ import type {
 type ContextAction = (ctx: CommandContext) => Promise<CommandResult>;
 type AuthContextAction = (ctx: AuthCommandContext) => Promise<CommandResult>;
 
-function buildBaseContext(
+type GlobalFlags = OutputFlags & { verbose?: boolean };
+
+export function buildBaseContext(
   command: Command,
   signals: SignalRegistry,
 ): {
   ctx: CommandContext;
   apiBaseUrl: string;
+  loggingSystem: LoggingSystem;
 } {
   const env = process.env;
+  const flags = command.optsWithGlobals<GlobalFlags>();
   const outputMode = detectOutputMode({
-    flags: command.optsWithGlobals<OutputFlags>(),
+    flags,
     env,
     stdoutIsTTY: Boolean(process.stdout.isTTY),
+  });
+  const stderrLevel =
+    outputMode === "agent"
+      ? "silent"
+      : resolveStderrLevel(env, Boolean(flags.verbose));
+  const loggingSystem = createLoggingSystem({
+    stderrLevel,
+    logPath: defaultLogPath(),
   });
   const apiBaseUrl =
     env["QAWOLF_API_URL"]?.replace(/\/+$/, "") || "https://app.qawolf.com";
@@ -46,8 +64,10 @@ function buildBaseContext(
       }),
       apiBaseUrl,
       signals,
+      log: (scope) => loggingSystem.createLogger(scope),
     },
     apiBaseUrl,
+    loggingSystem,
   };
 }
 
@@ -56,7 +76,7 @@ export function withContext(
   fn: ContextAction,
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
-    const { ctx } = buildBaseContext(command, signals);
+    const { ctx, loggingSystem } = buildBaseContext(command, signals);
     try {
       const result = await fn(ctx);
       if (result !== undefined) {
@@ -66,6 +86,8 @@ export function withContext(
     } catch (err: unknown) {
       ctx.ui.error(errorMessage(err));
       process.exitCode = 1;
+    } finally {
+      loggingSystem.flush();
     }
   };
 }
@@ -76,7 +98,10 @@ export function withAuthContext(
   deps: { requireApiKey?: typeof requireApiKey } = {},
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
-    const { ctx, apiBaseUrl } = buildBaseContext(command, signals);
+    const { ctx, apiBaseUrl, loggingSystem } = buildBaseContext(
+      command,
+      signals,
+    );
     const resolved = await (deps.requireApiKey ?? requireApiKey)(
       ctx.configDir,
     ).catch((err: unknown) => {
@@ -84,11 +109,15 @@ export function withAuthContext(
       process.exitCode = 1;
       return undefined;
     });
-    if (resolved === undefined) return;
+    if (resolved === undefined) {
+      loggingSystem.flush();
+      return;
+    }
 
     const platform = createPlatformClient(resolved.key, {
       baseUrl: apiBaseUrl,
       fetch: globalThis.fetch,
+      logger: ctx.log("trpc"),
     });
     try {
       const result = await fn({
@@ -103,6 +132,8 @@ export function withAuthContext(
     } catch (err: unknown) {
       ctx.ui.error(errorMessage(err));
       process.exitCode = 1;
+    } finally {
+      loggingSystem.flush();
     }
   };
 }

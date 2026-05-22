@@ -2,6 +2,7 @@ import { mock } from "bun:test";
 
 import type { CommandContext } from "~/shell/commandContext.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
+import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import type { FlowStamp } from "~/shell/manifest/types.js";
 import type { Reporter } from "~/shell/reporter/types.js";
 import type { FlowRunError } from "~/domains/runner/errors.js";
@@ -50,6 +51,7 @@ export const makeCtx = (ui: UI = makeFakeUI()): CommandContext => ({
   isInteractive: false,
   apiBaseUrl: "https://example.invalid",
   signals: noopSignals,
+  log: () => makeNoopLogger(),
 });
 
 export function makeReporter(): Reporter {

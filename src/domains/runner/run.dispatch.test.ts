@@ -132,7 +132,7 @@ describe("flowsRun dispatch", () => {
         deps: unknown;
         options: Record<string, unknown>;
       };
-      expect(callArg.deps).toBe(deps.runWebFlowDeps);
+      expect(callArg.deps).toMatchObject(deps.runWebFlowDeps);
       expect(callArg.options).not.toHaveProperty("browser");
     }
   });

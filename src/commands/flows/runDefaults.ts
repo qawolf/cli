@@ -19,6 +19,7 @@ import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js"
 // import { configureEmails } from "~/emails/configureEmails.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 
+import { pluralize } from "~/core/pluralize.js";
 import { parseDotenv } from "~/domains/flows/dotenv.js";
 import {
   ensureFlowDeps as defaultEnsureFlowDeps,
@@ -44,7 +45,7 @@ export async function loadEnvFile(envDir: string): Promise<void> {
 }
 
 export type HandleFlowsRunDeps = {
-  expandPatterns: (patterns: string[], cwd?: string) => Promise<string[]>;
+  expandPatterns: typeof defaultExpandPatterns;
   resolveUniqueEnvDir: (files: string[]) => string | undefined;
   ensureFlowDeps: (envDir: string) => Promise<void>;
   configureTestkit: (dir: string) => Promise<void>;
@@ -74,7 +75,11 @@ export async function handleFlowsRun(
   const expandedFiles = await deps.expandPatterns(
     buildPatternArgs(pattern),
     cwd,
+    ctx.log("flows"),
   );
+  ctx
+    .log("flows")
+    .debug(`discovered ${pluralize(expandedFiles.length, "flow")}`);
 
   let envDir: string | undefined;
   try {
@@ -119,6 +124,7 @@ export async function handleFlowsRun(
     shutdownAndroid: android.shutdown,
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
+    logger: ctx.log("runner"),
     reporter: createConsoleReporter({
       stdout: process.stdout,
       stderr: process.stderr,

@@ -1,4 +1,5 @@
 import type { FlowStamp } from "~/shell/manifest/types.js";
+import type { Logger } from "~/shell/logger.js";
 import type { TestCounts } from "~/core/types.js";
 import type { FlowRunError } from "./errors.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
@@ -53,6 +54,7 @@ export type RunnerDeps = {
   spawn: RunnerSpawnFn;
   signals: SignalRegistry;
   createStorage: <T>() => AsyncStorage<T>;
+  logger?: Logger;
 };
 
 export type RunnerOptions = {

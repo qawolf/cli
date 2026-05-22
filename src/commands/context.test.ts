@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
-import type { Command } from "commander";
+import { Command } from "commander";
 
-import { withAuthContext, withContext } from "~/commands/context.js";
+import {
+  buildBaseContext,
+  withAuthContext,
+  withContext,
+} from "~/commands/context.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 
 const noopSignals = makeNoopSignals();
@@ -53,6 +57,26 @@ describe("withAuthContext exit code plumbing", () => {
     )({}, fakeCommand());
 
     expect(process.exitCode).toBe(1);
+  });
+});
+
+describe("buildBaseContext", () => {
+  it("should include log factory in CommandContext", () => {
+    const cmd = new Command();
+    cmd
+      .option("--verbose", "Enable debug logging to stderr")
+      .option("--json", "Output as JSON")
+      .option("--agent", "Output for agent consumption");
+    cmd.parse([], { from: "user" });
+
+    const { ctx } = buildBaseContext(cmd, noopSignals);
+
+    const scopedLogger = ctx.log("test");
+    expect(typeof scopedLogger.error).toBe("function");
+    expect(typeof scopedLogger.warn).toBe("function");
+    expect(typeof scopedLogger.info).toBe("function");
+    expect(typeof scopedLogger.debug).toBe("function");
+    expect(typeof scopedLogger.trace).toBe("function");
   });
 });
 

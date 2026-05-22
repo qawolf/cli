@@ -7,6 +7,7 @@ Run QA Wolf flows locally
 
 Options:
   -V, --version      output the version number
+  --verbose          Enable debug logging to stderr
   --json             Output as JSON
   --agent            Output for agent consumption
   -h, --help         display help for command

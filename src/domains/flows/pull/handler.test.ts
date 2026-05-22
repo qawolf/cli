@@ -7,6 +7,7 @@ import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import type { UI } from "~/shell/ui/index.js";
 import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
+import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 
 import { makeFakeUI } from "~/domains/runner/run.fixtures.js";
 import { handleFlowsPull } from "./handler.js";
@@ -64,6 +65,7 @@ function makeCtx(
     apiBaseUrl: "https://test.qawolf.com",
     apiKeySource: "env",
     signals: noopSignals,
+    log: () => makeNoopLogger(),
     platform: makeMockPlatformClient({
       downloadBundle: mock().mockResolvedValue({
         ok: true,
