@@ -55,6 +55,7 @@ describe("flowsRun pre-flight", () => {
       expect(result).toBeUndefined();
       expect(ui.warn).toHaveBeenCalledWith(expectedWarning);
       expect(ui.error).not.toHaveBeenCalled();
+      expect(ui.info).not.toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
       expect(deps.installBrowsers).not.toHaveBeenCalled();
     },
   );
@@ -72,6 +73,29 @@ describe("flowsRun pre-flight", () => {
 
     expect(ui.warn).toHaveBeenCalledTimes(1);
     expect(ui.warn).toHaveBeenCalledWith("2 Basic flows skipped");
+    expect(ui.info).not.toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
+  });
+
+  it("groups multiple iOS flows into one warning without emitting noFlowsMatched", async () => {
+    const ui = makeFakeUI();
+    const deps = makeDeps({
+      metaByFile: {
+        "/a": { target: "iOS - iPad" },
+        "/b": { target: "iOS - iPad" },
+      },
+    });
+
+    const result = await flowsRun(
+      makeCtx(ui),
+      ["/a", "/b"],
+      defaultFlags(),
+      deps,
+    );
+
+    expect(result).toBeUndefined();
+    expect(ui.warn).toHaveBeenCalledTimes(1);
+    expect(ui.warn).toHaveBeenCalledWith("2 iOS flows skipped");
+    expect(ui.info).not.toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
   });
 
   it("warns per type and continues with supported flows in a mixed batch", async () => {

@@ -63,7 +63,9 @@ export async function flowsRun(
   flows.sort((a, b) => a.file.localeCompare(b.file));
 
   if (flows.length === 0) {
-    ctx.ui.info(runnerMessages.noFlowsMatched);
+    if (skippedByType.size === 0) {
+      ctx.ui.info(runnerMessages.noFlowsMatched);
+    }
     return;
   }
 
