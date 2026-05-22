@@ -44,6 +44,7 @@ function makeCtx(mode: "human" | "json" | "agent" = "human"): CommandContext {
       password: mock(),
       withProgress: mock(),
     },
+    log: mock(),
   } as unknown as CommandContext;
 }
 
