@@ -76,7 +76,7 @@ export function withContext(
   fn: ContextAction,
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
-    const { ctx } = buildBaseContext(command, signals);
+    const { ctx, loggingSystem } = buildBaseContext(command, signals);
     try {
       const result = await fn(ctx);
       if (result !== undefined) {
@@ -86,6 +86,8 @@ export function withContext(
     } catch (err: unknown) {
       ctx.ui.error(errorMessage(err));
       process.exitCode = 1;
+    } finally {
+      loggingSystem.flush();
     }
   };
 }
@@ -96,7 +98,10 @@ export function withAuthContext(
   deps: { requireApiKey?: typeof requireApiKey } = {},
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
-    const { ctx, apiBaseUrl } = buildBaseContext(command, signals);
+    const { ctx, apiBaseUrl, loggingSystem } = buildBaseContext(
+      command,
+      signals,
+    );
     const resolved = await (deps.requireApiKey ?? requireApiKey)(
       ctx.configDir,
     ).catch((err: unknown) => {
@@ -104,7 +109,10 @@ export function withAuthContext(
       process.exitCode = 1;
       return undefined;
     });
-    if (resolved === undefined) return;
+    if (resolved === undefined) {
+      loggingSystem.flush();
+      return;
+    }
 
     const platform = createPlatformClient(resolved.key, {
       baseUrl: apiBaseUrl,
@@ -124,6 +132,8 @@ export function withAuthContext(
     } catch (err: unknown) {
       ctx.ui.error(errorMessage(err));
       process.exitCode = 1;
+    } finally {
+      loggingSystem.flush();
     }
   };
 }
