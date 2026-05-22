@@ -44,15 +44,20 @@ export async function installAvds(
     });
   }
 
-  // Install each unique system image. The system image directory is created by
-  // sdkmanager after a successful install, so its presence means it's installed.
+  // Install each unique system image. Check for system.img inside the directory
+  // rather than the directory itself — sdkmanager can leave a partial install
+  // (directory present, system.img absent) that avdmanager rejects.
   const installedImages = new Set<string>();
   for (const spec of specs) {
     if (installedImages.has(spec.systemImage)) continue;
     // system-images;android-35;google_apis_playstore;arm64-v8a
-    //   → $ANDROID_HOME/system-images/android-35/google_apis_playstore/arm64-v8a
-    const imageDir = join(deps.androidHome, ...spec.systemImage.split(";"));
-    if (deps.checkExists(imageDir)) {
+    //   → $ANDROID_HOME/system-images/android-35/google_apis_playstore/arm64-v8a/system.img
+    const systemImg = join(
+      deps.androidHome,
+      ...spec.systemImage.split(";"),
+      "system.img",
+    );
+    if (deps.checkExists(systemImg)) {
       ctx.ui.info(`System image ${spec.systemImage} already installed.`);
       installedImages.add(spec.systemImage);
       continue;
