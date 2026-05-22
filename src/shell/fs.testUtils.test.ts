@@ -5,8 +5,8 @@ import { makeMemoryFs } from "./fs.testUtils.js";
 describe("makeMemoryFs", () => {
   it("should write and read back file content", async () => {
     const fs = makeMemoryFs();
-    await fs.writeFile("/test/file.txt", "hello");
-    const result = await fs.readFile("/test/file.txt");
+    await fs.writeFile("/file.txt", "hello");
+    const result = await fs.readFile("/file.txt");
     expect(result).toBe("hello");
   });
 
@@ -23,6 +23,7 @@ describe("makeMemoryFs", () => {
 
   it("should return true from pathExists after writeFile", async () => {
     const fs = makeMemoryFs();
+    await fs.mkdir("/a");
     await fs.writeFile("/a/b.txt", "data");
     const result = await fs.pathExists("/a/b.txt");
     expect(result).toBe(true);
@@ -36,16 +37,20 @@ describe("makeMemoryFs", () => {
 
   it("should create a directory and report it via pathExists", async () => {
     const fs = makeMemoryFs();
-    await fs.mkdir("/tmp/dir");
-    const result = await fs.pathExists("/tmp/dir");
+    await fs.mkdir("/dir");
+    const result = await fs.pathExists("/dir");
     expect(result).toBe(true);
   });
 
-  it("should not create parent directories when non-recursive mkdir is called", async () => {
+  it("should throw ENOENT from non-recursive mkdir when parent does not exist", async () => {
     const fs = makeMemoryFs();
-    await fs.mkdir("/a/b/c");
-    expect(await fs.pathExists("/a/b/c")).toBe(true);
-    expect(await fs.pathExists("/a/b")).toBe(false);
+    let caughtError: unknown;
+    try {
+      await fs.mkdir("/a/b/c");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(isNoEntError(caughtError)).toBe(true);
   });
 
   it("should remove a file with rm", async () => {
@@ -116,12 +121,15 @@ describe("makeMemoryFs", () => {
     expect(isNoEntError(caughtError)).toBe(true);
   });
 
-  it("should auto-create parent directories when writing a nested file", async () => {
+  it("should throw ENOENT when writing to a path whose parent does not exist", async () => {
     const fs = makeMemoryFs();
-    await fs.writeFile("/a/b/c.txt", "data");
-    expect(await fs.pathExists("/a/b/c.txt")).toBe(true);
-    expect(await fs.pathExists("/a/b")).toBe(true);
-    expect(await fs.pathExists("/a")).toBe(true);
+    let caughtError: unknown;
+    try {
+      await fs.writeFile("/a/b/c.txt", "data");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(isNoEntError(caughtError)).toBe(true);
   });
 
   it("should create ancestor directories when recursive mkdir is called", async () => {

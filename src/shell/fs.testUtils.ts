@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 
 function throwNoEntError(
   path: string,
-  kind: "open" | "rm" | "stat" | "unlink",
+  kind: "mkdir" | "open" | "rm" | "stat" | "unlink",
 ): never {
   throw Object.assign(
     new Error(`ENOENT: no such file or directory, ${kind} '${path}'`),
@@ -28,6 +28,10 @@ export function makeMemoryFs(): Fs {
 
   return {
     async mkdir(path, opts) {
+      if (!opts?.recursive) {
+        const parent = dirname(path);
+        if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "mkdir");
+      }
       dirs.add(path);
       if (opts?.recursive) addParents(path);
     },
@@ -81,11 +85,12 @@ export function makeMemoryFs(): Fs {
       files.delete(path);
     },
     async writeFile(path, data) {
+      const parent = dirname(path);
+      if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "open");
       files.set(
         path,
         typeof data === "string" ? textEncoder.encode(data) : data,
       );
-      addParents(path);
     },
   };
 }
