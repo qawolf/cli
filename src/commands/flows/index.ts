@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 
 import { withAuthContext, withContext } from "~/commands/context.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import type {
   HarContent,
   HarMode,
@@ -27,7 +28,10 @@ const traceDefault: TraceMode = "off";
 const harDefault: HarMode = "off";
 const harContentDefault: HarContent = "omit";
 
-export function registerFlowsCommand(program: Command): void {
+export function registerFlowsCommand(
+  program: Command,
+  signals: SignalRegistry,
+): void {
   const flows = program
     .command("flows")
     .description("Manage and run QA Wolf flows");
@@ -100,14 +104,13 @@ export function registerFlowsCommand(program: Command): void {
       ) => {
         if (opts.env !== undefined) {
           const hybridFlags = { ...opts, env: opts.env };
-          return withAuthContext((ctx) =>
+          return withAuthContext(signals, (ctx) =>
             handleHybridFlowsRun(ctx, pattern, hybridFlags),
           )(opts, command);
         }
-        return withContext((ctx) => handleFlowsRun(ctx, pattern, opts))(
-          opts,
-          command,
-        );
+        return withContext(signals, (ctx) =>
+          handleFlowsRun(ctx, pattern, opts),
+        )(opts, command);
       },
     );
 
@@ -117,7 +120,10 @@ export function registerFlowsCommand(program: Command): void {
       "List flow files matched by [pattern] (all flows when omitted)",
     )
     .action((pattern: string | undefined, opts: unknown, command: Command) =>
-      withContext((ctx) => handleFlowsList(ctx, pattern))(opts, command),
+      withContext(signals, (ctx) => handleFlowsList(ctx, pattern))(
+        opts,
+        command,
+      ),
     );
 
   flows
@@ -127,7 +133,7 @@ export function registerFlowsCommand(program: Command): void {
     .option("--out <path>", "Override the .qawolf/<env>/ destination")
     .option("--yes", "Skip the overwrite prompt for locally-modified files")
     .action((opts: FlowsPullOptions, command: Command) => {
-      return withAuthContext((ctx) => handleFlowsPull(ctx, opts))(
+      return withAuthContext(signals, (ctx) => handleFlowsPull(ctx, opts))(
         opts,
         command,
       );

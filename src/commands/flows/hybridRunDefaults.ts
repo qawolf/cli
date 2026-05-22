@@ -89,7 +89,7 @@ export async function handleHybridFlowsRun(
   );
   await loadEnvFile(envDir);
   await deps.configureTestkit(envDir);
-  const android = createAndroidDeps(envDir);
+  const android = createAndroidDeps(envDir, ctx.signals);
 
   return deps.flowsRun(ctx, files, flags, {
     peekFlowMeta: defaultPeekFlowMeta,
@@ -100,7 +100,7 @@ export async function handleHybridFlowsRun(
         playwrightCliPath: resolvePlaywrightCli(envDir),
       }),
     runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: await deps.runWebFlowDeps(envDir),
+    runWebFlowDeps: await deps.runWebFlowDeps(envDir, ctx.signals),
     runAndroidFlow: defaultRunAndroidFlow,
     runAndroidFlowDeps: android.deps,
     bootAndroid: android.boot,

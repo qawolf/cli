@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 import type { AuthCommandContext } from "~/shell/commandContext.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import type { UI } from "~/shell/ui/index.js";
 import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
 
@@ -48,6 +49,8 @@ function makeJsonUi(): UI {
   };
 }
 
+const noopSignals = makeNoopSignals();
+
 function makeCtx(
   ui: UI,
   bundlePath: string,
@@ -60,6 +63,7 @@ function makeCtx(
     isInteractive: false,
     apiBaseUrl: "https://test.qawolf.com",
     apiKeySource: "env",
+    signals: noopSignals,
     platform: makeMockPlatformClient({
       downloadBundle: mock().mockResolvedValue({
         ok: true,

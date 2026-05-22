@@ -3,6 +3,7 @@ import { errorMessage } from "~/core/errors.js";
 import { getConfigDir } from "~/core/paths.js";
 import { requireApiKey } from "~/domains/auth/index.js";
 import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import {
   type OutputFlags,
   detectOutputMode,
@@ -18,7 +19,10 @@ import type {
 type ContextAction = (ctx: CommandContext) => Promise<CommandResult>;
 type AuthContextAction = (ctx: AuthCommandContext) => Promise<CommandResult>;
 
-function buildBaseContext(command: Command): {
+function buildBaseContext(
+  command: Command,
+  signals: SignalRegistry,
+): {
   ctx: CommandContext;
   apiBaseUrl: string;
 } {
@@ -40,16 +44,18 @@ function buildBaseContext(command: Command): {
         env,
       }),
       apiBaseUrl,
+      signals,
     },
     apiBaseUrl,
   };
 }
 
 export function withContext(
+  signals: SignalRegistry,
   fn: ContextAction,
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
-    const { ctx } = buildBaseContext(command);
+    const { ctx } = buildBaseContext(command, signals);
     try {
       const result = await fn(ctx);
       if (result !== undefined) {
@@ -64,11 +70,12 @@ export function withContext(
 }
 
 export function withAuthContext(
+  signals: SignalRegistry,
   fn: AuthContextAction,
   deps: { requireApiKey?: typeof requireApiKey } = {},
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
-    const { ctx, apiBaseUrl } = buildBaseContext(command);
+    const { ctx, apiBaseUrl } = buildBaseContext(command, signals);
     const resolved = await (deps.requireApiKey ?? requireApiKey)(
       ctx.configDir,
     ).catch((err: unknown) => {

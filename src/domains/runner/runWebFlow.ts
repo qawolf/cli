@@ -1,5 +1,3 @@
-import crypto from "node:crypto";
-import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type {
@@ -14,16 +12,11 @@ import type {
   RunnerDeps,
   RunnerOptions,
 } from "./types.js";
-import type {
-  MinimalBrowser,
-  MinimalBrowserContext,
-  WebLaunchDeps,
-  WebLaunchOptions,
-} from "./web/types.js";
+import type { WebLaunchDeps, WebLaunchOptions } from "./web/types.js";
 import { FailWithoutRetryError } from "./errors.js";
 import { initFlowRuntime } from "./initFlowRuntime.js";
 import {
-  normalizeBrowserName,
+  createLaunch,
   notSupported,
   unsupportedWebDepNames,
 } from "./runWebFlowUtils.js";
@@ -66,8 +59,6 @@ export async function runWebFlow({
     ? (exported as WebFlowDefinition["run"])
     : (exported as WebFlowDefinition).run;
 
-  const openBrowsers: MinimalBrowser[] = [];
-  const openContexts: MinimalBrowserContext[] = [];
   const { harMode, harPath } = await initHar(deps.fs, options, flowName);
   const videoSize = { width: 1280, height: 720 };
   const contextSetup = buildContextSetup(videoSize, options, harPath);
@@ -80,35 +71,17 @@ export async function runWebFlow({
       : {}),
   };
 
-  const launch = async (launchOpts?: {
-    browser?: "chrome" | "chromium" | "firefox" | "msedge" | "webkit";
-    persistentContext?: boolean;
-    userDataDir?: string;
-  }) => {
-    const browserName = normalizeBrowserName(launchOpts?.browser);
-    const bt = deps[browserName];
-
-    if (launchOpts?.persistentContext === true) {
-      const userDataDir =
-        launchOpts.userDataDir ??
-        path.join(os.tmpdir(), `qawolf-${crypto.randomUUID()}`);
-      const context = await bt.launchPersistentContext(userDataDir, {
-        ...launchBrowserOpts,
-        ...contextSetup,
-      });
-      context.setDefaultTimeout(options.timeout);
-      openContexts.push(context);
-      const page = await context.newPage();
-      return { browserType: browserName, context, page };
-    }
-
-    const browser = await bt.launch(launchBrowserOpts);
-    openBrowsers.push(browser);
-    const context = await browser.newContext(contextSetup);
-    context.setDefaultTimeout(options.timeout);
-    openContexts.push(context);
-    return { browser, browserType: browserName, context };
-  };
+  const { launch, cleanup } = createLaunch({
+    browsers: {
+      chromium: deps.chromium,
+      firefox: deps.firefox,
+      webkit: deps.webkit,
+    },
+    contextSetup,
+    launchBrowserOpts,
+    signals: deps.signals,
+    timeout: options.timeout,
+  });
 
   const flowDef: FlowDefinition = {
     name: flowName,
@@ -139,10 +112,7 @@ export async function runWebFlow({
     passed = result.passed;
     return result;
   } finally {
-    await Promise.allSettled([
-      ...openContexts.map((c) => c.close()),
-      ...openBrowsers.map((b) => b.close()),
-    ]);
+    await cleanup();
     if (harPath !== undefined) {
       await maybeCleanupHar(deps.fs, harPath, passed, harMode);
     }

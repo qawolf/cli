@@ -64,6 +64,7 @@ export async function runAndroidFlow({
   const avdName = options.avdName ?? resolveAvdName(target);
 
   const openCtxs: AndroidLaunchContext[] = [];
+  const unregisters: (() => void)[] = [];
   let result: FlowRunResult | undefined;
 
   // Lazily creates a new context each time the flow calls wdio.startAndroid().
@@ -77,6 +78,11 @@ export async function runAndroidFlow({
       },
     });
     openCtxs.push(ctx);
+    unregisters.push(
+      deps.signals.register(async () => {
+        await ctx.cleanup(false);
+      }),
+    );
     await ctx.launch();
     const driver = ctx.pages()[0];
     if (driver === undefined) {
@@ -112,6 +118,8 @@ export async function runAndroidFlow({
     result = await runner.run(flowDef);
     return result;
   } finally {
+    // unregister first so a concurrent signal cleanup doesn't duplicate the closes
+    for (const unreg of unregisters) unreg();
     const passed = result?.passed ?? false;
     await Promise.allSettled(openCtxs.map((ctx) => ctx.cleanup(passed)));
   }

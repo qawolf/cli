@@ -6,6 +6,7 @@ import { createEmulatorPool } from "~/shell/appium/createEmulatorPool.js";
 import { defaultAdb } from "~/shell/appium/emulatorSetup.js";
 import type { AppiumDriver } from "~/shell/appium/types.js";
 import type { RunAndroidFlowDeps } from "./runAndroidFlow.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 type WdioRemote = {
   startRecordingScreen(): Promise<void>;
@@ -40,7 +41,7 @@ async function createSession(
   };
 }
 
-function makeRunnerDeps() {
+function makeRunnerDeps(signals: SignalRegistry) {
   return {
     fs: {
       mkdir: async (p: string, opts?: { recursive?: boolean }) => {
@@ -64,14 +65,7 @@ function makeRunnerDeps() {
         },
       };
     },
-    signals: {
-      on: (signal: NodeJS.Signals, handler: () => void) => {
-        process.on(signal, handler);
-        return () => {
-          process.off(signal, handler);
-        };
-      },
-    },
+    signals,
     createStorage: <T>() => {
       const als = new AsyncLocalStorage<unknown>();
       return {
@@ -89,18 +83,21 @@ function makeRunnerDeps() {
  * The Appium server starts lazily on the first `boot()` call so web-only
  * runs incur no overhead. `shutdown()` is idempotent.
  */
-export function createAndroidDeps(envDir: string): {
+export function createAndroidDeps(
+  envDir: string,
+  signals: SignalRegistry,
+): {
   deps: RunAndroidFlowDeps;
   boot: (avdNames: string[]) => Promise<void>;
   shutdown: () => void;
 } {
-  const pool = createEmulatorPool({ deps: { adb: defaultAdb } });
+  const pool = createEmulatorPool({ signals, deps: { adb: defaultAdb } });
   // Mutable placeholder populated by boot() before any flow dispatches.
   const serverHandle = { port: 0, home: "", stop: () => {} };
   let serverStarted = false;
 
   const deps: RunAndroidFlowDeps = {
-    ...makeRunnerDeps(),
+    ...makeRunnerDeps(signals),
     appiumServer: serverHandle,
     emulatorPool: pool,
     createSession,
@@ -117,7 +114,7 @@ export function createAndroidDeps(envDir: string): {
       );
     }
     if (!serverStarted) {
-      const server = await createAppiumServer(envDir);
+      const server = await createAppiumServer(envDir, signals);
       Object.assign(serverHandle, server);
       serverStarted = true;
     }

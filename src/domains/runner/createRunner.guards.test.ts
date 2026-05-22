@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { createRunner } from "./createRunner.js";
 import type { FlowDefinition, RunnerDeps } from "./types.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 
 function makeDeps(): RunnerDeps {
   return {
@@ -13,9 +14,7 @@ function makeDeps(): RunnerDeps {
       exitCode: Promise.resolve(0),
       kill: () => {},
     }),
-    signals: {
-      on: () => () => {},
-    },
+    signals: makeNoopSignals(),
     createStorage: <T>() => ({
       run: async (_store: T, callback: () => Promise<void>) => callback(),
       getStore: () => undefined,
@@ -48,10 +47,11 @@ describe("createRunner — guards and edge cases", () => {
       deps: {
         ...makeDeps(),
         signals: {
-          on: (_sig: string, handler: () => void) => {
-            signalHandler = handler;
+          register: (cleanup: () => void) => {
+            signalHandler = cleanup;
             return () => {};
           },
+          shutdown: async () => {},
         },
       },
       options: { retries: 0, outputDir: "/tmp" },

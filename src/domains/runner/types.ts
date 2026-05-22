@@ -1,6 +1,9 @@
 import type { FlowStamp } from "~/shell/manifest/types.js";
 import type { TestCounts } from "~/core/types.js";
 import type { FlowRunError } from "./errors.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+
+export type { SignalRegistry };
 
 export type JsonSerializable =
   | string
@@ -22,10 +25,6 @@ export type FlowDefinition = {
   name: string;
   path: string;
   callback: (deps: FlowDeps) => Promise<void>;
-};
-
-export type SignalRegistry = {
-  on: (signal: NodeJS.Signals, handler: () => void) => () => void;
 };
 
 export type AsyncStorage<T> = {

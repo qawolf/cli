@@ -8,6 +8,7 @@ import {
   makePage,
   makeUniformDeps,
 } from "./web/createWebLaunchContext.fixtures.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import type { RunWebFlowDeps, RunWebFlowOptions } from "./runWebFlow.js";
 
 export function makeRunnerDeps(): RunnerDeps {
@@ -18,7 +19,7 @@ export function makeRunnerDeps(): RunnerDeps {
       unlink: async () => {},
     },
     spawn: () => ({ exitCode: Promise.resolve(0), kill: () => {} }),
-    signals: { on: () => () => {} },
+    signals: makeNoopSignals(),
     createStorage: <T>() => ({
       run: async (_store: T, callback: () => Promise<void>) => callback(),
       getStore: () => undefined,
