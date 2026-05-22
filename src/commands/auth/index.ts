@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 
-import { withAuthContext, withContext } from "~/commands/context.js";
+import { withContext } from "~/commands/context.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { handleLogin } from "./login.js";
 import { handleLogout } from "./logout.js";
@@ -27,5 +27,5 @@ export function registerAuthCommand(
   auth
     .command("whoami")
     .description("Show authentication status")
-    .action(withAuthContext(signals, handleWhoami));
+    .action(withContext(signals, handleWhoami));
 }

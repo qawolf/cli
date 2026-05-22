@@ -7,6 +7,7 @@ import {
   withContext,
 } from "~/commands/context.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
+import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
 
 const noopSignals = makeNoopSignals();
 
@@ -28,6 +29,11 @@ afterEach(() => {
   mock.restore();
 });
 
+const okRequireApiKey = async () => ({
+  key: "qawolf_test",
+  source: "env" as const,
+});
+
 describe("withAuthContext exit code plumbing", () => {
   const failRequireApiKey = async (): Promise<never> => {
     throw new Error(
@@ -44,16 +50,15 @@ describe("withAuthContext exit code plumbing", () => {
   });
 
   it("sets exitCode to 1 when the action throws after auth succeeds", async () => {
-    const okRequireApiKey = async () => ({
-      key: "qawolf_test",
-      source: "env" as const,
-    });
     await withAuthContext(
       noopSignals,
       async () => {
         throw new Error("handler boom");
       },
-      { requireApiKey: okRequireApiKey },
+      {
+        requireApiKey: okRequireApiKey,
+        createPlatform: () => makeMockPlatformClient(),
+      },
     )({}, fakeCommand());
 
     expect(process.exitCode).toBe(1);
