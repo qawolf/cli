@@ -45,7 +45,6 @@ type FsStat = Pick<
   "isFile" | "isDirectory" | "size" | "mtimeMs" | "mtime"
 >;
 
-
 export type Fs = {
   mkdir(path: string, options?: { recursive?: boolean }): Promise<void>;
   pathExists(path: string): Promise<boolean>;
