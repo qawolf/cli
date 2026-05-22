@@ -1,4 +1,4 @@
-import { isAndroidTarget } from "~/core/flowMeta.js";
+import { isAndroidTarget, type PeekFlowMetaFn } from "~/core/flowMeta.js";
 import { pluralize } from "~/core/pluralize.js";
 import { avdNameForTarget, buildSystemImage } from "~/core/androidTargets.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
@@ -9,10 +9,6 @@ import { installAvds } from "./avd.js";
 import type { AvdSpec } from "./avd.js";
 import { installUiautomator2Driver } from "./driver.js";
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
-
-type PeekFlowMetaFn = (
-  filePath: string,
-) => Promise<{ name: string | undefined; target: string | undefined }>;
 
 export type InstallAndroidDeps = {
   readonly cwd: string;

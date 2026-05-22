@@ -2,7 +2,7 @@ import {
   expandPatterns as defaultExpandPatterns,
   peekFlowMeta as defaultPeekFlowMeta,
 } from "~/domains/flows/expand.js";
-import { classifyTarget } from "~/core/flowMeta.js";
+import { classifyTarget, type PeekFlowMetaFn } from "~/core/flowMeta.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { errorMessage } from "~/core/errors.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
@@ -17,9 +17,7 @@ export type InstallAllDeps = {
     patterns: string[],
     cwd?: string,
   ) => Promise<string[]>;
-  readonly peekFlowMeta: (
-    filePath: string,
-  ) => Promise<{ name: string | undefined; target: string | undefined }>;
+  readonly peekFlowMeta: PeekFlowMetaFn;
   readonly installBrowsers: (
     ctx: CommandContext,
     pattern: string | undefined,
