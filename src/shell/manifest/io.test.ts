@@ -34,6 +34,7 @@ describe("readManifest", () => {
 
   it("returns the parsed manifest after writeManifest", async () => {
     const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
     await writeManifest(envDir, sample, memFs);
     const result = await readManifest(envDir, memFs);
     expect(result).toEqual(sample);
@@ -41,6 +42,7 @@ describe("readManifest", () => {
 
   it("returns 'malformed' on invalid JSON", async () => {
     const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
     await memFs.writeFile(join(envDir, manifestFilename), "{not json");
     const result = await readManifest(envDir, memFs);
     expect(result).toBe("malformed");
@@ -48,6 +50,7 @@ describe("readManifest", () => {
 
   it("returns 'malformed' when JSON shape does not match", async () => {
     const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
     await memFs.writeFile(
       join(envDir, manifestFilename),
       JSON.stringify({ envId: 7 }),
@@ -60,6 +63,7 @@ describe("readManifest", () => {
 describe("writeManifest", () => {
   it("writes pretty-printed JSON to .manifest.json", async () => {
     const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
     await writeManifest(envDir, sample, memFs);
     const raw = await memFs.readFile(join(envDir, manifestFilename));
     expect(raw).toContain("\n");
@@ -68,6 +72,7 @@ describe("writeManifest", () => {
 
   it("preserves optional fields as undefined when absent", async () => {
     const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
     const minimal: Manifest = {
       envId: "env-min",
       envSlug: undefined,
