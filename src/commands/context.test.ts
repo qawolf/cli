@@ -7,7 +7,7 @@ import {
   withContext,
 } from "~/commands/context.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
-import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
+import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
 
 const noopSignals = makeNoopSignals();
 
@@ -28,24 +28,6 @@ afterEach(() => {
   process.exitCode = 0;
   mock.restore();
 });
-
-function mockPlatform(): PlatformClient {
-  return {
-    getIdentity: async () => ({ ok: false as const, error: "not used" }),
-    getFlowsBundleUrl: async (_envId: string) => ({
-      ok: false as const,
-      error: "not used",
-    }),
-    getEnvVars: async (_envId: string) => ({
-      ok: false as const,
-      error: "not used",
-    }),
-    downloadBundle: async (_envId: string) => ({
-      ok: false as const,
-      error: "not used",
-    }),
-  };
-}
 
 const okRequireApiKey = async () => ({
   key: "qawolf_test",
@@ -75,7 +57,7 @@ describe("withAuthContext exit code plumbing", () => {
       },
       {
         requireApiKey: okRequireApiKey,
-        createPlatform: () => mockPlatform(),
+        createPlatform: () => makeMockPlatformClient(),
       },
     )({}, fakeCommand());
 
