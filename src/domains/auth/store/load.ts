@@ -1,4 +1,5 @@
-import { readFile } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import { join } from "node:path";
 
 import { Entry } from "@napi-rs/keyring";
@@ -10,12 +11,12 @@ import { credentialsFileSchema } from "./types.js";
 
 type LoadApiKeyDeps = {
   EntryClass: typeof Entry;
-  readFile: (path: string, encoding: BufferEncoding) => Promise<string>;
+  fs: Pick<Fs, "readFile">;
 };
 
 export async function loadApiKey(
   configDir: string,
-  deps: LoadApiKeyDeps = { EntryClass: Entry, readFile },
+  deps: LoadApiKeyDeps = { EntryClass: Entry, fs: makeDefaultFs() },
 ): Promise<LoadApiKeyResult> {
   const errors: { keychain?: string; file?: string } = {};
 
@@ -28,10 +29,7 @@ export async function loadApiKey(
   }
 
   try {
-    const content = await deps.readFile(
-      join(configDir, credentialsFile),
-      "utf-8",
-    );
+    const content = await deps.fs.readFile(join(configDir, credentialsFile));
     const parsed = credentialsFileSchema.safeParse(JSON.parse(content));
     if (parsed.success) {
       return { found: true, key: parsed.data.apiKey, source: "file" };

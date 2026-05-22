@@ -1,6 +1,7 @@
 import { dirname, join, relative } from "node:path";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
-import { mkdir, pathExists, readFile, writeFile } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import { flowsVersion } from "~/generated/dependencyVersions.js";
 import { initMessages } from "~/core/messages/index.js";
 import { exampleFlowTs, qawolfConfigTs, qawolfGitignore } from "./templates.js";
@@ -11,19 +12,13 @@ export type InitOpts = {
 
 export type InitDeps = {
   readonly cwd: string;
-  readonly pathExists: (p: string) => Promise<boolean>;
-  readonly readFile: (p: string, encoding: "utf-8") => Promise<string>;
-  readonly writeFile: (p: string, content: string) => Promise<void>;
-  readonly mkdir: (p: string, opts: { recursive: boolean }) => Promise<void>;
+  readonly fs: Fs;
 };
 
 export function makeDefaultInitDeps(): InitDeps {
   return {
     cwd: process.cwd(),
-    pathExists,
-    readFile: (p, enc) => readFile(p, enc),
-    writeFile: (p, content) => writeFile(p, content, "utf-8"),
-    mkdir: (p, opts) => mkdir(p, opts).then(() => {}),
+    fs: makeDefaultFs(),
   };
 }
 
@@ -56,7 +51,7 @@ async function writeWithPrompt(
 ): Promise<void> {
   const relPath = relative(deps.cwd, filePath);
 
-  if (await deps.pathExists(filePath)) {
+  if (await deps.fs.pathExists(filePath)) {
     const confirmed = await ctx.ui.confirm(`Overwrite ${relPath}?`, {
       yes,
       destructive: true,
@@ -67,8 +62,8 @@ async function writeWithPrompt(
     }
   }
 
-  await deps.mkdir(dirname(filePath), { recursive: true });
-  await deps.writeFile(filePath, content);
+  await deps.fs.mkdir(dirname(filePath), { recursive: true });
+  await deps.fs.writeFile(filePath, content);
   ctx.ui.step(`Created ${relPath}`);
 }
 
@@ -79,7 +74,7 @@ async function ensurePackageJson(
 ): Promise<void> {
   const pkgPath = join(deps.cwd, "package.json");
 
-  if (!(await deps.pathExists(pkgPath))) {
+  if (!(await deps.fs.pathExists(pkgPath))) {
     const confirmed = await ctx.ui.confirm(
       initMessages.createPackageJsonPrompt,
       { yes },
@@ -94,12 +89,12 @@ async function ensurePackageJson(
       dependencies: { "@qawolf/flows": flowsVersion },
       scripts: { "test:e2e": "qawolf flows run" },
     };
-    await deps.writeFile(pkgPath, JSON.stringify(pkg, undefined, 2) + "\n");
+    await deps.fs.writeFile(pkgPath, JSON.stringify(pkg, undefined, 2) + "\n");
     ctx.ui.step(initMessages.createdPackageJson);
     return;
   }
 
-  const raw = await deps.readFile(pkgPath, "utf-8");
+  const raw = await deps.fs.readFile(pkgPath);
 
   let pkg: Record<string, unknown>;
   try {
@@ -128,7 +123,7 @@ async function ensurePackageJson(
   pkg["scripts"] = scripts;
 
   const trailingNewline = raw.endsWith("\n") ? "\n" : "";
-  await deps.writeFile(
+  await deps.fs.writeFile(
     pkgPath,
     JSON.stringify(pkg, undefined, 2) + trailingNewline,
   );
