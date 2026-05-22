@@ -10,10 +10,8 @@ export const exampleFlowTs = `import { expect, flow } from "@qawolf/flows/web";
 
 export default flow(
   "Example",
-  { target: "Web - Chrome" },
-  async ({ launch, test }) => {
-    const { page } = await launch();
-
+  { launch: true, target: "Web - Chrome" },
+  async ({ page, test }) => {
     await test("navigate to example.com", async () => {
       await page.goto("https://example.com");
       await expect(page).toHaveTitle(/Example/);

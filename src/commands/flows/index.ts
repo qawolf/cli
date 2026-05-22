@@ -15,6 +15,7 @@ import {
   handleFlowsPull,
 } from "~/domains/flows/pull/handler.js";
 import { handleFlowsRun } from "./runDefaults.js";
+import { handleHybridFlowsRun } from "./hybridRunDefaults.js";
 import { parseEnum, parseInteger } from "~/domains/runner/runFlagParsers.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
@@ -91,8 +92,22 @@ export function registerFlowsCommand(
       "Open a visible browser window (default: headless)",
       false,
     )
+    .option(
+      "--env <env>",
+      "Pull and run a flow from this environment (UUID or slug) if not already cached",
+    )
     .action(
-      (pattern: string | undefined, opts: FlowsRunFlags, command: Command) => {
+      (
+        pattern: string | undefined,
+        opts: FlowsRunFlags & { env?: string },
+        command: Command,
+      ) => {
+        if (opts.env !== undefined) {
+          const hybridFlags = { ...opts, env: opts.env };
+          return withAuthContext(signals, (ctx) =>
+            handleHybridFlowsRun(ctx, pattern, hybridFlags),
+          )(opts, command);
+        }
         return withContext(signals, (ctx) =>
           handleFlowsRun(ctx, pattern, opts),
         )(opts, command);

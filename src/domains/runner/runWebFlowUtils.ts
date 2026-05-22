@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import type { SignalRegistry } from "./types.js";
+import { unsupportedSharedDepNames } from "./unsupportedDepNames.js";
 import type {
   BrowserDep,
   BrowserLaunchOptions,
@@ -100,19 +101,10 @@ export function notSupported(name: string): () => never {
 }
 
 export const unsupportedWebDepNames = [
+  ...unsupportedSharedDepNames,
   "launchElectron",
-  "getInbox",
-  "getOTP",
-  "OTPAuth",
-  "qawolf",
   "readQRCode",
-  "runCommand",
   "saveBaselineScreenshot",
   "selectors",
   "devices",
-  "fetchLatestEnvironmentVariables",
-  "setEnvironmentVariable",
-  "mountCifsShare",
-  "startOpenVpn",
-  "startWireGuard",
 ] as const;

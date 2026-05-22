@@ -33,14 +33,18 @@ describe("checkPlaywright", () => {
     expect(spawn).not.toHaveBeenCalled();
   });
 
-  it("passes when --version exits 0 with a parseable version", async () => {
+  it("passes when --version exits 0 with a parseable version and includes version string", async () => {
     const spawn = spawnReturning({
       exitCode: 0,
       stdout: "Version 1.49.1\n",
       stderr: "",
     });
     const r = await checkPlaywright(checkDeps(spawn));
-    expect(r).toEqual({ name: "playwright", status: "pass" });
+    expect(r).toEqual({
+      name: "playwright",
+      status: "pass",
+      version: "1.49.1",
+    });
     expect(spawn).toHaveBeenCalledWith(fakeCli, ["--version"]);
   });
 

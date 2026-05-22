@@ -10,6 +10,7 @@ import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { isNoEntError } from "~/core/errors.js";
+import { buildPatternArgs } from "~/core/patternArgs.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { createConsoleReporter } from "~/shell/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
@@ -27,11 +28,7 @@ import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
-export function _buildPatternArgs(pattern: string | undefined): string[] {
-  return pattern ? [pattern] : [];
-}
-
-export async function _loadEnvFile(envDir: string): Promise<void> {
+export async function loadEnvFile(envDir: string): Promise<void> {
   let content: string;
   try {
     content = await readFile(join(envDir, ".env"), "utf8");
@@ -74,7 +71,7 @@ export async function handleFlowsRun(
   const cwd = process.cwd();
 
   const expandedFiles = await deps.expandPatterns(
-    _buildPatternArgs(pattern),
+    buildPatternArgs(pattern),
     cwd,
   );
 
@@ -97,7 +94,7 @@ export async function handleFlowsRun(
       ],
       () => "Environment ready",
     );
-    await _loadEnvFile(dir);
+    await loadEnvFile(dir);
   }
 
   // Resolve playwright from the env dir; falls back to CWD for local flows.

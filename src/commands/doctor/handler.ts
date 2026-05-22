@@ -3,9 +3,11 @@ import { readFile } from "node:fs/promises";
 import packageJson from "../../../package.json" with { type: "json" };
 
 import { avdNameForTarget } from "~/core/androidTargets.js";
+import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 import { resolveApiKey } from "~/domains/auth/resolve.js";
 import { runChecks } from "~/domains/doctor/checks/index.js";
 import { renderResults } from "~/domains/doctor/render.js";
+import type { CheckResult } from "~/domains/doctor/types.js";
 import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
 import { expandPatterns, peekFlowMeta } from "~/domains/flows/expand.js";
 import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
@@ -19,20 +21,14 @@ import { defaultSpawn } from "~/shell/spawn.js";
 
 type HandleDoctorOpts = { readonly all: boolean };
 
-const peekBatchSize = 32;
-
 async function collectRequiredAvds(
   files: readonly string[],
 ): Promise<string[]> {
   const seen = new Set<string>();
-  for (let i = 0; i < files.length; i += peekBatchSize) {
-    const batch = files.slice(i, i + peekBatchSize);
-    const metas = await Promise.all(batch.map(peekFlowMeta));
-    for (const meta of metas) {
-      if (!meta.target) continue;
-      const avd = avdNameForTarget(meta.target);
-      if (avd) seen.add(avd);
-    }
+  for await (const meta of batchMap(files, peekFlowMeta, flowBatchSize)) {
+    if (!meta.target) continue;
+    const avd = avdNameForTarget(meta.target);
+    if (avd) seen.add(avd);
   }
   return [...seen];
 }
@@ -64,6 +60,12 @@ export async function handleDoctor(
   const requiredAvds = await collectRequiredAvds(flowFiles);
   const runAndroidChecks = opts.all || requiredAvds.length > 0;
 
+  const cliCheck: CheckResult = {
+    name: "qawolf",
+    status: "pass",
+    version: packageJson.version,
+  };
+
   const results = await runChecks({
     apiKey: resolved?.key,
     fetch: globalThis.fetch,
@@ -82,7 +84,8 @@ export async function handleDoctor(
     resolveAppiumBin,
     requiredAvds,
   });
-  renderResults(ctx.ui, results);
-  const fails = results.filter((result) => result.status === "fail");
+  const allResults = [cliCheck, ...results];
+  renderResults(ctx.ui, allResults);
+  const fails = allResults.filter((result) => result.status === "fail");
   if (fails.length > 0) return { error: `${fails.length} check(s) failed` };
 }

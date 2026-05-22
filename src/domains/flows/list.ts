@@ -4,10 +4,9 @@ import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { pluralize } from "~/core/pluralize.js";
 import type { BrowserName } from "~/core/types.js";
 
+import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 import { flowBasename, targetToBrowser } from "~/core/flowMeta.js";
 import { expandPatterns, peekFlowMeta } from "./expand.js";
-
-const batchSize = 32;
 
 export type FlowsListDeps = {
   readonly cwd: string;
@@ -32,19 +31,18 @@ export async function flowsList(
   const files = await deps.expandPatterns(patterns, deps.cwd);
 
   const items: FlowsListItem[] = [];
-  for (let i = 0; i < files.length; i += batchSize) {
-    const batch = files.slice(i, i + batchSize);
-    const metas = await Promise.all(batch.map((f) => deps.peekFlowMeta(f)));
-    for (const [j, meta] of metas.entries()) {
-      const file = batch[j]!;
-      items.push({
-        file: path.relative(deps.cwd, file),
-        name: meta.name ?? flowBasename(file),
-        tags: [],
-        target: meta.target,
-        browser: meta.target ? targetToBrowser(meta.target) : undefined,
-      });
-    }
+  for await (const { file, ...meta } of batchMap(
+    files,
+    async (f) => ({ file: f, ...(await deps.peekFlowMeta(f)) }),
+    flowBatchSize,
+  )) {
+    items.push({
+      file: path.relative(deps.cwd, file),
+      name: meta.name ?? flowBasename(file),
+      tags: [],
+      target: meta.target,
+      browser: meta.target ? targetToBrowser(meta.target) : undefined,
+    });
   }
 
   if (ctx.ui.mode === "json") {

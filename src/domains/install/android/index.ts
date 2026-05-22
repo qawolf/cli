@@ -1,12 +1,14 @@
 import { isAndroidTarget } from "~/core/flowMeta.js";
 import { pluralize } from "~/core/pluralize.js";
 import { avdNameForTarget, buildSystemImage } from "~/core/androidTargets.js";
+import { buildPatternArgs } from "~/core/patternArgs.js";
 import { parseExecutionTarget } from "@qawolf/flow-targets";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { SpawnFn } from "~/shell/spawn.js";
 import { installAvds } from "./avd.js";
 import type { AvdSpec } from "./avd.js";
 import { installUiautomator2Driver } from "./driver.js";
+import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 
 type PeekFlowMetaFn = (
   filePath: string,
@@ -37,7 +39,7 @@ export async function installAndroid(
   pattern: string | undefined,
   deps: InstallAndroidDeps,
 ): Promise<CommandResult> {
-  const patterns = pattern ? [pattern] : [];
+  const patterns = buildPatternArgs(pattern);
   const files = await deps.expandPatterns(patterns, deps.cwd);
 
   const targets = await collectAndroidTargets(files, deps.peekFlowMeta);
@@ -67,20 +69,14 @@ export async function installAndroid(
   );
 }
 
-const batchSize = 32;
-
 async function collectAndroidTargets(
   files: readonly string[],
   peekFlowMeta: PeekFlowMetaFn,
 ): Promise<string[]> {
   const seen = new Set<string>();
-  for (let i = 0; i < files.length; i += batchSize) {
-    const batch = files.slice(i, i + batchSize);
-    const metas = await Promise.all(batch.map(peekFlowMeta));
-    for (const meta of metas) {
-      if (meta.target && isAndroidTarget(meta.target)) {
-        seen.add(meta.target);
-      }
+  for await (const meta of batchMap(files, peekFlowMeta, flowBatchSize)) {
+    if (meta.target && isAndroidTarget(meta.target)) {
+      seen.add(meta.target);
     }
   }
   return [...seen];

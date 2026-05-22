@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { pathExists } from "~/shell/fs.js";
 import type { CommandContext } from "~/shell/commandContext.js";
 import { type InitDeps, handleInit } from "./init.js";
+import { flowsVersion } from "~/generated/dependencyVersions.js";
 import { exampleFlowTs, qawolfConfigTs, qawolfGitignore } from "./templates.js";
 
 let dir: string;
@@ -128,12 +129,44 @@ describe("handleInit", () => {
     ).toBe(true);
   });
 
-  it("should not write package.json when none exists", async () => {
-    const { ctx } = makeCtx();
+  it("should create package.json with type:module when none exists", async () => {
+    const { ctx } = makeCtx(true);
+
+    await handleInit(ctx, { yes: false }, makeDeps(dir));
+
+    const pkg = JSON.parse(
+      await fsReadFile(join(dir, "package.json"), "utf-8"),
+    ) as Record<string, unknown>;
+    expect(pkg["private"]).toBe(true);
+    expect(pkg["type"]).toBe("module");
+    const deps = pkg["dependencies"] as Record<string, string>;
+    expect(deps["@qawolf/flows"]).toBe(flowsVersion);
+    const scripts = pkg["scripts"] as Record<string, string>;
+    expect(scripts["test:e2e"]).toBe("qawolf flows run");
+  });
+
+  it("should skip creating package.json when none exists and confirm returns false", async () => {
+    const { ctx } = makeCtx(false);
 
     await handleInit(ctx, { yes: false }, makeDeps(dir));
 
     expect(await pathExists(join(dir, "package.json"))).toBe(false);
+  });
+
+  it("should create package.json when --yes is set and none exists", async () => {
+    const { ctx } = makeCtx(false);
+
+    await handleInit(ctx, { yes: true }, makeDeps(dir));
+
+    const pkg = JSON.parse(
+      await fsReadFile(join(dir, "package.json"), "utf-8"),
+    ) as Record<string, unknown>;
+    expect(pkg["private"]).toBe(true);
+    expect(pkg["type"]).toBe("module");
+    const deps = pkg["dependencies"] as Record<string, string>;
+    expect(deps["@qawolf/flows"]).toBe(flowsVersion);
+    const scripts = pkg["scripts"] as Record<string, string>;
+    expect(scripts["test:e2e"]).toBe("qawolf flows run");
   });
 
   it("should skip package.json update when confirm returns false", async () => {

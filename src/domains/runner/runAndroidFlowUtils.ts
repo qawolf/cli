@@ -2,21 +2,13 @@ import type { AndroidFlowTargetInput } from "@qawolf/flows/android";
 import type { AndroidExecutionTarget } from "@qawolf/flow-targets";
 import { parseExecutionTarget } from "@qawolf/flow-targets";
 import { makeAvdName } from "~/core/androidTargets.js";
+import { unsupportedSharedDepNames } from "./unsupportedDepNames.js";
 
 // Matches testContextDependencies from @qawolf/flows/android minus wdio,
 // which is provided by the runner.
 export const unsupportedAndroidDepNames = [
   "emulator",
-  "fetchLatestEnvironmentVariables",
-  "getInbox",
-  "getOTP",
-  "mountCifsShare",
-  "OTPAuth",
-  "qawolf",
-  "runCommand",
-  "setEnvironmentVariable",
-  "startOpenVpn",
-  "startWireGuard",
+  ...unsupportedSharedDepNames,
 ] as const;
 
 // Cast matches the pattern in src/commands/flows/expand.ts — parseExecutionTarget
