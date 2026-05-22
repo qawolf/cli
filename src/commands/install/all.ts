@@ -5,6 +5,7 @@ import {
 import { classifyTarget, type PeekFlowMetaFn } from "~/core/flowMeta.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { errorMessage } from "~/core/errors.js";
+import { installMessages } from "~/core/messages/index.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 
@@ -49,12 +50,12 @@ export async function installAll(
   }
 
   if (!hasWeb && !hasAndroid && !hasIos) {
-    ctx.ui.info("No flows requiring installation were found.");
+    ctx.ui.info(installMessages.noFlowsFound);
     return;
   }
 
   if (hasIos) {
-    ctx.ui.warn("iOS targets are not supported in v0.1.");
+    ctx.ui.warn(installMessages.iosNotSupported);
   }
 
   if (!hasWeb && !hasAndroid) {
@@ -82,7 +83,7 @@ export async function installAll(
   }
 
   if (!firstError) {
-    ctx.ui.success("Install complete.");
+    ctx.ui.success(installMessages.installComplete);
   }
 
   return firstError;

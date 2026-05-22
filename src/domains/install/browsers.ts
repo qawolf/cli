@@ -1,4 +1,5 @@
 import { targetToBrowser, type PeekFlowMetaFn } from "~/core/flowMeta.js";
+import { installMessages } from "~/core/messages/index.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
@@ -52,7 +53,7 @@ export async function installBrowsers(
 
   const browsers = await collectBrowsers(files, deps.peekFlowMeta);
   if (browsers.length === 0) {
-    ctx.ui.info("No web flows requiring browser installation were found.");
+    ctx.ui.info(installMessages.noBrowserFlows);
     return;
   }
 

@@ -5,6 +5,7 @@ import {
 } from "~/domains/flows/expand.js";
 import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
 import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
+import { installMessages } from "~/core/messages/index.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { existsSync } from "~/shell/fs.js";
 import { defaultSpawn } from "~/shell/spawn.js";
@@ -17,11 +18,7 @@ export async function handleInstallAndroid(
   const androidHome =
     process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"];
   if (!androidHome) {
-    return {
-      error:
-        "Android SDK not found. Set ANDROID_HOME to the SDK path.\n" +
-        "Install Android Studio and open Tools > SDK Manager to install the SDK.",
-    };
+    return { error: installMessages.androidSdkNotFound };
   }
 
   return installAndroid(ctx, pattern, {

@@ -11,6 +11,7 @@ import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { isNoEntError } from "~/core/errors.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
+import { runnerMessages } from "~/core/messages/index.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { createConsoleReporter } from "~/shell/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
@@ -88,11 +89,11 @@ export async function handleFlowsRun(
     await ctx.ui.withProgress(
       [
         {
-          message: "Preparing environment",
+          message: runnerMessages.preparingEnvironment,
           task: () => deps.ensureFlowDeps(dir),
         },
       ],
-      () => "Environment ready",
+      () => runnerMessages.environmentReady,
     );
     await loadEnvFile(dir);
   }

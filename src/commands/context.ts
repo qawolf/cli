@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import { errorMessage } from "~/core/errors.js";
+import { authMessages } from "~/core/messages/index.js";
 import { getConfigDir } from "~/core/paths.js";
 import { requireApiKey } from "~/domains/auth/index.js";
 import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
@@ -79,7 +80,7 @@ export function withAuthContext(
     const resolved = await (deps.requireApiKey ?? requireApiKey)(
       ctx.configDir,
     ).catch((err: unknown) => {
-      ctx.ui.error("Not authenticated", errorMessage(err));
+      ctx.ui.error(authMessages.notAuthenticated, errorMessage(err));
       process.exitCode = 1;
       return undefined;
     });

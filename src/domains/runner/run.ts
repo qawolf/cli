@@ -3,6 +3,7 @@ import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
+import { runnerMessages } from "~/core/messages/index.js";
 
 import { buildRunOptions, runFlows } from "./runHelpers.js";
 import {
@@ -22,9 +23,8 @@ export async function flowsRun(
   deps: FlowsRunDeps,
 ): Promise<CommandResult> {
   if (flags.workers > 1) {
-    const message = "--workers > 1 is deferred to v0.2; current cap is 1.";
-    ctx.ui.error(message);
-    return { error: message, exitCode: 2 };
+    ctx.ui.error(runnerMessages.workersCapError);
+    return { error: runnerMessages.workersCapError, exitCode: 2 };
   }
 
   const flows: ResolvedFlow[] = [];
@@ -59,7 +59,7 @@ export async function flowsRun(
   flows.sort((a, b) => a.file.localeCompare(b.file));
 
   if (flows.length === 0) {
-    ctx.ui.info("No flows matched.");
+    ctx.ui.info(runnerMessages.noFlowsMatched);
     return;
   }
 
@@ -95,7 +95,7 @@ export async function flowsRun(
         await deps.bootAndroid(avdNames);
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Android boot failed";
+          err instanceof Error ? err.message : runnerMessages.androidBootFailed;
         ctx.ui.error(message);
         return { error: message };
       }

@@ -1,4 +1,5 @@
 import type { AuthCommandContext } from "~/shell/commandContext.js";
+import { flowsMessages } from "~/core/messages/index.js";
 
 type FetchedBundle = {
   tmpArchive: string;
@@ -20,7 +21,7 @@ export async function fetchBundleAndEnvVars(
   await ctx.ui.withProgress(
     [
       {
-        message: "Downloading flows bundle",
+        message: flowsMessages.pull.downloadingBundle,
         task: async () => {
           const result = await platform.downloadBundle(envId);
           if (!result.ok) throw new Error(result.error);
@@ -29,7 +30,7 @@ export async function fetchBundleAndEnvVars(
         },
       },
       {
-        message: "Fetching environment variables",
+        message: flowsMessages.pull.fetchingEnvVars,
         task: async () => {
           const result = await platform.getEnvVars(envId);
           if (!result.ok) throw new Error(result.error);
@@ -38,7 +39,7 @@ export async function fetchBundleAndEnvVars(
         },
       },
     ],
-    "Downloaded flows bundle and environment variables",
+    flowsMessages.pull.downloadComplete,
   );
 
   if (

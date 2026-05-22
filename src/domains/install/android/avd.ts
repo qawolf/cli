@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { SpawnFn } from "~/shell/spawn.js";
+import { installMessages } from "~/core/messages/index.js";
 
 export type AvdSpec = {
   readonly avdName: string;
@@ -35,9 +36,9 @@ export async function installAvds(
   // sdkmanager writes it on first acceptance.
   const licenseFile = join(deps.androidHome, "licenses", "android-sdk-license");
   if (deps.checkExists(licenseFile)) {
-    ctx.ui.info("Android SDK licenses already accepted.");
+    ctx.ui.info(installMessages.android.licensesAlreadyAccepted);
   } else {
-    ctx.ui.step("Accepting Android SDK licenses");
+    ctx.ui.step(installMessages.android.acceptingLicenses);
     await deps.spawn(deps.sdkManagerPath, ["--licenses"], {
       stdin: "y\n".repeat(20),
     });
