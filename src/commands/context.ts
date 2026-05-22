@@ -26,7 +26,6 @@ import type {
 
 type ContextAction = (ctx: CommandContext) => Promise<CommandResult>;
 type AuthContextAction = (ctx: AuthCommandContext) => Promise<CommandResult>;
-
 type GlobalFlags = OutputFlags & { verbose?: boolean };
 
 export function buildBaseContext(
@@ -48,12 +47,10 @@ export function buildBaseContext(
     outputMode === "agent"
       ? "silent"
       : resolveStderrLevel(env, Boolean(flags.verbose));
-
   const { clack, verboseTarget, verboseWrite } = createVerboseContext(
     outputMode,
     stderrLevel !== "silent",
   );
-
   const loggingSystem = createLoggingSystem({
     stderrLevel,
     logPath: defaultLogPath(),
