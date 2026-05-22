@@ -19,6 +19,7 @@ import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js"
 // import { configureEmails } from "~/emails/configureEmails.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 
+import { pluralize } from "~/core/pluralize.js";
 import { parseDotenv } from "~/domains/flows/dotenv.js";
 import {
   ensureFlowDeps as defaultEnsureFlowDeps,
@@ -78,9 +79,7 @@ export async function handleFlowsRun(
   );
   ctx
     .log("flows")
-    .debug(
-      `discovered ${expandedFiles.length} flow${expandedFiles.length === 1 ? "" : "s"}`,
-    );
+    .debug(`discovered ${pluralize(expandedFiles.length, "flow")}`);
 
   let envDir: string | undefined;
   try {
