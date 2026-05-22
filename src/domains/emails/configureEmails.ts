@@ -1,4 +1,5 @@
 import type { configureEmailsClient, createEmailsClient } from "@qawolf/emails";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 type EmailsModule = {
@@ -12,7 +13,10 @@ type EmailsModule = {
 async function loadSdkDeps(cwd: string): Promise<EmailsModule> {
   try {
     return (await import(
-      import.meta.resolve("@qawolf/emails", pathToFileURL(cwd))
+      import.meta.resolve(
+        "@qawolf/emails",
+        pathToFileURL(join(cwd, "package.json")),
+      )
     )) as EmailsModule;
   } catch (err) {
     throw new Error(

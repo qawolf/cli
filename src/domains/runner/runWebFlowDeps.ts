@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { createRunnerDeps } from "./runnerDeps.js";
@@ -20,7 +21,10 @@ export async function defaultRunWebFlowDeps(
   let playwright: Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
   try {
     playwright = (await import(
-      import.meta.resolve("playwright", pathToFileURL(cwd))
+      import.meta.resolve(
+        "playwright",
+        pathToFileURL(join(cwd, "package.json")),
+      )
     )) as Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
   } catch (err) {
     throw new Error(
