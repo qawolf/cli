@@ -10,7 +10,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for human contributor setup.
 bun install                        # install dependencies
 bun run dev                        # run CLI in development
 bun run dev -- <args>              # pass args to CLI (e.g. -- --help)
-bun run build                      # JS bundle → dist/cli.js
+bun run build                      # JS bundle → dist/cli.js + dist/cli.js.map (uses --outdir; bun rejects --sourcemap=external with --outfile)
 bun run build:binary               # standalone binary → dist/qawolf
 bun run typecheck                  # tsc --noEmit
 bun run lint                       # oxlint
