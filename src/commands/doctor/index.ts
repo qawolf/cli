@@ -13,10 +13,18 @@ export function registerDoctorCommand(
 ): void {
   program
     .command("doctor")
-    .description("Run environment diagnostics")
+    .description("Diagnose problems running flows locally")
     .option(
       "--all",
-      "Run all platform checks (Android, etc.) regardless of project content",
+      "Run every platform check, including platforms the project does not use",
+      false,
+    )
+    .addHelpText(
+      "after",
+      `
+Examples:
+  $ qawolf doctor
+  $ qawolf doctor --all`,
     )
     .action((opts: DoctorOpts, command: Command) => {
       return withContext(signals, (ctx) =>
