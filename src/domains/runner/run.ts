@@ -50,9 +50,12 @@ export async function flowsRun(
         name: meta.name ?? flowBasename(file),
         target: meta.target,
       });
-    } else {
-      const typeName = classified?.kind === "ios" ? "iOS" : meta.target;
+    } else if (classified) {
+      const typeName = classified.kind === "ios" ? "iOS" : meta.target;
       skippedByType.set(typeName, (skippedByType.get(typeName) ?? 0) + 1);
+    } else {
+      ctx.ui.error(`Unrecognized flow target: "${meta.target}"`);
+      return { error: "unrecognized flow target", exitCode: 2 };
     }
   }
 

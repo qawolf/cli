@@ -98,6 +98,49 @@ describe("flowsRun pre-flight", () => {
     expect(ui.info).not.toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
   });
 
+  it("exits 2 with an error for an unrecognized target string", async () => {
+    const ui = makeFakeUI();
+    const deps = makeDeps({
+      metaByFile: { "/a": { target: "Web - Chorme" } },
+    });
+
+    const result = await flowsRun(makeCtx(ui), ["/a"], defaultFlags(), deps);
+
+    expect(result).toEqual({
+      error: "unrecognized flow target",
+      exitCode: 2,
+    });
+    expect(ui.error).toHaveBeenCalledWith(
+      `Unrecognized flow target: "Web - Chorme"`,
+    );
+    expect(ui.warn).not.toHaveBeenCalled();
+  });
+
+  it("exits 2 on the first unrecognized target in a mixed batch", async () => {
+    const ui = makeFakeUI();
+    const deps = makeDeps({
+      metaByFile: {
+        "/ios.flow.ts": { target: "iOS - iPad" },
+        "/bad.flow.ts": { target: "Web - Chorme" },
+      },
+    });
+
+    const result = await flowsRun(
+      makeCtx(ui),
+      ["/ios.flow.ts", "/bad.flow.ts"],
+      defaultFlags(),
+      deps,
+    );
+
+    expect(result).toEqual({
+      error: "unrecognized flow target",
+      exitCode: 2,
+    });
+    expect(ui.error).toHaveBeenCalledWith(
+      `Unrecognized flow target: "Web - Chorme"`,
+    );
+  });
+
   it("warns per type and continues with supported flows in a mixed batch", async () => {
     const ui = makeFakeUI();
     const deps = makeDeps({

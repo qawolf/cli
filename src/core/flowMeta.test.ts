@@ -17,7 +17,15 @@ describe("classifyTarget", () => {
     expect(classifyTarget("iOS - iPad")).toEqual({ kind: "ios" });
   });
 
-  it("should return undefined for an unrecognised target string", () => {
+  it("should return { kind: 'unsupported' } for an Electron target", () => {
+    expect(classifyTarget("Electron")).toEqual({ kind: "unsupported" });
+  });
+
+  it("should return { kind: 'unsupported' } for a Basic (legacy) target", () => {
+    expect(classifyTarget("Basic")).toEqual({ kind: "unsupported" });
+  });
+
+  it("should return undefined for an unrecognised target string (e.g. a typo)", () => {
     expect(classifyTarget("not-a-real-target")).toBeUndefined();
   });
 });
