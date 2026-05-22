@@ -1,6 +1,6 @@
 {
   "name": "@qawolf/cli",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": true,
   "description": "Tools for agents, CI, and humans to interact with QA Wolf",
   "license": "Apache-2.0",
