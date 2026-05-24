@@ -114,7 +114,7 @@ export async function handleFlowsRun(
       installBrowserList(innerCtx, browsers, {
         spawn: defaultSpawn,
         platform: process.platform,
-        playwrightCliPath: resolvePlaywrightCli(resolvedDir),
+        playwrightCliPath: resolvePlaywrightCli(resolvedDir, process.platform),
       }),
     runWebFlow: defaultRunWebFlow,
     runWebFlowDeps: await deps.runWebFlowDeps(resolvedDir, ctx.signals),
