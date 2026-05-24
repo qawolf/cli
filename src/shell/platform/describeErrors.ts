@@ -1,17 +1,19 @@
+import { authMessages } from "~/core/messages/index.js";
 import type { WireError } from "./createTrpcClient.js";
+
+const m = authMessages.errors;
 
 export function describeIdentityError(err: WireError): string {
   if (err.kind === "http") {
     if (err.status === 401 || err.status === 403) {
-      return "API key is invalid or unauthorized";
+      return m.identity.invalidOrUnauthorized;
     }
-    const detail = parseErrorBody(err.body);
-    return `Could not verify API key: ${detail || `HTTP ${err.status}`}`;
+    return m.identity.couldNotVerify(parseErrorBody(err.body), err.status);
   }
   if (err.kind === "network") {
-    return `Could not verify API key: ${err.cause.message}`;
+    return m.identity.couldNotVerifyNetwork(err.cause.message);
   }
-  return "Could not verify API key: unexpected response format";
+  return m.identity.unexpectedFormat;
 }
 
 function parseErrorBody(body: string): string {
@@ -37,36 +39,23 @@ export function describeRequestError(
   baseUrl: string,
   noun?: string,
 ): string {
-  const adj = noun ? ` ${noun}` : "";
   if (err.kind === "http") {
-    if (err.status === 401) {
-      return `QA Wolf API rejected the${adj} request (HTTP 401). Check your API key.`;
-    }
-    if (err.status === 403) {
-      return `QA Wolf API rejected the${adj} request (HTTP 403). Check that your API key has access to this environment.`;
-    }
-    if (err.status === 404) {
-      const what = noun ? `${noun} for that environment` : "that environment";
-      return `QA Wolf API could not find ${what} (HTTP 404). Check the --env value.`;
-    }
-    return `QA Wolf API${adj} request failed (HTTP ${err.status}).`;
+    if (err.status === 401) return m.request.rejected401(noun);
+    if (err.status === 403) return m.request.rejected403(noun);
+    if (err.status === 404) return m.request.notFound404(noun);
+    return m.request.failedWithStatus(err.status, noun);
   }
   if (err.kind === "network") {
-    const suffix = noun ? ` to fetch ${noun}` : "";
-    return `Could not reach the QA Wolf API at ${baseUrl}${suffix}. Check your network connection and QAWOLF_API_URL.`;
+    return m.request.networkUnreachable(baseUrl, noun);
   }
-  return `Unexpected${adj} response from the QA Wolf API.`;
+  return m.request.unexpectedResponse(noun);
 }
 
 export function describeBundleDownloadError(err: WireError): string {
   if (err.kind === "http") {
-    if (err.status === 401 || err.status === 403) {
-      return `The flow bundle download link has expired. Please run \`qawolf flows pull\` again to refresh.`;
-    }
-    return `Could not download the flow bundle (HTTP ${err.status}).`;
+    if (err.status === 401 || err.status === 403) return m.bundle.linkExpired;
+    return m.bundle.failedWithStatus(err.status);
   }
-  if (err.kind === "network") {
-    return `Could not reach the flow bundle storage. Check your network connection and try again.`;
-  }
-  return `The flow bundle download was malformed. Please run \`qawolf flows pull\` again.`;
+  if (err.kind === "network") return m.bundle.networkUnreachable;
+  return m.bundle.malformed;
 }

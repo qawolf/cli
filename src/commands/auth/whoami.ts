@@ -25,7 +25,7 @@ export async function handleWhoami(
     } else {
       ctx.ui.output(
         { authenticated: false, source: undefined },
-        "Not authenticated",
+        authMessages.notAuthenticated,
       );
     }
     return { error: "not authenticated" };
@@ -41,7 +41,10 @@ export async function handleWhoami(
 
   if (!identity.ok) {
     if (ctx.ui.mode === "human") {
-      ctx.ui.note(`Source: ${resolved.source}`, authMessages.whoamiFailed);
+      ctx.ui.note(
+        authMessages.whoami.source(resolved.source),
+        authMessages.whoamiFailed,
+      );
       ctx.ui.warn(identity.error);
     } else {
       ctx.ui.output(
@@ -51,7 +54,7 @@ export async function handleWhoami(
           source: resolved.source,
           valid: false,
         },
-        `Authentication failed (source: ${resolved.source}): ${identity.error}`,
+        authMessages.whoami.authFailed(resolved.source, identity.error),
       );
     }
     return { error: "invalid key" };
@@ -64,15 +67,7 @@ export async function handleWhoami(
 
   if (ctx.ui.mode === "human") {
     ctx.ui.note(
-      [
-        `Team:   ${team.name}`,
-        `ID:     ${team.id}`,
-        team.slug && `Slug:   ${team.slug}`,
-        teamUrl && `URL:    ${teamUrl}`,
-        `Source: ${resolved.source}`,
-      ]
-        .filter(Boolean)
-        .join("\n"),
+      authMessages.whoami.teamNote({ team, teamUrl, source: resolved.source }),
       authMessages.whoamiAuthenticated,
     );
     ctx.ui.outro(authMessages.outroReady);
@@ -84,7 +79,7 @@ export async function handleWhoami(
         team,
         teamUrl,
       },
-      `Authenticated as ${team.name} (source: ${resolved.source})`,
+      authMessages.whoami.authenticatedAs(team.name, resolved.source),
     );
   }
 }

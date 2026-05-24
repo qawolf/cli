@@ -2,6 +2,8 @@
 // and `qawolf flows run` reads. Always double-quotes values; escapes `\\`,
 // `\"`, `\n`, `\r`, `\t`. Round-trips exactly (escape/unescape are inverses).
 
+import { flowsMessages } from "~/core/messages/index.js";
+
 const envKeyPattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const lineRe = /^([A-Za-z_][A-Za-z0-9_]*)="((?:[^"\\]|\\.)*)"$/;
 
@@ -9,9 +11,7 @@ export function serializeDotenv(vars: Record<string, string>): string {
   const keys = Object.keys(vars).sort();
   for (const key of keys) {
     if (!envKeyPattern.test(key)) {
-      throw new Error(
-        `Cannot serialize env var with invalid key: ${JSON.stringify(key)}`,
-      );
+      throw new Error(flowsMessages.dotenv.invalidKey(key));
     }
   }
   if (keys.length === 0) return "";
@@ -35,7 +35,7 @@ export function parseDotenv(content: string): Record<string, string> {
     if (line === "") continue;
     const match = lineRe.exec(line);
     if (!match) {
-      throw new Error(`Cannot parse .env line: ${JSON.stringify(line)}`);
+      throw new Error(flowsMessages.dotenv.unparseableLine(line));
     }
     out[match[1]!] = unquote(match[2]!);
   }

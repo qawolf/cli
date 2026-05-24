@@ -9,6 +9,7 @@ import { dirname, resolve } from "node:path";
 import { createGunzip } from "node:zlib";
 import { Parser, type ReadEntry } from "tar";
 
+import { flowsMessages } from "~/core/messages/index.js";
 import { validateEntryPath } from "./entryPath.js";
 
 const defaultMaxEntryBytes = 50 * 1024 * 1024;
@@ -103,7 +104,7 @@ async function handleEntry(args: HandleArgs): Promise<void> {
 
   if (entry.type === "SymbolicLink" || entry.type === "Link") {
     entry.resume();
-    throw new Error(`symlink entry rejected: ${entry.path}`);
+    throw new Error(flowsMessages.pull.symlinkRejected(entry.path));
   }
   if (entry.type === "Directory") {
     await mkdir(target, { recursive: true });
@@ -115,7 +116,7 @@ async function handleEntry(args: HandleArgs): Promise<void> {
   if (size > maxEntryBytes) {
     entry.resume();
     throw new Error(
-      `entry exceeds max size (${entry.path}): ${String(size)} > ${String(maxEntryBytes)}`,
+      flowsMessages.pull.entryTooLarge(entry.path, size, maxEntryBytes),
     );
   }
   if (args.getTotal() + size > maxTotalBytes) {

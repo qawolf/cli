@@ -26,9 +26,7 @@ export async function installAvds(
   const versionResult = await deps.spawn(deps.sdkManagerPath, ["--version"]);
   if (versionResult.exitCode !== 0) {
     throw new Error(
-      `sdkmanager not found at ${deps.sdkManagerPath}.\n` +
-        `Install Android cmdline-tools via Android Studio SDK Manager or from\n` +
-        `https://developer.android.com/studio#command-line-tools-only`,
+      installMessages.android.sdkmanagerNotFound(deps.sdkManagerPath),
     );
   }
 
@@ -58,11 +56,15 @@ export async function installAvds(
       "system.img",
     );
     if (deps.checkExists(systemImg)) {
-      ctx.ui.info(`System image ${spec.systemImage} already installed.`);
+      ctx.ui.info(
+        installMessages.android.systemImageAlreadyInstalled(spec.systemImage),
+      );
       installedImages.add(spec.systemImage);
       continue;
     }
-    ctx.ui.step(`Installing ${spec.systemImage}`);
+    ctx.ui.step(
+      installMessages.android.installingSystemImage(spec.systemImage),
+    );
     const result = await deps.spawn(deps.sdkManagerPath, [spec.systemImage]);
     if (result.exitCode !== 0) {
       const detail =
@@ -71,7 +73,10 @@ export async function installAvds(
           .map((l) => l.trim())
           .find(Boolean) ?? `exit code ${result.exitCode}`;
       throw new Error(
-        `sdkmanager failed to install ${spec.systemImage}: ${detail}`,
+        installMessages.android.sdkmanagerInstallFailed(
+          spec.systemImage,
+          detail,
+        ),
       );
     }
     installedImages.add(spec.systemImage);
@@ -93,10 +98,10 @@ export async function installAvds(
   // Create missing AVDs.
   for (const spec of specs) {
     if (existingAvds.has(spec.avdName)) {
-      ctx.ui.info(`AVD ${spec.avdName} already exists, skipping.`);
+      ctx.ui.info(installMessages.android.avdAlreadyExists(spec.avdName));
       continue;
     }
-    ctx.ui.step(`Creating AVD ${spec.avdName}`);
+    ctx.ui.step(installMessages.android.creatingAvd(spec.avdName));
     const result = await deps.spawn(deps.avdManagerPath, [
       "create",
       "avd",
@@ -114,7 +119,9 @@ export async function installAvds(
           .split("\n")
           .map((l) => l.trim())
           .find(Boolean) ?? `exit code ${result.exitCode}`;
-      throw new Error(`avdmanager failed to create ${spec.avdName}: ${detail}`);
+      throw new Error(
+        installMessages.android.avdmanagerCreateFailed(spec.avdName, detail),
+      );
     }
   }
 }

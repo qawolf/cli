@@ -51,6 +51,6 @@ export async function installUiautomator2Driver(
         .split("\n")
         .map((l) => l.trim())
         .find(Boolean) ?? `exit code ${installResult.exitCode}`;
-    throw new Error(`appium driver install uiautomator2 failed: ${detail}`);
+    throw new Error(installMessages.android.uiautomator2InstallFailed(detail));
   }
 }

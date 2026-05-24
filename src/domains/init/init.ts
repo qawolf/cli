@@ -52,19 +52,22 @@ async function writeWithPrompt(
   const relPath = relative(deps.cwd, filePath);
 
   if (await deps.fs.pathExists(filePath)) {
-    const confirmed = await ctx.ui.confirm(`Overwrite ${relPath}?`, {
-      yes,
-      destructive: true,
-    });
+    const confirmed = await ctx.ui.confirm(
+      initMessages.overwritePrompt(relPath),
+      {
+        yes,
+        destructive: true,
+      },
+    );
     if (!confirmed.ok || !confirmed.value) {
-      ctx.ui.info(`Skipped ${relPath}`);
+      ctx.ui.info(initMessages.skippedFile(relPath));
       return;
     }
   }
 
   await deps.fs.mkdir(dirname(filePath), { recursive: true });
   await deps.fs.writeFile(filePath, content);
-  ctx.ui.step(`Created ${relPath}`);
+  ctx.ui.step(initMessages.createdFile(relPath));
 }
 
 async function ensurePackageJson(

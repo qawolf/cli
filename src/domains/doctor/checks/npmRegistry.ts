@@ -1,3 +1,4 @@
+import { doctorMessages } from "~/core/messages/index.js";
 import type { SpawnFn } from "~/shell/spawn.js";
 
 import type { CheckResult } from "~/domains/doctor/types.js";
@@ -15,7 +16,7 @@ export async function checkNpmRegistry(
     return {
       name: "npm-registry",
       status: "warn",
-      detail: "npm is not installed or not on PATH",
+      detail: doctorMessages.npmRegistry.notInstalled,
     };
   }
 

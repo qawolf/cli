@@ -1,3 +1,4 @@
+import { runnerMessages } from "~/core/messages/index.js";
 import { FlowRunError } from "./errors.js";
 import type {
   FlowDefinition,
@@ -16,9 +17,7 @@ export function createRunner({
   options: RunnerOptions;
 }): Runner {
   if (!Number.isInteger(options.retries) || options.retries < 0) {
-    throw new Error(
-      `retries must be a non-negative integer, got ${options.retries}`,
-    );
+    throw new Error(runnerMessages.invalidRetries(options.retries));
   }
 
   const storage = deps.createStorage<FlowDeps>();

@@ -1,5 +1,6 @@
 import { relative } from "node:path";
 
+import { doctorMessages } from "~/core/messages/index.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
 import { errorMessage } from "~/core/errors.js";
 
@@ -30,14 +31,7 @@ const compiledByCategory = fileAssetVarPatterns.map(
   }),
 );
 
-export const fileAssetsWarnReasons: Readonly<
-  Record<FileAssetCategory, string>
-> = {
-  "file-asset":
-    "file assets aren't pulled in v0.1; this flow can't run locally",
-  "mobile-input":
-    "mobile build inputs aren't mounted locally; provide the APK path via a local env var",
-};
+export const fileAssetsWarnReasons = doctorMessages.fileAssets.warnReasons;
 
 type ReadFileFn = (path: string) => Promise<string>;
 
@@ -61,7 +55,8 @@ export function scanFileAssetReferences(source: string): string[] {
 
 function categorize(varName: string): FileAssetCategory {
   const hit = compiledByCategory.find(({ re }) => re.test(varName));
-  if (!hit) throw new Error(`uncategorized file-asset var: ${varName}`);
+  if (!hit)
+    throw new Error(doctorMessages.fileAssets.uncategorizedVar(varName));
   return hit.category;
 }
 
@@ -106,7 +101,10 @@ export async function checkFileAssets(
         {
           name: "file-assets",
           status: "warn",
-          detail: `${display} could not be read: ${outcome.message}`,
+          detail: doctorMessages.fileAssets.unreadable(
+            display,
+            outcome.message,
+          ),
         },
       ];
     }
@@ -115,7 +113,11 @@ export async function checkFileAssets(
       ([category, vars]): CheckResult => ({
         name: "file-assets",
         status: "warn",
-        detail: `${display} references ${vars.join(", ")} — ${fileAssetsWarnReasons[category]}`,
+        detail: doctorMessages.fileAssets.referencesVars(
+          display,
+          vars.join(", "),
+          fileAssetsWarnReasons[category],
+        ),
       }),
     );
   });

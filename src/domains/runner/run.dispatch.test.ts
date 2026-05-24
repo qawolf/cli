@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
+import { runnerMessages } from "~/core/messages/index.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 
 import {
@@ -82,7 +83,7 @@ describe("flowsRun dispatch", () => {
       deps,
     );
 
-    expect(result).toEqual({ error: "1 flow(s) failed" });
+    expect(result).toEqual({ error: runnerMessages.flowsFailed(1) });
     expect(reporter.onFlowPass).not.toHaveBeenCalled();
     expect(reporter.onFlowFail).toHaveBeenCalledTimes(1);
     expect(reporter.onRunComplete).toHaveBeenCalledTimes(1);
@@ -153,7 +154,7 @@ describe("flowsRun dispatch", () => {
     const result = await flowsRun(makeCtx(), ["/a", "/b", "/c"], flags, deps);
 
     expect(callsOf(deps.runWebFlow).length).toBe(2);
-    expect(result).toEqual({ error: "1 flow(s) failed" });
+    expect(result).toEqual({ error: runnerMessages.flowsFailed(1) });
     const bail = callsOf(reporter.onRunComplete!)[0]?.[0] as {
       summary: RunSummary;
     };
@@ -182,7 +183,7 @@ describe("flowsRun dispatch", () => {
     );
 
     expect(callsOf(deps.runWebFlow).length).toBe(3);
-    expect(result).toEqual({ error: "1 flow(s) failed" });
+    expect(result).toEqual({ error: runnerMessages.flowsFailed(1) });
     const allCall = callsOf(reporter.onRunComplete!)[0]?.[0] as {
       summary: RunSummary;
     };
@@ -214,7 +215,7 @@ describe("flowsRun dispatch", () => {
 
     expect(callsOf(deps.runWebFlow).length).toBe(2);
     expect(reporter.onFlowFail).toHaveBeenCalledTimes(2);
-    expect(result).toEqual({ error: "2 flow(s) failed" });
+    expect(result).toEqual({ error: runnerMessages.flowsFailed(2) });
     expect(reporter.onRunComplete).toHaveBeenCalledTimes(1);
   });
 });

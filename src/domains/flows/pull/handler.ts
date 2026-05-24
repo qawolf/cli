@@ -7,7 +7,6 @@ import {
   type AuthCommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
-import { pluralize } from "~/core/pluralize.js";
 import { manifestFilename } from "~/shell/manifest/io.js";
 import { flowsMessages } from "~/core/messages/index.js";
 import { fetchBundleAndEnvVars } from "./fetchPhase.js";
@@ -19,31 +18,6 @@ export type FlowsPullOptions = {
   readonly out?: string;
   readonly yes?: boolean;
 };
-
-function formatPullSummary(
-  result: {
-    envDir: string;
-    flowCount: number;
-    envVarCount: number;
-    flowsWithTeamStorageRefs: string[];
-  },
-  assetsAbs: string,
-): string {
-  const flows = pluralize(result.flowCount, "flow");
-  const envVars =
-    result.envVarCount === 0
-      ? ""
-      : ` and ${pluralize(result.envVarCount, "environment variable")}`;
-  let summary = `Pulled ${flows}${envVars} into ${result.envDir}`;
-  if (result.flowsWithTeamStorageRefs.length > 0) {
-    const refs = pluralize(result.flowsWithTeamStorageRefs.length, "flow");
-    summary += `\nTeam-storage assets required for ${refs} — populate ${assetsAbs} before running:`;
-    for (const path of result.flowsWithTeamStorageRefs) {
-      summary += `\n  - ${path}`;
-    }
-  }
-  return summary;
-}
 
 type HandleFlowsPullDeps = {
   readonly flowsVersion: string;
@@ -113,7 +87,7 @@ export async function handleFlowsPull(
             }),
         },
       ],
-      (results) => formatPullSummary(results[0], assetsAbs),
+      (results) => flowsMessages.pull.summary(results[0], assetsAbs),
     );
 
     if (ctx.ui.mode === "json") {

@@ -23,14 +23,9 @@ export async function installBrowserList(
   browsers: BrowserName[],
   deps: Pick<InstallBrowsersDeps, "spawn" | "platform" | "playwrightCliPath">,
 ): Promise<void> {
-  const done =
-    browsers.length === 1
-      ? "Installed 1 browser."
-      : `Installed ${browsers.length} browsers.`;
-
   await ctx.ui.withProgress(
     browsers.map((browser) => ({
-      message: `Install ${browser}`,
+      message: installMessages.installingBrowser(browser),
       task: async () => {
         const args = buildArgs(browser, deps.platform);
         const result = await deps.spawn(deps.playwrightCliPath, args);
@@ -39,7 +34,7 @@ export async function installBrowserList(
         }
       },
     })),
-    done,
+    installMessages.browsersInstalled(browsers.length),
   );
 }
 
@@ -81,10 +76,10 @@ function buildArgs(browser: BrowserName, platform: NodeJS.Platform): string[] {
 
 function formatError(browser: BrowserName, result: SpawnResult): string {
   if (result.exitCode < 0) {
-    return `playwright install ${browser} failed: process failed to launch`;
+    return installMessages.playwrightInstallLaunchFailed(browser);
   }
   const detail =
     (result.stderr || result.stdout).split("\n")[0]?.trim() ||
     `exit code ${result.exitCode}`;
-  return `playwright install ${browser} failed: ${detail}`;
+  return installMessages.playwrightInstallFailed(browser, detail);
 }
