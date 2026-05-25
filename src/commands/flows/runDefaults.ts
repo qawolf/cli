@@ -89,6 +89,11 @@ export async function handleFlowsRun(
     .log("flows")
     .debug(`discovered ${pluralize(expandedFiles.length, "flow")}`);
 
+  if (expandedFiles.length === 0) {
+    ctx.ui.info(runnerMessages.noFlowsMatched);
+    return;
+  }
+
   let envDir: string | undefined;
   try {
     envDir = resolvedDeps.resolveUniqueEnvDir(expandedFiles);

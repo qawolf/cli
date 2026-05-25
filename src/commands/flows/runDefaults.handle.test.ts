@@ -65,6 +65,7 @@ function makeCtx(): CommandContext {
         for (const t of tasks) await t.task();
         return [];
       },
+      info: () => {},
       warn: () => {},
     },
   } as unknown as CommandContext;
@@ -102,12 +103,30 @@ describe("handleFlowsRun", () => {
     expect(flowsRunMock).not.toHaveBeenCalled();
   });
 
-  it("skips env setup and calls flowsRun when no envDir", async () => {
+  it("returns early and skips all setup when no flows match", async () => {
+    const result = await handleFlowsRun(
+      makeCtx(),
+      undefined,
+      defaultFlags(),
+      makeDeps(),
+    );
+
+    expect(result).toBeUndefined();
+    expect(ensureFlowDepsMock).not.toHaveBeenCalled();
+    expect(configureTestkitMock).not.toHaveBeenCalled();
+    expect(flowsRunMock).not.toHaveBeenCalled();
+  });
+
+  it("skips ensureFlowDeps when flows found but envDir is undefined", async () => {
+    expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
+    resolveUniqueEnvDirMock.mockReturnValue(undefined);
+
     await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
 
     expect(ensureFlowDepsMock).not.toHaveBeenCalled();
     expect(configureTestkitMock).toHaveBeenCalledTimes(1);
     expect(flowsRunMock).toHaveBeenCalledTimes(1);
+    expect(runWebFlowDepsMock).toHaveBeenCalledTimes(1);
   });
 
   it("calls ensureFlowDeps and configureTestkit with envDir when envDir is present", async () => {
