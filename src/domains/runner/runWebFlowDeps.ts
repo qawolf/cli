@@ -17,8 +17,8 @@ export async function defaultRunWebFlowDeps(
   // expects MinimalVideo | undefined. Runtime values are interchangeable
   // (the runner only reads .path() / .delete() on the video).
   let playwright: Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
-  const playwrightPath = resolveFromEnvDir(cwd, "playwright");
   try {
+    const playwrightPath = resolveFromEnvDir(cwd, "playwright");
     playwright = (await import(playwrightPath)) as Pick<
       RunWebFlowDeps,
       "chromium" | "firefox" | "webkit"

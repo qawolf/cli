@@ -10,8 +10,8 @@ type EmailsModule = {
 // Loaded via resolveFromEnvDir + import() so the binary finds the package in
 // the project's node_modules. Tests always inject deps.
 async function loadSdkDeps(cwd: string): Promise<EmailsModule> {
-  const emailsPath = resolveFromEnvDir(cwd, "@qawolf/emails");
   try {
+    const emailsPath = resolveFromEnvDir(cwd, "@qawolf/emails");
     return (await import(emailsPath)) as EmailsModule;
   } catch (err) {
     throw new Error(
