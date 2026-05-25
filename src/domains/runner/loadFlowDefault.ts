@@ -84,7 +84,8 @@ export async function loadFlowDefault<T>(
     return exported;
   }
 
-  const dataUri = `data:text/javascript,${encodeURIComponent(transformed)}`;
+  const annotated = `${transformed}\n//# sourceURL=${pathToFileURL(flowPath).href}`;
+  const dataUri = `data:text/javascript,${encodeURIComponent(annotated)}`;
   const mod = (await import(dataUri)) as Record<string, unknown>;
   const exported = mod["default"] as T | undefined;
   if (exported === undefined)
