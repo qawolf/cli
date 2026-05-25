@@ -20,6 +20,36 @@ function findFlowsEnvDir(
   }
 }
 
+// Exported for testing. Replaces @qawolf/flows and @qawolf/flows/* specifiers
+// with the URL returned by resolve(specifier). Leaves unresolvable specifiers
+// unchanged (resolve is expected to throw on failure).
+export function rewriteFlowImports(
+  content: string,
+  resolve: (specifier: string) => string,
+): string {
+  return content
+    .replace(
+      /(from|import)\s+(['"])(@qawolf\/flows(?:\/[^'"]+)?)\2/g,
+      (match, keyword: string, quote: string, specifier: string) => {
+        try {
+          return `${keyword} ${quote}${resolve(specifier)}${quote}`;
+        } catch {
+          return match;
+        }
+      },
+    )
+    .replace(
+      /\bimport\s*\(\s*(['"])(@qawolf\/flows(?:\/[^'"]+)?)\1\s*\)/g,
+      (match, quote: string, specifier: string) => {
+        try {
+          return `import(${quote}${resolve(specifier)}${quote})`;
+        } catch {
+          return match;
+        }
+      },
+    );
+}
+
 export async function loadFlowDefault<T>(
   flowPath: string,
   fs: Fs = makeDefaultFs(),
@@ -48,29 +78,11 @@ export async function loadFlowDefault<T>(
   const envDir = findFlowsEnvDir(flowPath, fs);
 
   const transformed = envDir
-    ? content
-        .replace(
-          /(from|import)\s+(['"])(@qawolf\/flows(?:\/[^'"]+)?)\2/g,
-          (match, keyword: string, quote: string, specifier: string) => {
-            try {
-              const resolved = resolveFromEnvDir(envDir, specifier, "esm", fs);
-              return `${keyword} ${quote}${pathToFileURL(resolved).href}${quote}`;
-            } catch {
-              return match;
-            }
-          },
-        )
-        .replace(
-          /\bimport\s*\(\s*(['"])(@qawolf\/flows(?:\/[^'"]+)?)\1\s*\)/g,
-          (match, quote: string, specifier: string) => {
-            try {
-              const resolved = resolveFromEnvDir(envDir, specifier, "esm", fs);
-              return `import(${quote}${pathToFileURL(resolved).href}${quote})`;
-            } catch {
-              return match;
-            }
-          },
-        )
+    ? rewriteFlowImports(
+        content,
+        (specifier) =>
+          pathToFileURL(resolveFromEnvDir(envDir, specifier, "esm", fs)).href,
+      )
     : content;
 
   if (transformed === content) {
