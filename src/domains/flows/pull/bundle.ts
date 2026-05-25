@@ -56,7 +56,7 @@ export async function buildManifest(
   const flows = await Promise.all(
     flowPaths.map(async (rel) => ({
       path: rel,
-      contentHash: await hashFile(join(args.bundleDir, rel)),
+      contentHash: await hashFile(join(args.bundleDir, rel), fs),
     })),
   );
 

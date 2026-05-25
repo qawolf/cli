@@ -14,9 +14,11 @@ export type LoadConfigDeps = {
   importConfig: (path: string) => Promise<unknown>;
 };
 
+const defaultFs = makeDefaultFs();
+
 const defaultLoadConfigDeps: LoadConfigDeps = {
   cwd: () => process.cwd(),
-  fileExists: (path) => makeDefaultFs().existsSync(path),
+  fileExists: (path) => defaultFs.existsSync(path),
   importConfig: async (path): Promise<unknown> =>
     import(pathToFileURL(path).href),
 };

@@ -22,13 +22,15 @@ export async function handleInstallAndroid(
     return { error: installMessages.androidSdkNotFound };
   }
 
+  const fs = makeDefaultFs();
+
   // When envDir is pre-resolved (composite `qawolf install` path), use it
   // directly. Otherwise let installAndroid resolve from matched files.
   const resolveEnvDir = envDir
     ? () => envDir
     : (files: string[]) => {
         try {
-          return resolveUniqueEnvDir(files);
+          return resolveUniqueEnvDir(files, fs);
         } catch {
           return undefined;
         }
@@ -39,7 +41,7 @@ export async function handleInstallAndroid(
     spawn: defaultSpawn,
     arch: process.arch,
     androidHome,
-    checkExists: (path: string) => makeDefaultFs().existsSync(path),
+    checkExists: (path: string) => fs.existsSync(path),
     sdkManagerPath: join(
       androidHome,
       "cmdline-tools",

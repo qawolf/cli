@@ -69,31 +69,6 @@ function pkgDir(envDir: string, ...pkgParts: string[]): string {
   return join(envDir, "node_modules", ...pkgParts);
 }
 
-function readPkgJson(
-  envDir: string,
-  fs: Fs,
-  ...parts: string[]
-): Record<string, unknown> | undefined {
-  try {
-    return JSON.parse(
-      fs.readFileSync(join(pkgDir(envDir, ...parts), "package.json")),
-    ) as Record<string, unknown>;
-  } catch {
-    return undefined;
-  }
-}
-
-// Returns the version field from an installed package's package.json.
-function installedVersion(
-  envDir: string,
-  fs: Fs,
-  ...parts: string[]
-): string | undefined {
-  const pkg = readPkgJson(envDir, fs, ...parts);
-  const v = pkg?.["version"];
-  return typeof v === "string" ? v : undefined;
-}
-
 // Returns the single envDir for all flow files, or undefined if none have a
 // package.json ancestor. Throws if files span multiple packages.
 export function resolveUniqueEnvDir(
@@ -132,6 +107,24 @@ export async function ensureFlowDeps(
   envDir: string,
   fs: Fs = makeDefaultFs(),
 ): Promise<void> {
+  function readPkgJson(
+    ...parts: string[]
+  ): Record<string, unknown> | undefined {
+    try {
+      return JSON.parse(
+        fs.readFileSync(join(pkgDir(envDir, ...parts), "package.json")),
+      ) as Record<string, unknown>;
+    } catch {
+      return undefined;
+    }
+  }
+
+  function getInstalledVersion(...parts: string[]): string | undefined {
+    const pkg = readPkgJson(...parts);
+    const v = pkg?.["version"];
+    return typeof v === "string" ? v : undefined;
+  }
+
   const pm = detectPackageManager(envDir, fs);
 
   if (!fs.existsSync(pkgDir(envDir))) {
@@ -148,7 +141,7 @@ export async function ensureFlowDeps(
   }
 
   const needsInstall = pinnedPackages.some(
-    ([pkg, ver]) => installedVersion(envDir, fs, ...pkg.split("/")) !== ver,
+    ([pkg, ver]) => getInstalledVersion(...pkg.split("/")) !== ver,
   );
   if (!needsInstall) return;
 
