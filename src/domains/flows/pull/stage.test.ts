@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-import { pathExists } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
 import { readManifest } from "~/shell/manifest/io.js";
 import { buildBundle } from "./pull.fixtures.js";
 import { stageBundle } from "./stage.js";
@@ -81,7 +81,9 @@ describe("stageBundle", () => {
 
     expect(result.flowCount).toBe(1);
     expect(await readFile(join(destDir, "a.flow.js"), "utf8")).toBe("// a\n");
-    expect(await pathExists(join(destDir, "garden-x-y-abc123"))).toBe(false);
+    expect(
+      await makeDefaultFs().pathExists(join(destDir, "garden-x-y-abc123")),
+    ).toBe(false);
   });
 
   it("records qawolfCommitSha when the wrapper has a GitHub-style SHA suffix", async () => {

@@ -1,4 +1,5 @@
-import { readFile } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { isNoEntError } from "~/core/errors.js";
@@ -8,7 +9,7 @@ type ConfigureFlowRuntime = (opts: {
   webExpectAttributes?: unknown;
 }) => Promise<void>;
 
-async function findFlowsRunnerPath(flowPath: string): Promise<string> {
+async function findFlowsRunnerPath(flowPath: string, fs: Fs): Promise<string> {
   let dir = path.dirname(flowPath);
   while (true) {
     const pkgPath = path.join(
@@ -19,7 +20,7 @@ async function findFlowsRunnerPath(flowPath: string): Promise<string> {
       "package.json",
     );
     try {
-      const pkg = JSON.parse(await readFile(pkgPath, "utf8")) as {
+      const pkg = JSON.parse(await fs.readFile(pkgPath)) as {
         exports?: Record<string, { import?: string } | string>;
       };
       const entry = pkg.exports?.["./_runner"];
@@ -46,8 +47,8 @@ async function findFlowsRunnerPath(flowPath: string): Promise<string> {
 
 const initCache = new Map<string, Promise<void>>();
 
-async function doInit(flowPath: string): Promise<void> {
-  const runnerPath = await findFlowsRunnerPath(flowPath);
+async function doInit(flowPath: string, fs: Fs): Promise<void> {
+  const runnerPath = await findFlowsRunnerPath(flowPath, fs);
   const mod = (await import(pathToFileURL(runnerPath).href)) as {
     configureFlowRuntime?: ConfigureFlowRuntime;
   };
@@ -65,11 +66,14 @@ async function doInit(flowPath: string): Promise<void> {
   });
 }
 
-export function initFlowRuntime(flowPath: string): Promise<void> {
+export function initFlowRuntime(
+  flowPath: string,
+  fs: Fs = makeDefaultFs(),
+): Promise<void> {
   const startDir = path.dirname(flowPath);
   let p = initCache.get(startDir);
   if (!p) {
-    p = doInit(flowPath);
+    p = doInit(flowPath, fs);
     initCache.set(startDir, p);
   }
   return p;

@@ -3,7 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-import { pathExists } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import {
   buildManifest,
   flattenSingleWrapper,
@@ -31,9 +32,15 @@ describe("flattenSingleWrapper", () => {
     const wrapperName = await flattenSingleWrapper(workDir);
 
     expect(wrapperName).toBe("wrapper");
-    expect(await pathExists(join(workDir, "a.flow.ts"))).toBe(true);
-    expect(await pathExists(join(workDir, "nested/b.flow.ts"))).toBe(true);
-    expect(await pathExists(join(workDir, "wrapper"))).toBe(false);
+    expect(await makeDefaultFs().pathExists(join(workDir, "a.flow.ts"))).toBe(
+      true,
+    );
+    expect(
+      await makeDefaultFs().pathExists(join(workDir, "nested/b.flow.ts")),
+    ).toBe(true);
+    expect(await makeDefaultFs().pathExists(join(workDir, "wrapper"))).toBe(
+      false,
+    );
   });
 
   it("returns undefined and leaves dir alone when it contains multiple entries", async () => {
@@ -41,19 +48,35 @@ describe("flattenSingleWrapper", () => {
     await mkdir(join(workDir, "nested"));
 
     expect(await flattenSingleWrapper(workDir)).toBeUndefined();
-    expect(await pathExists(join(workDir, "a.flow.ts"))).toBe(true);
-    expect(await pathExists(join(workDir, "nested"))).toBe(true);
+    expect(await makeDefaultFs().pathExists(join(workDir, "a.flow.ts"))).toBe(
+      true,
+    );
+    expect(await makeDefaultFs().pathExists(join(workDir, "nested"))).toBe(
+      true,
+    );
   });
 
   it("returns undefined when the single entry is a file", async () => {
     await writeFile(join(workDir, "a.flow.ts"), "// a", "utf8");
 
     expect(await flattenSingleWrapper(workDir)).toBeUndefined();
-    expect(await pathExists(join(workDir, "a.flow.ts"))).toBe(true);
+    expect(await makeDefaultFs().pathExists(join(workDir, "a.flow.ts"))).toBe(
+      true,
+    );
   });
 
   it("returns undefined for an empty dir", async () => {
     expect(await flattenSingleWrapper(workDir)).toBeUndefined();
+  });
+
+  it("should move directory contents and remove wrapper via injected memFs", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir("/root/wrapper", { recursive: true });
+    await memFs.writeFile("/root/wrapper/a.flow.ts", "// a");
+    const name = await flattenSingleWrapper("/root", memFs);
+    expect(name).toBe("wrapper");
+    expect(await memFs.pathExists("/root/a.flow.ts")).toBe(true);
+    expect(await memFs.pathExists("/root/wrapper")).toBe(false);
   });
 });
 

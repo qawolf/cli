@@ -1,4 +1,4 @@
-import { pathExists, rename } from "~/shell/fs.js";
+import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import { writeManifest } from "~/shell/manifest/io.js";
 import {
   buildManifest,
@@ -34,20 +34,24 @@ type StageBundleResult = {
 
 export async function stageBundle(
   args: StageBundleArgs,
+  fs: Fs = makeDefaultFs(),
 ): Promise<StageBundleResult> {
   const registry = createTempPathRegistry();
   const tmpDir = mintTempPath(args.destAbs, "pull", registry);
 
   try {
-    await extractTarGz(args.tmpArchive, tmpDir);
-    const wrapperName = await flattenSingleWrapper(tmpDir);
+    await extractTarGz(args.tmpArchive, tmpDir, {}, fs);
+    const wrapperName = await flattenSingleWrapper(tmpDir, fs);
     // Sample mtime before any local rewrite so qawolfCommittedAt reflects
     // the upstream commit time, not our write time.
-    const qawolfCommittedAt = await sampleQawolfCommittedAt(tmpDir);
+    const qawolfCommittedAt = await sampleQawolfCommittedAt(tmpDir, fs);
     // Rewrite literal /home/wolf/team-storage/ references in source files to
     // ${process.env.TEAM_STORAGE_DIR}/. Must run before buildManifest so the
     // content hashes match what's actually on disk.
-    const { flowsWithTeamStorageRefs } = await applyTeamStorageRewrite(tmpDir);
+    const { flowsWithTeamStorageRefs } = await applyTeamStorageRewrite(
+      tmpDir,
+      fs,
+    );
     // TEAM_STORAGE_DIR is overridden locally: the API ships the runner mount
     // path (/home/wolf/team-storage) which doesn't exist on this machine. The
     // rewriter has already normalized literal mount-path references to use
@@ -57,27 +61,30 @@ export async function stageBundle(
       ...args.envVars,
       TEAM_STORAGE_DIR: args.assetsAbs,
     };
-    await writeEnvFile(tmpDir, effectiveEnvVars);
-    const manifest = await buildManifest({
-      envId: args.envId,
-      bundleDir: tmpDir,
-      cliFlowsVersion: args.cliFlowsVersion,
-      now: args.now,
-      envVarsFetchedAt: args.envVarsFetchedAt,
-      wrapperName,
-      qawolfCommittedAt,
-    });
-    await writeManifest(tmpDir, manifest);
+    await writeEnvFile(tmpDir, effectiveEnvVars, fs);
+    const manifest = await buildManifest(
+      {
+        envId: args.envId,
+        bundleDir: tmpDir,
+        cliFlowsVersion: args.cliFlowsVersion,
+        now: args.now,
+        envVarsFetchedAt: args.envVarsFetchedAt,
+        wrapperName,
+        qawolfCommittedAt,
+      },
+      fs,
+    );
+    await writeManifest(tmpDir, manifest, fs);
 
     let oldDir: string | undefined;
     try {
-      if (await pathExists(args.destAbs)) {
+      if (await fs.pathExists(args.destAbs)) {
         oldDir = mintTempPath(args.destAbs, "old", registry);
-        await rename(args.destAbs, oldDir);
+        await fs.rename(args.destAbs, oldDir);
       }
-      await rename(tmpDir, args.destAbs);
+      await fs.rename(tmpDir, args.destAbs);
     } catch (err) {
-      if (oldDir) await rename(oldDir, args.destAbs).catch(() => {});
+      if (oldDir) await fs.rename(oldDir, args.destAbs).catch(() => {});
       throw err;
     }
 

@@ -1,4 +1,4 @@
-import { existsSync } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -16,7 +16,7 @@ export type LoadConfigDeps = {
 
 const defaultLoadConfigDeps: LoadConfigDeps = {
   cwd: () => process.cwd(),
-  fileExists: existsSync,
+  fileExists: (path) => makeDefaultFs().existsSync(path),
   importConfig: async (path): Promise<unknown> =>
     import(pathToFileURL(path).href),
 };

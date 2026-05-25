@@ -2,7 +2,8 @@ import { join, relative } from "node:path";
 
 import { hashFile } from "~/shell/manifest/io.js";
 import type { Manifest } from "~/shell/manifest/types.js";
-import { readdir, rename, rmdir, stat } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 
 // If `dir` contains exactly one entry and that entry is a directory, promote
 // its contents up one level and return the wrapper directory's name. Lets
@@ -10,19 +11,20 @@ import { readdir, rename, rmdir, stat } from "~/shell/fs.js";
 // so the bundle's source commit can be recorded in the manifest.
 export async function flattenSingleWrapper(
   dir: string,
+  fs: Fs = makeDefaultFs(),
 ): Promise<string | undefined> {
-  const entries = await readdir(dir);
+  const entries = await fs.readdir(dir);
   if (entries.length !== 1) return undefined;
   const innerName = entries[0];
   if (!innerName) return undefined;
   const inner = join(dir, innerName);
-  const innerStat = await stat(inner);
+  const innerStat = await fs.stat(inner);
   if (!innerStat.isDirectory()) return undefined;
 
-  for (const e of await readdir(inner)) {
-    await rename(join(inner, e), join(dir, e));
+  for (const e of await fs.readdir(inner)) {
+    await fs.rename(join(inner, e), join(dir, e));
   }
-  await rmdir(inner);
+  await fs.rm(inner, { recursive: true });
   return innerName;
 }
 
@@ -38,16 +40,19 @@ function extractQawolfCommitSha(
 
 const flowExtensions = [".flow.ts", ".flow.js"];
 
-export async function buildManifest(args: {
-  envId: string;
-  bundleDir: string;
-  cliFlowsVersion: string;
-  now: Date;
-  envVarsFetchedAt: Date | undefined;
-  wrapperName: string | undefined;
-  qawolfCommittedAt: string | undefined;
-}): Promise<Manifest> {
-  const flowPaths = await walkForFlows(args.bundleDir);
+export async function buildManifest(
+  args: {
+    envId: string;
+    bundleDir: string;
+    cliFlowsVersion: string;
+    now: Date;
+    envVarsFetchedAt: Date | undefined;
+    wrapperName: string | undefined;
+    qawolfCommittedAt: string | undefined;
+  },
+  fs: Fs = makeDefaultFs(),
+): Promise<Manifest> {
+  const flowPaths = await walkForFlows(args.bundleDir, fs);
   const flows = await Promise.all(
     flowPaths.map(async (rel) => ({
       path: rel,
@@ -67,9 +72,9 @@ export async function buildManifest(args: {
   };
 }
 
-async function walkForFlows(root: string): Promise<string[]> {
+async function walkForFlows(root: string, fs: Fs): Promise<string[]> {
   const out: string[] = [];
-  await walk(root, root, out);
+  await walk(root, root, out, fs);
   return out.sort();
 }
 
@@ -77,12 +82,13 @@ async function walk(
   current: string,
   root: string,
   out: string[],
+  fs: Fs,
 ): Promise<void> {
-  const entries = await readdir(current, { withFileTypes: true });
+  const entries = await fs.readdirWithTypes(current);
   for (const e of entries) {
     const abs = join(current, e.name);
     if (e.isDirectory()) {
-      await walk(abs, root, out);
+      await walk(abs, root, out, fs);
     } else if (
       e.isFile() &&
       flowExtensions.some((ext) => e.name.endsWith(ext))
@@ -98,9 +104,10 @@ async function walk(
 // rewrite pass — otherwise the mtime reflects our write, not the source.
 export async function sampleQawolfCommittedAt(
   bundleDir: string,
+  fs: Fs = makeDefaultFs(),
 ): Promise<string | undefined> {
-  const flowPaths = await walkForFlows(bundleDir);
+  const flowPaths = await walkForFlows(bundleDir, fs);
   const sample = flowPaths[0];
   if (!sample) return undefined;
-  return (await stat(join(bundleDir, sample))).mtime.toISOString();
+  return (await fs.stat(join(bundleDir, sample))).mtime.toISOString();
 }

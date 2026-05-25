@@ -1,5 +1,3 @@
-import { readFile } from "node:fs/promises";
-
 import packageJson from "../../../package.json" with { type: "json" };
 
 import { avdNameForTarget } from "~/core/androidTargets.js";
@@ -15,7 +13,7 @@ import {
   type CommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
-import { existsSync } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 
@@ -55,6 +53,8 @@ export async function handleDoctor(
     playwrightCliPath = undefined;
   }
 
+  const fs = makeDefaultFs();
+
   const resolved = await resolveApiKey(ctx.configDir);
 
   const requiredAvds = await collectRequiredAvds(flowFiles);
@@ -74,12 +74,12 @@ export async function handleDoctor(
     enginesNode: packageJson.engines.node,
     processVersion: process.version,
     flowFiles,
-    readFile: (path) => readFile(path, "utf-8"),
+    readFile: (path) => fs.readFile(path),
     cwd,
     playwrightCliPath,
     runAndroidChecks,
     androidHome: process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"],
-    checkExists: existsSync,
+    checkExists: (path: string) => fs.existsSync(path),
     envDir,
     resolveAppiumBin,
     requiredAvds,
