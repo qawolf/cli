@@ -28,6 +28,19 @@ import { resolveFromEnvDir } from "~/shell/resolveExport.js";
 
 type ShimMarker = { _qawolf_version: string; _qawolf_format: string };
 
+// Uses a structural type instead of `typeof Bun.build` to avoid the
+// no-restricted-globals lint rule. Injected in tests — globalThis.Bun is
+// read-only in the Bun runtime and cannot be reassigned.
+export type BuildFn = (config: {
+  entrypoints: string[];
+  target?: string;
+  format?: string;
+}) => Promise<{
+  success: boolean;
+  outputs: Blob[];
+  logs: { message: string }[];
+}>;
+
 // Returns the shim marker if shimDir is a qawolf-managed shim, undefined otherwise.
 // A directory without the marker is a real package — must not be touched.
 function readShimMarker(shimDir: string, fs: Fs): ShimMarker | undefined {
@@ -50,6 +63,8 @@ function readShimMarker(shimDir: string, fs: Fs): ShimMarker | undefined {
 export async function shimFlowsDeps(
   envDir: string,
   fs: Fs = makeDefaultFs(),
+  // undefined = auto-detect from globalThis.Bun; false = Node.js mode (no Bun)
+  bunBuild?: BuildFn | false,
 ): Promise<void> {
   const flowsDir = join(envDir, "node_modules", "@qawolf", "flows");
   if (!fs.existsSync(flowsDir)) return;
@@ -67,16 +82,13 @@ export async function shimFlowsDeps(
   // Access Bun.build via globalThis — works in both the compiled binary (Bun
   // available) and the Node.js CLI build (Bun absent). Uses a structural type
   // instead of `typeof Bun.build` to avoid the no-restricted-globals lint rule.
-  type BuildFn = (config: {
-    entrypoints: string[];
-    target?: string;
-    format?: string;
-  }) => Promise<{
-    success: boolean;
-    outputs: Blob[];
-    logs: { message: string }[];
-  }>;
-  const bun = (globalThis as { Bun?: { build: BuildFn } }).Bun;
+  // bunBuild is injected in tests (globalThis.Bun is read-only in the runtime).
+  const bun =
+    bunBuild !== undefined
+      ? bunBuild !== false
+        ? { build: bunBuild }
+        : undefined
+      : (globalThis as { Bun?: { build: BuildFn } }).Bun;
   // Node.js resolves bare specifiers correctly; shimming is unnecessary and
   // a CJS require() fallback for ESM-only packages would break named imports.
   // But stale Bun-built CJS shims from a prior binary run must be removed —
