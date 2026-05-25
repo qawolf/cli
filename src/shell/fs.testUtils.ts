@@ -1,5 +1,6 @@
-import type { Fs } from "./fs.js";
+import type { FsDirent, Fs } from "./fs.js";
 import { dirname } from "node:path";
+import { Readable } from "node:stream";
 
 function throwNoEntError(
   path: string,
@@ -56,7 +57,7 @@ export function makeMemoryFs(): Fs {
               files.delete(k);
             }
           }
-          for (const k of dirs) {
+          for (const k of Array.from(dirs)) {
             if (k === path || k.startsWith(prefix)) {
               dirs.delete(k);
             }
@@ -84,13 +85,112 @@ export function makeMemoryFs(): Fs {
       if (!files.has(path)) throwNoEntError(path, "unlink");
       files.delete(path);
     },
-    async writeFile(path, data) {
+    async writeFile(path, data, _options) {
       const parent = dirname(path);
       if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "open");
       files.set(
         path,
         typeof data === "string" ? textEncoder.encode(data) : data,
       );
+    },
+    readdir(path) {
+      if (!dirs.has(path)) throwNoEntError(path, "open");
+      const prefix = path + "/";
+      const names = new Set<string>();
+      for (const f of files.keys()) {
+        if (f.startsWith(prefix)) {
+          const segment = f.slice(prefix.length).split("/")[0];
+          if (segment) names.add(segment);
+        }
+      }
+      for (const d of dirs) {
+        if (d.startsWith(prefix)) {
+          const rel = d.slice(prefix.length);
+          if (!rel.includes("/")) names.add(rel);
+        }
+      }
+      return Promise.resolve([...names]);
+    },
+    readdirWithTypes(path) {
+      if (!dirs.has(path)) throwNoEntError(path, "open");
+      const prefix = path + "/";
+      const names = new Set<string>();
+      for (const f of files.keys()) {
+        if (f.startsWith(prefix)) {
+          const segment = f.slice(prefix.length).split("/")[0];
+          if (segment) names.add(segment);
+        }
+      }
+      for (const d of dirs) {
+        if (d.startsWith(prefix)) {
+          const rel = d.slice(prefix.length);
+          if (!rel.includes("/")) names.add(rel);
+        }
+      }
+      return Promise.resolve<FsDirent[]>(
+        [...names].map((name) => ({
+          name,
+          isFile: () => files.has(`${path}/${name}`),
+          isDirectory: () => dirs.has(`${path}/${name}`),
+        })),
+      );
+    },
+    rename(oldPath, newPath) {
+      if (files.has(oldPath)) {
+        const parent = dirname(newPath);
+        if (parent !== "/" && !dirs.has(parent))
+          throwNoEntError(newPath, "open");
+        files.set(newPath, files.get(oldPath)!);
+        files.delete(oldPath);
+        return Promise.resolve();
+      }
+      if (dirs.has(oldPath)) {
+        const parent = dirname(newPath);
+        if (parent !== "/" && !dirs.has(parent))
+          throwNoEntError(newPath, "open");
+        const oldPrefix = oldPath + "/";
+        const newPrefix = newPath + "/";
+        dirs.delete(oldPath);
+        dirs.add(newPath);
+        for (const key of Array.from(files.keys())) {
+          if (key.startsWith(oldPrefix)) {
+            files.set(newPrefix + key.slice(oldPrefix.length), files.get(key)!);
+            files.delete(key);
+          }
+        }
+        for (const d of Array.from(dirs)) {
+          if (d.startsWith(oldPrefix)) {
+            dirs.delete(d);
+            dirs.add(newPrefix + d.slice(oldPrefix.length));
+          }
+        }
+        return Promise.resolve();
+      }
+      throwNoEntError(oldPath, "open");
+    },
+    utimes(_path, _atime, _mtime) {
+      return Promise.resolve();
+    },
+    createReadStream(path) {
+      const data = files.get(path);
+      if (data === undefined) throwNoEntError(path, "open");
+      return Readable.from([data]);
+    },
+    existsSync(path) {
+      return files.has(path) || dirs.has(path);
+    },
+    readFileSync(path) {
+      const data = files.get(path);
+      if (data === undefined) throwNoEntError(path, "open");
+      return textDecoder.decode(data);
+    },
+    mkdirSync(path, opts) {
+      if (!opts?.recursive) {
+        const parent = dirname(path);
+        if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "mkdir");
+      }
+      dirs.add(path);
+      if (opts?.recursive) addParents(path);
     },
   };
 }

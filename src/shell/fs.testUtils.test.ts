@@ -1,3 +1,4 @@
+// oxlint-disable eslint/max-lines -- test file covers all makeMemoryFs methods; splitting would fragment related fixtures
 import { describe, expect, it } from "bun:test";
 import { isNoEntError } from "~/core/errors.js";
 import { makeMemoryFs } from "./fs.testUtils.js";
@@ -138,5 +139,198 @@ describe("makeMemoryFs", () => {
     expect(await fs.pathExists("/x/y/z")).toBe(true);
     expect(await fs.pathExists("/x/y")).toBe(true);
     expect(await fs.pathExists("/x")).toBe(true);
+  });
+
+  // readdir
+  it("should return direct child names when directory exists", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/a");
+    await fs.writeFile("/a/f.txt", "");
+    await fs.mkdir("/a/sub");
+    const entries = await fs.readdir("/a");
+    expect(entries.sort()).toEqual(["f.txt", "sub"]);
+  });
+
+  it("should throw ENOENT when directory does not exist", async () => {
+    const fs = makeMemoryFs();
+    let caughtError: unknown;
+    try {
+      await fs.readdir("/missing");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(isNoEntError(caughtError)).toBe(true);
+  });
+
+  // readdirWithTypes
+  it("should return FsDirent with isFile true for files", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/d");
+    await fs.writeFile("/d/a.txt", "");
+    const entries = await fs.readdirWithTypes("/d");
+    const f = entries.find((e) => e.name === "a.txt");
+    expect(f?.isFile()).toBe(true);
+    expect(f?.isDirectory()).toBe(false);
+  });
+
+  it("should return FsDirent with isDirectory true for subdirs", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/p");
+    await fs.mkdir("/p/sub");
+    const entries = await fs.readdirWithTypes("/p");
+    const d = entries.find((e) => e.name === "sub");
+    expect(d?.isDirectory()).toBe(true);
+    expect(d?.isFile()).toBe(false);
+  });
+
+  // rename
+  it("should move a file to the new path", async () => {
+    const fs = makeMemoryFs();
+    await fs.writeFile("/src.txt", "hello");
+    await fs.rename("/src.txt", "/dst.txt");
+    expect(await fs.readFile("/dst.txt")).toBe("hello");
+    expect(await fs.pathExists("/src.txt")).toBe(false);
+  });
+
+  it("should move a directory and its children to the new path", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/src", { recursive: true });
+    await fs.writeFile("/src/a.txt", "hello");
+    await fs.mkdir("/src/sub");
+    await fs.writeFile("/src/sub/b.txt", "world");
+    await fs.mkdir("/dst-parent");
+    await fs.rename("/src", "/dst-parent/dst");
+    expect(await fs.readFile("/dst-parent/dst/a.txt")).toBe("hello");
+    expect(await fs.readFile("/dst-parent/dst/sub/b.txt")).toBe("world");
+    expect(await fs.pathExists("/src")).toBe(false);
+    expect(await fs.pathExists("/src/a.txt")).toBe(false);
+  });
+
+  it("should throw ENOENT when renaming a missing path", async () => {
+    const fs = makeMemoryFs();
+    let caughtError: unknown;
+    try {
+      await fs.rename("/nope.txt", "/dst.txt");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(isNoEntError(caughtError)).toBe(true);
+  });
+
+  it("should throw ENOENT when renaming a directory to a non-existent parent", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/src");
+    let caughtError: unknown;
+    try {
+      await fs.rename("/src", "/missing/dst");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(isNoEntError(caughtError)).toBe(true);
+  });
+
+  // existsSync
+  it("should return true for an existing file", async () => {
+    const fs = makeMemoryFs();
+    await fs.writeFile("/f.txt", "");
+    expect(fs.existsSync("/f.txt")).toBe(true);
+  });
+
+  it("should return false for a missing path", () => {
+    const fs = makeMemoryFs();
+    expect(fs.existsSync("/nowhere")).toBe(false);
+  });
+
+  // readFileSync
+  it("should return file content as string", async () => {
+    const fs = makeMemoryFs();
+    await fs.writeFile("/f.txt", "content");
+    expect(fs.readFileSync("/f.txt")).toBe("content");
+  });
+
+  it("should throw ENOENT when file does not exist", () => {
+    const fs = makeMemoryFs();
+    let caughtError: unknown;
+    try {
+      fs.readFileSync("/missing.txt");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(isNoEntError(caughtError)).toBe(true);
+  });
+
+  // mkdirSync
+  it("should create a directory synchronously", () => {
+    const fs = makeMemoryFs();
+    fs.mkdirSync("/d");
+    expect(fs.existsSync("/d")).toBe(true);
+  });
+
+  it("should throw ENOENT for non-recursive when parent does not exist", () => {
+    const fs = makeMemoryFs();
+    let caughtError: unknown;
+    try {
+      fs.mkdirSync("/a/b/c");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(isNoEntError(caughtError)).toBe(true);
+  });
+
+  it("should create all ancestors when recursive is true", () => {
+    const fs = makeMemoryFs();
+    fs.mkdirSync("/a/b/c", { recursive: true });
+    expect(fs.existsSync("/a")).toBe(true);
+    expect(fs.existsSync("/a/b")).toBe(true);
+    expect(fs.existsSync("/a/b/c")).toBe(true);
+  });
+
+  // createReadStream
+  it("should stream file content through data events", async () => {
+    const fs = makeMemoryFs();
+    await fs.writeFile("/f.txt", "hello");
+    const stream = fs.createReadStream("/f.txt");
+    const chunks: Buffer[] = [];
+    await new Promise<void>((resolve, reject) => {
+      stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+      stream.on("end", resolve);
+      stream.on("error", reject);
+    });
+    expect(Buffer.concat(chunks).toString()).toBe("hello");
+  });
+
+  it("should throw ENOENT when file does not exist", () => {
+    const fs = makeMemoryFs();
+    let caughtError: unknown;
+    try {
+      fs.createReadStream("/missing.txt");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(isNoEntError(caughtError)).toBe(true);
+  });
+
+  // utimes
+  it("should resolve without error", async () => {
+    const fs = makeMemoryFs();
+    await fs.writeFile("/f.txt", "");
+    expect(
+      fs.utimes("/f.txt", new Date(), new Date()),
+    ).resolves.toBeUndefined();
+  });
+
+  // mkdir with mode option
+  it("should create directory when mode option is provided", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/d", { recursive: true, mode: 0o700 });
+    expect(await fs.pathExists("/d")).toBe(true);
+  });
+
+  // writeFile with options
+  it("should write file when mode option is provided", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/d");
+    await fs.writeFile("/d/f.txt", "data", { mode: 0o600 });
+    expect(await fs.readFile("/d/f.txt")).toBe("data");
   });
 });
