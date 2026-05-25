@@ -24,53 +24,54 @@ export async function loadFlowDefault<T>(
   flowPath: string,
   fs: Fs = makeDefaultFs(),
 ): Promise<T> {
-  const content = await fs.readFile(flowPath);
-  const envDir = findFlowsEnvDir(flowPath, fs);
+  // process.env.QAWOLF_COMPILED is injected via --define at binary build time
+  // (see build:binary in package.json). Undefined in bun run / bun test dev mode.
+  const isCompiledBinary = process.env.QAWOLF_COMPILED === "true";
+
+  // Non-compiled path: direct import, no file read needed.
+  if (!isCompiledBinary) {
+    const mod = (await import(pathToFileURL(flowPath).href)) as Record<
+      string,
+      unknown
+    >;
+    const exported = mod["default"] as T | undefined;
+    if (exported === undefined)
+      throw new Error(runnerMessages.noDefaultExport(flowPath));
+    return exported;
+  }
 
   // In compiled Bun binaries, dynamically imported external files cannot resolve
   // bare specifiers — this is a Bun binary limitation separate from the scoped-
   // package traversal bug. Transform @qawolf/flows/* imports to absolute file://
   // paths so Bun loads them directly without any resolution step.
-  //
-  // process.env.QAWOLF_COMPILED is injected via --define at binary build time
-  // (see build:binary in package.json). Undefined in bun run / bun test dev mode.
-  const isCompiledBinary = process.env.QAWOLF_COMPILED === "true";
-  const transformed =
-    isCompiledBinary && envDir
-      ? content
-          .replace(
-            /(from|import)\s+(['"])(@qawolf\/flows\/[^'"]+)\2/g,
-            (match, keyword: string, quote: string, specifier: string) => {
-              try {
-                const resolved = resolveFromEnvDir(
-                  envDir,
-                  specifier,
-                  "esm",
-                  fs,
-                );
-                return `${keyword} ${quote}${pathToFileURL(resolved).href}${quote}`;
-              } catch {
-                return match;
-              }
-            },
-          )
-          .replace(
-            /\bimport\s*\(\s*(['"])(@qawolf\/flows\/[^'"]+)\1\s*\)/g,
-            (match, quote: string, specifier: string) => {
-              try {
-                const resolved = resolveFromEnvDir(
-                  envDir,
-                  specifier,
-                  "esm",
-                  fs,
-                );
-                return `import(${quote}${pathToFileURL(resolved).href}${quote})`;
-              } catch {
-                return match;
-              }
-            },
-          )
-      : content;
+  const content = await fs.readFile(flowPath);
+  const envDir = findFlowsEnvDir(flowPath, fs);
+
+  const transformed = envDir
+    ? content
+        .replace(
+          /(from|import)\s+(['"])(@qawolf\/flows\/[^'"]+)\2/g,
+          (match, keyword: string, quote: string, specifier: string) => {
+            try {
+              const resolved = resolveFromEnvDir(envDir, specifier, "esm", fs);
+              return `${keyword} ${quote}${pathToFileURL(resolved).href}${quote}`;
+            } catch {
+              return match;
+            }
+          },
+        )
+        .replace(
+          /\bimport\s*\(\s*(['"])(@qawolf\/flows\/[^'"]+)\1\s*\)/g,
+          (match, quote: string, specifier: string) => {
+            try {
+              const resolved = resolveFromEnvDir(envDir, specifier, "esm", fs);
+              return `import(${quote}${pathToFileURL(resolved).href}${quote})`;
+            } catch {
+              return match;
+            }
+          },
+        )
+    : content;
 
   if (transformed === content) {
     const mod = (await import(pathToFileURL(flowPath).href)) as Record<
