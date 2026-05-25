@@ -157,6 +157,14 @@ describe("makeMemoryFs", () => {
   });
 
   // readdir
+  it("should return top-level entries when listing root", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/a");
+    await fs.writeFile("/b.txt", "");
+    const entries = await fs.readdir("/");
+    expect(entries.sort()).toEqual(["a", "b.txt"]);
+  });
+
   it("should return direct child names when directory exists", async () => {
     const fs = makeMemoryFs();
     await fs.mkdir("/a");
@@ -178,6 +186,19 @@ describe("makeMemoryFs", () => {
   });
 
   // readdirWithTypes
+  it("should return correct types when listing root", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/dir");
+    await fs.writeFile("/f.txt", "");
+    const entries = await fs.readdirWithTypes("/");
+    const d = entries.find((e) => e.name === "dir");
+    const f = entries.find((e) => e.name === "f.txt");
+    expect(d?.isDirectory()).toBe(true);
+    expect(d?.isFile()).toBe(false);
+    expect(f?.isFile()).toBe(true);
+    expect(f?.isDirectory()).toBe(false);
+  });
+
   it("should return FsDirent with isFile true for files", async () => {
     const fs = makeMemoryFs();
     await fs.mkdir("/d");

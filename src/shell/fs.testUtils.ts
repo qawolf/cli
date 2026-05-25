@@ -14,9 +14,13 @@ function throwNoEntError(
 
 export function makeMemoryFs(): Fs {
   const files = new Map<string, Uint8Array>();
-  const dirs = new Set<string>();
+  const dirs = new Set<string>(["/"]);
   const textEncoder = new TextEncoder();
   const textDecoder = new TextDecoder();
+
+  function joinPath(dir: string, name: string) {
+    return dir === "/" ? `/${name}` : `${dir}/${name}`;
+  }
 
   function addParents(filePath: string) {
     let dir = dirname(filePath);
@@ -105,7 +109,7 @@ export function makeMemoryFs(): Fs {
     },
     readdir(path) {
       if (!dirs.has(path)) throwNoEntError(path, "open");
-      const prefix = path + "/";
+      const prefix = path === "/" ? "/" : path + "/";
       const names = new Set<string>();
       for (const f of files.keys()) {
         if (f.startsWith(prefix)) {
@@ -114,7 +118,7 @@ export function makeMemoryFs(): Fs {
         }
       }
       for (const d of dirs) {
-        if (d.startsWith(prefix)) {
+        if (d !== path && d.startsWith(prefix)) {
           const rel = d.slice(prefix.length);
           if (!rel.includes("/")) names.add(rel);
         }
@@ -123,7 +127,7 @@ export function makeMemoryFs(): Fs {
     },
     readdirWithTypes(path) {
       if (!dirs.has(path)) throwNoEntError(path, "open");
-      const prefix = path + "/";
+      const prefix = path === "/" ? "/" : path + "/";
       const names = new Set<string>();
       for (const f of files.keys()) {
         if (f.startsWith(prefix)) {
@@ -132,7 +136,7 @@ export function makeMemoryFs(): Fs {
         }
       }
       for (const d of dirs) {
-        if (d.startsWith(prefix)) {
+        if (d !== path && d.startsWith(prefix)) {
           const rel = d.slice(prefix.length);
           if (!rel.includes("/")) names.add(rel);
         }
@@ -140,8 +144,8 @@ export function makeMemoryFs(): Fs {
       return Promise.resolve<FsDirent[]>(
         [...names].map((name) => ({
           name,
-          isFile: () => files.has(`${path}/${name}`),
-          isDirectory: () => dirs.has(`${path}/${name}`),
+          isFile: () => files.has(joinPath(path, name)),
+          isDirectory: () => dirs.has(joinPath(path, name)),
         })),
       );
     },
