@@ -5,13 +5,23 @@ import { flowsMessages, runnerMessages } from "~/core/messages/index.js";
 import type { BrowserName } from "~/core/types.js";
 
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
-import { flowBasename, targetToBrowser } from "~/core/flowMeta.js";
-import { expandPatterns, peekFlowMeta } from "./expand.js";
+import {
+  flowBasename,
+  targetToBrowser,
+  type PeekFlowMetaFn,
+} from "~/core/flowMeta.js";
+import {
+  expandPatterns as defaultExpandPatterns,
+  makePeekFlowMeta,
+} from "./expand.js";
 
 export type FlowsListDeps = {
   readonly cwd: string;
-  readonly expandPatterns: typeof expandPatterns;
-  readonly peekFlowMeta: typeof peekFlowMeta;
+  readonly expandPatterns: (
+    patterns: string[],
+    cwd: string,
+  ) => Promise<string[]>;
+  readonly peekFlowMeta: PeekFlowMetaFn;
 };
 
 type FlowsListItem = {
@@ -67,10 +77,12 @@ export function handleFlowsList(
   ctx: CommandContext,
   pattern: string | undefined,
 ): Promise<CommandResult> {
+  const { fs } = ctx;
   return flowsList(ctx, pattern, {
     cwd: process.cwd(),
-    expandPatterns,
-    peekFlowMeta,
+    expandPatterns: (patterns, cwd) =>
+      defaultExpandPatterns(patterns, cwd, undefined, fs),
+    peekFlowMeta: makePeekFlowMeta(fs),
   });
 }
 

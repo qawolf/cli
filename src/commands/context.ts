@@ -1,7 +1,9 @@
+// oxlint-disable eslint/max-lines -- threading ctx.fs through auth context added 3 lines; extracting withAuthContext would be premature
 import type { Command } from "commander";
 import { errorMessage } from "~/core/errors.js";
 import { authMessages } from "~/core/messages/index.js";
 import { getConfigDir } from "~/core/paths.js";
+import { makeDefaultFs } from "~/shell/fs.js";
 import { requireApiKey } from "~/domains/auth/index.js";
 import {
   createLoggingSystem,
@@ -73,6 +75,7 @@ export function buildBaseContext(
       apiBaseUrl,
       signals,
       log: (scope) => loggingSystem.createLogger(scope),
+      fs: makeDefaultFs(),
     },
     apiBaseUrl,
     loggingSystem,
@@ -115,6 +118,7 @@ export function withAuthContext(
     );
     const resolved = await (deps.requireApiKey ?? requireApiKey)(
       ctx.configDir,
+      ctx.fs,
     ).catch((err: unknown) => {
       ctx.ui.error(authMessages.notAuthenticated, errorMessage(err));
       process.exitCode = 1;

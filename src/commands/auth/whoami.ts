@@ -18,7 +18,10 @@ export async function handleWhoami(
 
   let resolved: Awaited<ReturnType<typeof requireApiKey>> | undefined;
   try {
-    resolved = await (deps.requireApiKey ?? requireApiKey)(ctx.configDir);
+    resolved = await (deps.requireApiKey ?? requireApiKey)(
+      ctx.configDir,
+      ctx.fs,
+    );
   } catch (err: unknown) {
     if (ctx.ui.mode === "human") {
       ctx.ui.note(errorMessage(err), authMessages.whoamiFailed);

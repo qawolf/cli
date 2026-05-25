@@ -16,7 +16,7 @@ export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
     return { error: "non-interactive" };
   }
 
-  const existing = await resolveApiKey(ctx.configDir);
+  const existing = await resolveApiKey(ctx.configDir, ctx.fs);
   if (existing) {
     const reauth = await ctx.ui.confirm(authMessages.login.reAuthPrompt);
     if (!reauth.ok || !reauth.value) {
@@ -58,7 +58,7 @@ export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
       },
       {
         message: authMessages.storing,
-        task: async () => saveApiKey(ctx.configDir, result.value),
+        task: async () => saveApiKey(ctx.configDir, result.value, ctx.fs),
       },
     ],
     ([, saveResult]) => {
