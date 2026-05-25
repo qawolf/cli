@@ -1,3 +1,4 @@
+// oxlint-disable eslint/max-lines -- readShimMarker helper is colocated with shimFlowsDeps; extracting it would split tightly coupled logic
 import { join } from "node:path";
 
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
@@ -24,6 +25,28 @@ import { resolveFromEnvDir } from "~/shell/resolveExport.js";
 // In Node.js mode Bun.build() is absent AND Node.js resolves correctly, so
 // shimming is skipped entirely. A CJS require() shim for an ESM-only package
 // like @qawolf/flow-targets would break named imports in Node.js.
+
+type ShimMarker = { _qawolf_version: string; _qawolf_format: string };
+
+// Returns the shim marker if shimDir is a qawolf-managed shim, undefined otherwise.
+// A directory without the marker is a real package — must not be touched.
+function readShimMarker(shimDir: string, fs: Fs): ShimMarker | undefined {
+  try {
+    const pkg = JSON.parse(
+      fs.readFileSync(join(shimDir, "package.json")),
+    ) as Partial<ShimMarker>;
+    if (pkg._qawolf_format) {
+      return {
+        _qawolf_version: pkg._qawolf_version ?? "",
+        _qawolf_format: pkg._qawolf_format,
+      };
+    }
+  } catch {
+    // missing or unreadable — not a managed shim
+  }
+  return undefined;
+}
+
 export async function shimFlowsDeps(
   envDir: string,
   fs: Fs = makeDefaultFs(),
@@ -62,7 +85,12 @@ export async function shimFlowsDeps(
   if (!bun) {
     const shimsDir = join(flowsDir, "node_modules");
     if (fs.existsSync(shimsDir)) {
-      await fs.rm(shimsDir, { recursive: true, force: true });
+      for (const dep of flowsDeps) {
+        const shimDepDir = join(shimsDir, ...dep.split("/"));
+        if (readShimMarker(shimDepDir, fs)) {
+          await fs.rm(shimDepDir, { recursive: true, force: true });
+        }
+      }
     }
     return;
   }
@@ -84,29 +112,18 @@ export async function shimFlowsDeps(
 
     const shimDir = join(flowsDir, "node_modules", ...depParts);
 
-    // Remove stale symlink (expect was previously shimmed as a symlink).
-    // fs.rm without options removes symlinks, throws EISDIR on directories,
-    // and throws ENOENT if absent — all three cases are handled by the catch.
-    try {
-      await fs.rm(shimDir);
-    } catch {
-      /* directory (EISDIR) or not found (ENOENT) — proceed */
-    }
-
-    // Skip if already bundled for this dep version in the current format.
-    // _qawolf_format guards against stale shims from older formats (CJS require()
-    // before Bun.build()) that may carry a matching version stamp but wrong content.
-    try {
-      const shimPkg = JSON.parse(
-        fs.readFileSync(join(shimDir, "package.json")),
-      ) as { _qawolf_version?: string; _qawolf_format?: string };
+    if (fs.existsSync(shimDir)) {
+      const marker = readShimMarker(shimDir, fs);
+      // No marker means this is a real package directory (e.g. pnpm nested
+      // install) — never overwrite or remove it.
+      if (!marker) continue;
       if (
-        shimPkg._qawolf_version === depVersion &&
-        shimPkg._qawolf_format === "bun-build-v1"
+        marker._qawolf_version === depVersion &&
+        marker._qawolf_format === "bun-build-v1"
       )
         continue;
-    } catch {
-      /* stale or missing — rebuild */
+      // Stale managed shim — remove and rebuild below.
+      await fs.rm(shimDir, { recursive: true, force: true });
     }
 
     let entry: string;
