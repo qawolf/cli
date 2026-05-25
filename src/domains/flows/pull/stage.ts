@@ -88,7 +88,7 @@ export async function stageBundle(
       throw err;
     }
 
-    if (oldDir) await removeTempDir(oldDir, registry).catch(() => {});
+    if (oldDir) await removeTempDir(oldDir, registry, fs).catch(() => {});
 
     return {
       envDir: args.destAbs,
@@ -97,7 +97,7 @@ export async function stageBundle(
       flowsWithTeamStorageRefs,
     };
   } catch (err) {
-    await removeTempDir(tmpDir, registry).catch(() => {});
+    await removeTempDir(tmpDir, registry, fs).catch(() => {});
     throw err;
   }
 }
