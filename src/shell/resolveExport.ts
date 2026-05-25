@@ -5,6 +5,13 @@ import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 
 type ExportsEntry = string | Record<string, unknown> | null;
 
+// pkg.exports can be a path map, a bare string, or a top-level conditions object
+type ExportsField =
+  | string
+  | Record<string, ExportsEntry>
+  | Record<string, unknown>
+  | null;
+
 function pickPath(
   entry: ExportsEntry | undefined,
   preference: "esm" | "cjs",
@@ -21,6 +28,27 @@ function pickPath(
         ? (e.require ?? e.default ?? e.import)
         : (e.import ?? e.require ?? e.default);
     return pickPath(raw as ExportsEntry, preference);
+  }
+  return undefined;
+}
+
+// Normalize pkg.exports to a path map keyed by subpath strings ("." / "./sub").
+// Handles three formats packages use:
+//   string:             "./index.js"                → { ".": "./index.js" }
+//   top-level conds:    { "import": "./esm.js" }    → { ".": { "import": "./esm.js" } }
+//   path map (normal):  { ".": "./index.js" }       → unchanged
+function normalizeExports(
+  exports: ExportsField | undefined,
+): Record<string, ExportsEntry> | undefined {
+  if (exports === undefined || exports === null) return undefined;
+  if (typeof exports === "string") return { ".": exports };
+  if (typeof exports === "object") {
+    const keys = Object.keys(exports);
+    if (keys.every((k) => k.startsWith("."))) {
+      return exports as Record<string, ExportsEntry>;
+    }
+    // Top-level condition object — treat as the "." entry
+    return { ".": exports as Record<string, unknown> };
   }
   return undefined;
 }
@@ -44,7 +72,7 @@ export function resolveFromEnvDir(
 
   const pkgDir = join(envDir, "node_modules", ...pkgName.split("/"));
   let pkg: {
-    exports?: Record<string, ExportsEntry>;
+    exports?: ExportsField;
     main?: string;
     module?: string;
   };
@@ -61,7 +89,8 @@ export function resolveFromEnvDir(
     throw err;
   }
 
-  const entry = pkg.exports?.[subpath];
+  const exportsMap = normalizeExports(pkg.exports);
+  const entry = exportsMap?.[subpath];
   const relative =
     pickPath(entry, preference) ??
     (subpath === "." ? (pkg.module ?? pkg.main) : undefined);

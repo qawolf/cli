@@ -19,6 +19,24 @@ describe("resolveFromEnvDir", () => {
   const envDir = "/project";
 
   describe("unscoped package, root entry", () => {
+    it("handles exports as a bare string shorthand", () => {
+      const testFs = makeTestFs(`${envDir}/node_modules/pkg`, {
+        exports: "./index.js",
+      });
+      expect(resolveFromEnvDir(envDir, "pkg", "esm", testFs)).toBe(
+        `${envDir}/node_modules/pkg/index.js`,
+      );
+    });
+
+    it("handles exports as a top-level conditions object", () => {
+      const testFs = makeTestFs(`${envDir}/node_modules/pkg`, {
+        exports: { import: "./esm.js", require: "./cjs.js" },
+      });
+      expect(resolveFromEnvDir(envDir, "pkg", "esm", testFs)).toBe(
+        `${envDir}/node_modules/pkg/esm.js`,
+      );
+    });
+
     it("returns path from string export", () => {
       const testFs = makeTestFs(`${envDir}/node_modules/playwright`, {
         exports: { ".": "./index.js" },
