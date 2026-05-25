@@ -12,6 +12,13 @@ function throwNoEntError(
   );
 }
 
+function throwNotDirError(path: string, syscall: string): never {
+  throw Object.assign(
+    new Error(`ENOTDIR: not a directory, ${syscall} '${path}'`),
+    { code: "ENOTDIR" },
+  );
+}
+
 export function makeMemoryFs(): Fs {
   const files = new Map<string, Uint8Array>();
   const dirs = new Set<string>(["/"]);
@@ -108,6 +115,7 @@ export function makeMemoryFs(): Fs {
       );
     },
     readdir(path) {
+      if (files.has(path)) throwNotDirError(path, "scandir");
       if (!dirs.has(path)) throwNoEntError(path, "open");
       const prefix = path === "/" ? "/" : path + "/";
       const names = new Set<string>();

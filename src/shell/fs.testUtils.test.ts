@@ -185,6 +185,18 @@ describe("makeMemoryFs", () => {
     expect(isNoEntError(caughtError)).toBe(true);
   });
 
+  it("should throw ENOTDIR when path is a file", async () => {
+    const fs = makeMemoryFs();
+    await fs.writeFile("/f.txt", "data");
+    let caughtError: unknown;
+    try {
+      await fs.readdir("/f.txt");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect((caughtError as NodeJS.ErrnoException).code).toBe("ENOTDIR");
+  });
+
   // readdirWithTypes
   it("should return correct types when listing root", async () => {
     const fs = makeMemoryFs();
