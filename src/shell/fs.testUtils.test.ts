@@ -231,6 +231,18 @@ describe("makeMemoryFs", () => {
     expect(d?.isFile()).toBe(false);
   });
 
+  it("should throw ENOTDIR when path is a file", async () => {
+    const fs = makeMemoryFs();
+    await fs.writeFile("/f.txt", "data");
+    let caughtError: unknown;
+    try {
+      await fs.readdirWithTypes("/f.txt");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect((caughtError as NodeJS.ErrnoException).code).toBe("ENOTDIR");
+  });
+
   // rename
   it("should move a file to the new path", async () => {
     const fs = makeMemoryFs();

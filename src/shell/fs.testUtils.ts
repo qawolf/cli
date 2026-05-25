@@ -134,6 +134,7 @@ export function makeMemoryFs(): Fs {
       return Promise.resolve([...names]);
     },
     readdirWithTypes(path) {
+      if (files.has(path)) throwNotDirError(path, "scandir");
       if (!dirs.has(path)) throwNoEntError(path, "open");
       const prefix = path === "/" ? "/" : path + "/";
       const names = new Set<string>();
