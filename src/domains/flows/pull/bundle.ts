@@ -24,6 +24,14 @@ export async function flattenSingleWrapper(
   for (const e of await fs.readdir(inner)) {
     await fs.rename(join(inner, e), join(dir, e));
   }
+  // Verify empty before removal — preserves the original rmdir safety
+  // guarantee that unexpected leftover content causes a hard failure.
+  const leftovers = await fs.readdir(inner);
+  if (leftovers.length > 0) {
+    throw new Error(
+      `flattenSingleWrapper: ${leftovers.length} unexpected item(s) remain in wrapper dir`,
+    );
+  }
   await fs.rm(inner, { recursive: true });
   return innerName;
 }

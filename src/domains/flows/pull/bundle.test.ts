@@ -69,6 +69,22 @@ describe("flattenSingleWrapper", () => {
     expect(await flattenSingleWrapper(workDir)).toBeUndefined();
   });
 
+  it("throws when items remain in wrapper dir after all renames complete", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir("/root/wrapper", { recursive: true });
+    await memFs.writeFile("/root/wrapper/a.flow.ts", "// a");
+    // No-op rename simulates an entry that couldn't be moved, leaving the
+    // wrapper dir non-empty so the guard fires.
+    const brokenFs = { ...memFs, rename: () => Promise.resolve() };
+    let caughtError: unknown;
+    try {
+      await flattenSingleWrapper("/root", brokenFs);
+    } catch (e) {
+      caughtError = e;
+    }
+    expect((caughtError as Error).message).toContain("unexpected item");
+  });
+
   it("should move directory contents and remove wrapper via injected memFs", async () => {
     const memFs = makeMemoryFs();
     await memFs.mkdir("/root/wrapper", { recursive: true });
