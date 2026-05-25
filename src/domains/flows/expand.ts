@@ -5,8 +5,10 @@ import { glob } from "tinyglobby";
 import { extractFlowMeta, type PeekFlowMetaFn } from "~/core/flowMeta.js";
 import type { Logger } from "~/shell/logger.js";
 
+const defaultPeekFs = makeDefaultFs();
+
 export const peekFlowMeta: PeekFlowMetaFn = async (filePath) => {
-  const source = await makeDefaultFs().readFile(filePath);
+  const source = await defaultPeekFs.readFile(filePath);
   return extractFlowMeta(source);
 };
 
