@@ -71,6 +71,21 @@ describe("makeMemoryFs", () => {
     expect(await fs.pathExists("/dir/f.txt")).toBe(false);
   });
 
+  it("should throw ENOTEMPTY when rm is called without recursive on a non-empty directory", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/d");
+    await fs.writeFile("/d/f.txt", "x");
+    let caughtError: unknown;
+    try {
+      await fs.rm("/d");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect((caughtError as NodeJS.ErrnoException).code).toBe("ENOTEMPTY");
+    expect(await fs.pathExists("/d")).toBe(true);
+    expect(await fs.pathExists("/d/f.txt")).toBe(true);
+  });
+
   it("should not throw from rm with force on a missing path", async () => {
     const fs = makeMemoryFs();
     expect(fs.rm("/nope", { force: true })).resolves.toBeUndefined();

@@ -63,6 +63,16 @@ export function makeMemoryFs(): Fs {
             }
           }
         } else {
+          const prefix = path + "/";
+          const hasChildren =
+            [...files.keys()].some((k) => k.startsWith(prefix)) ||
+            [...dirs].some((d) => d.startsWith(prefix));
+          if (hasChildren) {
+            throw Object.assign(
+              new Error(`ENOTEMPTY: directory not empty, rmdir '${path}'`),
+              { code: "ENOTEMPTY" },
+            );
+          }
           dirs.delete(path);
         }
         return;
