@@ -71,6 +71,7 @@ export function initFlowRuntime(
   fs: Fs = makeDefaultFs(),
 ): Promise<void> {
   const startDir = path.dirname(flowPath);
+  // Cache key is startDir, not fs — tests reusing the same startDir must call _resetInitCache() between runs.
   let p = initCache.get(startDir);
   if (!p) {
     p = doInit(flowPath, fs);
