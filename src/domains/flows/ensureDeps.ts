@@ -3,6 +3,7 @@ import type { Fs } from "~/shell/fs.js";
 import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import { dirname, join } from "node:path";
 import { flowsMessages } from "~/core/messages/index.js";
+import { shimFlowsDeps } from "./shimDeps.js";
 import {
   appiumUiautomator2DriverVersion,
   appiumVersion,
@@ -44,9 +45,7 @@ async function spawnPm(
   args: string[],
   cwd: string,
 ): Promise<{ exitCode: number; stderr: string }> {
-  // npm 7+ does strict peer-dep resolution by default, which rejects
-  // peerOptional conflicts like @qawolf/flows vs. a project's pinned
-  // playwright. --legacy-peer-deps reverts to npm 6 behaviour (warnings only).
+  // npm 7+ strict peer-dep resolution rejects peerOptional conflicts — revert to npm 6 behaviour.
   const resolvedArgs = pm === "npm" ? [...args, "--legacy-peer-deps"] : args;
   return new Promise((resolve) => {
     const child = nodeSpawn(pm, resolvedArgs, { cwd });
@@ -134,7 +133,10 @@ export async function ensureFlowDeps(envDir: string, fs: Fs): Promise<void> {
   const needsInstall = pinnedPackages.some(
     ([pkg, ver]) => getInstalledVersion(...pkg.split("/")) !== ver,
   );
-  if (!needsInstall) return;
+  if (!needsInstall) {
+    await shimFlowsDeps(envDir, fs);
+    return;
+  }
 
   // All pinned packages are installed in one command. npm replaces the entire
   // @qawolf/ scope directory on each sequential install, so batching prevents
@@ -148,4 +150,5 @@ export async function ensureFlowDeps(envDir: string, fs: Fs): Promise<void> {
       flowsMessages.ensureDeps.installFailed(pm, envDir, r.stderr.trim()),
     );
   }
+  await shimFlowsDeps(envDir, fs);
 }
