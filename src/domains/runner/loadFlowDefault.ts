@@ -50,7 +50,7 @@ export async function loadFlowDefault<T>(
   const transformed = envDir
     ? content
         .replace(
-          /(from|import)\s+(['"])(@qawolf\/flows\/[^'"]+)\2/g,
+          /(from|import)\s+(['"])(@qawolf\/flows(?:\/[^'"]+)?)\2/g,
           (match, keyword: string, quote: string, specifier: string) => {
             try {
               const resolved = resolveFromEnvDir(envDir, specifier, "esm", fs);
@@ -61,7 +61,7 @@ export async function loadFlowDefault<T>(
           },
         )
         .replace(
-          /\bimport\s*\(\s*(['"])(@qawolf\/flows\/[^'"]+)\1\s*\)/g,
+          /\bimport\s*\(\s*(['"])(@qawolf\/flows(?:\/[^'"]+)?)\1\s*\)/g,
           (match, quote: string, specifier: string) => {
             try {
               const resolved = resolveFromEnvDir(envDir, specifier, "esm", fs);
