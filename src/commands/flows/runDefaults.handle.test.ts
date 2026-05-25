@@ -3,6 +3,7 @@ import type { CommandContext } from "~/shell/commandContext.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
+import { runnerMessages } from "~/core/messages/index.js";
 import { handleFlowsRun, type HandleFlowsRunDeps } from "./runDefaults.js";
 
 const noopSignals = makeNoopSignals();
@@ -15,6 +16,7 @@ const ensureFlowDepsMock = mock<(envDir: string) => Promise<void>>();
 const configureTestkitMock = mock<(dir: string) => Promise<void>>();
 const flowsRunMock = mock<HandleFlowsRunDeps["flowsRun"]>();
 const runWebFlowDepsMock = mock<(...args: unknown[]) => Promise<unknown>>();
+const uiInfoMock = mock<(message: string) => void>();
 
 const trackedMocks = [
   expandPatternsMock,
@@ -23,6 +25,7 @@ const trackedMocks = [
   configureTestkitMock,
   flowsRunMock,
   runWebFlowDepsMock,
+  uiInfoMock,
 ];
 
 function makeDeps(): HandleFlowsRunDeps {
@@ -65,7 +68,7 @@ function makeCtx(): CommandContext {
         for (const t of tasks) await t.task();
         return [];
       },
-      info: () => {},
+      info: uiInfoMock,
       warn: () => {},
     },
   } as unknown as CommandContext;
@@ -112,6 +115,7 @@ describe("handleFlowsRun", () => {
     );
 
     expect(result).toBeUndefined();
+    expect(uiInfoMock).toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
     expect(ensureFlowDepsMock).not.toHaveBeenCalled();
     expect(configureTestkitMock).not.toHaveBeenCalled();
     expect(flowsRunMock).not.toHaveBeenCalled();
