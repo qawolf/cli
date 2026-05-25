@@ -151,11 +151,16 @@ export function makeMemoryFs(): Fs {
         }
       }
       return Promise.resolve<FsDirent[]>(
-        [...names].map((name) => ({
-          name,
-          isFile: () => files.has(joinPath(path, name)),
-          isDirectory: () => dirs.has(joinPath(path, name)),
-        })),
+        [...names].map((name) => {
+          const fullPath = joinPath(path, name);
+          const isFileSnapshot = files.has(fullPath);
+          const isDirSnapshot = dirs.has(fullPath);
+          return {
+            name,
+            isFile: () => isFileSnapshot,
+            isDirectory: () => isDirSnapshot,
+          };
+        }),
       );
     },
     rename(oldPath, newPath) {

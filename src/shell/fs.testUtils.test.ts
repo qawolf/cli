@@ -243,6 +243,17 @@ describe("makeMemoryFs", () => {
     expect((caughtError as NodeJS.ErrnoException).code).toBe("ENOTDIR");
   });
 
+  it("should snapshot isFile/isDirectory at readdir time, not reflect later mutations", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/d");
+    await fs.writeFile("/d/f.txt", "data");
+    const entries = await fs.readdirWithTypes("/d");
+    const f = entries.find((e) => e.name === "f.txt")!;
+    expect(f.isFile()).toBe(true);
+    await fs.unlink("/d/f.txt");
+    expect(f.isFile()).toBe(true);
+  });
+
   // rename
   it("should move a file to the new path", async () => {
     const fs = makeMemoryFs();
