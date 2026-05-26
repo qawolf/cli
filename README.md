@@ -2,121 +2,44 @@
 
 Run QA Wolf flows from your terminal or in CI.
 
-The CLI is for running and managing flows locally. Flow creation, AI-powered test generation, managed cloud execution, and team collaboration are part of the full QA Wolf platform. See [docs.qawolf.com](https://docs.qawolf.com) for the full docs, or [qawolf.com](https://www.qawolf.com) to get started.
+The CLI runs and manages flows locally. Flow creation, AI-powered test generation, managed cloud execution, and team collaboration are part of the full QA Wolf platform. See [docs.qawolf.com](https://docs.qawolf.com) for the full docs, or [qawolf.com](https://www.qawolf.com) to get started.
 
-## Installation
+## Install
 
 ```bash
 npm install -g @qawolf/cli
 ```
 
-## Quickstart
+Requires Node.js 24 or later.
 
-**1. Log in**
-
-```bash
-qawolf auth login
-```
-
-**2. Pull flows from your environment**
+## Quick start
 
 ```bash
-qawolf flows pull --env <env-id>
+qawolf auth login                  # or set QAWOLF_API_KEY for CI
+qawolf flows run --env <env-id>
 ```
 
-Your environment ID and API key are in your workspace settings on the QA Wolf platform. The `--env` flag accepts either the full UUID or the kebab-case slug.
+`qawolf flows run --env` runs your team's flows from the local `.qawolf/<env>` cache, pulling them first only if they are not already cached locally, then installs the runtime dependencies they need and runs them. To refresh the local cache, run `qawolf flows pull --env <env-id>`. To author flows locally without the platform, run `qawolf init` first.
 
-**3. Run**
+## Commands
 
-```bash
-qawolf flows run
-```
+| Command          | What it does                                                                                                                                                   |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `qawolf auth`    | [Authenticate with QA Wolf](https://docs.qawolf.com/qawolf/local-execution/authenticate)                                                                       |
+| `qawolf flows`   | [Run flows locally](https://docs.qawolf.com/qawolf/local-execution/run-flows-locally), [pull flows](https://docs.qawolf.com/qawolf/local-execution/pull-flows) |
+| `qawolf install` | [Install runtime dependencies](https://docs.qawolf.com/qawolf/local-execution/install-dependencies)                                                            |
+| `qawolf init`    | [Set up a local-only project](https://docs.qawolf.com/qawolf/local-execution/set-up-a-project)                                                                 |
+| `qawolf doctor`  | [Diagnose problems](https://docs.qawolf.com/qawolf/local-execution/diagnose-problems)                                                                          |
 
-Run `qawolf flows run --help` for the full list of flags (retries, timeouts, artifact capture, and more).
+Run any command with `--help` for its flags and options.
 
-To write flows from scratch without the platform, run `qawolf init` instead of pulling.
+## Reference
 
-## Platform requirements
-
-The CLI runs on any platform that supports Playwright or Appium. Some flow types have additional requirements:
-
-| Flow type | Additional requirement                                      |
-| --------- | ----------------------------------------------------------- |
-| Web       | None                                                        |
-| Android   | Android SDK with ADB (`ANDROID_HOME` or `ANDROID_SDK_ROOT`) |
-| iOS       | macOS with Xcode                                            |
-
-The CLI will ensure Playwright is installed automatically, so you do not need Playwright installed separately.
-
-## Authentication
-
-For interactive use, `qawolf auth login` prompts for your API key and stores it locally.
-
-For CI and non-interactive environments, set the environment variable directly instead:
-
-```bash
-export QAWOLF_API_KEY=your-api-key
-```
-
-Your API key is in your workspace settings on the QA Wolf platform.
-
-## Environments
-
-An environment in QA Wolf groups a set of flows and their configuration. Use `flows pull` to download flows from a specific environment:
-
-```bash
-qawolf flows pull --env <env-id>
-```
-
-Your environment IDs are in workspace settings on the QA Wolf platform.
-
-## Running in CI
-
-Commit your pulled flows to the repository, add `QAWOLF_API_KEY` as a repository secret, then use this workflow:
-
-```yaml
-name: QA Wolf
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-      - name: Install QA Wolf CLI
-        run: npm install -g @qawolf/cli
-      - name: Install browsers
-        run: qawolf install browsers
-      - name: Run flows
-        run: qawolf flows run
-        env:
-          QAWOLF_API_KEY: ${{ secrets.QAWOLF_API_KEY }}
-```
-
-Exit code `0` means all flows passed; `1` means one or more failed. See `qawolf flows run --help` for retry, timeout, and artifact options.
-
-## Troubleshooting
-
-If flows are not running as expected, start with:
-
-```bash
-qawolf doctor
-```
-
-This checks your Node.js version, Playwright installation, browser availability, and Android SDK configuration. Pass `--all` to run every platform check regardless of which flow types are in the project.
-
-## Known limitations
-
-- **iOS flows require macOS** — Xcode and iOS simulators are macOS-only.
-- **Parallel workers not yet supported** — `--workers` is accepted but capped at 1 in v0.1.
-- **File assets not pulled** — `flows pull` does not download file attachments in v0.1.
-- **Mobile flows require a local APK or IPA path** — set the path via an environment variable in your flow config.
-- **`--har` captures headers and timing only by default** — use `--har-content full` for response bodies (increases memory usage).
-- **Dynamic-target flows** — flows where target is a computed value rather than a string literal. The CLI can't determine the platform ahead of time, so these flows are included in every run.
-- **`Basic` flows** — a legacy flow type that will download successfully but can't be executed by the CLI in v0.1..
+- [Commands](https://docs.qawolf.com/qawolf/libraries/cli/api-reference/commands) — full command and flag reference
+- [Configuration](https://docs.qawolf.com/qawolf/libraries/cli/api-reference/configuration) — `qawolf.config.ts` fields
+- [Environment variables](https://docs.qawolf.com/qawolf/libraries/cli/api-reference/environment-variables)
+- [Exit codes](https://docs.qawolf.com/qawolf/libraries/cli/api-reference/exit-codes)
+- [Troubleshooting](https://docs.qawolf.com/qawolf/libraries/cli/troubleshooting)
 
 ## Contributing
 
