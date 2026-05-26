@@ -18,7 +18,7 @@ Examples:
   $ qawolf flows list --remote
   $ qawolf flows list "**/checkout/**" --remote`;
 
-type FlowsListOptions = { readonly remote?: boolean };
+type FlowsListOptions = { readonly remote: boolean };
 
 const pullExamples = `
 Examples:
@@ -39,7 +39,7 @@ export function registerFlowsCommand(
   flows
     .command("list [pattern]")
     .description(
-      "List flow files in the project, optionally filtered by [pattern]",
+      "List flows matching [pattern] from the local project, or from QA Wolf with --remote",
     )
     .option(
       "--remote",

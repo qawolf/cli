@@ -116,8 +116,8 @@ Options:
 Commands:
   run [options] [pattern]   Run flows matching [pattern], or every flow when
                             omitted
-  list [options] [pattern]  List flow files in the project, optionally filtered
-                            by [pattern]
+  list [options] [pattern]  List flows matching [pattern] from the local
+                            project, or from QA Wolf with --remote
   pull [options]            Download an environment's flows into the local
                             .qawolf/<env>/ cache
   help [command]            display help for command
@@ -162,7 +162,8 @@ Examples:
 exports[`--help output qawolf flows list 1`] = `
 "Usage: qawolf flows list [options] [pattern]
 
-List flow files in the project, optionally filtered by [pattern]
+List flows matching [pattern] from the local project, or from QA Wolf with
+--remote
 
 Options:
   --remote    List flows from the QA Wolf platform instead of the local project
