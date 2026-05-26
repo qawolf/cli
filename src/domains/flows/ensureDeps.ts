@@ -1,5 +1,5 @@
 // oxlint-disable eslint/max-lines -- fs injection added ~10 lines; extracting spawnPm would be premature
-import { makeDefaultFs, type Fs } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import { dirname, join } from "node:path";
 import { flowsMessages } from "~/core/messages/index.js";
@@ -15,10 +15,7 @@ import {
 
 // Walk up from a flow file to find its containing package root (the directory
 // with the package.json that declares its dependencies).
-export function findEnvDir(
-  flowPath: string,
-  fs: Fs = makeDefaultFs(),
-): string | undefined {
+export function findEnvDir(flowPath: string, fs: Fs): string | undefined {
   let dir = dirname(flowPath);
   while (true) {
     if (fs.existsSync(join(dir, "package.json"))) return dir;
@@ -30,10 +27,7 @@ export function findEnvDir(
 
 type PackageManager = "npm" | "bun" | "pnpm" | "yarn";
 
-export function detectPackageManager(
-  dir: string,
-  fs: Fs = makeDefaultFs(),
-): PackageManager {
+export function detectPackageManager(dir: string, fs: Fs): PackageManager {
   // bun.lockb = binary format (bun < 1.1); bun.lock = text format (bun ≥ 1.1, now default)
   if (
     fs.existsSync(join(dir, "bun.lockb")) ||
@@ -73,7 +67,7 @@ function pkgDir(envDir: string, ...pkgParts: string[]): string {
 // package.json ancestor. Throws if files span multiple packages.
 export function resolveUniqueEnvDir(
   files: string[],
-  fs: Fs = makeDefaultFs(),
+  fs: Fs,
 ): string | undefined {
   const dirs = new Set(
     files
@@ -103,10 +97,7 @@ const pinnedPackages: [string, string][] = [
 // packages are present at the versions baked in at build time (see
 // dependencyVersions.ts). This guarantees the env matches the CLI binary
 // regardless of what the env's own package.json declares.
-export async function ensureFlowDeps(
-  envDir: string,
-  fs: Fs = makeDefaultFs(),
-): Promise<void> {
+export async function ensureFlowDeps(envDir: string, fs: Fs): Promise<void> {
   function readPkgJson(
     ...parts: string[]
   ): Record<string, unknown> | undefined {

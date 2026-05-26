@@ -1,4 +1,5 @@
 import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
+import type { Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import type { OutputMode } from "~/shell/ui/env.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
@@ -12,6 +13,7 @@ export type CommandContext = {
   readonly apiBaseUrl: string;
   readonly signals: SignalRegistry;
   readonly log: (scope: string) => Logger;
+  readonly fs: Fs;
 };
 
 export type AuthCommandContext = CommandContext & {

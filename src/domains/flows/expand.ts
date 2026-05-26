@@ -1,16 +1,15 @@
-import { makeDefaultFs } from "~/shell/fs.js";
 import type { Fs } from "~/shell/fs.js";
 import { join } from "node:path";
 import { glob } from "tinyglobby";
 import { extractFlowMeta, type PeekFlowMetaFn } from "~/core/flowMeta.js";
 import type { Logger } from "~/shell/logger.js";
 
-const defaultPeekFs = makeDefaultFs();
-
-export const peekFlowMeta: PeekFlowMetaFn = async (filePath) => {
-  const source = await defaultPeekFs.readFile(filePath);
-  return extractFlowMeta(source);
-};
+export function makePeekFlowMeta(fs: Fs): PeekFlowMetaFn {
+  return async (filePath) => {
+    const source = await fs.readFile(filePath);
+    return extractFlowMeta(source);
+  };
+}
 
 // Globs run from cwd *and* from each `.qawolf/<env>/` subdir so a
 // freshly-pulled `.qawolf/<env>/src/flows/...` layout is discoverable
@@ -31,9 +30,9 @@ async function resolveGlobRoots(cwd: string, fs: Fs): Promise<string[]> {
 
 export async function expandPatterns(
   patterns: string[],
-  cwd = process.cwd(),
-  logger?: Logger,
-  fs: Fs = makeDefaultFs(),
+  cwd: string,
+  logger: Logger | undefined,
+  fs: Fs,
 ): Promise<string[]> {
   logger?.debug(`expandPatterns: ${patterns.join(", ")}`);
   const effectivePatterns =

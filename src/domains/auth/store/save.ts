@@ -1,4 +1,3 @@
-import { makeDefaultFs } from "~/shell/fs.js";
 import type { Fs } from "~/shell/fs.js";
 import { join } from "node:path";
 
@@ -27,7 +26,7 @@ async function saveToFile(
 export async function saveApiKey(
   configDir: string,
   key: string,
-  fs: Fs = makeDefaultFs(),
+  fs: Fs,
 ): Promise<SaveApiKeyResult> {
   try {
     const entry = new Entry(service, account);

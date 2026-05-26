@@ -14,17 +14,18 @@ export type LoadConfigDeps = {
   importConfig: (path: string) => Promise<unknown>;
 };
 
-const defaultFs = makeDefaultFs();
-
-const defaultLoadConfigDeps: LoadConfigDeps = {
-  cwd: () => process.cwd(),
-  fileExists: (path) => defaultFs.existsSync(path),
-  importConfig: async (path): Promise<unknown> =>
-    import(pathToFileURL(path).href),
-};
+function makeDefaultLoadConfigDeps(): LoadConfigDeps {
+  const fs = makeDefaultFs();
+  return {
+    cwd: () => process.cwd(),
+    fileExists: (path) => fs.existsSync(path),
+    importConfig: async (path): Promise<unknown> =>
+      import(pathToFileURL(path).href),
+  };
+}
 
 export async function loadConfig(
-  deps: LoadConfigDeps = defaultLoadConfigDeps,
+  deps: LoadConfigDeps = makeDefaultLoadConfigDeps(),
 ): Promise<QawolfConfig> {
   const configPath = resolve(deps.cwd(), configFilename);
   const userConfig = deps.fileExists(configPath)

@@ -1,4 +1,3 @@
-import { makeDefaultFs } from "~/shell/fs.js";
 import type { Fs } from "~/shell/fs.js";
 import { join } from "node:path";
 
@@ -30,7 +29,7 @@ async function deleteFromFile(
 
 export async function deleteApiKey(
   configDir: string,
-  fs: Fs = makeDefaultFs(),
+  fs: Fs,
 ): Promise<DeleteApiKeyResult> {
   const [keychain, file] = await Promise.all([
     Promise.resolve(deleteFromKeychain()),
