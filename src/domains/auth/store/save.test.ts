@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+
 import { Entry } from "@napi-rs/keyring";
 
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
@@ -6,14 +7,25 @@ import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import { deleteApiKey } from "./delete.js";
 import { saveApiKey } from "./save.js";
 
+afterEach(() => {
+  mock.restore();
+});
+
 describe("saveApiKey", () => {
-  afterEach(() => {
-    mock.restore();
+  it("returns stored: keychain when keychain write succeeds", async () => {
+    spyOn(Entry.prototype, "setPassword").mockReturnValue(undefined);
+    const memFs = makeMemoryFs();
+    await memFs.mkdir("/config", { recursive: true });
+
+    const result = await saveApiKey("/config", "key-abc", memFs);
+
+    expect(result.stored).toBe("keychain");
+    expect(await memFs.pathExists("/config/credentials.json")).toBe(false);
   });
 
-  it("should write credentials file via injected fs when keychain throws", async () => {
+  it("falls back to credentials file when keychain throws", async () => {
     spyOn(Entry.prototype, "setPassword").mockImplementation(() => {
-      throw new Error("keychain unavailable in test");
+      throw new Error("keychain unavailable");
     });
     const memFs = makeMemoryFs();
     await memFs.mkdir("/config", { recursive: true });
