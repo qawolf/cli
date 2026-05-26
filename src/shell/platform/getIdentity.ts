@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { WireResult } from "./createTrpcClient.js";
+import { toError } from "./toError.js";
 
 const identityResponseSchema = z.object({
   team: z.object({
@@ -51,8 +52,4 @@ export async function getIdentity(
   }
 
   return { ok: true, data: parsed.data };
-}
-
-function toError(value: unknown): Error {
-  return value instanceof Error ? value : new Error(String(value));
 }

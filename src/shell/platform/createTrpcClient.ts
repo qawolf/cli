@@ -2,6 +2,8 @@ import superjson, { type SuperJSONResult } from "superjson";
 import type { z } from "zod";
 import type { Logger } from "~/shell/logger.js";
 
+import { toError } from "./toError.js";
+
 export type WireError =
   | { kind: "http"; status: number; body: string }
   | { kind: "network"; cause: Error }
@@ -144,5 +146,3 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null;
 const isSuperJSONResult = (v: unknown): v is SuperJSONResult =>
   isRecord(v) && "json" in v;
-const toError = (v: unknown): Error =>
-  v instanceof Error ? v : new Error(String(v));

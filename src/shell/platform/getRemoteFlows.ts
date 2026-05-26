@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { WireResult } from "./createTrpcClient.js";
+import { toError } from "./toError.js";
 
 // `executionTarget` is either a preset string ("Web - Chrome") or an ad-hoc
 // target object; accept both and let the display layer flatten it.
@@ -53,8 +54,4 @@ export async function getRemoteFlows(
   }
 
   return { ok: true, data: parsed.data };
-}
-
-function toError(value: unknown): Error {
-  return value instanceof Error ? value : new Error(String(value));
 }
