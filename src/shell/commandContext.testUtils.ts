@@ -5,6 +5,7 @@ import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import type { OutputMode } from "~/shell/ui/env.js";
 import type { UI } from "~/shell/ui/index.js";
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 const noopSignals = makeNoopSignals();
 
@@ -50,6 +51,7 @@ export function makeCtx(
     apiBaseUrl: "https://example.invalid",
     signals: noopSignals,
     log: () => makeNoopLogger(),
+    fs: makeMemoryFs(),
     ...overrides,
   };
 }

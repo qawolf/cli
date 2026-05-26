@@ -1,10 +1,5 @@
-import {
-  createReadStream,
-  mkdir,
-  mkdirSync,
-  utimes,
-  writeFile,
-} from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import { dirname, resolve } from "node:path";
 import { createGunzip } from "node:zlib";
 import { Parser, type ReadEntry } from "tar";
@@ -32,10 +27,11 @@ export async function extractTarGz(
   tgzPath: string,
   destDir: string,
   opts: ExtractOptions = {},
+  fs: Fs = makeDefaultFs(),
 ): Promise<void> {
   const maxEntryBytes = opts.maxEntryBytes ?? defaultMaxEntryBytes;
   const maxTotalBytes = opts.maxTotalBytes ?? defaultMaxTotalBytes;
-  await mkdir(destDir, { recursive: true });
+  await fs.mkdir(destDir, { recursive: true });
   const destResolved = resolve(destDir);
 
   return new Promise<void>((resolveOuter, rejectOuter) => {
@@ -43,7 +39,7 @@ export async function extractTarGz(
     let aborted = false;
     const pending: Promise<void>[] = [];
 
-    const rs = createReadStream(tgzPath);
+    const rs = fs.createReadStream(tgzPath);
     const gz = createGunzip();
     const parser = new Parser({ strict: true });
 
@@ -68,6 +64,7 @@ export async function extractTarGz(
         maxTotalBytes,
         addTotal: (n) => (total += n),
         getTotal: () => total,
+        fs,
       }).catch((err: unknown) => {
         abort(err instanceof Error ? err : new Error(String(err)));
       });
@@ -96,6 +93,7 @@ type HandleArgs = {
   maxTotalBytes: number;
   getTotal: () => number;
   addTotal: (n: number) => number;
+  fs: Fs;
 };
 
 async function handleEntry(args: HandleArgs): Promise<void> {
@@ -107,7 +105,7 @@ async function handleEntry(args: HandleArgs): Promise<void> {
     throw new Error(flowsMessages.pull.symlinkRejected(entry.path));
   }
   if (entry.type === "Directory") {
-    await mkdir(target, { recursive: true });
+    await args.fs.mkdir(target, { recursive: true });
     entry.resume();
     return;
   }
@@ -128,7 +126,7 @@ async function handleEntry(args: HandleArgs): Promise<void> {
   // mkdirSync (not async) to keep entry-consumer attachment synchronous.
   // Switching to `await mkdir(...)` lets the parser stream advance before we
   // attach the data handler, dropping entry bytes.
-  mkdirSync(dirname(target), { recursive: true });
+  args.fs.mkdirSync(dirname(target), { recursive: true });
 
   // Buffer entry data into memory, then write the file. Atomicity for the
   // bundle as a whole comes from stageBundle's rename-into-place swap, not
@@ -141,9 +139,9 @@ async function handleEntry(args: HandleArgs): Promise<void> {
     entry.on("end", () => res());
   });
 
-  await writeFile(target, Buffer.concat(chunks));
+  await args.fs.writeFile(target, Buffer.concat(chunks));
   // Preserve the tar entry's mtime so the manifest's `qawolfCommittedAt`
   // (sampled from any flow file's mtime in buildManifest) reflects the
   // source commit time rather than the extraction time.
-  if (entry.mtime) await utimes(target, entry.mtime, entry.mtime);
+  if (entry.mtime) await args.fs.utimes(target, entry.mtime, entry.mtime);
 }

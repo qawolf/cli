@@ -1,4 +1,4 @@
-import { makeDefaultFs, type Fs } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import { dirname, join, resolve } from "node:path";
 
 import cliPackageJson from "../../../../package.json" with { type: "json" };
@@ -27,11 +27,12 @@ type HandleFlowsPullDeps = {
 export async function handleFlowsPull(
   ctx: AuthCommandContext,
   opts: FlowsPullOptions,
-  deps: HandleFlowsPullDeps = {
-    flowsVersion: cliPackageJson.dependencies["@qawolf/flows"],
-    fs: makeDefaultFs(),
-  },
+  deps?: HandleFlowsPullDeps,
 ): Promise<CommandResult> {
+  const resolvedDeps: HandleFlowsPullDeps = deps ?? {
+    flowsVersion: cliPackageJson.dependencies["@qawolf/flows"],
+    fs: ctx.fs,
+  };
   const validation = validateEnvId(opts.env);
   if (validation !== "ok") {
     ctx.ui.error(validation.error);
@@ -43,7 +44,7 @@ export async function handleFlowsPull(
   // Shared assets sibling of the env directory. Created unconditionally so
   // TEAM_STORAGE_DIR resolves to a real path even before any asset is dropped
   // in. Idempotent across re-pulls.
-  await deps.fs.mkdir(assetsAbs, { recursive: true });
+  await resolvedDeps.fs.mkdir(assetsAbs, { recursive: true });
   const yes = opts.yes ?? false;
   let archive: string | undefined;
 
@@ -75,16 +76,19 @@ export async function handleFlowsPull(
         {
           message: flowsMessages.pull.extractingBundle,
           task: () =>
-            stageBundle({
-              tmpArchive: fetched.tmpArchive,
-              destAbs,
-              assetsAbs,
-              envId: opts.env,
-              cliFlowsVersion: deps.flowsVersion,
-              now: fetched.bundleFetchedAt,
-              envVars: fetched.envVars,
-              envVarsFetchedAt: fetched.envVarsFetchedAt,
-            }),
+            stageBundle(
+              {
+                tmpArchive: fetched.tmpArchive,
+                destAbs,
+                assetsAbs,
+                envId: opts.env,
+                cliFlowsVersion: resolvedDeps.flowsVersion,
+                now: fetched.bundleFetchedAt,
+                envVars: fetched.envVars,
+                envVarsFetchedAt: fetched.envVarsFetchedAt,
+              },
+              resolvedDeps.fs,
+            ),
         },
       ],
       (results) => flowsMessages.pull.summary(results[0], assetsAbs),
@@ -106,6 +110,7 @@ export async function handleFlowsPull(
       );
     }
   } finally {
-    if (archive !== undefined) await deps.fs.unlink(archive).catch(() => {});
+    if (archive !== undefined)
+      await resolvedDeps.fs.unlink(archive).catch(() => {});
   }
 }

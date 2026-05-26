@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { z } from "zod";
 
 import { isNoEntError } from "~/core/errors.js";
-import { createReadStream, makeDefaultFs } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
 import type { Fs } from "~/shell/fs.js";
 import type { Manifest } from "./types.js";
 
@@ -72,11 +72,14 @@ export async function writeManifest(
   await fs.writeFile(join(envDir, manifestFilename), `${body}\n`);
 }
 
-export function hashFile(absPath: string): Promise<string> {
+export function hashFile(
+  absPath: string,
+  fs: Fs = makeDefaultFs(),
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const hash = createHash("sha256");
-    const stream = createReadStream(absPath);
-    stream.on("data", (chunk) => hash.update(chunk));
+    const stream = fs.createReadStream(absPath);
+    stream.on("data", (chunk: Buffer) => hash.update(chunk));
     stream.on("end", () => resolve(hash.digest("hex")));
     stream.on("error", reject);
   });

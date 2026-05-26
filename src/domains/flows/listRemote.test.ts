@@ -1,17 +1,14 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import type { AuthCommandContext } from "~/shell/commandContext.js";
-import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
+import { makeCtx as makeBaseCtx } from "~/shell/commandContext.testUtils.js";
 import type { OutputMode } from "~/shell/ui/env.js";
 import type { UI } from "~/shell/ui/index.js";
-import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
 import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
 
 import { callsOf, makeFakeUI } from "~/domains/runner/run.fixtures.js";
 import { flowsListRemote } from "./listRemote.js";
-
-const noopSignals = makeNoopSignals();
 
 afterEach(() => {
   mock.restore();
@@ -23,14 +20,9 @@ function makeCtx(
   platform: PlatformClient,
 ): AuthCommandContext {
   return {
+    ...makeBaseCtx(outputMode),
     ui: { ...ui, mode: outputMode },
-    configDir: "/tmp/test-config",
-    outputMode,
-    isInteractive: false,
-    apiBaseUrl: "https://test.qawolf.com",
     apiKeySource: "env",
-    signals: noopSignals,
-    log: () => makeNoopLogger(),
     platform,
   };
 }

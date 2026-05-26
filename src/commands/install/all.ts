@@ -1,6 +1,6 @@
 import {
   expandPatterns as defaultExpandPatterns,
-  peekFlowMeta as defaultPeekFlowMeta,
+  makePeekFlowMeta,
 } from "~/domains/flows/expand.js";
 import { resolveUniqueEnvDir as defaultResolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
 import { classifyTarget, type PeekFlowMetaFn } from "~/core/flowMeta.js";
@@ -104,11 +104,13 @@ export async function handleInstall(
   ctx: CommandContext,
   pattern: string | undefined,
 ): Promise<CommandResult> {
+  const { fs } = ctx;
   return installAll(ctx, pattern, {
     cwd: process.cwd(),
-    expandPatterns: defaultExpandPatterns,
-    peekFlowMeta: defaultPeekFlowMeta,
-    resolveUniqueEnvDir: defaultResolveUniqueEnvDir,
+    expandPatterns: (patterns, cwd) =>
+      defaultExpandPatterns(patterns, cwd ?? process.cwd(), undefined, fs),
+    peekFlowMeta: makePeekFlowMeta(fs),
+    resolveUniqueEnvDir: (files) => defaultResolveUniqueEnvDir(files, fs),
     installBrowsers: handleInstallBrowsers,
     installAndroid: handleInstallAndroid,
   });
