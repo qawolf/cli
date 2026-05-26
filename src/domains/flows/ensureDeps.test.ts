@@ -4,6 +4,8 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
+
 import {
   detectPackageManager,
   findEnvDir,
@@ -89,6 +91,16 @@ describe("detectPackageManager", () => {
     const dir = await makeTmpDir();
     await writeFile(join(dir, "bun.lock"), "");
     expect(detectPackageManager(dir)).toBe("bun");
+  });
+});
+
+describe("findEnvDir with injected fs", () => {
+  it("should find package.json via injected memFs", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir("/pkg");
+    await memFs.writeFile("/pkg/package.json", "{}");
+    const result = findEnvDir("/pkg/my.flow.ts", memFs);
+    expect(result).toBe("/pkg");
   });
 });
 

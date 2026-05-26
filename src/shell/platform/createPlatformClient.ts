@@ -2,7 +2,8 @@ import { randomBytes } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { unlink } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import { createTrpcClient } from "./createTrpcClient.js";
 import {
@@ -36,6 +37,7 @@ type Deps = {
   baseUrl: string;
   logger?: Logger;
   sleep?: (ms: number) => Promise<void>;
+  fs?: Fs;
 };
 
 const requestBackoffMs = [500, 1500] as const;
@@ -105,7 +107,8 @@ export function createPlatformClient(
         { fetch: deps.fetch },
       );
       if (!result.ok) {
-        await unlink(tmpArchive).catch(() => {});
+        const fsInst = deps.fs ?? makeDefaultFs();
+        await fsInst.unlink(tmpArchive).catch(() => {});
         return { ok: false, error: describeBundleDownloadError(result.error) };
       }
       return { ok: true, value: { tmpArchive } };

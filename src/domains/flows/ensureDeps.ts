@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from "~/shell/fs.js";
+// oxlint-disable eslint/max-lines -- fs injection added ~10 lines; extracting spawnPm would be premature
+import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import { dirname, join } from "node:path";
 import { flowsMessages } from "~/core/messages/index.js";
@@ -14,10 +15,13 @@ import {
 
 // Walk up from a flow file to find its containing package root (the directory
 // with the package.json that declares its dependencies).
-export function findEnvDir(flowPath: string): string | undefined {
+export function findEnvDir(
+  flowPath: string,
+  fs: Fs = makeDefaultFs(),
+): string | undefined {
   let dir = dirname(flowPath);
   while (true) {
-    if (existsSync(join(dir, "package.json"))) return dir;
+    if (fs.existsSync(join(dir, "package.json"))) return dir;
     const parent = dirname(dir);
     if (parent === dir) return undefined;
     dir = parent;
@@ -26,12 +30,18 @@ export function findEnvDir(flowPath: string): string | undefined {
 
 type PackageManager = "npm" | "bun" | "pnpm" | "yarn";
 
-export function detectPackageManager(dir: string): PackageManager {
+export function detectPackageManager(
+  dir: string,
+  fs: Fs = makeDefaultFs(),
+): PackageManager {
   // bun.lockb = binary format (bun < 1.1); bun.lock = text format (bun ≥ 1.1, now default)
-  if (existsSync(join(dir, "bun.lockb")) || existsSync(join(dir, "bun.lock")))
+  if (
+    fs.existsSync(join(dir, "bun.lockb")) ||
+    fs.existsSync(join(dir, "bun.lock"))
+  )
     return "bun";
-  if (existsSync(join(dir, "pnpm-lock.yaml"))) return "pnpm";
-  if (existsSync(join(dir, "yarn.lock"))) return "yarn";
+  if (fs.existsSync(join(dir, "pnpm-lock.yaml"))) return "pnpm";
+  if (fs.existsSync(join(dir, "yarn.lock"))) return "yarn";
   return "npm";
 }
 
@@ -59,34 +69,16 @@ function pkgDir(envDir: string, ...pkgParts: string[]): string {
   return join(envDir, "node_modules", ...pkgParts);
 }
 
-function readPkgJson(
-  envDir: string,
-  ...parts: string[]
-): Record<string, unknown> | undefined {
-  try {
-    return JSON.parse(
-      readFileSync(join(pkgDir(envDir, ...parts), "package.json"), "utf8"),
-    ) as Record<string, unknown>;
-  } catch {
-    return undefined;
-  }
-}
-
-// Returns the version field from an installed package's package.json.
-function installedVersion(
-  envDir: string,
-  ...parts: string[]
-): string | undefined {
-  const pkg = readPkgJson(envDir, ...parts);
-  const v = pkg?.["version"];
-  return typeof v === "string" ? v : undefined;
-}
-
 // Returns the single envDir for all flow files, or undefined if none have a
 // package.json ancestor. Throws if files span multiple packages.
-export function resolveUniqueEnvDir(files: string[]): string | undefined {
+export function resolveUniqueEnvDir(
+  files: string[],
+  fs: Fs = makeDefaultFs(),
+): string | undefined {
   const dirs = new Set(
-    files.map(findEnvDir).filter((d): d is string => d !== undefined),
+    files
+      .map((f) => findEnvDir(f, fs))
+      .filter((d): d is string => d !== undefined),
   );
   if (dirs.size > 1) {
     const listed = [...dirs].map((d) => `  - ${d}`).join("\n");
@@ -111,10 +103,31 @@ const pinnedPackages: [string, string][] = [
 // packages are present at the versions baked in at build time (see
 // dependencyVersions.ts). This guarantees the env matches the CLI binary
 // regardless of what the env's own package.json declares.
-export async function ensureFlowDeps(envDir: string): Promise<void> {
-  const pm = detectPackageManager(envDir);
+export async function ensureFlowDeps(
+  envDir: string,
+  fs: Fs = makeDefaultFs(),
+): Promise<void> {
+  function readPkgJson(
+    ...parts: string[]
+  ): Record<string, unknown> | undefined {
+    try {
+      return JSON.parse(
+        fs.readFileSync(join(pkgDir(envDir, ...parts), "package.json")),
+      ) as Record<string, unknown>;
+    } catch {
+      return undefined;
+    }
+  }
 
-  if (!existsSync(pkgDir(envDir))) {
+  function getInstalledVersion(...parts: string[]): string | undefined {
+    const pkg = readPkgJson(...parts);
+    const v = pkg?.["version"];
+    return typeof v === "string" ? v : undefined;
+  }
+
+  const pm = detectPackageManager(envDir, fs);
+
+  if (!fs.existsSync(pkgDir(envDir))) {
     const install = await spawnPm(pm, ["install"], envDir);
     if (install.exitCode !== 0) {
       throw new Error(
@@ -128,7 +141,7 @@ export async function ensureFlowDeps(envDir: string): Promise<void> {
   }
 
   const needsInstall = pinnedPackages.some(
-    ([pkg, version]) => installedVersion(envDir, ...pkg.split("/")) !== version,
+    ([pkg, ver]) => getInstalledVersion(...pkg.split("/")) !== ver,
   );
   if (!needsInstall) return;
 

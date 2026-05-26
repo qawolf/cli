@@ -75,16 +75,19 @@ export async function handleFlowsPull(
         {
           message: flowsMessages.pull.extractingBundle,
           task: () =>
-            stageBundle({
-              tmpArchive: fetched.tmpArchive,
-              destAbs,
-              assetsAbs,
-              envId: opts.env,
-              cliFlowsVersion: deps.flowsVersion,
-              now: fetched.bundleFetchedAt,
-              envVars: fetched.envVars,
-              envVarsFetchedAt: fetched.envVarsFetchedAt,
-            }),
+            stageBundle(
+              {
+                tmpArchive: fetched.tmpArchive,
+                destAbs,
+                assetsAbs,
+                envId: opts.env,
+                cliFlowsVersion: deps.flowsVersion,
+                now: fetched.bundleFetchedAt,
+                envVars: fetched.envVars,
+                envVarsFetchedAt: fetched.envVarsFetchedAt,
+              },
+              deps.fs,
+            ),
         },
       ],
       (results) => flowsMessages.pull.summary(results[0], assetsAbs),

@@ -1,22 +1,25 @@
-import { readFile, readdir } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import { join } from "node:path";
 import { glob } from "tinyglobby";
 import { extractFlowMeta, type PeekFlowMetaFn } from "~/core/flowMeta.js";
 import type { Logger } from "~/shell/logger.js";
 
+const defaultPeekFs = makeDefaultFs();
+
 export const peekFlowMeta: PeekFlowMetaFn = async (filePath) => {
-  const source = await readFile(filePath, "utf-8");
+  const source = await defaultPeekFs.readFile(filePath);
   return extractFlowMeta(source);
 };
 
 // Globs run from cwd *and* from each `.qawolf/<env>/` subdir so a
 // freshly-pulled `.qawolf/<env>/src/flows/...` layout is discoverable
 // alongside project-local flows. Duplicates are merged on absolute path.
-async function resolveGlobRoots(cwd: string): Promise<string[]> {
+async function resolveGlobRoots(cwd: string, fs: Fs): Promise<string[]> {
   const qawolfPath = join(cwd, ".qawolf");
   let envDirs: string[] = [];
   try {
-    const entries = await readdir(qawolfPath, { withFileTypes: true });
+    const entries = await fs.readdirWithTypes(qawolfPath);
     envDirs = entries
       .filter((e) => e.isDirectory())
       .map((e) => join(qawolfPath, e.name));
@@ -30,11 +33,12 @@ export async function expandPatterns(
   patterns: string[],
   cwd = process.cwd(),
   logger?: Logger,
+  fs: Fs = makeDefaultFs(),
 ): Promise<string[]> {
   logger?.debug(`expandPatterns: ${patterns.join(", ")}`);
   const effectivePatterns =
     patterns.length > 0 ? patterns : ["**/*.flow.{ts,js}"];
-  const roots = await resolveGlobRoots(cwd);
+  const roots = await resolveGlobRoots(cwd, fs);
   const seen = new Set<string>();
   for (const root of roots) {
     const matches = await glob(effectivePatterns, {
