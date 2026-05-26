@@ -111,16 +111,16 @@ exports[`--help output qawolf flows 1`] = `
 Manage and run QA Wolf flows
 
 Options:
-  -h, --help               display help for command
+  -h, --help                display help for command
 
 Commands:
-  run [options] [pattern]  Run flows matching [pattern], or every flow when
-                           omitted
-  list [pattern]           List flow files in the project, optionally filtered
-                           by [pattern]
-  pull [options]           Download an environment's flows into the local
-                           .qawolf/<env>/ cache
-  help [command]           display help for command
+  run [options] [pattern]   Run flows matching [pattern], or every flow when
+                            omitted
+  list [options] [pattern]  List flow files in the project, optionally filtered
+                            by [pattern]
+  pull [options]            Download an environment's flows into the local
+                            .qawolf/<env>/ cache
+  help [command]            display help for command
 "
 `;
 
@@ -165,11 +165,15 @@ exports[`--help output qawolf flows list 1`] = `
 List flow files in the project, optionally filtered by [pattern]
 
 Options:
+  --remote    List flows from the QA Wolf platform instead of the local project
+              (default: false)
   -h, --help  display help for command
 
 Examples:
   $ qawolf flows list
   $ qawolf flows list "flows/checkout/**"
+  $ qawolf flows list --remote
+  $ qawolf flows list "**/checkout/**" --remote
 "
 `;
 
