@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import superjson from "superjson";
 
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import { createPlatformClient } from "./createPlatformClient.js";
 
 let workDir = "";
@@ -47,6 +48,30 @@ describe("PlatformClient.syncTeamStorageAssets", () => {
     expect(await readFile(join(assetsDir, "nested", "data.csv"), "utf8")).toBe(
       "nested",
     );
+  });
+
+  it("writes downloaded assets through the platform fs dependency", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/assets", { recursive: true });
+    const fakeFetch = makeFetch([
+      {
+        path: "root.txt",
+        signedUrl: "https://storage.example.com/root",
+        size: 4,
+      },
+    ]);
+
+    const result = await createPlatformClient("qawolf_key", {
+      baseUrl: "https://test.qawolf.com",
+      fetch: fakeFetch.fetch,
+      fs,
+    }).syncTeamStorageAssets("/assets");
+
+    expect(result).toEqual({
+      ok: true,
+      value: { downloadedCount: 1, skippedCount: 0 },
+    });
+    expect(await fs.readFile("/assets/root.txt")).toBe("root");
   });
 
   it("skips unsupported paths without fetching their signed urls", async () => {

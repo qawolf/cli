@@ -1,7 +1,7 @@
 import { dirname, join, isAbsolute, normalize, sep } from "node:path";
 
 import { errorMessage } from "~/core/errors.js";
-import { mkdir } from "~/shell/fs.js";
+import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import { describeTeamStorageDownloadError } from "./describeErrors.js";
 import { fetchSignedUrl } from "./fetchSignedUrl.js";
 import type { PlatformResult } from "./requestWithRetry.js";
@@ -19,6 +19,7 @@ type DownloadTeamStorageAssetsArgs = {
 
 type DownloadTeamStorageAssetsDeps = {
   fetch: typeof globalThis.fetch;
+  fs?: Fs | undefined;
 };
 
 export async function downloadTeamStorageAssets(
@@ -39,6 +40,7 @@ async function writeTeamStorageAssets(
   args: DownloadTeamStorageAssetsArgs,
   deps: DownloadTeamStorageAssetsDeps,
 ): Promise<SyncTeamStorageAssetsResult> {
+  const fs = deps.fs ?? makeDefaultFs();
   let downloadedCount = 0;
   let skippedCount = 0;
 
@@ -50,10 +52,10 @@ async function writeTeamStorageAssets(
     }
 
     const dest = join(args.assetsAbs, relativePath);
-    await mkdir(dirname(dest), { recursive: true });
+    await fs.mkdir(dirname(dest), { recursive: true });
     const result = await fetchSignedUrl(
       { url: file.signedUrl, dest },
-      { fetch: deps.fetch },
+      { fetch: deps.fetch, fs },
     );
     if (!result.ok) {
       throw new Error(

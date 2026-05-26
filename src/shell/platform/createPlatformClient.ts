@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { unlink } from "~/shell/fs.js";
+import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import { createTrpcClient } from "./createTrpcClient.js";
 import {
@@ -44,6 +44,7 @@ export type PlatformClient = {
 type Deps = {
   fetch: typeof globalThis.fetch;
   baseUrl: string;
+  fs?: Fs | undefined;
   logger?: Logger;
   sleep?: (ms: number) => Promise<void>;
 };
@@ -55,6 +56,7 @@ export function createPlatformClient(
   deps: Deps,
 ): PlatformClient {
   const trpc = createTrpcClient(apiKey, deps);
+  const fs = deps.fs ?? makeDefaultFs();
 
   async function getFlowsBundleUrlImpl(
     envId: string,
@@ -117,7 +119,7 @@ export function createPlatformClient(
       if (!files.ok) return files;
       return downloadTeamStorageAssets(
         { assetsAbs, files: files.value },
-        { fetch: deps.fetch },
+        { fetch: deps.fetch, fs },
       );
     },
 
@@ -131,10 +133,10 @@ export function createPlatformClient(
       );
       const result = await fetchSignedUrl(
         { url: urlResult.value.signedUrl, dest: tmpArchive },
-        { fetch: deps.fetch },
+        { fetch: deps.fetch, fs },
       );
       if (!result.ok) {
-        await unlink(tmpArchive).catch(() => {});
+        await fs.unlink(tmpArchive).catch(() => {});
         return { ok: false, error: describeBundleDownloadError(result.error) };
       }
       return { ok: true, value: { tmpArchive } };
