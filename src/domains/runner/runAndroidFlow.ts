@@ -1,4 +1,3 @@
-import { pathToFileURL } from "node:url";
 import type {
   AndroidFlowApiReturnValue,
   AndroidFlowDefinition,
@@ -9,6 +8,7 @@ import type {
   AndroidLaunchDeps,
   AndroidLaunchOptions,
 } from "~/shell/appium/types.js";
+import { loadFlowDefault } from "./loadFlowDefault.js";
 import { createRunner } from "./createRunner.js";
 import type {
   FlowDefinition,
@@ -41,14 +41,7 @@ export async function runAndroidFlow({
   options: RunAndroidFlowOptions;
   flowPath: string;
 }): Promise<FlowRunResult> {
-  const mod = (await import(pathToFileURL(flowPath).href)) as Record<
-    string,
-    unknown
-  >;
-  const exported = mod["default"] as AndroidFlowApiReturnValue | undefined;
-  if (exported === undefined) {
-    throw new Error(`No default export found in "${flowPath}"`);
-  }
+  const exported = await loadFlowDefault<AndroidFlowApiReturnValue>(flowPath);
   if (typeof exported === "function") {
     // (D2) Android legacy flows have no target; AVD derivation is impossible.
     throw new Error(
@@ -64,6 +57,7 @@ export async function runAndroidFlow({
   const avdName = options.avdName ?? resolveAvdName(target);
 
   const openCtxs: AndroidLaunchContext[] = [];
+  const unregisters: (() => void)[] = [];
   let result: FlowRunResult | undefined;
 
   // Lazily creates a new context each time the flow calls wdio.startAndroid().
@@ -77,6 +71,11 @@ export async function runAndroidFlow({
       },
     });
     openCtxs.push(ctx);
+    unregisters.push(
+      deps.signals.register(async () => {
+        await ctx.cleanup(false);
+      }),
+    );
     await ctx.launch();
     const driver = ctx.pages()[0];
     if (driver === undefined) {
@@ -112,6 +111,8 @@ export async function runAndroidFlow({
     result = await runner.run(flowDef);
     return result;
   } finally {
+    // unregister first so a concurrent signal cleanup doesn't duplicate the closes
+    for (const unreg of unregisters) unreg();
     const passed = result?.passed ?? false;
     await Promise.allSettled(openCtxs.map((ctx) => ctx.cleanup(passed)));
   }

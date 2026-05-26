@@ -9,6 +9,7 @@ import {
   password,
   selectKey,
   spinner,
+  taskLog,
 } from "@clack/prompts";
 
 import { styledTitle } from "./theme.js";
@@ -39,6 +40,11 @@ export type StyledClack = {
     stop(message: string): void;
     error(message: string): void;
   };
+  taskLog(opts: { title: string; limit?: number }): {
+    message(text: string): void;
+    success(message: string): void;
+    error(message: string): void;
+  };
 };
 
 export function createStyledClack(): StyledClack {
@@ -52,6 +58,7 @@ export function createStyledClack(): StyledClack {
     password,
     isCancel,
     spinner,
+    taskLog,
     intro(title: string) {
       intro(styledTitle(title));
     },

@@ -1,0 +1,193 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`--help output qawolf 1`] = `
+"Usage: qawolf [options] [command]
+
+Run QA Wolf flows locally
+
+Options:
+  -V, --version      output the version number
+  --verbose          Enable debug logging to stderr
+  --json             Output as JSON
+  --agent            Output for agent consumption
+  -h, --help         display help for command
+
+Commands:
+  auth               Manage authentication with QA Wolf
+  doctor [options]   Diagnose problems running flows locally
+  flows              Manage and run QA Wolf flows
+  init [options]     Scaffold a QA Wolf project in the current directory
+  install [pattern]  Install every runtime dependency the project's flows need
+  help [command]     display help for command
+"
+`;
+
+exports[`--help output qawolf init 1`] = `
+"Usage: qawolf init [options]
+
+Scaffold a QA Wolf project in the current directory
+
+Options:
+  --yes       Overwrite existing files without prompting (default: false)
+  -h, --help  display help for command
+
+Examples:
+  $ qawolf init
+  $ qawolf init --yes
+"
+`;
+
+exports[`--help output qawolf install 1`] = `
+"Usage: qawolf install [options] [command] [pattern]
+
+Install every runtime dependency the project's flows need
+
+Arguments:
+  pattern             Glob limiting which flows determine required dependencies
+
+Options:
+  -h, --help          display help for command
+
+Commands:
+  browsers [pattern]  Install Playwright browsers used by the project's web
+                      flows
+  android [pattern]   Install Android system images, AVDs, and the Appium driver
+                      used by the project's Android flows
+
+Examples:
+  $ qawolf install
+  $ qawolf install "flows/checkout/**"
+"
+`;
+
+exports[`--help output qawolf install browsers 1`] = `
+"Usage: qawolf install browsers [options] [pattern]
+
+Install Playwright browsers used by the project's web flows
+
+Options:
+  -h, --help  display help for command
+
+Examples:
+  $ qawolf install browsers
+  $ qawolf install browsers "flows/web/**"
+"
+`;
+
+exports[`--help output qawolf install android 1`] = `
+"Usage: qawolf install android [options] [pattern]
+
+Install Android system images, AVDs, and the Appium driver used by the project's
+Android flows
+
+Options:
+  -h, --help  display help for command
+
+Examples:
+  $ qawolf install android
+  $ qawolf install android "flows/mobile/**"
+"
+`;
+
+exports[`--help output qawolf doctor 1`] = `
+"Usage: qawolf doctor [options]
+
+Diagnose problems running flows locally
+
+Options:
+  --all       Run every platform check, including platforms the project does not
+              use (default: false)
+  -h, --help  display help for command
+
+Examples:
+  $ qawolf doctor
+  $ qawolf doctor --all
+"
+`;
+
+exports[`--help output qawolf flows 1`] = `
+"Usage: qawolf flows [options] [command]
+
+Manage and run QA Wolf flows
+
+Options:
+  -h, --help               display help for command
+
+Commands:
+  run [options] [pattern]  Run flows matching [pattern], or every flow when
+                           omitted
+  list [pattern]           List flow files in the project, optionally filtered
+                           by [pattern]
+  pull [options]           Download an environment's flows into the local
+                           .qawolf/<env>/ cache
+  help [command]           display help for command
+"
+`;
+
+exports[`--help output qawolf flows run 1`] = `
+"Usage: qawolf flows run [options] [pattern]
+
+Run flows matching [pattern], or every flow when omitted
+
+Options:
+  --retries <n>         Retry each failing flow up to this many times (default:
+                        0)
+  --bail                Stop the run after the first failure (default: false)
+  --workers <n>         Parallel worker count (capped at 1 in v0.1) (default: 1)
+  --timeout <ms>        Per-flow timeout in milliseconds (default: 30000)
+  --video <mode>        Record video: on | off | retain-on-failure (default:
+                        "off")
+  --trace <mode>        Record Playwright trace: on | off | retain-on-failure
+                        (capture pending) (default: "off")
+  --har <mode>          Record HAR network log: on | off | retain-on-failure
+                        (default: "off")
+  --har-content <mode>  HAR response bodies: omit | full (full uses more memory)
+                        (default: "omit")
+  --output-dir <path>   Directory for run artifacts (videos, traces, HAR)
+                        (default: "qawolf-output")
+  --headed              Show the browser window instead of headless (default:
+                        false)
+  --env <env>           Pull and run a flow from this environment (UUID or slug)
+                        if not cached locally
+  -h, --help            display help for command
+
+Examples:
+  $ qawolf flows run
+  $ qawolf flows run "flows/checkout/**"
+  $ qawolf flows run --retries 2 --video retain-on-failure
+  $ qawolf flows run checkout --env staging --headed
+"
+`;
+
+exports[`--help output qawolf flows list 1`] = `
+"Usage: qawolf flows list [options] [pattern]
+
+List flow files in the project, optionally filtered by [pattern]
+
+Options:
+  -h, --help  display help for command
+
+Examples:
+  $ qawolf flows list
+  $ qawolf flows list "flows/checkout/**"
+"
+`;
+
+exports[`--help output qawolf flows pull 1`] = `
+"Usage: qawolf flows pull [options]
+
+Download an environment's flows into the local .qawolf/<env>/ cache
+
+Options:
+  --env <env>   Environment to pull from (UUID or kebab-case slug)
+  --out <path>  Destination directory (defaults to .qawolf/<env>/)
+  --yes         Overwrite locally-modified files without prompting (default:
+                false)
+  -h, --help    display help for command
+
+Examples:
+  $ qawolf flows pull --env staging
+  $ qawolf flows pull --env 4e9c... --out ./snapshot
+  $ qawolf flows pull --env staging --yes
+"
+`;

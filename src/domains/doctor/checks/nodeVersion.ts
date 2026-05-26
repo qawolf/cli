@@ -1,3 +1,4 @@
+import { doctorMessages } from "~/core/messages/index.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
 
 type NodeVersionDeps = {
@@ -13,7 +14,7 @@ export async function checkNodeVersion(
     return {
       name: "node-version",
       status: "fail",
-      detail: `Could not parse engines.node "${deps.enginesNode}"`,
+      detail: doctorMessages.nodeVersion.couldNotParseEngines(deps.enginesNode),
     };
   }
 
@@ -22,7 +23,9 @@ export async function checkNodeVersion(
     return {
       name: "node-version",
       status: "fail",
-      detail: `Could not parse Node version "${deps.processVersion}"`,
+      detail: doctorMessages.nodeVersion.couldNotParseVersion(
+        deps.processVersion,
+      ),
     };
   }
 
@@ -30,7 +33,10 @@ export async function checkNodeVersion(
     return {
       name: "node-version",
       status: "fail",
-      detail: `Node ${deps.processVersion} is below required ${deps.enginesNode}`,
+      detail: doctorMessages.nodeVersion.belowRequired(
+        deps.processVersion,
+        deps.enginesNode,
+      ),
       version: deps.processVersion.replace(/^v/, ""),
     };
   }

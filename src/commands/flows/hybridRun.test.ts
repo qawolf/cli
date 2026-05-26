@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { AuthCommandContext } from "~/shell/commandContext.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import {
   handleHybridFlowsRun,
   type HandleHybridFlowsRunDeps,
@@ -45,6 +46,7 @@ function makeCtx(): AuthCommandContext {
     isInteractive: false,
     apiKeySource: "env",
     platform: {} as unknown,
+    signals: makeNoopSignals(),
     ui: {
       withProgress: async (
         tasks: { task: () => Promise<void> }[],

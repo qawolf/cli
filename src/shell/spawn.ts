@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, type SpawnOptions } from "node:child_process";
 
 export { spawn };
 
@@ -14,10 +14,37 @@ export type SpawnFn = (
   opts?: { stdin?: string; env?: Record<string, string | undefined> },
 ) => Promise<SpawnResult>;
 
+// Node 18.20.2+/20.12.2+/24 refuses to execute .bat/.cmd files on win32
+// unless shell:true is set (CVE-2024-27980). With shell:true, Node routes
+// through cmd.exe /d /s /c and applies its own arg-quoting — the path the
+// CVE fix is designed to make safe.
+//
+// SECURITY CONTRACT for callers spawning .cmd/.bat on win32:
+//   Do not pass attacker-controlled values in `cmd` or `args`. Node's
+//   cmd.exe escaping protects against shell-metacharacter injection in
+//   args, but only when those args are passed as separate array elements
+//   (never concatenated into `cmd`). Today the only such call site is
+//   playwright.cmd with literal args (browser names, --version); audit any
+//   new .cmd/.bat caller before merging.
+export function buildSpawnOptions(
+  cmd: string,
+  platform: NodeJS.Platform,
+  env: Record<string, string | undefined> | undefined,
+): SpawnOptions {
+  const opts: SpawnOptions = {};
+  if (env) opts.env = env;
+  if (platform === "win32" && /\.(cmd|bat)$/i.test(cmd)) opts.shell = true;
+  return opts;
+}
+
 export const defaultSpawn: SpawnFn = (cmd, args, opts) =>
   new Promise((resolve) => {
     const env = opts?.env ? { ...process.env, ...opts.env } : undefined;
-    const child = spawn(cmd, args, env ? { env } : undefined);
+    const child = spawn(
+      cmd,
+      args,
+      buildSpawnOptions(cmd, process.platform, env),
+    );
     let stdout = "";
     let stderr = "";
     child.stdout?.on("data", (chunk) => {

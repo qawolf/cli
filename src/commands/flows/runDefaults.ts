@@ -11,6 +11,7 @@ import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { isNoEntError } from "~/core/errors.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
+import { runnerMessages } from "~/core/messages/index.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { createConsoleReporter } from "~/shell/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
@@ -18,6 +19,7 @@ import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js"
 // import { configureEmails } from "~/emails/configureEmails.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 
+import { pluralize } from "~/core/pluralize.js";
 import { parseDotenv } from "~/domains/flows/dotenv.js";
 import {
   ensureFlowDeps as defaultEnsureFlowDeps,
@@ -43,7 +45,7 @@ export async function loadEnvFile(envDir: string): Promise<void> {
 }
 
 export type HandleFlowsRunDeps = {
-  expandPatterns: (patterns: string[], cwd?: string) => Promise<string[]>;
+  expandPatterns: typeof defaultExpandPatterns;
   resolveUniqueEnvDir: (files: string[]) => string | undefined;
   ensureFlowDeps: (envDir: string) => Promise<void>;
   configureTestkit: (dir: string) => Promise<void>;
@@ -73,7 +75,11 @@ export async function handleFlowsRun(
   const expandedFiles = await deps.expandPatterns(
     buildPatternArgs(pattern),
     cwd,
+    ctx.log("flows"),
   );
+  ctx
+    .log("flows")
+    .debug(`discovered ${pluralize(expandedFiles.length, "flow")}`);
 
   let envDir: string | undefined;
   try {
@@ -88,11 +94,11 @@ export async function handleFlowsRun(
     await ctx.ui.withProgress(
       [
         {
-          message: "Preparing environment",
+          message: runnerMessages.preparingEnvironment,
           task: () => deps.ensureFlowDeps(dir),
         },
       ],
-      () => "Environment ready",
+      () => runnerMessages.environmentReady,
     );
     await loadEnvFile(dir);
   }
@@ -101,23 +107,24 @@ export async function handleFlowsRun(
   const resolvedDir = envDir ?? cwd;
 
   await deps.configureTestkit(resolvedDir);
-  const android = createAndroidDeps(resolvedDir);
+  const android = createAndroidDeps(resolvedDir, ctx.signals);
   return deps.flowsRun(ctx, expandedFiles, flags, {
     peekFlowMeta: defaultPeekFlowMeta,
     installBrowsers: (innerCtx, browsers) =>
       installBrowserList(innerCtx, browsers, {
         spawn: defaultSpawn,
         platform: process.platform,
-        playwrightCliPath: resolvePlaywrightCli(resolvedDir),
+        playwrightCliPath: resolvePlaywrightCli(resolvedDir, process.platform),
       }),
     runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: await deps.runWebFlowDeps(resolvedDir),
+    runWebFlowDeps: await deps.runWebFlowDeps(resolvedDir, ctx.signals),
     runAndroidFlow: defaultRunAndroidFlow,
     runAndroidFlowDeps: android.deps,
     bootAndroid: android.boot,
     shutdownAndroid: android.shutdown,
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
+    logger: ctx.log("runner"),
     reporter: createConsoleReporter({
       stdout: process.stdout,
       stderr: process.stderr,

@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 
 import { isNoEntError } from "~/core/errors.js";
+import { flowsMessages } from "~/core/messages/index.js";
 import { hashFile } from "~/shell/manifest/io.js";
 import type { Manifest } from "~/shell/manifest/types.js";
 import { validateEntryPath } from "./entryPath.js";
@@ -57,7 +58,11 @@ export async function promptOverwriteIfModified(
   if (modified.length === 0) return "proceed";
 
   const list = modified.map((m) => `  - ${m.path}`).join("\n");
-  const summary = `${modified.length} locally-modified file(s) under ${args.envDir} would be overwritten:\n${list}`;
+  const summary = flowsMessages.pull.localModsWouldOverwrite(
+    modified.length,
+    args.envDir,
+    list,
+  );
 
   if (args.yes) {
     args.log(`${summary}\noverwriting (--yes)`);

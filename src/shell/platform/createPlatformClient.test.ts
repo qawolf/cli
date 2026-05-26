@@ -44,7 +44,12 @@ function callCount(f: typeof fetch): number {
 
 describe("getIdentity", () => {
   it("sends GET to /api/v0/identity with Bearer token and returns team on success", async () => {
-    const team = { id: "t1", name: "T", createdAt: "2024-01-01T00:00:00.000Z" };
+    const team = {
+      id: "t1",
+      name: "T",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      slug: "acme",
+    };
     const f = mockFetch(json({ team }));
 
     const result = await createPlatformClient(apiKey, {
@@ -84,7 +89,12 @@ describe("getIdentity", () => {
     m.mockRejectedValueOnce(new TypeError("fetch failed"));
     m.mockResolvedValueOnce(
       json({
-        team: { id: "t1", name: "T", createdAt: "2024-01-01T00:00:00.000Z" },
+        team: {
+          id: "t1",
+          name: "T",
+          createdAt: "2024-01-01T00:00:00.000Z",
+          slug: "acme",
+        },
       }),
     );
     const f = m as unknown as typeof fetch;

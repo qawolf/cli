@@ -24,6 +24,7 @@ import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
+import { runnerMessages } from "~/core/messages/index.js";
 import { loadEnvFile } from "./runDefaults.js";
 
 export type HandleHybridFlowsRunDeps = {
@@ -81,15 +82,15 @@ export async function handleHybridFlowsRun(
   await ctx.ui.withProgress(
     [
       {
-        message: "Preparing environment",
+        message: runnerMessages.preparingEnvironment,
         task: () => deps.ensureFlowDeps(envDir),
       },
     ],
-    () => "Environment ready",
+    () => runnerMessages.environmentReady,
   );
   await loadEnvFile(envDir);
   await deps.configureTestkit(envDir);
-  const android = createAndroidDeps(envDir);
+  const android = createAndroidDeps(envDir, ctx.signals);
 
   return deps.flowsRun(ctx, files, flags, {
     peekFlowMeta: defaultPeekFlowMeta,
@@ -97,10 +98,10 @@ export async function handleHybridFlowsRun(
       installBrowserList(innerCtx, browsers, {
         spawn: defaultSpawn,
         platform: process.platform,
-        playwrightCliPath: resolvePlaywrightCli(envDir),
+        playwrightCliPath: resolvePlaywrightCli(envDir, process.platform),
       }),
     runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: await deps.runWebFlowDeps(envDir),
+    runWebFlowDeps: await deps.runWebFlowDeps(envDir, ctx.signals),
     runAndroidFlow: defaultRunAndroidFlow,
     runAndroidFlowDeps: android.deps,
     bootAndroid: android.boot,

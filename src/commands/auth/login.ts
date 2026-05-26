@@ -8,44 +8,44 @@ import {
   type CommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
-import { authCopy } from "~/core/copy/index.js";
+import { authMessages } from "~/core/messages/index.js";
 
 export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
   if (ctx.ui.mode !== "human") {
-    ctx.ui.error(authCopy.login.nonInteractive);
+    ctx.ui.error(authMessages.login.nonInteractive);
     return { error: "non-interactive" };
   }
 
   const existing = await resolveApiKey(ctx.configDir);
   if (existing) {
-    const reauth = await ctx.ui.confirm(authCopy.login.reAuthPrompt);
+    const reauth = await ctx.ui.confirm(authMessages.login.reAuthPrompt);
     if (!reauth.ok || !reauth.value) {
-      ctx.ui.info(authCopy.alreadyConfigured);
+      ctx.ui.info(authMessages.alreadyConfigured);
       return;
     }
   }
 
   ctx.ui.gap();
-  ctx.ui.intro(authCopy.title);
+  ctx.ui.intro(authMessages.title);
 
   const result = await ctx.ui.password(
-    authCopy.promptApiKey,
+    authMessages.promptApiKey,
     "Set QAWOLF_API_KEY to authenticate in non-interactive environments.",
   );
   if (!result.ok) {
-    ctx.ui.cancel(authCopy.cancelled);
+    ctx.ui.cancel(authMessages.cancelled);
     return;
   }
 
   if (!result.value.trim()) {
-    ctx.ui.cancel(authCopy.cancelled);
+    ctx.ui.cancel(authMessages.cancelled);
     return;
   }
 
   await ctx.ui.withProgress(
     [
       {
-        message: authCopy.verifying,
+        message: authMessages.verifying,
         task: async () => {
           const v = await validateApiKey({
             platform: createPlatformClient(result.value, {
@@ -57,16 +57,16 @@ export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
         },
       },
       {
-        message: authCopy.storing,
+        message: authMessages.storing,
         task: async () => saveApiKey(ctx.configDir, result.value),
       },
     ],
     ([, saveResult]) => {
       return saveResult.stored === "file"
-        ? authCopy.storedFile
-        : authCopy.storedKeychain;
+        ? authMessages.storedFile
+        : authMessages.storedKeychain;
     },
   );
 
-  ctx.ui.outro(authCopy.outroSuccess);
+  ctx.ui.outro(authMessages.outroSuccess);
 }

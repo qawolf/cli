@@ -1,6 +1,6 @@
 {
   "name": "@qawolf/cli",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": true,
   "description": "Tools for agents, CI, and humans to interact with QA Wolf",
   "license": "Apache-2.0",
@@ -8,13 +8,15 @@
     "qawolf": "./dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "type": "module",
   "scripts": {
-    "build": "bun build ./src/main.ts --outfile dist/cli.js --target node --external @napi-rs/keyring --external @qawolf/flow-targets --external @qawolf/flows --external playwright --external playwright-core --external @qawolf/emails --external @qawolf/testkit",
+    "build": "bun build ./src/main.ts --outdir dist --entry-naming=\"cli.[ext]\" --target node --external @napi-rs/keyring --external @qawolf/flow-targets --external @qawolf/flows --external playwright --external playwright-core --external @qawolf/emails --external @qawolf/testkit --sourcemap=external",
     "postbuild": "./scripts/postbuild.sh",
-    "build:binary": "bun build --compile --bytecode ./src/main.ts --outfile dist/qawolf --external @qawolf/emails --external @qawolf/testkit",
+    "build:binary": "bun build --compile ./src/main.ts --outfile dist/qawolf --external @qawolf/emails --external @qawolf/testkit",
     "dev": "bun run src/main.ts",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
@@ -28,6 +30,7 @@
     "typecheck": "tsc --noEmit",
     "prepare": "bun scripts/genDependencyVersions.ts && git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git config core.hooksPath .githooks || true",
     "uninstall:local": "npm unlink -g @qawolf/cli",
+    "version-packages": "changeset version",
     "uninstall:binary": "rm ~/.local/bin/qawolf"
   },
   "dependencies": {
@@ -43,6 +46,7 @@
     "appium-xcuitest-driver": "9.10.5",
     "commander": "14.0.3",
     "env-paths": "4.0.0",
+    "pino": "10.3.1",
     "playwright": "1.58.2",
     "superjson": "2.2.6",
     "tar": "7.5.15",
@@ -51,6 +55,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@changesets/cli": "2.31.0",
     "@tsconfig/bun": "1.0.10",
     "@tsconfig/strictest": "2.0.8",
     "@types/bun": "1.3.14",

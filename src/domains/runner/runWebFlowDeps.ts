@@ -1,26 +1,31 @@
-import { AsyncLocalStorage } from "node:async_hooks";
-import { mkdir, unlink, writeFile } from "~/shell/fs.js";
-import { spawn as nodeSpawn } from "~/shell/spawn.js";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { createRunnerDeps } from "./runnerDeps.js";
 import type { RunWebFlowDeps } from "./runWebFlow.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 export async function defaultRunWebFlowDeps(
   cwd = process.cwd(),
+  signals: SignalRegistry,
 ): Promise<RunWebFlowDeps> {
   // Loaded via import.meta.resolve so the binary finds playwright in the
   // project's node_modules rather than alongside the CLI binary. Dynamic
   // import() also prevents bun's --compile bundler from tracing playwright-core
   // statically — it has optional deps (electron, chromium-bidi) that are not
-  // installed and would break the binary build if bundled.
+  // installed and would break the binary build if bundled. The base URL points
+  // to a file inside cwd (not the directory itself) because pathToFileURL on a
+  // directory produces a URL without trailing slash, which import.meta.resolve
+  // treats as a file, causing lookup to start from the parent directory instead.
   // Playwright's BrowserType is structurally close to BrowserDep but its
   // newContext() returns Page[].video() = Video | null while MinimalPage
   // expects MinimalVideo | undefined. Runtime values are interchangeable
   // (the runner only reads .path() / .delete() on the video).
+  const base = pathToFileURL(join(cwd, "package.json"));
   let playwright: Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
   try {
     playwright = (await import(
-      import.meta.resolve("playwright", pathToFileURL(cwd))
+      import.meta.resolve("playwright", base)
     )) as Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
   } catch (err) {
     throw new Error(
@@ -33,47 +38,6 @@ export async function defaultRunWebFlowDeps(
     chromium,
     firefox,
     webkit,
-    fs: {
-      mkdir: async (p, opts) => {
-        await mkdir(p, opts);
-      },
-      writeFile: async (p, d) => {
-        await writeFile(p, d);
-      },
-      unlink: async (p) => {
-        await unlink(p);
-      },
-    },
-    spawn: (cmd, args) => {
-      const child = nodeSpawn(cmd, args);
-      return {
-        exitCode: new Promise((resolve) =>
-          child.on("close", (code) => resolve(code ?? -1)),
-        ),
-        kill: () => {
-          child.kill();
-        },
-      };
-    },
-    signals: {
-      on: (signal, handler) => {
-        process.on(signal, handler);
-        return () => {
-          process.off(signal, handler);
-        };
-      },
-    },
-    createStorage: <T>() => {
-      // Stored as `unknown` internally; casts on the boundary keep the outer T
-      // contract while sidestepping TS's inability to unify the outer T with
-      // AsyncLocalStorage's instance method generic.
-      const als = new AsyncLocalStorage<unknown>();
-      return {
-        run: async (store, callback) => {
-          await als.run(store, callback);
-        },
-        getStore: () => als.getStore() as T | undefined,
-      };
-    },
+    ...createRunnerDeps(signals),
   };
 }

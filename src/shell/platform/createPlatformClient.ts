@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { unlink } from "~/shell/fs.js";
+import type { Logger } from "~/shell/logger.js";
 import { createTrpcClient } from "./createTrpcClient.js";
 import {
   describeBundleDownloadError,
@@ -43,6 +44,7 @@ export type PlatformClient = {
 type Deps = {
   fetch: typeof globalThis.fetch;
   baseUrl: string;
+  logger?: Logger;
   sleep?: (ms: number) => Promise<void>;
 };
 

@@ -1,3 +1,4 @@
+import { doctorMessages } from "~/core/messages/index.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
 
 type ApiKeyDeps = {
@@ -9,8 +10,7 @@ export async function checkApiKey(deps: ApiKeyDeps): Promise<CheckResult> {
     return {
       name: "api-key",
       status: "warn",
-      detail:
-        "No API key found. Set QAWOLF_API_KEY or run `qawolf auth login`.",
+      detail: doctorMessages.apiKey.notFound,
     };
   }
   return { name: "api-key", status: "pass" };

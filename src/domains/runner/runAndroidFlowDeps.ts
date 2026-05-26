@@ -1,11 +1,10 @@
-import { AsyncLocalStorage } from "node:async_hooks";
-import { mkdir, unlink, writeFile } from "~/shell/fs.js";
-import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import { createAppiumServer } from "~/shell/appium/createAppiumServer.js";
 import { createEmulatorPool } from "~/shell/appium/createEmulatorPool.js";
 import { defaultAdb } from "~/shell/appium/emulatorSetup.js";
 import type { AppiumDriver } from "~/shell/appium/types.js";
 import type { RunAndroidFlowDeps } from "./runAndroidFlow.js";
+import { createRunnerDeps } from "./runnerDeps.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 type WdioRemote = {
   startRecordingScreen(): Promise<void>;
@@ -40,67 +39,27 @@ async function createSession(
   };
 }
 
-function makeRunnerDeps() {
-  return {
-    fs: {
-      mkdir: async (p: string, opts?: { recursive?: boolean }) => {
-        await mkdir(p, opts);
-      },
-      writeFile: async (p: string, d: string) => {
-        await writeFile(p, d);
-      },
-      unlink: async (p: string) => {
-        await unlink(p);
-      },
-    },
-    spawn: (cmd: string, args: string[]) => {
-      const child = nodeSpawn(cmd, args);
-      return {
-        exitCode: new Promise<number>((resolve) =>
-          child.on("close", (code) => resolve(code ?? -1)),
-        ),
-        kill: () => {
-          child.kill();
-        },
-      };
-    },
-    signals: {
-      on: (signal: NodeJS.Signals, handler: () => void) => {
-        process.on(signal, handler);
-        return () => {
-          process.off(signal, handler);
-        };
-      },
-    },
-    createStorage: <T>() => {
-      const als = new AsyncLocalStorage<unknown>();
-      return {
-        run: async (store: T, callback: () => Promise<void>) =>
-          als.run(store, callback),
-        getStore: () => als.getStore() as T | undefined,
-      };
-    },
-  };
-}
-
 /**
  * Creates Android runner deps and lifecycle hooks for a flow run.
  *
  * The Appium server starts lazily on the first `boot()` call so web-only
  * runs incur no overhead. `shutdown()` is idempotent.
  */
-export function createAndroidDeps(envDir: string): {
+export function createAndroidDeps(
+  envDir: string,
+  signals: SignalRegistry,
+): {
   deps: RunAndroidFlowDeps;
   boot: (avdNames: string[]) => Promise<void>;
   shutdown: () => void;
 } {
-  const pool = createEmulatorPool({ deps: { adb: defaultAdb } });
+  const pool = createEmulatorPool({ signals, deps: { adb: defaultAdb } });
   // Mutable placeholder populated by boot() before any flow dispatches.
   const serverHandle = { port: 0, home: "", stop: () => {} };
   let serverStarted = false;
 
   const deps: RunAndroidFlowDeps = {
-    ...makeRunnerDeps(),
+    ...createRunnerDeps(signals),
     appiumServer: serverHandle,
     emulatorPool: pool,
     createSession,
@@ -117,7 +76,7 @@ export function createAndroidDeps(envDir: string): {
       );
     }
     if (!serverStarted) {
-      const server = await createAppiumServer(envDir);
+      const server = await createAppiumServer(envDir, signals);
       Object.assign(serverHandle, server);
       serverStarted = true;
     }

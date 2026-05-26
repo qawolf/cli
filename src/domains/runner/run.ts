@@ -3,6 +3,7 @@ import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
+import { runnerMessages } from "~/core/messages/index.js";
 
 import { buildRunOptions, runFlows } from "./runHelpers.js";
 import {
@@ -11,7 +12,6 @@ import {
   type FlowsRunFlags,
   type ResolvedFlow,
   type WebResolvedFlow,
-  unsupportedTargetMessage,
 } from "./runInternals.js";
 import { resolveAvdName } from "./runAndroidFlowUtils.js";
 
@@ -22,12 +22,12 @@ export async function flowsRun(
   deps: FlowsRunDeps,
 ): Promise<CommandResult> {
   if (flags.workers > 1) {
-    const message = "--workers > 1 is deferred to v0.2; current cap is 1.";
-    ctx.ui.error(message);
-    return { error: message, exitCode: 2 };
+    ctx.ui.error(runnerMessages.workersCapError);
+    return { error: runnerMessages.workersCapError, exitCode: 2 };
   }
 
   const flows: ResolvedFlow[] = [];
+  const skippedByType = new Map<string, number>();
   for await (const { file, ...meta } of batchMap(
     files,
     async (file) => ({ file, ...(await deps.peekFlowMeta(file)) }),
@@ -35,31 +35,39 @@ export async function flowsRun(
   )) {
     if (!meta.target) continue;
     const classified = classifyTarget(meta.target);
-    if (classified?.kind === "web") {
+    if (classified.kind === "web") {
       flows.push({
         kind: "web",
         file,
         name: meta.name ?? flowBasename(file),
         browser: classified.browser,
       });
-    } else if (classified?.kind === "android") {
+    } else if (classified.kind === "android") {
       flows.push({
         kind: "android",
         file,
         name: meta.name ?? flowBasename(file),
         target: meta.target,
       });
+    } else if (classified.kind === "unrecognized") {
+      ctx.ui.error(runnerMessages.unrecognizedTarget(meta.target));
+      return { error: "unrecognized flow target", exitCode: 2 };
     } else {
-      const message = unsupportedTargetMessage(meta.target);
-      ctx.ui.error(message);
-      return { error: message, exitCode: 2 };
+      const typeName = classified.kind === "ios" ? "iOS" : meta.target;
+      skippedByType.set(typeName, (skippedByType.get(typeName) ?? 0) + 1);
     }
+  }
+
+  for (const [type, count] of skippedByType) {
+    ctx.ui.warn(runnerMessages.flowsSkipped(type, count));
   }
 
   flows.sort((a, b) => a.file.localeCompare(b.file));
 
   if (flows.length === 0) {
-    ctx.ui.info("No flows matched.");
+    if (skippedByType.size === 0) {
+      ctx.ui.info(runnerMessages.noFlowsMatched);
+    }
     return;
   }
 
@@ -95,7 +103,7 @@ export async function flowsRun(
         await deps.bootAndroid(avdNames);
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Android boot failed";
+          err instanceof Error ? err.message : runnerMessages.androidBootFailed;
         ctx.ui.error(message);
         return { error: message };
       }
@@ -130,6 +138,6 @@ export async function flowsRun(
   deps.reporter.onRunComplete?.({ summary });
 
   if (counts.flowsFailed > 0) {
-    return { error: `${counts.flowsFailed} flow(s) failed` };
+    return { error: runnerMessages.flowsFailed(counts.flowsFailed) };
   }
 }
