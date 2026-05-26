@@ -9,6 +9,7 @@ type PullSummaryInput = {
 
 export const flowsMessages = {
   title: "Flows",
+  remoteTitle: "Remote Flows",
   flowCount: (count: number) => pluralize(count, "flow"),
   pull: {
     downloadingBundle: "Downloading flows bundle",

@@ -4,6 +4,7 @@ import { withAuthContext, withContext } from "~/commands/context.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { handleFlowsList } from "~/domains/flows/list.js";
+import { flowsListRemote } from "~/domains/flows/listRemote.js";
 import {
   type FlowsPullOptions,
   handleFlowsPull,
@@ -13,7 +14,11 @@ import { registerFlowsRunCommand } from "./run.register.js";
 const listExamples = `
 Examples:
   $ qawolf flows list
-  $ qawolf flows list "flows/checkout/**"`;
+  $ qawolf flows list "flows/checkout/**"
+  $ qawolf flows list --remote
+  $ qawolf flows list "**/checkout/**" --remote`;
+
+type FlowsListOptions = { readonly remote: boolean };
 
 const pullExamples = `
 Examples:
@@ -34,14 +39,30 @@ export function registerFlowsCommand(
   flows
     .command("list [pattern]")
     .description(
-      "List flow files in the project, optionally filtered by [pattern]",
+      "List flows matching [pattern] from the local project, or from QA Wolf with --remote",
+    )
+    .option(
+      "--remote",
+      "List flows from the QA Wolf platform instead of the local project",
+      false,
     )
     .addHelpText("after", listExamples)
-    .action((pattern: string | undefined, opts: unknown, command: Command) =>
-      withContext(signals, (ctx) => handleFlowsList(ctx, pattern))(
-        opts,
-        command,
-      ),
+    .action(
+      (
+        pattern: string | undefined,
+        opts: FlowsListOptions,
+        command: Command,
+      ) => {
+        if (opts.remote) {
+          return withAuthContext(signals, (ctx) =>
+            flowsListRemote(ctx, pattern),
+          )(opts, command);
+        }
+        return withContext(signals, (ctx) => handleFlowsList(ctx, pattern))(
+          opts,
+          command,
+        );
+      },
     );
 
   flows
