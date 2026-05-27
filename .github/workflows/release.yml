@@ -78,6 +78,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.sha }}
 
       - uses: oven-sh/setup-bun@v2
         with:
