@@ -38,7 +38,7 @@ Run any command with `--help` for its flags and options.
 - [Commands](https://docs.qawolf.com/qawolf/libraries/cli/api-reference/commands) — full command and flag reference
 - [Configuration](https://docs.qawolf.com/qawolf/libraries/cli/api-reference/configuration) — `qawolf.config.ts` fields
 - [Environment variables](https://docs.qawolf.com/qawolf/libraries/cli/api-reference/environment-variables)
-- [Exit codes](https://docs.qawolf.com/qawolf/libraries/cli/api-reference/exit-codes)
+- [Exit codes](https://docs.qawolf.com/qawolf/libraries/cli/api-reference/index#exit-codes)
 - [Troubleshooting](https://docs.qawolf.com/qawolf/libraries/cli/troubleshooting)
 
 ## Contributing
