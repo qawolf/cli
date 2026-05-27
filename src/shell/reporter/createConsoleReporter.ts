@@ -1,5 +1,6 @@
 import { styleText } from "node:util";
 import { runnerMessages } from "~/core/messages/index.js";
+import { filterStack, flattenErrorChain } from "./formatError.js";
 import type { Reporter } from "./types.js";
 
 type WriteSink = { write: (str: string) => void };
@@ -23,44 +24,14 @@ function fmtStampLine(manifest: {
   return `    ${styleText("dim", `env=${manifest.envId} hash=${shortHash}`)}\n`;
 }
 
-function filterStack(stack: string): string {
-  const cwd = process.cwd();
-  return stack
-    .split("\n")
-    .filter((line) => {
-      if (!/^\s+at /.test(line)) return true;
-      return !line.includes("node_modules") && !line.includes("dist/cli.js");
-    })
-    .map((line) => {
-      if (!/^\s+at /.test(line)) return line;
-      return line.replace(`file://${cwd}/`, "").replace(`${cwd}/`, "");
-    })
-    .join("\n");
-}
-
-function renderCause(cause: unknown): string {
-  if (cause instanceof Error) return filterStack(cause.stack ?? cause.message);
-  if (typeof cause === "object" && cause !== null) {
-    const obj = cause as Record<string, unknown>;
-    // Duck-type: if it has a string message, treat it as error-like
-    if (typeof obj["message"] === "string") return obj["message"];
-    try {
-      return JSON.stringify(cause);
-    } catch {
-      // oxlint-disable-next-line @typescript-eslint/no-base-to-string
-      return String(cause);
-    }
-  }
-  return String(cause);
-}
-
 function formatErrorWithCause(err: Error): string {
+  // String(err) preserves the error name (e.g. "TypeError: ..."); the shared
+  // chain walker is used for the remaining causes, with stack traces filtered
+  // to drop node_modules and dist/cli.js frames.
   const parts: string[] = [String(err)];
-  let cause: unknown = err.cause;
-  while (cause !== undefined && cause !== null) {
-    parts.push(`Caused by: ${renderCause(cause)}`);
-    if (!(cause instanceof Error)) break;
-    cause = cause.cause;
+  for (const cause of flattenErrorChain(err).slice(1)) {
+    const rendered = cause.stack ? filterStack(cause.stack) : cause.message;
+    parts.push(`Caused by: ${rendered}`);
   }
   return parts.join("\n");
 }
