@@ -57,7 +57,7 @@ export function createPlatformClient(
       call: () =>
         trpc.mutation(
           "gitwolf.getFlowsBundleUrl",
-          { envId },
+          { environmentId: envId },
           flowsBundleResponseSchema,
         ),
       backoffMs: requestBackoffMs,
