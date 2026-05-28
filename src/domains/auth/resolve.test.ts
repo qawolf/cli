@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import type { LoadApiKeyResult } from "./types.js";
 import { requireApiKey, resolveApiKey } from "./resolve.js";
 
@@ -7,12 +8,14 @@ afterEach(() => {
   mock.restore();
 });
 
+const memFs = makeMemoryFs();
+
 describe("resolveApiKey", () => {
   it("returns env var when QAWOLF_API_KEY is set", async () => {
     const mockLoadApiKey =
       mock<(configDir: string) => Promise<LoadApiKeyResult>>();
 
-    const result = await resolveApiKey("/tmp/config", {
+    const result = await resolveApiKey("/tmp/config", memFs, {
       loadApiKey: mockLoadApiKey,
       env: { QAWOLF_API_KEY: "qaw_test_key" },
     });
@@ -25,7 +28,7 @@ describe("resolveApiKey", () => {
     const mockLoadApiKey =
       mock<(configDir: string) => Promise<LoadApiKeyResult>>();
 
-    const result = await resolveApiKey("/tmp/config", {
+    const result = await resolveApiKey("/tmp/config", memFs, {
       loadApiKey: mockLoadApiKey,
       env: { QAWOLF_API_KEY: "  qaw_test_key  " },
     });
@@ -39,7 +42,7 @@ describe("resolveApiKey", () => {
       (configDir: string) => Promise<LoadApiKeyResult>
     >().mockResolvedValue({ found: false });
 
-    const result = await resolveApiKey("/tmp/config", {
+    const result = await resolveApiKey("/tmp/config", memFs, {
       loadApiKey: mockLoadApiKey,
       env: { QAWOLF_API_KEY: "   " },
     });
@@ -57,7 +60,7 @@ describe("resolveApiKey", () => {
       source: "keychain",
     });
 
-    const result = await resolveApiKey("/tmp/config", {
+    const result = await resolveApiKey("/tmp/config", memFs, {
       loadApiKey: mockLoadApiKey,
       env: {},
     });
@@ -70,7 +73,7 @@ describe("resolveApiKey", () => {
       (configDir: string) => Promise<LoadApiKeyResult>
     >().mockResolvedValue({ found: false });
 
-    const result = await resolveApiKey("/tmp/config", {
+    const result = await resolveApiKey("/tmp/config", memFs, {
       loadApiKey: mockLoadApiKey,
       env: {},
     });
@@ -83,7 +86,7 @@ describe("requireApiKey", () => {
   it("returns the resolved ApiKeyResult when a key exists", async () => {
     const mockLoad = mock<(configDir: string) => Promise<LoadApiKeyResult>>();
 
-    const result = await requireApiKey("/tmp/config", {
+    const result = await requireApiKey("/tmp/config", memFs, {
       loadApiKey: mockLoad,
       env: { QAWOLF_API_KEY: "qaw_key" },
     });
@@ -98,7 +101,7 @@ describe("requireApiKey", () => {
 
     let caughtError: unknown;
     try {
-      await requireApiKey("/tmp/config", {
+      await requireApiKey("/tmp/config", memFs, {
         loadApiKey: mockLoad,
         env: {},
       });

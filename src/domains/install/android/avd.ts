@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { SpawnFn } from "~/shell/spawn.js";
+import { installMessages } from "~/core/messages/index.js";
 
 export type AvdSpec = {
   readonly avdName: string;
@@ -25,9 +26,7 @@ export async function installAvds(
   const versionResult = await deps.spawn(deps.sdkManagerPath, ["--version"]);
   if (versionResult.exitCode !== 0) {
     throw new Error(
-      `sdkmanager not found at ${deps.sdkManagerPath}.\n` +
-        `Install Android cmdline-tools via Android Studio SDK Manager or from\n` +
-        `https://developer.android.com/studio#command-line-tools-only`,
+      installMessages.android.sdkmanagerNotFound(deps.sdkManagerPath),
     );
   }
 
@@ -35,28 +34,37 @@ export async function installAvds(
   // sdkmanager writes it on first acceptance.
   const licenseFile = join(deps.androidHome, "licenses", "android-sdk-license");
   if (deps.checkExists(licenseFile)) {
-    ctx.ui.info("Android SDK licenses already accepted.");
+    ctx.ui.info(installMessages.android.licensesAlreadyAccepted);
   } else {
-    ctx.ui.step("Accepting Android SDK licenses");
+    ctx.ui.step(installMessages.android.acceptingLicenses);
     await deps.spawn(deps.sdkManagerPath, ["--licenses"], {
       stdin: "y\n".repeat(20),
     });
   }
 
-  // Install each unique system image. The system image directory is created by
-  // sdkmanager after a successful install, so its presence means it's installed.
+  // Install each unique system image. Check for system.img inside the directory
+  // rather than the directory itself — sdkmanager can leave a partial install
+  // (directory present, system.img absent) that avdmanager rejects.
   const installedImages = new Set<string>();
   for (const spec of specs) {
     if (installedImages.has(spec.systemImage)) continue;
     // system-images;android-35;google_apis_playstore;arm64-v8a
-    //   → $ANDROID_HOME/system-images/android-35/google_apis_playstore/arm64-v8a
-    const imageDir = join(deps.androidHome, ...spec.systemImage.split(";"));
-    if (deps.checkExists(imageDir)) {
-      ctx.ui.info(`System image ${spec.systemImage} already installed.`);
+    //   → $ANDROID_HOME/system-images/android-35/google_apis_playstore/arm64-v8a/system.img
+    const systemImg = join(
+      deps.androidHome,
+      ...spec.systemImage.split(";"),
+      "system.img",
+    );
+    if (deps.checkExists(systemImg)) {
+      ctx.ui.info(
+        installMessages.android.systemImageAlreadyInstalled(spec.systemImage),
+      );
       installedImages.add(spec.systemImage);
       continue;
     }
-    ctx.ui.step(`Installing ${spec.systemImage}`);
+    ctx.ui.step(
+      installMessages.android.installingSystemImage(spec.systemImage),
+    );
     const result = await deps.spawn(deps.sdkManagerPath, [spec.systemImage]);
     if (result.exitCode !== 0) {
       const detail =
@@ -65,7 +73,10 @@ export async function installAvds(
           .map((l) => l.trim())
           .find(Boolean) ?? `exit code ${result.exitCode}`;
       throw new Error(
-        `sdkmanager failed to install ${spec.systemImage}: ${detail}`,
+        installMessages.android.sdkmanagerInstallFailed(
+          spec.systemImage,
+          detail,
+        ),
       );
     }
     installedImages.add(spec.systemImage);
@@ -87,10 +98,10 @@ export async function installAvds(
   // Create missing AVDs.
   for (const spec of specs) {
     if (existingAvds.has(spec.avdName)) {
-      ctx.ui.info(`AVD ${spec.avdName} already exists, skipping.`);
+      ctx.ui.info(installMessages.android.avdAlreadyExists(spec.avdName));
       continue;
     }
-    ctx.ui.step(`Creating AVD ${spec.avdName}`);
+    ctx.ui.step(installMessages.android.creatingAvd(spec.avdName));
     const result = await deps.spawn(deps.avdManagerPath, [
       "create",
       "avd",
@@ -108,7 +119,9 @@ export async function installAvds(
           .split("\n")
           .map((l) => l.trim())
           .find(Boolean) ?? `exit code ${result.exitCode}`;
-      throw new Error(`avdmanager failed to create ${spec.avdName}: ${detail}`);
+      throw new Error(
+        installMessages.android.avdmanagerCreateFailed(spec.avdName, detail),
+      );
     }
   }
 }

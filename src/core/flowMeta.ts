@@ -26,26 +26,29 @@ export function classifyTarget(
   | { kind: "web"; browser: BrowserName }
   | { kind: "android" }
   | { kind: "ios" }
-  | undefined {
+  | { kind: "unsupported" }
+  | { kind: "unrecognized" } {
   let parsed: ReturnType<typeof parseExecutionTarget>;
   try {
     parsed = parseExecutionTarget(target as ParseExecutionTargetArg);
   } catch {
-    return undefined;
+    // Zod validation failed — not a known target string (e.g. a typo)
+    return { kind: "unrecognized" };
   }
   if (parsed.platform === "android") return { kind: "android" };
   if (parsed.platform === "ios") return { kind: "ios" };
-  if (parsed.platform !== "web") return undefined;
+  if (parsed.platform !== "web") return { kind: "unsupported" };
   const meta = parsed.meta;
-  if (typeof meta === "string") return undefined; // "legacy" form
-  if (!("defaultBrowser" in meta) && !("browser" in meta)) return undefined; // Electron
+  if (typeof meta === "string") return { kind: "unsupported" }; // "legacy" form
+  if (!("defaultBrowser" in meta) && !("browser" in meta))
+    return { kind: "unsupported" }; // Electron
   try {
     const info = getWebBrowserInfo(meta);
     const browser = browserNameToPlaywright[info.name];
-    if (!browser) return undefined;
+    if (!browser) return { kind: "unsupported" };
     return { kind: "web", browser };
   } catch {
-    return undefined;
+    return { kind: "unsupported" };
   }
 }
 
@@ -78,6 +81,10 @@ const nameRe = /\bflow\s*\(\s*["']([^"'\n]+)["']/;
 // Dynamic expressions (variables, template literals) produce undefined for that field.
 const flowTargetRe =
   /\bflow\s*\(\s*["'][^"'\n]*["']\s*,\s*(?:["']([^"'\n]+)["']|\{[^{}]*\btarget\s*:\s*["']([^"'\n]+)["'])/;
+
+export type PeekFlowMetaFn = (
+  filePath: string,
+) => Promise<{ name: string | undefined; target: string | undefined }>;
 
 export function extractFlowMeta(source: string): {
   name: string | undefined;

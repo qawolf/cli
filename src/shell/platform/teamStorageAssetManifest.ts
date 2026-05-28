@@ -2,7 +2,7 @@ import { dirname } from "node:path";
 import { z } from "zod";
 
 import { isNoEntError } from "~/core/errors.js";
-import { mkdir, readFile, writeFile } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import type { TeamStorageFile } from "./types.js";
 
 const assetManifestSchema = z.object({
@@ -27,10 +27,11 @@ function assetManifestPath(assetsAbs: string): string {
 
 export async function readAssetManifest(
   assetsAbs: string,
+  fs: Fs,
 ): Promise<Map<string, AssetManifestEntry>> {
   let raw: string;
   try {
-    raw = await readFile(assetManifestPath(assetsAbs), "utf8");
+    raw = await fs.readFile(assetManifestPath(assetsAbs));
   } catch (err: unknown) {
     if (isNoEntError(err)) return new Map();
     throw err;
@@ -52,6 +53,7 @@ export async function readAssetManifest(
 export async function writeAssetManifest(
   assetsAbs: string,
   files: readonly TeamStorageFile[],
+  fs: Fs,
 ): Promise<void> {
   const manifest = {
     version: 1,
@@ -63,8 +65,8 @@ export async function writeAssetManifest(
     })),
   };
   const path = assetManifestPath(assetsAbs);
-  await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, `${JSON.stringify(manifest, undefined, 2)}\n`, "utf8");
+  await fs.mkdir(dirname(path), { recursive: true });
+  await fs.writeFile(path, `${JSON.stringify(manifest, undefined, 2)}\n`);
 }
 
 function serializeDate(value: Date | string | undefined): string | undefined {

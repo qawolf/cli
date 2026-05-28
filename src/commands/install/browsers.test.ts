@@ -5,7 +5,6 @@ import {
   fakeCli,
   callsOf,
   makeDeps,
-  makeFakeUI,
   makeCtx,
   ok,
   setup,
@@ -32,7 +31,7 @@ describe("installBrowsers", () => {
   });
 
   it("spawns install for each unique browser sorted alphabetically", async () => {
-    const ui = makeFakeUI();
+    const ctx = makeCtx();
     const deps = makeDeps({
       files: ["/a", "/b", "/c"],
       metaByFile: {
@@ -43,21 +42,21 @@ describe("installBrowsers", () => {
       spawn: spawnSequence(ok, ok, ok),
     });
 
-    await installBrowsers(makeCtx(ui), undefined, deps);
+    await installBrowsers(ctx, undefined, deps);
 
     expect(callsOf(deps.spawn)).toEqual([
       [fakeCli, ["install", "chromium"]],
       [fakeCli, ["install", "firefox"]],
       [fakeCli, ["install", "webkit"]],
     ]);
-    expect(ui.withProgress).toHaveBeenCalledWith(
+    expect(ctx.ui.withProgress).toHaveBeenCalledWith(
       expect.anything(),
       "Installed 3 browsers.",
     );
   });
 
   it("invokes each browser only once when multiple flows share a target", async () => {
-    const ui = makeFakeUI();
+    const ctx = makeCtx();
     const deps = makeDeps({
       files: ["/a", "/b", "/c"],
       metaByFile: {
@@ -67,17 +66,17 @@ describe("installBrowsers", () => {
       },
     });
 
-    await installBrowsers(makeCtx(ui), undefined, deps);
+    await installBrowsers(ctx, undefined, deps);
 
     expect(deps.spawn).toHaveBeenCalledTimes(1);
-    expect(ui.withProgress).toHaveBeenCalledWith(
+    expect(ctx.ui.withProgress).toHaveBeenCalledWith(
       expect.anything(),
       "Installed 1 browser.",
     );
   });
 
   it("silently skips flows whose target is not a Playwright-driven web browser", async () => {
-    const ui = makeFakeUI();
+    const ctx = makeCtx();
     const deps = makeDeps({
       files: ["/a", "/b", "/c"],
       metaByFile: {
@@ -87,24 +86,24 @@ describe("installBrowsers", () => {
       },
     });
 
-    await installBrowsers(makeCtx(ui), undefined, deps);
+    await installBrowsers(ctx, undefined, deps);
 
     expect(deps.spawn).not.toHaveBeenCalled();
-    expect(ui.info).toHaveBeenCalledWith(
+    expect(ctx.ui.info).toHaveBeenCalledWith(
       "No web flows requiring browser installation were found.",
     );
-    expect(ui.success).not.toHaveBeenCalled();
+    expect(ctx.ui.success).not.toHaveBeenCalled();
   });
 
   it("reports no flows when expandPatterns returns empty", async () => {
-    const ui = makeFakeUI();
+    const ctx = makeCtx();
     const deps = makeDeps({ files: [] });
 
-    await installBrowsers(makeCtx(ui), undefined, deps);
+    await installBrowsers(ctx, undefined, deps);
 
     expect(deps.peekFlowMeta).not.toHaveBeenCalled();
     expect(deps.spawn).not.toHaveBeenCalled();
-    expect(ui.info).toHaveBeenCalledWith(
+    expect(ctx.ui.info).toHaveBeenCalledWith(
       "No web flows requiring browser installation were found.",
     );
   });
@@ -122,7 +121,7 @@ describe("installBrowsers", () => {
   });
 
   it("throws and stops on first non-zero exit", async () => {
-    const ui = makeFakeUI();
+    const ctx = makeCtx();
     const deps = makeDeps({
       files: ["/a", "/b"],
       metaByFile: {
@@ -138,7 +137,7 @@ describe("installBrowsers", () => {
 
     let caughtError: unknown;
     try {
-      await installBrowsers(makeCtx(ui), undefined, deps);
+      await installBrowsers(ctx, undefined, deps);
     } catch (e) {
       caughtError = e;
     }
@@ -148,7 +147,7 @@ describe("installBrowsers", () => {
     expect((caughtError as Error).message).toBe(
       "playwright install firefox failed: boom",
     );
-    expect(ui.withProgress).toHaveBeenCalledTimes(1);
+    expect(ctx.ui.withProgress).toHaveBeenCalledTimes(1);
   });
 
   it("throws when spawn returns exitCode -1 (process failed to launch)", async () => {

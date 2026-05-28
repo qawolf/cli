@@ -3,12 +3,14 @@ import {
   type AdbFn,
   type SpawnFn,
 } from "./createAndroidEmulator.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 export type EmulatorSlot = { serial: string; avdName: string };
 
 const baseConsolePort = 5554;
 
-export function createEmulatorPool(params?: {
+export function createEmulatorPool(params: {
+  signals: SignalRegistry;
   deps?: { spawn?: SpawnFn; adb?: AdbFn };
 }): {
   bootForAvd: (avdName: string, count: number) => Promise<void>;
@@ -29,8 +31,11 @@ export function createEmulatorPool(params?: {
   >();
   const bootedAvds = new Set<string>();
 
-  return {
-    async bootForAvd(avdName, count) {
+  let closeAllImpl: () => void = () => {};
+  const unregister = params.signals.register(() => closeAllImpl());
+
+  const pool = {
+    async bootForAvd(avdName: string, count: number) {
       if (bootedAvds.has(avdName)) return;
       bootedAvds.add(avdName);
 
@@ -40,7 +45,7 @@ export function createEmulatorPool(params?: {
         const p = createAndroidEmulator({
           avdName,
           port,
-          ...(params?.deps !== undefined ? { deps: params.deps } : {}),
+          ...(params.deps !== undefined ? { deps: params.deps } : {}),
         });
         inFlightBoots.add(p);
         void p.finally(() => inFlightBoots.delete(p));
@@ -81,17 +86,17 @@ export function createEmulatorPool(params?: {
       }
     },
 
-    checkOut(avdName) {
+    checkOut(avdName: string) {
       const free = freeSlots.get(avdName);
       if (free?.length) return Promise.resolve(free.shift()!);
 
-      return new Promise((resolve, reject) => {
+      return new Promise<EmulatorSlot>((resolve, reject) => {
         if (!waiters.has(avdName)) waiters.set(avdName, []);
         waiters.get(avdName)!.push({ resolve, reject });
       });
     },
 
-    checkIn(slot) {
+    checkIn(slot: EmulatorSlot) {
       if (closed) return;
       const waiter = waiters.get(slot.avdName)?.shift();
       if (waiter) {
@@ -102,7 +107,8 @@ export function createEmulatorPool(params?: {
       }
     },
 
-    closeAll() {
+    closeAll(this: void) {
+      unregister();
       closed = true;
       for (const h of handles) h.stop();
       handles.length = 0;
@@ -121,4 +127,7 @@ export function createEmulatorPool(params?: {
       nextPort = baseConsolePort;
     },
   };
+
+  closeAllImpl = pool.closeAll;
+  return pool;
 }

@@ -1,5 +1,3 @@
-import { readFile } from "node:fs/promises";
-
 import packageJson from "../../../package.json" with { type: "json" };
 
 import { avdNameForTarget } from "~/core/androidTargets.js";
@@ -9,13 +7,12 @@ import { runChecks } from "~/domains/doctor/checks/index.js";
 import { renderResults } from "~/domains/doctor/render.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
 import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
-import { expandPatterns, peekFlowMeta } from "~/domains/flows/expand.js";
+import { expandPatterns, makePeekFlowMeta } from "~/domains/flows/expand.js";
 import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
 import {
   type CommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
-import { existsSync } from "~/shell/fs.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 
@@ -23,6 +20,7 @@ type HandleDoctorOpts = { readonly all: boolean };
 
 async function collectRequiredAvds(
   files: readonly string[],
+  peekFlowMeta: ReturnType<typeof makePeekFlowMeta>,
 ): Promise<string[]> {
   const seen = new Set<string>();
   for await (const meta of batchMap(files, peekFlowMeta, flowBatchSize)) {
@@ -37,27 +35,31 @@ export async function handleDoctor(
   ctx: CommandContext,
   opts: HandleDoctorOpts,
 ): Promise<CommandResult> {
+  const { fs } = ctx;
   const cwd = process.cwd();
-  const flowFiles = await expandPatterns([], cwd);
+  const flowFiles = await expandPatterns([], cwd, undefined, fs);
 
   // Playwright lives in the env dir (installed by ensureFlowDeps), not in cwd.
   // Silently fall back to cwd when no env dir is found or flows span multiple packages.
   let envDir: string | undefined;
   try {
-    envDir = resolveUniqueEnvDir([...flowFiles]);
+    envDir = resolveUniqueEnvDir([...flowFiles], fs);
   } catch {
     // multiple env dirs — fall back to cwd
   }
   let playwrightCliPath: string | undefined;
   try {
-    playwrightCliPath = resolvePlaywrightCli(envDir ?? cwd);
+    playwrightCliPath = resolvePlaywrightCli(envDir ?? cwd, process.platform);
   } catch {
     playwrightCliPath = undefined;
   }
 
-  const resolved = await resolveApiKey(ctx.configDir);
+  const resolved = await resolveApiKey(ctx.configDir, fs);
 
-  const requiredAvds = await collectRequiredAvds(flowFiles);
+  const requiredAvds = await collectRequiredAvds(
+    flowFiles,
+    makePeekFlowMeta(fs),
+  );
   const runAndroidChecks = opts.all || requiredAvds.length > 0;
 
   const cliCheck: CheckResult = {
@@ -74,12 +76,12 @@ export async function handleDoctor(
     enginesNode: packageJson.engines.node,
     processVersion: process.version,
     flowFiles,
-    readFile: (path) => readFile(path, "utf-8"),
+    readFile: (path) => ctx.fs.readFile(path),
     cwd,
     playwrightCliPath,
     runAndroidChecks,
     androidHome: process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"],
-    checkExists: existsSync,
+    checkExists: (path: string) => ctx.fs.existsSync(path),
     envDir,
     resolveAppiumBin,
     requiredAvds,

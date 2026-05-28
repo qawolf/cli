@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import { fetchSignedUrl } from "./fetchSignedUrl.js";
 
 const cleanups: (() => void)[] = [];
@@ -55,6 +56,22 @@ describe("fetchSignedUrl", () => {
 
     expect(result).toEqual({ ok: true, data: undefined });
     expect(readFileSync(dest, "utf8")).toBe("hello bytes");
+  });
+
+  it("writes through the injected fs dependency", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/assets", { recursive: true });
+
+    const result = await fetchSignedUrl(
+      { dest: "/assets/file.txt", url },
+      {
+        fetch: asFetch(createFetchMock(new Response("memory bytes"))),
+        fs,
+      },
+    );
+
+    expect(result).toEqual({ ok: true, data: undefined });
+    expect(await fs.readFile("/assets/file.txt")).toBe("memory bytes");
   });
 
   it("returns http error on 403 (URL expired)", async () => {

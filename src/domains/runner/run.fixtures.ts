@@ -1,12 +1,11 @@
 import { mock } from "bun:test";
 
-import type { CommandContext } from "~/shell/commandContext.js";
+import { makeCtx, makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import type { FlowStamp } from "~/shell/manifest/types.js";
 import type { Reporter } from "~/shell/reporter/types.js";
 import type { FlowRunError } from "~/domains/runner/errors.js";
 import type { RunWebFlowDeps } from "~/domains/runner/runWebFlow.js";
 import type { FlowRunResult } from "~/domains/runner/types.js";
-import type { UI } from "~/shell/ui/index.js";
 
 import type { RunAndroidFlowDeps } from "~/domains/runner/runAndroidFlow.js";
 
@@ -14,39 +13,7 @@ import type { FlowsRunDeps, FlowsRunFlags } from "./runInternals.js";
 
 export const fakeCwd = "/proj";
 
-// Note: this duplicates `makeFakeUI` from `src/commands/install/browsers.fixtures.ts`.
-// Lift to a shared `~/lib/test/ui.ts` (or similar) when a third file needs it.
-export function makeFakeUI(): UI {
-  return {
-    mode: "human",
-    gap: mock(() => {}),
-    intro: mock(() => {}),
-    note: mock(() => {}),
-    outro: mock(() => {}),
-    confirm: mock(() => Promise.resolve({ ok: false } as const)),
-    password: mock(() => Promise.resolve({ ok: false } as const)),
-    withProgress: mock(() =>
-      Promise.resolve([]),
-    ) as unknown as UI["withProgress"],
-    step: mock(() => {}),
-    success: mock(() => {}),
-    warn: mock(() => {}),
-    cancel: mock(() => {}),
-    json: mock(() => {}),
-    output: mock(() => {}),
-    error: mock(() => {}),
-    info: mock(() => {}),
-    write: mock(() => {}),
-  };
-}
-
-export const makeCtx = (ui: UI = makeFakeUI()): CommandContext => ({
-  ui,
-  configDir: "/tmp/test-config",
-  outputMode: "human",
-  isInteractive: false,
-  apiBaseUrl: "https://example.invalid",
-});
+export { makeCtx, makeFakeUI };
 
 export function makeReporter(): Reporter {
   return {

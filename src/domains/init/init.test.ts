@@ -1,40 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import {
-  mkdir as fsMkdir,
-  mkdtemp,
-  readFile as fsReadFile,
-  rm,
-  writeFile as fsWriteFile,
-} from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { describe, expect, it } from "bun:test";
 import { join } from "node:path";
-import { pathExists } from "~/shell/fs.js";
+
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import type { CommandContext } from "~/shell/commandContext.js";
-import { type InitDeps, handleInit } from "./init.js";
+import { handleInit } from "./init.js";
 import { flowsVersion } from "~/generated/dependencyVersions.js";
 import { exampleFlowTs, qawolfConfigTs, qawolfGitignore } from "./templates.js";
 
-let dir: string;
-
-beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), "qawolf-init-"));
-});
-
-afterEach(async () => {
-  await rm(dir, { recursive: true, force: true });
-});
-
-function makeDeps(cwd: string): InitDeps {
-  return {
-    cwd,
-    pathExists,
-    readFile: (p, enc) => fsReadFile(p, enc),
-    writeFile: (p, content) => fsWriteFile(p, content),
-    mkdir: async (p, opts) => {
-      await fsMkdir(p, opts);
-    },
-  };
-}
+const cwd = "/test/project";
 
 function makeCtx(confirmValue = true) {
   const messages: { method: string; text: string }[] = [];
@@ -57,39 +30,40 @@ function makeCtx(confirmValue = true) {
 
 describe("handleInit", () => {
   it("should create all four artifacts in an empty directory", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx } = makeCtx();
-    await fsWriteFile(
-      join(dir, "package.json"),
+    await memFs.writeFile(
+      join(cwd, "package.json"),
       JSON.stringify({ name: "app" }),
     );
 
-    await handleInit(ctx, { yes: false }, makeDeps(dir));
+    await handleInit(ctx, { yes: false }, { cwd, fs: memFs });
 
-    expect(await fsReadFile(join(dir, "qawolf.config.ts"), "utf-8")).toBe(
+    expect(await memFs.readFile(join(cwd, "qawolf.config.ts"))).toBe(
       qawolfConfigTs,
     );
     expect(
-      await fsReadFile(join(dir, "src", "flows", "example.flow.ts"), "utf-8"),
+      await memFs.readFile(join(cwd, "src", "flows", "example.flow.ts")),
     ).toBe(exampleFlowTs);
-    const gitignore = await fsReadFile(
-      join(dir, ".qawolf", ".gitignore"),
-      "utf-8",
-    );
+    const gitignore = await memFs.readFile(join(cwd, ".qawolf", ".gitignore"));
     expect(gitignore).toBe(qawolfGitignore);
     const pkg = JSON.parse(
-      await fsReadFile(join(dir, "package.json"), "utf-8"),
+      await memFs.readFile(join(cwd, "package.json")),
     ) as Record<string, unknown>;
     const scripts = pkg["scripts"] as Record<string, string>;
     expect(scripts["test:e2e"]).toBe("qawolf flows run");
   });
 
   it("should skip qawolf.config.ts when it exists and confirm returns false", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx, messages } = makeCtx(false);
-    await fsWriteFile(join(dir, "qawolf.config.ts"), "// existing");
+    await memFs.writeFile(join(cwd, "qawolf.config.ts"), "// existing");
 
-    await handleInit(ctx, { yes: false }, makeDeps(dir));
+    await handleInit(ctx, { yes: false }, { cwd, fs: memFs });
 
-    expect(await fsReadFile(join(dir, "qawolf.config.ts"), "utf-8")).toBe(
+    expect(await memFs.readFile(join(cwd, "qawolf.config.ts"))).toBe(
       "// existing",
     );
     expect(
@@ -100,27 +74,31 @@ describe("handleInit", () => {
   });
 
   it("should overwrite qawolf.config.ts when --yes is set", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx } = makeCtx(false);
-    await fsWriteFile(join(dir, "qawolf.config.ts"), "// existing");
+    await memFs.writeFile(join(cwd, "qawolf.config.ts"), "// existing");
 
-    await handleInit(ctx, { yes: true }, makeDeps(dir));
+    await handleInit(ctx, { yes: true }, { cwd, fs: memFs });
 
-    expect(await fsReadFile(join(dir, "qawolf.config.ts"), "utf-8")).toBe(
+    expect(await memFs.readFile(join(cwd, "qawolf.config.ts"))).toBe(
       qawolfConfigTs,
     );
   });
 
   it("should warn and skip test:e2e when already in package.json scripts", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx, messages } = makeCtx();
-    await fsWriteFile(
-      join(dir, "package.json"),
+    await memFs.writeFile(
+      join(cwd, "package.json"),
       JSON.stringify({ scripts: { "test:e2e": "already there" } }),
     );
 
-    await handleInit(ctx, { yes: false }, makeDeps(dir));
+    await handleInit(ctx, { yes: false }, { cwd, fs: memFs });
 
     const pkg = JSON.parse(
-      await fsReadFile(join(dir, "package.json"), "utf-8"),
+      await memFs.readFile(join(cwd, "package.json")),
     ) as Record<string, unknown>;
     const scripts = pkg["scripts"] as Record<string, string>;
     expect(scripts["test:e2e"]).toBe("already there");
@@ -130,12 +108,13 @@ describe("handleInit", () => {
   });
 
   it("should create package.json with type:module when none exists", async () => {
+    const memFs = makeMemoryFs();
     const { ctx } = makeCtx(true);
 
-    await handleInit(ctx, { yes: false }, makeDeps(dir));
+    await handleInit(ctx, { yes: false }, { cwd, fs: memFs });
 
     const pkg = JSON.parse(
-      await fsReadFile(join(dir, "package.json"), "utf-8"),
+      await memFs.readFile(join(cwd, "package.json")),
     ) as Record<string, unknown>;
     expect(pkg["private"]).toBe(true);
     expect(pkg["type"]).toBe("module");
@@ -146,20 +125,22 @@ describe("handleInit", () => {
   });
 
   it("should skip creating package.json when none exists and confirm returns false", async () => {
+    const memFs = makeMemoryFs();
     const { ctx } = makeCtx(false);
 
-    await handleInit(ctx, { yes: false }, makeDeps(dir));
+    await handleInit(ctx, { yes: false }, { cwd, fs: memFs });
 
-    expect(await pathExists(join(dir, "package.json"))).toBe(false);
+    expect(await memFs.pathExists(join(cwd, "package.json"))).toBe(false);
   });
 
   it("should create package.json when --yes is set and none exists", async () => {
+    const memFs = makeMemoryFs();
     const { ctx } = makeCtx(false);
 
-    await handleInit(ctx, { yes: true }, makeDeps(dir));
+    await handleInit(ctx, { yes: true }, { cwd, fs: memFs });
 
     const pkg = JSON.parse(
-      await fsReadFile(join(dir, "package.json"), "utf-8"),
+      await memFs.readFile(join(cwd, "package.json")),
     ) as Record<string, unknown>;
     expect(pkg["private"]).toBe(true);
     expect(pkg["type"]).toBe("module");
@@ -170,16 +151,18 @@ describe("handleInit", () => {
   });
 
   it("should skip package.json update when confirm returns false", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx, messages } = makeCtx(false);
-    await fsWriteFile(
-      join(dir, "package.json"),
+    await memFs.writeFile(
+      join(cwd, "package.json"),
       JSON.stringify({ name: "app" }),
     );
 
-    await handleInit(ctx, { yes: false }, makeDeps(dir));
+    await handleInit(ctx, { yes: false }, { cwd, fs: memFs });
 
     const pkg = JSON.parse(
-      await fsReadFile(join(dir, "package.json"), "utf-8"),
+      await memFs.readFile(join(cwd, "package.json")),
     ) as Record<string, unknown>;
     expect(pkg["scripts"]).toBeUndefined();
     expect(
@@ -190,30 +173,32 @@ describe("handleInit", () => {
   });
 
   it("should add test:e2e to package.json when --yes is set", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx } = makeCtx(false);
-    await fsWriteFile(
-      join(dir, "package.json"),
+    await memFs.writeFile(
+      join(cwd, "package.json"),
       JSON.stringify({ name: "app" }),
     );
 
-    await handleInit(ctx, { yes: true }, makeDeps(dir));
+    await handleInit(ctx, { yes: true }, { cwd, fs: memFs });
 
     const pkg = JSON.parse(
-      await fsReadFile(join(dir, "package.json"), "utf-8"),
+      await memFs.readFile(join(cwd, "package.json")),
     ) as Record<string, unknown>;
     const scripts = pkg["scripts"] as Record<string, string>;
     expect(scripts["test:e2e"]).toBe("qawolf flows run");
   });
 
   it("should warn when package.json is not valid JSON", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(cwd, { recursive: true });
     const { ctx, messages } = makeCtx();
-    await fsWriteFile(join(dir, "package.json"), "not json {");
+    await memFs.writeFile(join(cwd, "package.json"), "not json {");
 
-    await handleInit(ctx, { yes: false }, makeDeps(dir));
+    await handleInit(ctx, { yes: false }, { cwd, fs: memFs });
 
-    expect(await fsReadFile(join(dir, "package.json"), "utf-8")).toBe(
-      "not json {",
-    );
+    expect(await memFs.readFile(join(cwd, "package.json"))).toBe("not json {");
     expect(
       messages.some(
         (m) => m.method === "warn" && m.text.includes("not valid JSON"),

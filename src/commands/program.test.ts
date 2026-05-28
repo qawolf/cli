@@ -2,10 +2,13 @@ import { CommanderError } from "commander";
 import { describe, expect, it } from "bun:test";
 
 import packageJson from "../../package.json" with { type: "json" };
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { createProgram } from "./program.js";
 
+const noopSignals = makeNoopSignals();
+
 function silentProgram() {
-  return createProgram()
+  return createProgram({ signals: noopSignals })
     .exitOverride()
     .configureOutput({ writeOut: () => {}, writeErr: () => {} });
 }
@@ -14,7 +17,9 @@ describe("createProgram", () => {
   // Best-effort: ensures the version at least aligns with package.json, but
   // cannot prove the value is dynamically derived rather than hardcoded.
   it("version matches package.json", () => {
-    expect(createProgram().version()).toBe(packageJson.version);
+    expect(createProgram({ signals: noopSignals }).version()).toBe(
+      packageJson.version,
+    );
   });
 
   it("--version exits cleanly", () => {
@@ -53,7 +58,7 @@ describe("createProgram", () => {
   });
 
   it("registers the install browsers subcommand", () => {
-    const program = createProgram();
+    const program = createProgram({ signals: noopSignals });
     const install = program.commands.find((c) => c.name() === "install");
     expect(install).toBeDefined();
     const browsers = install?.commands.find((c) => c.name() === "browsers");
@@ -61,13 +66,13 @@ describe("createProgram", () => {
   });
 
   it("registers the init command", () => {
-    const program = createProgram();
+    const program = createProgram({ signals: noopSignals });
     const init = program.commands.find((c) => c.name() === "init");
     expect(init).toBeDefined();
   });
 
   it("registers the flows run subcommand", () => {
-    const program = createProgram();
+    const program = createProgram({ signals: noopSignals });
     const flows = program.commands.find((c) => c.name() === "flows");
     expect(flows).toBeDefined();
     const run = flows?.commands.find((c) => c.name() === "run");

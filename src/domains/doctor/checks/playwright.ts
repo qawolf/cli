@@ -1,3 +1,4 @@
+import { doctorMessages } from "~/core/messages/index.js";
 import type { SpawnFn } from "~/shell/spawn.js";
 
 import type { CheckResult } from "~/domains/doctor/types.js";
@@ -14,8 +15,7 @@ export async function checkPlaywright(
     return {
       name: "playwright",
       status: "fail",
-      detail:
-        "Could not find Playwright. Run `qawolf flows run` to install it, or run `npm install playwright` in your flow directory.",
+      detail: doctorMessages.playwright.notFound,
     };
   }
 
@@ -25,7 +25,7 @@ export async function checkPlaywright(
     return {
       name: "playwright",
       status: "fail",
-      detail: "Could not launch Playwright. Try reinstalling the qawolf CLI.",
+      detail: doctorMessages.playwright.launchFailed,
     };
   }
 
@@ -41,7 +41,7 @@ export async function checkPlaywright(
     return {
       name: "playwright",
       status: "fail",
-      detail: "Could not parse playwright version output",
+      detail: doctorMessages.playwright.versionUnparseable,
     };
   }
 

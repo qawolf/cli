@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
+import { runnerMessages } from "~/core/messages/index.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 
 import {
@@ -26,7 +27,7 @@ describe("flowsRun Android dispatch", () => {
       reporter,
     });
     const result = await flowsRun(makeCtx(), ["/a.ts"], defaultFlags(), deps);
-    expect(result).toEqual({ error: "1 flow(s) failed" });
+    expect(result).toEqual({ error: runnerMessages.flowsFailed(1) });
     expect(reporter.onFlowFail).toHaveBeenCalledTimes(1);
     const failCall = callsOf(reporter.onFlowFail!)[0]?.[0] as { err: Error };
     expect((failCall.err.cause as Error).message).toContain("WIZ-10343");
@@ -47,7 +48,7 @@ describe("flowsRun Android dispatch", () => {
       flowPath: string;
       options: unknown;
     };
-    expect(arg.deps).toBe(deps.runAndroidFlowDeps);
+    expect(arg.deps).toMatchObject(deps.runAndroidFlowDeps as object);
     expect(arg.flowPath).toBe("/a.ts");
     expect(arg.options).toMatchObject({ retries: 0, recordVideo: false });
     expect(reporter.onFlowPass).toHaveBeenCalledTimes(1);

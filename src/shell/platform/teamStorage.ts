@@ -25,7 +25,7 @@ export async function listTeamStorageFiles(
     const input =
       nextPageToken === undefined
         ? { teamId: args.teamId, excludePrefixes }
-        : { teamId: args.teamId, excludePrefixes, nextPageToken };
+        : { teamId: args.teamId, excludePrefixes, pageToken: nextPageToken };
     const result = await requestWithRetry({
       call: () =>
         trpc.query(

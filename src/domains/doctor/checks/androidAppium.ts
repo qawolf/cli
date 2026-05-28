@@ -2,6 +2,7 @@ import { join } from "node:path";
 
 import envPaths from "env-paths";
 
+import { doctorMessages } from "~/core/messages/index.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 
@@ -26,8 +27,7 @@ export function checkAppium(
       appium: {
         name: "appium",
         status: "warn",
-        detail:
-          "No env dir found. Run `qawolf flows run` to install Appium dependencies.",
+        detail: doctorMessages.appium.noEnvDir,
       },
       bin: undefined,
     };
@@ -38,7 +38,7 @@ export function checkAppium(
       appium: {
         name: "appium",
         status: "warn",
-        detail: `Appium binary missing at ${bin}. Run \`qawolf flows run\` to install.`,
+        detail: doctorMessages.appium.binaryMissing(bin),
       },
       bin: undefined,
     };
@@ -54,7 +54,7 @@ export async function checkUiautomator2(
     return {
       name: "uiautomator2-driver",
       status: "warn",
-      detail: "Cannot check driver list without Appium binary.",
+      detail: doctorMessages.appium.cannotCheckDriverList,
     };
   }
   const result = await spawn(appiumBin, ["driver", "list", "--installed"], {
@@ -64,7 +64,7 @@ export async function checkUiautomator2(
     return {
       name: "uiautomator2-driver",
       status: "warn",
-      detail: `Could not run \`appium driver list\` (${firstLine(result)}). The Appium binary may be broken — try \`qawolf flows run\` to reinstall.`,
+      detail: doctorMessages.appium.driverListFailed(firstLine(result)),
     };
   }
   // Appium 2 prints the driver list to stderr on some versions.
@@ -75,7 +75,6 @@ export async function checkUiautomator2(
   return {
     name: "uiautomator2-driver",
     status: "warn",
-    detail:
-      "uiautomator2 driver not installed. Run `qawolf install android` to install it.",
+    detail: doctorMessages.appium.uiautomator2NotInstalled,
   };
 }

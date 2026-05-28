@@ -1,54 +1,88 @@
-import {
-  type AuthCommandContext,
-  type CommandResult,
-} from "~/shell/commandContext.js";
-import { authCopy } from "~/core/copy/index.js";
+import { errorMessage } from "~/core/errors.js";
+import { authMessages } from "~/core/messages/index.js";
+import { requireApiKey } from "~/domains/auth/index.js";
+import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
+import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
+
+type WhoamiDeps = {
+  requireApiKey?: typeof requireApiKey;
+  createPlatform?: typeof createPlatformClient;
+};
 
 export async function handleWhoami(
-  ctx: AuthCommandContext,
+  ctx: CommandContext,
+  deps: WhoamiDeps = {},
 ): Promise<CommandResult> {
   ctx.ui.gap();
-  ctx.ui.intro(authCopy.title);
+  ctx.ui.intro(authMessages.title);
 
-  const identity = await ctx.platform.getIdentity();
+  let resolved: Awaited<ReturnType<typeof requireApiKey>> | undefined;
+  try {
+    resolved = await (deps.requireApiKey ?? requireApiKey)(
+      ctx.configDir,
+      ctx.fs,
+    );
+  } catch (err: unknown) {
+    if (ctx.ui.mode === "human") {
+      ctx.ui.note(errorMessage(err), authMessages.whoamiFailed);
+    } else {
+      ctx.ui.output(
+        { authenticated: false, source: undefined },
+        authMessages.notAuthenticated,
+      );
+    }
+    return { error: "not authenticated" };
+  }
+
+  const platform = (deps.createPlatform ?? createPlatformClient)(resolved.key, {
+    baseUrl: ctx.apiBaseUrl,
+    fetch: globalThis.fetch,
+    logger: ctx.log("trpc"),
+  });
+
+  const identity = await platform.getIdentity();
 
   if (!identity.ok) {
     if (ctx.ui.mode === "human") {
-      ctx.ui.note(`Source: ${ctx.apiKeySource}`, authCopy.whoamiFailed);
+      ctx.ui.note(
+        authMessages.whoami.source(resolved.source),
+        authMessages.whoamiFailed,
+      );
       ctx.ui.warn(identity.error);
     } else {
       ctx.ui.output(
         {
           authenticated: false,
           error: identity.error,
-          source: ctx.apiKeySource,
+          source: resolved.source,
           valid: false,
         },
-        `Authentication failed (source: ${ctx.apiKeySource}): ${identity.error}`,
+        authMessages.whoami.authFailed(resolved.source, identity.error),
       );
     }
     return { error: "invalid key" };
   }
 
   const { team } = identity.value;
+  const teamUrl = team.slug
+    ? new URL("/" + encodeURIComponent(team.slug), ctx.apiBaseUrl).toString()
+    : undefined;
+
   if (ctx.ui.mode === "human") {
     ctx.ui.note(
-      [
-        `Team:   ${team.name}`,
-        `ID:     ${team.id}`,
-        `Source: ${ctx.apiKeySource}`,
-      ].join("\n"),
-      authCopy.whoamiAuthenticated,
+      authMessages.whoami.teamNote({ team, teamUrl, source: resolved.source }),
+      authMessages.whoamiAuthenticated,
     );
-    ctx.ui.outro(authCopy.outroReady);
+    ctx.ui.outro(authMessages.outroReady);
   } else {
     ctx.ui.output(
       {
         authenticated: true,
-        source: ctx.apiKeySource,
+        source: resolved.source,
         team,
+        teamUrl,
       },
-      `Authenticated as ${team.name} (source: ${ctx.apiKeySource})`,
+      authMessages.whoami.authenticatedAs(team.name, resolved.source),
     );
   }
 }

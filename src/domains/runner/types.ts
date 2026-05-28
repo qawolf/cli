@@ -1,6 +1,11 @@
+import type { Fs } from "~/shell/fs.js";
 import type { FlowStamp } from "~/shell/manifest/types.js";
+import type { Logger } from "~/shell/logger.js";
 import type { TestCounts } from "~/core/types.js";
 import type { FlowRunError } from "./errors.js";
+import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+
+export type { SignalRegistry };
 
 export type JsonSerializable =
   | string
@@ -24,33 +29,29 @@ export type FlowDefinition = {
   callback: (deps: FlowDeps) => Promise<void>;
 };
 
-export type SignalRegistry = {
-  on: (signal: NodeJS.Signals, handler: () => void) => () => void;
-};
-
 export type AsyncStorage<T> = {
   run: (store: T, callback: () => Promise<void>) => Promise<void>;
   getStore: () => T | undefined;
 };
 
-export type RunnerFs = {
-  mkdir: (path: string, options?: { recursive?: boolean }) => Promise<void>;
-  writeFile: (path: string, data: string) => Promise<void>;
-  unlink: (path: string) => Promise<void>;
-};
+export type RunnerFs = Pick<Fs, "mkdir" | "writeFile" | "unlink">;
 
-export type SpawnResult = {
+export type RunnerSpawnResult = {
   exitCode: Promise<number>;
   kill: () => void;
 };
 
-export type SpawnFn = (command: string, args: string[]) => SpawnResult;
+export type RunnerSpawnFn = (
+  command: string,
+  args: string[],
+) => RunnerSpawnResult;
 
 export type RunnerDeps = {
   fs: RunnerFs;
-  spawn: SpawnFn;
+  spawn: RunnerSpawnFn;
   signals: SignalRegistry;
   createStorage: <T>() => AsyncStorage<T>;
+  logger?: Logger;
 };
 
 export type RunnerOptions = {

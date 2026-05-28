@@ -73,7 +73,7 @@ describe("listTeamStorageFiles", () => {
       {
         teamId: "team_123",
         excludePrefixes: ["_screenshots_/"],
-        nextPageToken: "page-2",
+        pageToken: "page-2",
       },
     ]);
   });

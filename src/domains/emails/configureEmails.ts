@@ -1,19 +1,18 @@
 import type { configureEmailsClient, createEmailsClient } from "@qawolf/emails";
-import { pathToFileURL } from "node:url";
+
+import { resolveFromEnvDir } from "~/shell/resolveExport.js";
 
 type EmailsModule = {
   createEmailsClient: typeof createEmailsClient;
   configureEmailsClient: typeof configureEmailsClient;
 };
 
-// Loaded via import.meta.resolve so the binary finds the package in the
-// project's node_modules rather than alongside the CLI binary. Tests always
-// inject deps so this path only runs in production.
+// Loaded via resolveFromEnvDir + import() so the binary finds the package in
+// the project's node_modules. Tests always inject deps.
 async function loadSdkDeps(cwd: string): Promise<EmailsModule> {
   try {
-    return (await import(
-      import.meta.resolve("@qawolf/emails", pathToFileURL(cwd))
-    )) as EmailsModule;
+    const emailsPath = resolveFromEnvDir(cwd, "@qawolf/emails");
+    return (await import(emailsPath)) as EmailsModule;
   } catch (err) {
     throw new Error(
       "Could not load @qawolf/emails. Install it in your project: `npm install @qawolf/emails` or `bun add @qawolf/emails`.",

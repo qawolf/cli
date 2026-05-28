@@ -1,7 +1,9 @@
 import { dirname, join, relative } from "node:path";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
-import { mkdir, pathExists, readFile, writeFile } from "~/shell/fs.js";
+import { makeDefaultFs } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import { flowsVersion } from "~/generated/dependencyVersions.js";
+import { initMessages } from "~/core/messages/index.js";
 import { exampleFlowTs, qawolfConfigTs, qawolfGitignore } from "./templates.js";
 
 export type InitOpts = {
@@ -10,19 +12,13 @@ export type InitOpts = {
 
 export type InitDeps = {
   readonly cwd: string;
-  readonly pathExists: (p: string) => Promise<boolean>;
-  readonly readFile: (p: string, encoding: "utf-8") => Promise<string>;
-  readonly writeFile: (p: string, content: string) => Promise<void>;
-  readonly mkdir: (p: string, opts: { recursive: boolean }) => Promise<void>;
+  readonly fs: Fs;
 };
 
 export function makeDefaultInitDeps(): InitDeps {
   return {
     cwd: process.cwd(),
-    pathExists,
-    readFile: (p, enc) => readFile(p, enc),
-    writeFile: (p, content) => writeFile(p, content, "utf-8"),
-    mkdir: (p, opts) => mkdir(p, opts).then(() => {}),
+    fs: makeDefaultFs(),
   };
 }
 
@@ -32,7 +28,7 @@ export async function handleInit(
   deps: InitDeps = makeDefaultInitDeps(),
 ): Promise<CommandResult> {
   ctx.ui.gap();
-  ctx.ui.intro("QA Wolf");
+  ctx.ui.intro(initMessages.title);
 
   const configPath = join(deps.cwd, "qawolf.config.ts");
   const flowPath = join(deps.cwd, "src", "flows", "example.flow.ts");
@@ -43,9 +39,7 @@ export async function handleInit(
   await writeWithPrompt(ctx, gitignorePath, qawolfGitignore, opts.yes, deps);
   await ensurePackageJson(ctx, opts.yes, deps);
 
-  ctx.ui.outro(
-    "Run `qawolf auth login`, then `qawolf flows pull`, then `qawolf flows run`.",
-  );
+  ctx.ui.outro(initMessages.outro);
 }
 
 async function writeWithPrompt(
@@ -57,20 +51,23 @@ async function writeWithPrompt(
 ): Promise<void> {
   const relPath = relative(deps.cwd, filePath);
 
-  if (await deps.pathExists(filePath)) {
-    const confirmed = await ctx.ui.confirm(`Overwrite ${relPath}?`, {
-      yes,
-      destructive: true,
-    });
+  if (await deps.fs.pathExists(filePath)) {
+    const confirmed = await ctx.ui.confirm(
+      initMessages.overwritePrompt(relPath),
+      {
+        yes,
+        destructive: true,
+      },
+    );
     if (!confirmed.ok || !confirmed.value) {
-      ctx.ui.info(`Skipped ${relPath}`);
+      ctx.ui.info(initMessages.skippedFile(relPath));
       return;
     }
   }
 
-  await deps.mkdir(dirname(filePath), { recursive: true });
-  await deps.writeFile(filePath, content);
-  ctx.ui.step(`Created ${relPath}`);
+  await deps.fs.mkdir(dirname(filePath), { recursive: true });
+  await deps.fs.writeFile(filePath, content);
+  ctx.ui.step(initMessages.createdFile(relPath));
 }
 
 async function ensurePackageJson(
@@ -80,13 +77,13 @@ async function ensurePackageJson(
 ): Promise<void> {
   const pkgPath = join(deps.cwd, "package.json");
 
-  if (!(await deps.pathExists(pkgPath))) {
+  if (!(await deps.fs.pathExists(pkgPath))) {
     const confirmed = await ctx.ui.confirm(
-      "Create package.json (required to run flows)?",
+      initMessages.createPackageJsonPrompt,
       { yes },
     );
     if (!confirmed.ok || !confirmed.value) {
-      ctx.ui.info("Skipped package.json");
+      ctx.ui.info(initMessages.skippedCreatingPackageJson);
       return;
     }
     const pkg = {
@@ -95,33 +92,33 @@ async function ensurePackageJson(
       dependencies: { "@qawolf/flows": flowsVersion },
       scripts: { "test:e2e": "qawolf flows run" },
     };
-    await deps.writeFile(pkgPath, JSON.stringify(pkg, undefined, 2) + "\n");
-    ctx.ui.step("Created package.json");
+    await deps.fs.writeFile(pkgPath, JSON.stringify(pkg, undefined, 2) + "\n");
+    ctx.ui.step(initMessages.createdPackageJson);
     return;
   }
 
-  const raw = await deps.readFile(pkgPath, "utf-8");
+  const raw = await deps.fs.readFile(pkgPath);
 
   let pkg: Record<string, unknown>;
   try {
     pkg = JSON.parse(raw) as Record<string, unknown>;
   } catch {
-    ctx.ui.warn("package.json is not valid JSON — skipped adding `test:e2e`");
+    ctx.ui.warn(initMessages.packageJsonInvalidJson);
     return;
   }
 
   const scripts = (pkg["scripts"] ?? {}) as Record<string, string>;
   if (scripts["test:e2e"]) {
-    ctx.ui.warn("package.json already has `test:e2e` — skipped");
+    ctx.ui.warn(initMessages.packageJsonHasTestE2e);
     return;
   }
 
-  const confirmed = await ctx.ui.confirm(
-    "Add `test:e2e: qawolf flows run` to package.json?",
-    { yes, destructive: true },
-  );
+  const confirmed = await ctx.ui.confirm(initMessages.addTestE2ePrompt, {
+    yes,
+    destructive: true,
+  });
   if (!confirmed.ok || !confirmed.value) {
-    ctx.ui.info("Skipped package.json");
+    ctx.ui.info(initMessages.skippedAddingTestE2e);
     return;
   }
 
@@ -129,9 +126,9 @@ async function ensurePackageJson(
   pkg["scripts"] = scripts;
 
   const trailingNewline = raw.endsWith("\n") ? "\n" : "";
-  await deps.writeFile(
+  await deps.fs.writeFile(
     pkgPath,
     JSON.stringify(pkg, undefined, 2) + trailingNewline,
   );
-  ctx.ui.step("Updated package.json");
+  ctx.ui.step(initMessages.updatedPackageJson);
 }

@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 
 import { errorMessage } from "~/core/errors.js";
-import { copyFile, mkdir } from "~/shell/fs.js";
+import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import { describeTeamStorageDownloadError } from "./describeErrors.js";
 import { fetchSignedUrl } from "./fetchSignedUrl.js";
 import type { PlatformResult } from "./requestWithRetry.js";
@@ -35,6 +35,7 @@ type DownloadTeamStorageAssetsArgs = {
 
 type DownloadTeamStorageAssetsDeps = {
   fetch: typeof globalThis.fetch;
+  fs?: Fs | undefined;
 };
 
 export async function downloadTeamStorageAssets(
@@ -55,14 +56,20 @@ async function writeTeamStorageAssets(
   args: DownloadTeamStorageAssetsArgs,
   deps: DownloadTeamStorageAssetsDeps,
 ): Promise<SyncTeamStorageAssetsResult> {
+  const fs = deps.fs ?? makeDefaultFs();
   const tmpAssets = mintAssetSnapshotPath(args.assetsAbs, "pull");
-  const manifest = await readAssetManifest(args.assetsAbs);
-  const safeFiles = collectSafeFiles(args.files);
+  const manifest = await readAssetManifest(args.assetsAbs, fs);
+  const safeFiles: ReusableAssetFile[] = [];
+  for (const file of args.files) {
+    const relativePath = safeAssetPath(file.path);
+    if (relativePath !== undefined) safeFiles.push({ file, relativePath });
+  }
   const skippedCount = args.files.length - safeFiles.length;
   const reusable = await reusableAssetPaths(
     args.assetsAbs,
     safeFiles,
     manifest,
+    fs,
   );
   const reusedCount = reusable.size;
 
@@ -71,6 +78,7 @@ async function writeTeamStorageAssets(
     (await hasExactAssetSnapshot(
       args.assetsAbs,
       safeFiles.map((file) => file.relativePath),
+      fs,
     ))
   ) {
     return { downloadedCount: 0, reusedCount, skippedCount };
@@ -79,40 +87,30 @@ async function writeTeamStorageAssets(
   try {
     const downloadedCount = await writeAssetSnapshot({
       assetsAbs: args.assetsAbs,
-      deps,
+      deps: { fetch: deps.fetch, fs },
       reusable,
       safeFiles,
       tmpAssets,
     });
-    await replaceAssetsDir(args.assetsAbs, tmpAssets);
+    await replaceAssetsDir(args.assetsAbs, tmpAssets, fs);
     await writeAssetManifest(
       args.assetsAbs,
       safeFiles.map(({ file, relativePath }) => ({
         ...file,
         path: relativePath,
       })),
+      fs,
     );
     return { downloadedCount, reusedCount, skippedCount };
   } catch (error: unknown) {
-    await cleanupAssetSnapshot(tmpAssets);
+    await cleanupAssetSnapshot(tmpAssets, fs);
     throw error;
   }
 }
 
-function collectSafeFiles(
-  files: readonly TeamStorageFile[],
-): ReusableAssetFile[] {
-  const safeFiles: ReusableAssetFile[] = [];
-  for (const file of files) {
-    const relativePath = safeAssetPath(file.path);
-    if (relativePath !== undefined) safeFiles.push({ file, relativePath });
-  }
-  return safeFiles;
-}
-
 type WriteAssetSnapshotArgs = {
   assetsAbs: string;
-  deps: DownloadTeamStorageAssetsDeps;
+  deps: { fetch: typeof globalThis.fetch; fs: Fs };
   reusable: ReadonlySet<string>;
   safeFiles: readonly ReusableAssetFile[];
   tmpAssets: string;
@@ -122,19 +120,19 @@ async function writeAssetSnapshot(
   args: WriteAssetSnapshotArgs,
 ): Promise<number> {
   let downloadedCount = 0;
-  await mkdir(args.tmpAssets, { recursive: true });
+  await args.deps.fs.mkdir(args.tmpAssets, { recursive: true });
 
   for (const { file, relativePath } of args.safeFiles) {
     const dest = join(args.tmpAssets, relativePath);
-    await mkdir(dirname(dest), { recursive: true });
+    await args.deps.fs.mkdir(dirname(dest), { recursive: true });
     if (args.reusable.has(relativePath)) {
-      await copyFile(join(args.assetsAbs, relativePath), dest);
+      await args.deps.fs.copyFile(join(args.assetsAbs, relativePath), dest);
       continue;
     }
 
     const result = await fetchSignedUrl(
       { url: file.signedUrl, dest },
-      { fetch: args.deps.fetch },
+      { fetch: args.deps.fetch, fs: args.deps.fs },
     );
     if (!result.ok) {
       throw new Error(

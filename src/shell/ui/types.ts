@@ -1,6 +1,6 @@
 import type { OutputMode } from "./env.js";
 import type { PromptResult } from "./renderers/types.js";
-import type { WithProgressFn } from "./renderers/withProgress.js";
+import type { WithProgressFn } from "./renderers/modes/progress.js";
 
 export type UI = {
   readonly mode: OutputMode;

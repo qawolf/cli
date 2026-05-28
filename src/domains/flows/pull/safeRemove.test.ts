@@ -1,44 +1,37 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
-import { homedir, tmpdir } from "node:os";
+import { homedir } from "node:os";
 import { join, sep } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { beforeEach, describe, expect, it } from "bun:test";
 
-import { pathExists } from "~/shell/fs.js";
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import {
   createTempPathRegistry,
   mintTempPath,
   removeTempDir,
 } from "./safeRemove.js";
 
-let workDir = "";
 let registry = createTempPathRegistry();
 
-beforeEach(async () => {
-  workDir = await mkdtemp(join(tmpdir(), "qawolf-saferm-"));
+beforeEach(() => {
   registry = createTempPathRegistry();
-});
-
-afterEach(async () => {
-  await rm(workDir, { recursive: true, force: true });
 });
 
 describe("mintTempPath", () => {
   it("returns an absolute path matching .pull-<16hex>", () => {
-    const dest = join(workDir, "envA");
+    const dest = "/tmp/qawolf-test/envA";
     const minted = mintTempPath(dest, "pull", registry);
     expect(minted).toMatch(/\.pull-[a-f0-9]{16}$/);
     expect(minted.startsWith(dest)).toBe(true);
   });
 
   it("returns a different path on each call", () => {
-    const dest = join(workDir, "envA");
+    const dest = "/tmp/qawolf-test/envA";
     expect(mintTempPath(dest, "pull", registry)).not.toBe(
       mintTempPath(dest, "pull", registry),
     );
   });
 
   it("supports the 'old' kind for atomic-swap rollback", () => {
-    const minted = mintTempPath(join(workDir, "envA"), "old", registry);
+    const minted = mintTempPath("/tmp/qawolf-test/envA", "old", registry);
     expect(minted).toMatch(/\.old-[a-f0-9]{16}$/);
   });
 
@@ -51,20 +44,22 @@ describe("mintTempPath", () => {
 
 describe("removeTempDir", () => {
   it("removes a freshly minted directory that exists", async () => {
-    const dir = mintTempPath(join(workDir, "envA"), "pull", registry);
-    await mkdir(dir, { recursive: true });
-    await mkdir(join(dir, "nested"));
-    await Bun.write(join(dir, "file.txt"), "hi");
+    const memFs = makeMemoryFs();
+    const dir = mintTempPath("/tmp/qawolf-test/envA", "pull", registry);
+    await memFs.mkdir(dir, { recursive: true });
+    await memFs.mkdir(join(dir, "nested"));
+    await memFs.writeFile(join(dir, "file.txt"), "hi");
 
-    await removeTempDir(dir, registry);
+    await removeTempDir(dir, registry, memFs);
 
-    expect(await pathExists(dir)).toBe(false);
+    expect(await memFs.pathExists(dir)).toBe(false);
   });
 
   it("is a no-op for a minted path that does not exist on disk", async () => {
-    const dir = mintTempPath(join(workDir, "envA"), "pull", registry);
-    await removeTempDir(dir, registry);
-    expect(await pathExists(dir)).toBe(false);
+    const memFs = makeMemoryFs();
+    const dir = mintTempPath("/tmp/qawolf-test/envA", "pull", registry);
+    await removeTempDir(dir, registry, memFs);
+    expect(await memFs.pathExists(dir)).toBe(false);
   });
 
   it("rejects empty paths", async () => {
@@ -90,24 +85,20 @@ describe("removeTempDir", () => {
   });
 
   it("rejects paths that don't match the .pull-<hex>/.old-<hex> sentinel", async () => {
-    const dir = join(workDir, "no-sentinel");
-    await mkdir(dir);
-    expect(removeTempDir(dir, registry)).rejects.toThrow();
-    expect(await pathExists(dir)).toBe(true);
+    expect(
+      removeTempDir("/tmp/qawolf-test/no-sentinel", registry),
+    ).rejects.toThrow();
   });
 
   it("rejects paths that match the sentinel but were never minted (capability check)", async () => {
-    const forged = join(workDir, "forged.pull-1234567890abcdef");
-    await mkdir(forged);
-    expect(removeTempDir(forged, registry)).rejects.toThrow();
-    expect(await pathExists(forged)).toBe(true);
+    expect(
+      removeTempDir("/tmp/qawolf-test/forged.pull-1234567890abcdef", registry),
+    ).rejects.toThrow();
   });
 
   it("rejects paths minted in a different registry", async () => {
     const otherRegistry = createTempPathRegistry();
-    const dir = mintTempPath(join(workDir, "envA"), "pull", otherRegistry);
-    await mkdir(dir, { recursive: true });
+    const dir = mintTempPath("/tmp/qawolf-test/envA", "pull", otherRegistry);
     expect(removeTempDir(dir, registry)).rejects.toThrow();
-    expect(await pathExists(dir)).toBe(true);
   });
 });

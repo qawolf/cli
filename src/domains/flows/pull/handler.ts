@@ -1,4 +1,4 @@
-import { mkdir, unlink } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import { dirname, join, resolve } from "node:path";
 
 import cliPackageJson from "../../../../package.json" with { type: "json" };
@@ -8,10 +8,10 @@ import {
   type CommandResult,
 } from "~/shell/commandContext.js";
 import { manifestFilename } from "~/shell/manifest/io.js";
+import { flowsMessages } from "~/core/messages/index.js";
 import { fetchBundleAndEnvVars } from "./fetchPhase.js";
 import { checkSafety, validateEnvId } from "./pull.js";
 import { stageBundle } from "./stage.js";
-import { formatPullSummary } from "./summary.js";
 
 export type FlowsPullOptions = {
   readonly env: string;
@@ -21,15 +21,18 @@ export type FlowsPullOptions = {
 
 type HandleFlowsPullDeps = {
   readonly flowsVersion: string;
+  readonly fs: Fs;
 };
 
 export async function handleFlowsPull(
   ctx: AuthCommandContext,
   opts: FlowsPullOptions,
-  deps: HandleFlowsPullDeps = {
-    flowsVersion: cliPackageJson.dependencies["@qawolf/flows"],
-  },
+  deps?: HandleFlowsPullDeps,
 ): Promise<CommandResult> {
+  const resolvedDeps: HandleFlowsPullDeps = deps ?? {
+    flowsVersion: cliPackageJson.dependencies["@qawolf/flows"],
+    fs: ctx.fs,
+  };
   const validation = validateEnvId(opts.env);
   if (validation !== "ok") {
     ctx.ui.error(validation.error);
@@ -41,7 +44,7 @@ export async function handleFlowsPull(
   // Shared assets sibling of the env directory. Created unconditionally so
   // TEAM_STORAGE_DIR resolves to a real path even before any asset is dropped
   // in. Idempotent across re-pulls.
-  await mkdir(assetsAbs, { recursive: true });
+  await resolvedDeps.fs.mkdir(assetsAbs, { recursive: true });
   const yes = opts.yes ?? false;
   let archive: string | undefined;
 
@@ -60,32 +63,35 @@ export async function handleFlowsPull(
       },
     });
     if (safety === "needs-yes") {
-      ctx.ui.error("Re-run with --yes to overwrite locally-modified files");
+      ctx.ui.error(flowsMessages.pull.needsYesError);
       return { error: "local modifications require --yes" };
     }
     if (safety === "abort") {
-      ctx.ui.info("Aborted; no changes.");
+      ctx.ui.info(flowsMessages.pull.aborted);
       return;
     }
 
     const [result, assetResult] = await ctx.ui.withProgress(
       [
         {
-          message: "Extracting bundle",
+          message: flowsMessages.pull.extractingBundle,
           task: () =>
-            stageBundle({
-              tmpArchive: fetched.tmpArchive,
-              destAbs,
-              assetsAbs,
-              envId: opts.env,
-              cliFlowsVersion: deps.flowsVersion,
-              now: fetched.bundleFetchedAt,
-              envVars: fetched.envVars,
-              envVarsFetchedAt: fetched.envVarsFetchedAt,
-            }),
+            stageBundle(
+              {
+                tmpArchive: fetched.tmpArchive,
+                destAbs,
+                assetsAbs,
+                envId: opts.env,
+                cliFlowsVersion: resolvedDeps.flowsVersion,
+                now: fetched.bundleFetchedAt,
+                envVars: fetched.envVars,
+                envVarsFetchedAt: fetched.envVarsFetchedAt,
+              },
+              resolvedDeps.fs,
+            ),
         },
         {
-          message: "Downloading team-storage assets",
+          message: flowsMessages.pull.downloadingTeamStorageAssets,
           task: async () => {
             const result = await ctx.platform.syncTeamStorageAssets(assetsAbs);
             if (!result.ok) throw new Error(result.error);
@@ -94,7 +100,7 @@ export async function handleFlowsPull(
         },
       ],
       (results) =>
-        formatPullSummary(
+        flowsMessages.pull.summary(
           {
             ...results[0],
             assetDownloadedCount: results[1].downloadedCount,
@@ -124,6 +130,7 @@ export async function handleFlowsPull(
       );
     }
   } finally {
-    if (archive !== undefined) await unlink(archive).catch(() => {});
+    if (archive !== undefined)
+      await resolvedDeps.fs.unlink(archive).catch(() => {});
   }
 }

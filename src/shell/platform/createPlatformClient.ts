@@ -1,16 +1,13 @@
-import { randomBytes } from "node:crypto";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-
-import { unlink } from "~/shell/fs.js";
+import { makeDefaultFs, type Fs } from "~/shell/fs.js";
+import type { Logger } from "~/shell/logger.js";
 import { createTrpcClient } from "./createTrpcClient.js";
 import {
-  describeBundleDownloadError,
   describeIdentityError,
   describeRequestError,
 } from "./describeErrors.js";
-import { fetchSignedUrl } from "./fetchSignedUrl.js";
+import { downloadBundle } from "./downloadBundle.js";
 import { getIdentity, type IdentityResponse } from "./getIdentity.js";
+import { getRemoteFlows, type RemoteFlowsResponse } from "./getRemoteFlows.js";
 import { type PlatformResult, requestWithRetry } from "./requestWithRetry.js";
 import { listTeamStorageFiles } from "./teamStorage.js";
 import {
@@ -25,6 +22,7 @@ import {
 
 export type PlatformClient = {
   getIdentity: () => Promise<PlatformResult<IdentityResponse>>;
+  getRemoteFlows: () => Promise<PlatformResult<RemoteFlowsResponse>>;
   getFlowsBundleUrl: (
     envId: string,
   ) => Promise<PlatformResult<{ signedUrl: string }>>;
@@ -43,6 +41,8 @@ export type PlatformClient = {
 type Deps = {
   fetch: typeof globalThis.fetch;
   baseUrl: string;
+  fs?: Fs | undefined;
+  logger?: Logger;
   sleep?: (ms: number) => Promise<void>;
 };
 
@@ -53,6 +53,7 @@ export function createPlatformClient(
   deps: Deps,
 ): PlatformClient {
   const trpc = createTrpcClient(apiKey, deps);
+  const fs = deps.fs ?? makeDefaultFs();
 
   async function getFlowsBundleUrlImpl(
     envId: string,
@@ -61,7 +62,7 @@ export function createPlatformClient(
       call: () =>
         trpc.mutation(
           "gitwolf.getFlowsBundleUrl",
-          { envId },
+          { environmentId: envId },
           flowsBundleResponseSchema,
         ),
       backoffMs: requestBackoffMs,
@@ -78,6 +79,15 @@ export function createPlatformClient(
         call: () => getIdentity(apiKey, deps),
         backoffMs: requestBackoffMs,
         describe: describeIdentityError,
+        sleep: deps.sleep,
+      });
+    },
+
+    async getRemoteFlows() {
+      return requestWithRetry({
+        call: () => getRemoteFlows(apiKey, deps),
+        backoffMs: requestBackoffMs,
+        describe: (err) => describeRequestError(err, deps.baseUrl, "flows"),
         sleep: deps.sleep,
       });
     },
@@ -115,27 +125,17 @@ export function createPlatformClient(
       if (!files.ok) return files;
       return downloadTeamStorageAssets(
         { assetsAbs, files: files.value },
-        { fetch: deps.fetch },
+        { fetch: deps.fetch, fs },
       );
     },
 
     async downloadBundle(envId) {
       const urlResult = await getFlowsBundleUrlImpl(envId);
       if (!urlResult.ok) return urlResult;
-
-      const tmpArchive = join(
-        tmpdir(),
-        `qawolf-pull-${randomBytes(8).toString("hex")}.tar.gz`,
-      );
-      const result = await fetchSignedUrl(
-        { url: urlResult.value.signedUrl, dest: tmpArchive },
-        { fetch: deps.fetch },
-      );
-      if (!result.ok) {
-        await unlink(tmpArchive).catch(() => {});
-        return { ok: false, error: describeBundleDownloadError(result.error) };
-      }
-      return { ok: true, value: { tmpArchive } };
+      return downloadBundle(urlResult.value.signedUrl, {
+        fetch: deps.fetch,
+        fs,
+      });
     },
   };
 }

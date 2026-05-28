@@ -10,18 +10,28 @@ const peekFlowMetaMock =
       filePath: string,
     ) => Promise<{ name: string | undefined; target: string | undefined }>
   >();
+const resolveUniqueEnvDirMock = mock<(files: string[]) => string | undefined>();
 const installBrowsersMock =
   mock<
-    (ctx: CommandContext, pattern: string | undefined) => Promise<CommandResult>
+    (
+      ctx: CommandContext,
+      pattern: string | undefined,
+      envDir: string,
+    ) => Promise<CommandResult>
   >();
 const installAndroidMock =
   mock<
-    (ctx: CommandContext, pattern: string | undefined) => Promise<CommandResult>
+    (
+      ctx: CommandContext,
+      pattern: string | undefined,
+      envDir: string,
+    ) => Promise<CommandResult>
   >();
 
 const trackedMocks = [
   expandPatternsMock,
   peekFlowMetaMock,
+  resolveUniqueEnvDirMock,
   installBrowsersMock,
   installAndroidMock,
 ];
@@ -53,6 +63,7 @@ function makeDeps(): InstallAllDeps {
     cwd: "/project",
     expandPatterns: expandPatternsMock,
     peekFlowMeta: peekFlowMetaMock,
+    resolveUniqueEnvDir: resolveUniqueEnvDirMock,
     installBrowsers: installBrowsersMock,
     installAndroid: installAndroidMock,
   };
@@ -61,6 +72,7 @@ function makeDeps(): InstallAllDeps {
 beforeEach(() => {
   expandPatternsMock.mockResolvedValue([]);
   peekFlowMetaMock.mockResolvedValue({ name: undefined, target: undefined });
+  resolveUniqueEnvDirMock.mockReturnValue(undefined);
   installBrowsersMock.mockResolvedValue(undefined);
   installAndroidMock.mockResolvedValue(undefined);
 });
@@ -175,16 +187,63 @@ describe("installAll", () => {
     expect(result).toEqual({ error: "Could not find Playwright" });
   });
 
-  it("should forward pattern to both sub-handlers", async () => {
+  it("should forward pattern and resolved envDir to both sub-handlers", async () => {
     expandPatternsMock.mockResolvedValue(["web.flow.ts", "android.flow.ts"]);
     peekFlowMetaMock
       .mockResolvedValueOnce({ name: undefined, target: "Web - Chrome" })
       .mockResolvedValueOnce({ name: undefined, target: "Android - Pixel 9" });
+    resolveUniqueEnvDirMock.mockReturnValue("/project/.qawolf/staging");
     const { ctx } = makeCtx();
 
     await installAll(ctx, "src/**", makeDeps());
 
-    expect(installBrowsersMock).toHaveBeenCalledWith(ctx, "src/**");
-    expect(installAndroidMock).toHaveBeenCalledWith(ctx, "src/**");
+    expect(installBrowsersMock).toHaveBeenCalledWith(
+      ctx,
+      "src/**",
+      "/project/.qawolf/staging",
+    );
+    expect(installAndroidMock).toHaveBeenCalledWith(
+      ctx,
+      "src/**",
+      "/project/.qawolf/staging",
+    );
+  });
+
+  it("should fall back to cwd when no envDir can be resolved from flow files", async () => {
+    expandPatternsMock.mockResolvedValue(["web.flow.ts"]);
+    peekFlowMetaMock.mockResolvedValue({
+      name: undefined,
+      target: "Web - Chrome",
+    });
+    resolveUniqueEnvDirMock.mockReturnValue(undefined);
+    const { ctx } = makeCtx();
+
+    await installAll(ctx, undefined, makeDeps());
+
+    expect(installBrowsersMock).toHaveBeenCalledWith(
+      ctx,
+      undefined,
+      "/project",
+    );
+  });
+
+  it("should return exitCode 2 when flow files span multiple packages", async () => {
+    expandPatternsMock.mockResolvedValue([
+      ".qawolf/staging/a.flow.ts",
+      ".qawolf/prod/b.flow.ts",
+    ]);
+    resolveUniqueEnvDirMock.mockImplementation(() => {
+      throw new Error("Pattern matches flows from 2 packages");
+    });
+    const { ctx } = makeCtx();
+
+    const result = await installAll(ctx, undefined, makeDeps());
+
+    expect(result).toEqual({
+      error: "Pattern matches flows from 2 packages",
+      exitCode: 2,
+    });
+    expect(installBrowsersMock).not.toHaveBeenCalled();
+    expect(installAndroidMock).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { join, sep } from "node:path";
 
-import { pathExists, readdir, rename, rm } from "~/shell/fs.js";
+import { errorMessage } from "~/core/errors.js";
+import type { Fs } from "~/shell/fs.js";
 
 export function mintAssetSnapshotPath(
   assetsAbs: string,
@@ -13,41 +14,53 @@ export function mintAssetSnapshotPath(
 export async function replaceAssetsDir(
   assetsAbs: string,
   tmpAssets: string,
+  fs: Fs,
 ): Promise<void> {
   const oldAssets = mintAssetSnapshotPath(assetsAbs, "old");
   let movedOldAssets = false;
 
   try {
-    if (await pathExists(assetsAbs)) {
-      await rename(assetsAbs, oldAssets);
+    if (await fs.pathExists(assetsAbs)) {
+      await fs.rename(assetsAbs, oldAssets);
       movedOldAssets = true;
     }
-    await rename(tmpAssets, assetsAbs);
+    await fs.rename(tmpAssets, assetsAbs);
   } catch (error: unknown) {
     if (movedOldAssets) {
-      await rename(oldAssets, assetsAbs).catch(() => {});
+      try {
+        await fs.rename(oldAssets, assetsAbs);
+      } catch (rollbackError: unknown) {
+        throw new Error(
+          `Failed to replace team-storage assets and rollback also failed; previous assets may remain at ${oldAssets}. Replace error: ${errorMessage(error)}. Rollback error: ${errorMessage(rollbackError)}`,
+          { cause: rollbackError },
+        );
+      }
     }
     throw error;
   }
 
   if (movedOldAssets) {
-    await cleanupAssetSnapshot(oldAssets);
+    await cleanupAssetSnapshot(oldAssets, fs);
   }
 }
 
-export async function cleanupAssetSnapshot(absPath: string): Promise<void> {
-  await rm(absPath, { recursive: true, force: true }).catch(() => {});
+export async function cleanupAssetSnapshot(
+  absPath: string,
+  fs: Fs,
+): Promise<void> {
+  await fs.rm(absPath, { recursive: true, force: true }).catch(() => {});
 }
 
 export async function hasExactAssetSnapshot(
   assetsAbs: string,
   filePaths: readonly string[],
+  fs: Fs,
 ): Promise<boolean> {
   const expected = expectedEntries(filePaths);
-  if (!(await pathExists(assetsAbs))) return expected.size === 0;
+  if (!(await fs.pathExists(assetsAbs))) return expected.size === 0;
 
   const actual = new Set<string>();
-  await collectEntries(assetsAbs, "", actual);
+  await collectEntries(assetsAbs, "", actual, fs);
   return setsEqual(actual, expected);
 }
 
@@ -67,13 +80,14 @@ async function collectEntries(
   root: string,
   relDir: string,
   out: Set<string>,
+  fs: Fs,
 ): Promise<void> {
   const current = relDir ? join(root, relDir) : root;
-  for (const entry of await readdir(current, { withFileTypes: true })) {
+  for (const entry of await fs.readdirWithTypes(current)) {
     const relPath = relDir ? join(relDir, entry.name) : entry.name;
     out.add(relPath);
     if (entry.isDirectory()) {
-      await collectEntries(root, relPath, out);
+      await collectEntries(root, relPath, out, fs);
     }
   }
 }
