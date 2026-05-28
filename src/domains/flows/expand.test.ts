@@ -1,9 +1,14 @@
+// oxlint-disable eslint/max-lines -- passing fs to expandPatterns added ~10 lines; splitting the test file would obscure the coverage story
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { extractFlowMeta, targetToBrowser } from "~/core/flowMeta.js";
-import { expandPatterns, peekFlowMeta } from "./expand.js";
+import { makeDefaultFs } from "~/shell/fs.js";
+import { expandPatterns, makePeekFlowMeta } from "./expand.js";
+
+const defaultFs = makeDefaultFs();
+const peekFlowMeta = makePeekFlowMeta(defaultFs);
 
 describe("targetToBrowser", () => {
   it.each([
@@ -182,13 +187,18 @@ describe("expandPatterns", () => {
   });
 
   it("should return all flow files when no patterns provided and no .qawolf dir", async () => {
-    const result = await expandPatterns([], noQawolfTmpDir);
+    const result = await expandPatterns(
+      [],
+      noQawolfTmpDir,
+      undefined,
+      defaultFs,
+    );
     expect(result).toContain(join(noQawolfTmpDir, "a.flow.ts"));
     expect(result).toContain(join(noQawolfTmpDir, "sub", "b.flow.ts"));
   });
 
   it("should return files from the .qawolf env dir alongside cwd flows when no patterns provided", async () => {
-    const result = await expandPatterns([], mainTmpDir);
+    const result = await expandPatterns([], mainTmpDir, undefined, defaultFs);
     expect(result).toContain(
       join(mainTmpDir, ".qawolf", "staging", "c.flow.ts"),
     );
@@ -197,7 +207,12 @@ describe("expandPatterns", () => {
   });
 
   it("should resolve a pattern relative to each env dir root", async () => {
-    const result = await expandPatterns(["*.flow.ts"], mainTmpDir);
+    const result = await expandPatterns(
+      ["*.flow.ts"],
+      mainTmpDir,
+      undefined,
+      defaultFs,
+    );
     expect(result).toContain(
       join(mainTmpDir, ".qawolf", "staging", "c.flow.ts"),
     );
@@ -205,12 +220,22 @@ describe("expandPatterns", () => {
   });
 
   it("should return empty array when no files match", async () => {
-    const result = await expandPatterns(["*.missing.ts"], mainTmpDir);
+    const result = await expandPatterns(
+      ["*.missing.ts"],
+      mainTmpDir,
+      undefined,
+      defaultFs,
+    );
     expect(result).toEqual([]);
   });
 
   it("should glob across all .qawolf env dirs when there are multiple", async () => {
-    const result = await expandPatterns([], multiEnvTmpDir);
+    const result = await expandPatterns(
+      [],
+      multiEnvTmpDir,
+      undefined,
+      defaultFs,
+    );
     expect(result).toContain(
       join(multiEnvTmpDir, ".qawolf", "staging", "s.flow.ts"),
     );
@@ -225,7 +250,7 @@ describe("expandPatterns", () => {
     await writeFile(join(tmp, "a.flow.ts"), "// a");
     await writeFile(join(tmp, "b.flow.js"), "// b");
     try {
-      const result = await expandPatterns([], tmp);
+      const result = await expandPatterns([], tmp, undefined, defaultFs);
       expect(result).toContain(join(tmp, "a.flow.ts"));
       expect(result).toContain(join(tmp, "b.flow.js"));
     } finally {

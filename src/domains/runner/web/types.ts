@@ -6,7 +6,7 @@ import type {
   VideoMode,
 } from "~/core/types.js";
 
-type BrowserLaunchOptions = {
+export type BrowserLaunchOptions = {
   headless: boolean;
   slowMo: number;
   executablePath?: string;

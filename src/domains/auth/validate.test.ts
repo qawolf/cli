@@ -26,6 +26,7 @@ describe("validateApiKey", () => {
       createdAt: "2024-01-15T00:00:00.000Z",
       id: "team_123",
       name: "Acme Corp",
+      slug: "acme",
     };
     const deps = makeDeps({ ok: true, value: { team: teamData } });
 

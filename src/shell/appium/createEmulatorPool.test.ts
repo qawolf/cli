@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import type { AdbFn, SpawnFn } from "./createAndroidEmulator.js";
 import { createEmulatorPool } from "./createEmulatorPool.js";
+import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
+
+const noopSignals = makeNoopSignals();
 
 afterEach(() => {
   mock.restore();
@@ -20,6 +23,7 @@ function makeSpawn(onStop?: () => void): SpawnFn {
 describe("createEmulatorPool", () => {
   it("bootForAvd boots count emulators and makes slots available", async () => {
     const pool = createEmulatorPool({
+      signals: noopSignals,
       deps: { spawn: makeSpawn(), adb: makeAdb() },
     });
 
@@ -40,6 +44,7 @@ describe("createEmulatorPool", () => {
       return { stop: () => {} };
     };
     const pool = createEmulatorPool({
+      signals: noopSignals,
       deps: { spawn: countingSpawn, adb: makeAdb() },
     });
 
@@ -51,6 +56,7 @@ describe("createEmulatorPool", () => {
 
   it("checkIn returns slot to free list", async () => {
     const pool = createEmulatorPool({
+      signals: noopSignals,
       deps: { spawn: makeSpawn(), adb: makeAdb() },
     });
 
@@ -64,6 +70,7 @@ describe("createEmulatorPool", () => {
 
   it("checkIn dispatches to waiter when free list is empty", async () => {
     const pool = createEmulatorPool({
+      signals: noopSignals,
       deps: { spawn: makeSpawn(), adb: makeAdb() },
     });
 
@@ -91,6 +98,7 @@ describe("createEmulatorPool", () => {
       return { stop: s };
     };
     const pool = createEmulatorPool({
+      signals: noopSignals,
       deps: { spawn: trackingSpawn, adb: makeAdb() },
     });
 
@@ -103,6 +111,7 @@ describe("createEmulatorPool", () => {
 
   it("closeAll rejects pending checkOut waiters with Pool closed", async () => {
     const pool = createEmulatorPool({
+      signals: noopSignals,
       deps: { spawn: makeSpawn(), adb: makeAdb() },
     });
 
@@ -130,6 +139,7 @@ describe("createEmulatorPool", () => {
       return { stop: () => {} };
     };
     const pool = createEmulatorPool({
+      signals: noopSignals,
       deps: { spawn: countingSpawn, adb: makeAdb() },
     });
 

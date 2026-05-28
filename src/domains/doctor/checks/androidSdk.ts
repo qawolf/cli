@@ -1,3 +1,4 @@
+import { doctorMessages } from "~/core/messages/index.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 
@@ -16,15 +17,14 @@ export function checkHome(
     return {
       name: "android-home",
       status: "fail",
-      detail:
-        "ANDROID_HOME (or ANDROID_SDK_ROOT) is not set. Install Android Studio and set ANDROID_HOME to the SDK path.",
+      detail: doctorMessages.androidSdk.homeNotSet,
     };
   }
   if (!checkExists(androidHome)) {
     return {
       name: "android-home",
       status: "fail",
-      detail: `${androidHome} does not exist`,
+      detail: doctorMessages.androidSdk.homeDoesNotExist(androidHome),
     };
   }
   return { name: "android-home", status: "pass", detail: androidHome };
@@ -40,7 +40,7 @@ export async function checkAdb(
     return {
       name: "adb",
       status: "fail",
-      detail: `Could not launch adb at ${bin} (${firstLine(result)}). Install Android SDK platform-tools or check the path.`,
+      detail: doctorMessages.androidSdk.adbLaunchFailed(bin, firstLine(result)),
     };
   }
   if (result.exitCode !== 0) {
@@ -59,7 +59,10 @@ export async function checkEmulatorBin(
     return {
       name: "android-emulator",
       status: "fail",
-      detail: `Could not launch emulator at ${bin} (${firstLine(result)}). Install the Android SDK emulator package or check the path.`,
+      detail: doctorMessages.androidSdk.emulatorLaunchFailed(
+        bin,
+        firstLine(result),
+      ),
     };
   }
   if (result.exitCode !== 0) {
@@ -85,7 +88,10 @@ export async function checkAvds(
       {
         name: "android-avd",
         status: "warn",
-        detail: `Could not launch emulator at ${bin} to list AVDs (${firstLine(result)}).`,
+        detail: doctorMessages.androidSdk.emulatorAvdListFailed(
+          bin,
+          firstLine(result),
+        ),
       },
     ];
   }
@@ -94,7 +100,7 @@ export async function checkAvds(
       {
         name: "android-avd",
         status: "warn",
-        detail: `Could not list AVDs (${firstLine(result)}).`,
+        detail: doctorMessages.androidSdk.avdListFailed(firstLine(result)),
       },
     ];
   }
@@ -110,7 +116,7 @@ export async function checkAvds(
     {
       name: "android-avd",
       status: "warn",
-      detail: `Missing AVD(s): ${missing.join(", ")}. Run \`qawolf install android\`.`,
+      detail: doctorMessages.androidSdk.missingAvds(missing.join(", ")),
     },
   ];
 }

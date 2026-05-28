@@ -1,5 +1,8 @@
 import superjson, { type SuperJSONResult } from "superjson";
 import type { z } from "zod";
+import type { Logger } from "~/shell/logger.js";
+
+import { toError } from "./toError.js";
 
 export type WireError =
   | { kind: "http"; status: number; body: string }
@@ -13,6 +16,7 @@ export type WireResult<T> =
 type Deps = {
   fetch: typeof globalThis.fetch;
   baseUrl: string;
+  logger?: Logger;
 };
 
 export type TrpcClient = {
@@ -32,6 +36,25 @@ const timeoutMs = 15_000;
 
 export function createTrpcClient(apiKey: string, deps: Deps): TrpcClient {
   const authHeader = { Authorization: `Bearer ${apiKey}` };
+  const { logger } = deps;
+
+  async function withLogging<T>(
+    path: string,
+    call: () => Promise<WireResult<T>>,
+  ): Promise<WireResult<T>> {
+    logger?.debug(`→ ${path}`);
+    const result = await call();
+    if (result.ok) {
+      logger?.debug(`← ${path} ok`);
+    } else {
+      const e = result.error;
+      const raw = e.kind === "http" ? e.body : e.cause.message;
+      const clipped = raw.length > 200 ? raw.slice(0, 200) + "…" : raw;
+      const msg = e.kind === "http" ? `${e.status} ${clipped}` : clipped;
+      logger?.warn(`← ${path} error (${e.kind}): ${msg}`);
+    }
+    return result;
+  }
 
   return {
     query: (path, input, schema) => {
@@ -39,30 +62,34 @@ export function createTrpcClient(apiKey: string, deps: Deps): TrpcClient {
         JSON.stringify(superjson.serialize(input)),
       );
       const url = `${deps.baseUrl}/api/trpc/${path}?input=${encoded}`;
-      return send(
-        deps.fetch,
-        url,
-        {
-          headers: authHeader,
-          method: "GET",
-          signal: AbortSignal.timeout(timeoutMs),
-        },
-        schema,
+      return withLogging(path, () =>
+        send(
+          deps.fetch,
+          url,
+          {
+            headers: authHeader,
+            method: "GET",
+            signal: AbortSignal.timeout(timeoutMs),
+          },
+          schema,
+        ),
       );
     },
     mutation: (path, input, schema) => {
       const url = `${deps.baseUrl}/api/trpc/${path}`;
       const body = JSON.stringify(superjson.serialize(input));
-      return send(
-        deps.fetch,
-        url,
-        {
-          body,
-          headers: { ...authHeader, "content-type": "application/json" },
-          method: "POST",
-          signal: AbortSignal.timeout(timeoutMs),
-        },
-        schema,
+      return withLogging(path, () =>
+        send(
+          deps.fetch,
+          url,
+          {
+            body,
+            headers: { ...authHeader, "content-type": "application/json" },
+            method: "POST",
+            signal: AbortSignal.timeout(timeoutMs),
+          },
+          schema,
+        ),
       );
     },
   };
@@ -115,14 +142,7 @@ function unwrap(body: unknown): unknown {
   return data;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function isSuperJSONResult(value: unknown): value is SuperJSONResult {
-  return isRecord(value) && "json" in value;
-}
-
-function toError(value: unknown): Error {
-  return value instanceof Error ? value : new Error(String(value));
-}
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null;
+const isSuperJSONResult = (v: unknown): v is SuperJSONResult =>
+  isRecord(v) && "json" in v;

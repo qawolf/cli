@@ -1,35 +1,46 @@
 import { join } from "node:path";
 import {
   expandPatterns as defaultExpandPatterns,
-  peekFlowMeta as defaultPeekFlowMeta,
+  makePeekFlowMeta,
 } from "~/domains/flows/expand.js";
 import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
 import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
+import { installMessages } from "~/core/messages/index.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
-import { existsSync } from "~/shell/fs.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import { installAndroid } from "~/domains/install/android/index.js";
 
 export async function handleInstallAndroid(
   ctx: CommandContext,
   pattern: string | undefined,
+  envDir?: string,
 ): Promise<CommandResult> {
   const androidHome =
     process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"];
   if (!androidHome) {
-    return {
-      error:
-        "Android SDK not found. Set ANDROID_HOME to the SDK path.\n" +
-        "Install Android Studio and open Tools > SDK Manager to install the SDK.",
-    };
+    return { error: installMessages.androidSdkNotFound };
   }
+
+  const { fs } = ctx;
+
+  // When envDir is pre-resolved (composite `qawolf install` path), use it
+  // directly. Otherwise let installAndroid resolve from matched files.
+  const resolveEnvDir = envDir
+    ? () => envDir
+    : (files: string[]) => {
+        try {
+          return resolveUniqueEnvDir(files, fs);
+        } catch {
+          return undefined;
+        }
+      };
 
   return installAndroid(ctx, pattern, {
     cwd: process.cwd(),
     spawn: defaultSpawn,
     arch: process.arch,
     androidHome,
-    checkExists: existsSync,
+    checkExists: (path: string) => fs.existsSync(path),
     sdkManagerPath: join(
       androidHome,
       "cmdline-tools",
@@ -44,15 +55,10 @@ export async function handleInstallAndroid(
       "bin",
       "avdmanager",
     ),
-    expandPatterns: defaultExpandPatterns,
-    peekFlowMeta: defaultPeekFlowMeta,
-    resolveEnvDir: (files) => {
-      try {
-        return resolveUniqueEnvDir(files);
-      } catch {
-        return undefined;
-      }
-    },
+    expandPatterns: (patterns, cwd) =>
+      defaultExpandPatterns(patterns, cwd ?? process.cwd(), undefined, fs),
+    peekFlowMeta: makePeekFlowMeta(fs),
+    resolveEnvDir,
     resolveAppiumBin,
   });
 }

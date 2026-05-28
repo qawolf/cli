@@ -9,9 +9,16 @@ export type MockSpinner = {
   error: ReturnType<typeof mock>;
 };
 
+export type MockTaskLog = {
+  message: ReturnType<typeof mock>;
+  success: ReturnType<typeof mock>;
+  error: ReturnType<typeof mock>;
+};
+
 export function makeClack() {
   const isCancel = mock<(value: unknown) => boolean>();
   const createdSpinners: MockSpinner[] = [];
+  const createdTaskLogs: MockTaskLog[] = [];
   const clack = {
     log: {
       info: mock(),
@@ -38,6 +45,15 @@ export function makeClack() {
       createdSpinners.push(s);
       return s;
     }),
+    taskLog: mock((_opts: { title: string; limit?: number }) => {
+      const tl: MockTaskLog = {
+        message: mock(),
+        success: mock(),
+        error: mock(),
+      };
+      createdTaskLogs.push(tl);
+      return tl;
+    }),
   } satisfies StyledClack;
-  return { ...clack, createdSpinners };
+  return { ...clack, createdSpinners, createdTaskLogs };
 }

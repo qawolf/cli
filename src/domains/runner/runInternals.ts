@@ -1,6 +1,8 @@
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
+import type { Logger } from "~/shell/logger.js";
 import type { Reporter } from "~/shell/reporter/types.js";
+import { runnerMessages } from "~/core/messages/index.js";
 import { FlowRunError } from "./errors.js";
 import type {
   RunAndroidFlowDeps,
@@ -20,6 +22,7 @@ import type {
   TraceMode,
   VideoMode,
 } from "~/core/types.js";
+import type { PeekFlowMetaFn } from "~/core/flowMeta.js";
 
 export type FlowsRunFlags = {
   readonly retries: number;
@@ -35,9 +38,7 @@ export type FlowsRunFlags = {
 };
 
 export type FlowsRunDeps = {
-  readonly peekFlowMeta: (
-    filePath: string,
-  ) => Promise<{ name: string | undefined; target: string | undefined }>;
+  readonly peekFlowMeta: PeekFlowMetaFn;
   readonly installBrowsers: (
     ctx: CommandContext,
     browsers: BrowserName[],
@@ -50,6 +51,7 @@ export type FlowsRunDeps = {
   readonly now: () => number;
   readonly findFlowStamp: typeof defaultFindFlowStamp;
   readonly warn: (message: string) => void;
+  readonly logger?: Logger;
   /** Boots the AVDs for the given names before any android flows are dispatched. */
   readonly bootAndroid?: (avdNames: string[]) => Promise<void>;
   /** Stops the Appium server and emulator pool after all flows complete. */
@@ -72,10 +74,6 @@ export type AndroidResolvedFlow = {
 
 export type ResolvedFlow = WebResolvedFlow | AndroidResolvedFlow;
 
-export function unsupportedTargetMessage(target: string): string {
-  return `${target} targets aren't supported in v0.1. Run them on app.qawolf.com or wait for v0.2.`;
-}
-
 export async function dispatchFlow({
   deps,
   flow,
@@ -87,13 +85,16 @@ export async function dispatchFlow({
   webOptions: RunWebFlowOptions;
   androidOptions: RunAndroidFlowOptions;
 }): Promise<{ run: FlowRunResult; durationMs: number }> {
+  deps.logger?.info(`run: ${flow.name}`);
   deps.reporter.onFlowStart?.({ name: flow.name, path: flow.file });
   const flowStart = deps.now();
   let run: FlowRunResult;
   try {
+    const loggerPatch =
+      deps.logger !== undefined ? { logger: deps.logger } : {};
     if (flow.kind === "web") {
       run = await deps.runWebFlow({
-        deps: deps.runWebFlowDeps,
+        deps: { ...deps.runWebFlowDeps, ...loggerPatch },
         options: webOptions,
         flowPath: flow.file,
       });
@@ -106,7 +107,7 @@ export async function dispatchFlow({
         );
       }
       run = await deps.runAndroidFlow({
-        deps: deps.runAndroidFlowDeps,
+        deps: { ...deps.runAndroidFlowDeps, ...loggerPatch },
         options: androidOptions,
         flowPath: flow.file,
       });
@@ -127,8 +128,14 @@ export async function dispatchFlow({
     stamp = await deps.findFlowStamp(flow.file);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    deps.warn(`failed to read manifest stamp for ${flow.file}: ${message}`);
+    deps.warn(runnerMessages.manifestStampReadFailed(flow.file, message));
   }
   if (stamp) run = { ...run, manifest: stamp };
-  return { run, durationMs: deps.now() - flowStart };
+  const durationMs = deps.now() - flowStart;
+  const outcome = run.passed ? "pass" : "fail";
+  const attempts = run.attempts;
+  deps.logger?.info(
+    `${outcome}: ${flow.name} (${durationMs}ms, ${attempts} attempt${attempts === 1 ? "" : "s"})`,
+  );
+  return { run, durationMs };
 }

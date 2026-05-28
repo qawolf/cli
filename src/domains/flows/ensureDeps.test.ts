@@ -4,11 +4,16 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { makeDefaultFs } from "~/shell/fs.js";
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
+
 import {
   detectPackageManager,
   findEnvDir,
   resolveUniqueEnvDir,
 } from "./ensureDeps.js";
+
+const defaultFs = makeDefaultFs();
 
 const tmpDirs: string[] = [];
 
@@ -32,7 +37,7 @@ describe("findEnvDir", () => {
     const root = await makeTmpDir();
     await writeFile(join(root, "package.json"), "{}");
     const flowPath = join(root, "my.flow.ts");
-    expect(findEnvDir(flowPath)).toBe(root);
+    expect(findEnvDir(flowPath, defaultFs)).toBe(root);
   });
 
   it("should walk up to find package.json when flow is nested", async () => {
@@ -41,7 +46,7 @@ describe("findEnvDir", () => {
     const nested = join(root, "flows", "sub");
     await mkdir(nested, { recursive: true });
     const flowPath = join(nested, "my.flow.ts");
-    expect(findEnvDir(flowPath)).toBe(root);
+    expect(findEnvDir(flowPath, defaultFs)).toBe(root);
   });
 
   it("should return undefined when no package.json exists in any ancestor", async () => {
@@ -50,7 +55,7 @@ describe("findEnvDir", () => {
     await mkdir(nested, { recursive: true });
     const flowPath = join(nested, "my.flow.ts");
     // root has no package.json; walk reaches filesystem root and returns undefined
-    expect(findEnvDir(flowPath)).toBeUndefined();
+    expect(findEnvDir(flowPath, defaultFs)).toBeUndefined();
   });
 });
 
@@ -58,37 +63,47 @@ describe("detectPackageManager", () => {
   it("should detect bun from bun.lockb", async () => {
     const dir = await makeTmpDir();
     await writeFile(join(dir, "bun.lockb"), "");
-    expect(detectPackageManager(dir)).toBe("bun");
+    expect(detectPackageManager(dir, defaultFs)).toBe("bun");
   });
 
   it("should detect pnpm from pnpm-lock.yaml", async () => {
     const dir = await makeTmpDir();
     await writeFile(join(dir, "pnpm-lock.yaml"), "");
-    expect(detectPackageManager(dir)).toBe("pnpm");
+    expect(detectPackageManager(dir, defaultFs)).toBe("pnpm");
   });
 
   it("should detect yarn from yarn.lock", async () => {
     const dir = await makeTmpDir();
     await writeFile(join(dir, "yarn.lock"), "");
-    expect(detectPackageManager(dir)).toBe("yarn");
+    expect(detectPackageManager(dir, defaultFs)).toBe("yarn");
   });
 
   it("should fall back to npm when no lockfile is present", async () => {
     const dir = await makeTmpDir();
-    expect(detectPackageManager(dir)).toBe("npm");
+    expect(detectPackageManager(dir, defaultFs)).toBe("npm");
   });
 
   it("should prefer bun over pnpm and yarn when multiple lockfiles present", async () => {
     const dir = await makeTmpDir();
     await writeFile(join(dir, "bun.lockb"), "");
     await writeFile(join(dir, "pnpm-lock.yaml"), "");
-    expect(detectPackageManager(dir)).toBe("bun");
+    expect(detectPackageManager(dir, defaultFs)).toBe("bun");
   });
 
   it("should detect bun from bun.lock (text format, bun ≥ 1.1)", async () => {
     const dir = await makeTmpDir();
     await writeFile(join(dir, "bun.lock"), "");
-    expect(detectPackageManager(dir)).toBe("bun");
+    expect(detectPackageManager(dir, defaultFs)).toBe("bun");
+  });
+});
+
+describe("findEnvDir with injected fs", () => {
+  it("should find package.json via injected memFs", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir("/pkg");
+    await memFs.writeFile("/pkg/package.json", "{}");
+    const result = findEnvDir("/pkg/my.flow.ts", memFs);
+    expect(result).toBe("/pkg");
   });
 });
 
@@ -99,7 +114,7 @@ describe("resolveUniqueEnvDir", () => {
     const nested = join(root, "flows");
     await mkdir(nested, { recursive: true });
     const files = [join(nested, "a.flow.ts"), join(nested, "b.flow.ts")];
-    expect(resolveUniqueEnvDir(files)).toBe(root);
+    expect(resolveUniqueEnvDir(files, defaultFs)).toBe(root);
   });
 
   it("should return undefined when no files have a package.json ancestor", async () => {
@@ -107,11 +122,11 @@ describe("resolveUniqueEnvDir", () => {
     const nested = join(root, "flows");
     await mkdir(nested, { recursive: true });
     const files = [join(nested, "a.flow.ts")];
-    expect(resolveUniqueEnvDir(files)).toBeUndefined();
+    expect(resolveUniqueEnvDir(files, defaultFs)).toBeUndefined();
   });
 
   it("should return undefined for an empty file list", async () => {
-    expect(resolveUniqueEnvDir([])).toBeUndefined();
+    expect(resolveUniqueEnvDir([], defaultFs)).toBeUndefined();
   });
 
   it("should throw when files span multiple packages", async () => {
@@ -121,7 +136,10 @@ describe("resolveUniqueEnvDir", () => {
     await writeFile(join(rootB, "package.json"), "{}");
     let caughtError: unknown;
     try {
-      resolveUniqueEnvDir([join(rootA, "a.flow.ts"), join(rootB, "b.flow.ts")]);
+      resolveUniqueEnvDir(
+        [join(rootA, "a.flow.ts"), join(rootB, "b.flow.ts")],
+        defaultFs,
+      );
     } catch (e) {
       caughtError = e;
     }

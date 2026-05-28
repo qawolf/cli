@@ -3,6 +3,7 @@ import superjson from "superjson";
 import { z } from "zod";
 
 import { createTrpcClient } from "./createTrpcClient.js";
+import type { Logger } from "~/shell/logger.js";
 
 afterEach(() => {
   mock.restore();
@@ -208,5 +209,42 @@ describe("createTrpcClient.mutation", () => {
         method: "POST",
       }),
     );
+  });
+});
+
+describe("createTrpcClient logger", () => {
+  const makeLogger = (): Logger => ({
+    debug: mock(() => {}),
+    info: mock(() => {}),
+    warn: mock(() => {}),
+    error: mock(() => {}),
+    trace: mock(() => {}),
+  });
+  const lp = "env";
+
+  it("emits debug → debug on success", async () => {
+    const logger = makeLogger();
+    const client = createTrpcClient(apiKey, {
+      baseUrl,
+      fetch: asFetch(createFetchMock(jsonResponse(wrapped({ ok: true })))),
+      logger,
+    });
+    await client.query(lp, {}, z.object({ ok: z.boolean() }));
+    expect(logger.debug).toHaveBeenCalledWith(`→ ${lp}`);
+    expect(logger.debug).toHaveBeenCalledWith(`← ${lp} ok`);
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it("emits debug → warn on http failure with kind label", async () => {
+    const logger = makeLogger();
+    const client = createTrpcClient(apiKey, {
+      baseUrl,
+      fetch: asFetch(createFetchMock(new Response("nope", { status: 403 }))),
+      logger,
+    });
+    await client.query(lp, {}, z.unknown());
+    expect(logger.debug).toHaveBeenCalledWith(`→ ${lp}`);
+    expect(logger.warn).toHaveBeenCalledWith(`← ${lp} error (http): 403 nope`);
+    expect(logger.error).not.toHaveBeenCalled();
   });
 });

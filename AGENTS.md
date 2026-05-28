@@ -2,13 +2,15 @@
 
 CLI for agents, CI, and humans to interact with QA Wolf. TypeScript, Bun runtime, Commander.js framework.
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for human contributor setup.
+
 ## Commands
 
 ```bash
 bun install                        # install dependencies
 bun run dev                        # run CLI in development
 bun run dev -- <args>              # pass args to CLI (e.g. -- --help)
-bun run build                      # JS bundle → dist/cli.js
+bun run build                      # JS bundle → dist/cli.js + dist/cli.js.map (uses --outdir; bun rejects --sourcemap=external with --outfile)
 bun run build:binary               # standalone binary → dist/qawolf
 bun run typecheck                  # tsc --noEmit
 bun run lint                       # oxlint
@@ -33,7 +35,7 @@ src/
 │   ├── errors.ts        # errorMessage, isNoEntError
 │   ├── paths.ts         # getConfigDir
 │   ├── flowMeta.ts      # extractFlowMeta, targetToBrowser, flowBasename
-│   ├── copy/            # copyFile, copyDir
+│   ├── messages/        # authCopy — user-facing strings for auth commands
 │   ├── pluralize.ts     # pluralize
 │   └── types.ts         # BrowserName, VideoMode, TraceMode, HarMode, TestCounts
 ├── shell/               # I/O executors — process spawning, UI, API clients

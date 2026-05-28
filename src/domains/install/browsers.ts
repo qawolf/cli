@@ -1,4 +1,5 @@
-import { targetToBrowser } from "~/core/flowMeta.js";
+import { targetToBrowser, type PeekFlowMetaFn } from "~/core/flowMeta.js";
+import { installMessages } from "~/core/messages/index.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
@@ -13,9 +14,7 @@ export type InstallBrowsersDeps = {
     patterns: string[],
     cwd?: string,
   ) => Promise<string[]>;
-  readonly peekFlowMeta: (
-    filePath: string,
-  ) => Promise<{ name: string | undefined; target: string | undefined }>;
+  readonly peekFlowMeta: PeekFlowMetaFn;
   readonly playwrightCliPath: string;
 };
 
@@ -24,14 +23,9 @@ export async function installBrowserList(
   browsers: BrowserName[],
   deps: Pick<InstallBrowsersDeps, "spawn" | "platform" | "playwrightCliPath">,
 ): Promise<void> {
-  const done =
-    browsers.length === 1
-      ? "Installed 1 browser."
-      : `Installed ${browsers.length} browsers.`;
-
   await ctx.ui.withProgress(
     browsers.map((browser) => ({
-      message: `Install ${browser}`,
+      message: installMessages.installingBrowser(browser),
       task: async () => {
         const args = buildArgs(browser, deps.platform);
         const result = await deps.spawn(deps.playwrightCliPath, args);
@@ -40,7 +34,7 @@ export async function installBrowserList(
         }
       },
     })),
-    done,
+    installMessages.browsersInstalled(browsers.length),
   );
 }
 
@@ -54,7 +48,7 @@ export async function installBrowsers(
 
   const browsers = await collectBrowsers(files, deps.peekFlowMeta);
   if (browsers.length === 0) {
-    ctx.ui.info("No web flows requiring browser installation were found.");
+    ctx.ui.info(installMessages.noBrowserFlows);
     return;
   }
 
@@ -63,9 +57,7 @@ export async function installBrowsers(
 
 async function collectBrowsers(
   files: readonly string[],
-  peekFlowMeta: (
-    filePath: string,
-  ) => Promise<{ name: string | undefined; target: string | undefined }>,
+  peekFlowMeta: PeekFlowMetaFn,
 ): Promise<BrowserName[]> {
   const seen = new Set<BrowserName>();
   for await (const meta of batchMap(files, peekFlowMeta, flowBatchSize)) {
@@ -84,10 +76,10 @@ function buildArgs(browser: BrowserName, platform: NodeJS.Platform): string[] {
 
 function formatError(browser: BrowserName, result: SpawnResult): string {
   if (result.exitCode < 0) {
-    return `playwright install ${browser} failed: process failed to launch`;
+    return installMessages.playwrightInstallLaunchFailed(browser);
   }
   const detail =
     (result.stderr || result.stdout).split("\n")[0]?.trim() ||
     `exit code ${result.exitCode}`;
-  return `playwright install ${browser} failed: ${detail}`;
+  return installMessages.playwrightInstallFailed(browser, detail);
 }

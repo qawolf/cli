@@ -1,4 +1,5 @@
 import { styleText } from "node:util";
+import { runnerMessages } from "~/core/messages/index.js";
 import type { Reporter } from "./types.js";
 
 type WriteSink = { write: (str: string) => void };
@@ -82,7 +83,9 @@ export function createConsoleReporter(deps: ConsoleDeps): Reporter {
     },
 
     onScreenshot({ path }) {
-      deps.stdout.write(`    ${styleText("dim", `Screenshot: ${path}`)}\n`);
+      deps.stdout.write(
+        `    ${styleText("dim", runnerMessages.screenshot(path))}\n`,
+      );
     },
 
     onFlowPass({ tests, durationMs, manifest }) {
@@ -112,7 +115,9 @@ export function createConsoleReporter(deps: ConsoleDeps): Reporter {
       if (manifest) deps.stdout.write(fmtStampLine(manifest));
 
       if (attempt < maxAttempts) {
-        deps.stdout.write(`\nRetrying (${attempt} of ${maxAttempts})...\n`);
+        deps.stdout.write(
+          `\n${runnerMessages.retrying(attempt, maxAttempts)}\n`,
+        );
       }
     },
 

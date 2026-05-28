@@ -1,3 +1,4 @@
+import { doctorMessages } from "~/core/messages/index.js";
 import type { UI } from "~/shell/ui/types.js";
 
 import type { CheckResult } from "./types.js";
@@ -11,22 +12,26 @@ export function renderResults(ui: UI, results: CheckResult[]): void {
 
   if (ui.mode === "agent") {
     for (const result of results) {
-      const base = result.version
-        ? `${result.name}  ${result.version}`
-        : result.name;
-      const tail = result.detail ? `: ${result.detail}` : "";
-      ui.write(`${result.status.toUpperCase()} ${base}${tail}\n`);
+      ui.write(
+        doctorMessages.agentLine(
+          result.status,
+          result.name,
+          result.version,
+          result.detail,
+        ) + "\n",
+      );
     }
     return;
   }
 
-  ui.intro("qawolf doctor");
+  ui.intro(doctorMessages.intro);
 
   for (const result of results) {
-    const base = result.version
-      ? `${result.name}  ${result.version}`
-      : result.name;
-    const line = result.detail ? `${base}: ${result.detail}` : base;
+    const line = doctorMessages.humanLine(
+      result.name,
+      result.version,
+      result.detail,
+    );
     if (result.status === "pass") ui.success(line);
     else if (result.status === "warn") ui.warn(line);
     else ui.error(line);
