@@ -1,5 +1,6 @@
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import type { WireResult } from "./createTrpcClient.js";
+import { toError } from "./toError.js";
 
 type Deps = {
   fetch: typeof globalThis.fetch;
@@ -46,8 +47,4 @@ export async function fetchSignedUrl(
   }
 
   return { ok: true, data: undefined };
-}
-
-function toError(value: unknown): Error {
-  return value instanceof Error ? value : new Error(String(value));
 }

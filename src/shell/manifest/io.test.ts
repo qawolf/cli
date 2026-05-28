@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
+import { makeDefaultFs } from "~/shell/fs.js";
 import {
   hashFile,
   manifestFilename,
@@ -104,7 +105,7 @@ describe("hashFile", () => {
     const f = join(workDir, "a.txt");
     await writeFile(f, "hello world", "utf8");
     // sha256("hello world") = b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
-    expect(await hashFile(f)).toBe(
+    expect(await hashFile(f, makeDefaultFs())).toBe(
       "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
     );
   });
@@ -112,9 +113,20 @@ describe("hashFile", () => {
   it("hashes large files via streaming (no in-memory buffer)", async () => {
     const f = join(workDir, "big.bin");
     await writeFile(f, Buffer.alloc(1024 * 1024, 0x61));
-    const a = await hashFile(f);
-    const b = await hashFile(f);
+    const a = await hashFile(f, makeDefaultFs());
+    const b = await hashFile(f, makeDefaultFs());
     expect(a).toBe(b);
     expect(a).toHaveLength(64);
+  });
+
+  it("should hash file content via injected memFs", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir("/hash-test", { recursive: true });
+    await memFs.writeFile("/hash-test/a.txt", "hello world");
+    const result = await hashFile("/hash-test/a.txt", memFs);
+    // sha256("hello world")
+    expect(result).toBe(
+      "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+    );
   });
 });

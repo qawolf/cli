@@ -1,4 +1,4 @@
-import { unlink } from "~/shell/fs.js";
+import type { Fs } from "~/shell/fs.js";
 import { join } from "node:path";
 
 import { Entry } from "@napi-rs/keyring";
@@ -17,9 +17,10 @@ function deleteFromKeychain(): DeleteApiKeyResult["keychain"] {
 
 async function deleteFromFile(
   configDir: string,
+  fs: Fs,
 ): Promise<DeleteApiKeyResult["file"]> {
   try {
-    await unlink(join(configDir, credentialsFile));
+    await fs.unlink(join(configDir, credentialsFile));
     return "deleted";
   } catch {
     return "not-found";
@@ -28,10 +29,11 @@ async function deleteFromFile(
 
 export async function deleteApiKey(
   configDir: string,
+  fs: Fs,
 ): Promise<DeleteApiKeyResult> {
   const [keychain, file] = await Promise.all([
     Promise.resolve(deleteFromKeychain()),
-    deleteFromFile(configDir),
+    deleteFromFile(configDir, fs),
   ]);
   return { keychain, file };
 }

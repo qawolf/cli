@@ -8,7 +8,7 @@ import { authMessages } from "~/core/messages/index.js";
 export async function handleLogout(
   ctx: CommandContext,
 ): Promise<CommandResult> {
-  const resolved = await resolveApiKey(ctx.configDir);
+  const resolved = await resolveApiKey(ctx.configDir, ctx.fs);
 
   if (!resolved) {
     ctx.ui.info(authMessages.logout.notAuthenticated);
@@ -34,7 +34,7 @@ export async function handleLogout(
     [
       {
         message: authMessages.logout.deleting,
-        task: () => deleteApiKey(ctx.configDir),
+        task: () => deleteApiKey(ctx.configDir, ctx.fs),
       },
     ],
     () => authMessages.logout.credentialsRemoved,

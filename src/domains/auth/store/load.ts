@@ -1,8 +1,7 @@
-import { makeDefaultFs } from "~/shell/fs.js";
 import type { Fs } from "~/shell/fs.js";
 import { join } from "node:path";
 
-import { Entry } from "@napi-rs/keyring";
+import type { Entry } from "@napi-rs/keyring";
 
 import { errorMessage } from "~/core/errors.js";
 import type { LoadApiKeyResult } from "~/domains/auth/types.js";
@@ -16,7 +15,7 @@ type LoadApiKeyDeps = {
 
 export async function loadApiKey(
   configDir: string,
-  deps: LoadApiKeyDeps = { EntryClass: Entry, fs: makeDefaultFs() },
+  deps: LoadApiKeyDeps,
 ): Promise<LoadApiKeyResult> {
   const errors: { keychain?: string; file?: string } = {};
 

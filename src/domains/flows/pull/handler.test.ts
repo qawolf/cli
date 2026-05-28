@@ -8,6 +8,7 @@ import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.j
 import type { UI } from "~/shell/ui/index.js";
 import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
+import { makeDefaultFs } from "~/shell/fs.js";
 
 import { makeFakeUI } from "~/domains/runner/run.fixtures.js";
 import { handleFlowsPull } from "./handler.js";
@@ -66,6 +67,7 @@ function makeCtx(
     apiKeySource: "env",
     signals: noopSignals,
     log: () => makeNoopLogger(),
+    fs: makeDefaultFs(),
     platform: makeMockPlatformClient({
       downloadBundle: mock().mockResolvedValue({
         ok: true,

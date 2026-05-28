@@ -73,6 +73,7 @@ function safeAssetPath(path: string): string | undefined {
     !path ||
     path.endsWith("/") ||
     path.includes("\\") ||
+    path.includes("\0") ||
     path.includes(":") ||
     isAbsolute(path)
   ) {
@@ -97,6 +98,7 @@ function isUnsafeSegment(segment: string): boolean {
     segment === ".." ||
     normalized === "_screenshots_" ||
     normalized === "screenshots" ||
+    normalized === "ovpn" ||
     normalized.endsWith(".ovpn")
   );
 }
