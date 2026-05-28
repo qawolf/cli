@@ -197,6 +197,19 @@ describe("flowsRun pre-flight", () => {
     );
   });
 
+  it("closes the intro block with an outro before streaming, then a trailing gap", async () => {
+    const ctx = makeCtx();
+    const deps = makeDeps({
+      metaByFile: { "/a.flow.ts": { target: "Web - Chrome" } },
+      runResults: [passResult()],
+    });
+
+    await flowsRun(ctx, ["/a.flow.ts"], defaultFlags(), deps);
+
+    expect(ctx.ui.outro).toHaveBeenCalledWith("Running 1 flow");
+    expect(ctx.ui.gap).toHaveBeenCalled();
+  });
+
   it("does not call installBrowsers when all matched flows are Android targets", async () => {
     const deps = makeDeps({
       metaByFile: { "/a.flow.ts": { target: "Android - Pixel" } },

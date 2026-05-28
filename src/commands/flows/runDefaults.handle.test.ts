@@ -17,6 +17,7 @@ const configureTestkitMock = mock<(dir: string) => Promise<void>>();
 const flowsRunMock = mock<HandleFlowsRunDeps["flowsRun"]>();
 const runWebFlowDepsMock = mock<(...args: unknown[]) => Promise<unknown>>();
 const uiInfoMock = mock<(message: string) => void>();
+const uiIntroMock = mock<(title: string) => void>();
 
 const trackedMocks = [
   expandPatternsMock,
@@ -26,6 +27,7 @@ const trackedMocks = [
   flowsRunMock,
   runWebFlowDepsMock,
   uiInfoMock,
+  uiIntroMock,
 ];
 
 function makeDeps(): HandleFlowsRunDeps {
@@ -70,6 +72,9 @@ function makeCtx(): CommandContext {
       },
       info: uiInfoMock,
       warn: () => {},
+      gap: () => {},
+      intro: uiIntroMock,
+      outro: () => {},
     },
   } as unknown as CommandContext;
 }
@@ -143,5 +148,22 @@ describe("handleFlowsRun", () => {
     expect(ensureFlowDepsMock).toHaveBeenCalledWith(envDir);
     expect(configureTestkitMock).toHaveBeenCalledWith(envDir);
     expect(flowsRunMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the run with an intro once flows are resolved", async () => {
+    expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
+    resolveUniqueEnvDirMock.mockReturnValue(undefined);
+
+    await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
+
+    expect(uiIntroMock).toHaveBeenCalledWith("flows run");
+  });
+
+  it("does not open an intro when no flows match", async () => {
+    expandPatternsMock.mockResolvedValue([]);
+
+    await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
+
+    expect(uiIntroMock).not.toHaveBeenCalled();
   });
 });

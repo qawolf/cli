@@ -55,6 +55,9 @@ function makeCtx(): AuthCommandContext {
         for (const t of tasks) await t.task();
         return [];
       },
+      gap: () => {},
+      intro: () => {},
+      outro: () => {},
     },
   } as unknown as AuthCommandContext;
 }

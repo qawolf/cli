@@ -4,6 +4,7 @@ import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
 import { runnerMessages } from "~/core/messages/index.js";
+import { pluralize } from "~/core/pluralize.js";
 
 import { bootAndroidFlows, buildRunOptions, runFlows } from "./runHelpers.js";
 import { runFlowsPooled } from "./runFlowsPooled.js";
@@ -19,14 +20,14 @@ export async function flowsRun(
   ctx: CommandContext,
   files: readonly string[],
   flags: FlowsRunFlags,
-  deps: FlowsRunDeps,
+  deps: FlowsRunDeps
 ): Promise<CommandResult> {
   const flows: ResolvedFlow[] = [];
   const skippedByType = new Map<string, number>();
   for await (const { file, ...meta } of batchMap(
     files,
     async (file) => ({ file, ...(await deps.peekFlowMeta(file)) }),
-    flowBatchSize,
+    flowBatchSize
   )) {
     if (!meta.target) continue;
     const classified = classifyTarget(meta.target);
@@ -79,7 +80,7 @@ export async function flowsRun(
   }
 
   const androidFlows = flows.filter(
-    (f): f is AndroidResolvedFlow => f.kind === "android",
+    (f): f is AndroidResolvedFlow => f.kind === "android"
   );
 
   // Worker subprocesses are web-only for now; android parallelism needs
@@ -111,12 +112,14 @@ export async function flowsRun(
         ctx.ui.error(bootError);
         return { error: bootError };
       }
+      // Close the intro block before the reporter streams its raw test output.
+      ctx.ui.outro(`Running ${pluralize(flows.length, "flow")}`);
       ({ counts, durationMs } = await runFlows(
         flows,
         flags,
         deps,
         webOptions,
-        androidOptions,
+        androidOptions
       ));
     }
   } finally {
@@ -140,6 +143,7 @@ export async function flowsRun(
     },
   };
   deps.reporter.onRunComplete?.({ summary });
+  ctx.ui.gap();
 
   if (counts.flowsFailed > 0) {
     return { error: runnerMessages.flowsFailed(counts.flowsFailed) };

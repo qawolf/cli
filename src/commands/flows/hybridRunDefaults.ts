@@ -83,6 +83,9 @@ export async function handleHybridFlowsRun(
     }
   }
 
+  ctx.ui.gap();
+  ctx.ui.intro("flows run");
+
   await ctx.ui.withProgress(
     [
       {

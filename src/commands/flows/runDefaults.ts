@@ -103,6 +103,9 @@ export async function handleFlowsRun(
     return { error, exitCode: 2 };
   }
 
+  ctx.ui.gap();
+  ctx.ui.intro("flows run");
+
   if (envDir) {
     const dir = envDir;
     await ctx.ui.withProgress(
