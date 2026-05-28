@@ -27,7 +27,7 @@ import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { runnerMessages } from "~/core/messages/index.js";
-import { loadEnvFile } from "./runDefaults.js";
+import { loadEnvFile } from "./loadEnvFile.js";
 
 export type HandleHybridFlowsRunDeps = {
   expandPatterns: (patterns: string[], cwd?: string) => Promise<string[]>;
