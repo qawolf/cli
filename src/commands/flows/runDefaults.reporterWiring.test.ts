@@ -53,6 +53,14 @@ function makeCtx(outputMode: OutputMode): CommandContext {
       gap: () => {},
       intro: () => {},
       outro: () => {},
+      // Mirror real mode behavior: human→stdout, agent→stderr, json→no-op.
+      // The stream routes reporter writes through ui.write, so the spy captures them.
+      write:
+        outputMode === "human"
+          ? (text: string) => process.stdout.write(text)
+          : outputMode === "agent"
+            ? (text: string) => process.stderr.write(text)
+            : () => {},
     },
   } as unknown as CommandContext;
 }

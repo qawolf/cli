@@ -1,26 +1,21 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
-
 import {
   expandPatterns as defaultExpandPatterns,
   makePeekFlowMeta,
 } from "~/domains/flows/expand.js";
 import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
+import { createTextStream } from "~/shell/ui/textStream.js";
 import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
-import { isNoEntError } from "~/core/errors.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { runnerMessages } from "~/core/messages/index.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { buildRunReporter } from "./buildRunReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
-// import { configureEmails } from "~/emails/configureEmails.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 
 import { pluralize } from "~/core/pluralize.js";
-import { parseDotenv } from "~/domains/flows/dotenv.js";
 import {
   ensureFlowDeps as defaultEnsureFlowDeps,
   resolveUniqueEnvDir as defaultResolveUniqueEnvDir,
@@ -33,25 +28,13 @@ import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
-export async function loadEnvFile(envDir: string): Promise<void> {
-  let content: string;
-  try {
-    content = await readFile(join(envDir, ".env"), "utf8");
-  } catch (err) {
-    if (isNoEntError(err)) return;
-    throw err;
-  }
-  const vars = parseDotenv(content);
-  for (const [key, value] of Object.entries(vars)) {
-    if (process.env[key] === undefined) process.env[key] = value;
-  }
-}
+import { loadEnvFile } from "./loadEnvFile.js";
 
 export type HandleFlowsRunDeps = {
   expandPatterns: (
     patterns: string[],
     cwd: string,
-    logger?: Logger,
+    logger?: Logger
   ) => Promise<string[]>;
   resolveUniqueEnvDir: (files: string[]) => string | undefined;
   ensureFlowDeps: (envDir: string) => Promise<void>;
@@ -76,7 +59,7 @@ export async function handleFlowsRun(
   ctx: CommandContext,
   pattern: string | undefined,
   flags: FlowsRunFlags,
-  deps?: HandleFlowsRunDeps,
+  deps?: HandleFlowsRunDeps
 ): Promise<CommandResult> {
   const resolvedDeps = deps ?? makeDefaultDeps(ctx.fs);
   const cwd = process.cwd();
@@ -84,7 +67,7 @@ export async function handleFlowsRun(
   const expandedFiles = await resolvedDeps.expandPatterns(
     buildPatternArgs(pattern),
     cwd,
-    ctx.log("flows"),
+    ctx.log("flows")
   );
   ctx
     .log("flows")
@@ -115,7 +98,7 @@ export async function handleFlowsRun(
           task: () => resolvedDeps.ensureFlowDeps(dir),
         },
       ],
-      () => runnerMessages.environmentReady,
+      () => runnerMessages.environmentReady
     );
     await loadEnvFile(dir);
   }
@@ -125,6 +108,11 @@ export async function handleFlowsRun(
 
   await resolvedDeps.configureTestkit(resolvedDir);
   const android = createAndroidDeps(resolvedDir, ctx.signals);
+  const stream = createTextStream(ctx.ui);
+  const stdout =
+    ctx.outputMode === "json"
+      ? process.stdout
+      : { write: (text: string) => stream.write(text) };
   return resolvedDeps.flowsRun(ctx, expandedFiles, flags, {
     peekFlowMeta: makePeekFlowMeta(ctx.fs),
     installBrowsers: (innerCtx, browsers) =>
@@ -143,7 +131,7 @@ export async function handleFlowsRun(
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
     logger: ctx.log("runner"),
-    reporter: buildRunReporter(flags, { fs: ctx.fs }),
+    reporter: buildRunReporter(flags, { fs: ctx.fs, stdout }),
     now: () => Date.now(),
   });
 }
