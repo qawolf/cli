@@ -21,6 +21,7 @@ import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js"
 import { ensureFlowDeps as defaultEnsureFlowDeps } from "~/domains/flows/ensureDeps.js";
 import type { Fs } from "~/shell/fs.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
+import { makePooledDispatch } from "~/domains/runner/makePooledDispatch.js";
 import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
@@ -109,6 +110,7 @@ export async function handleHybridFlowsRun(
     runAndroidFlowDeps: android.deps,
     bootAndroid: android.boot,
     shutdownAndroid: android.shutdown,
+    createPooledDispatch: makePooledDispatch(envDir),
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
     reporter: createConsoleReporter({

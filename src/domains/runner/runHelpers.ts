@@ -1,7 +1,11 @@
+import { runnerMessages } from "~/core/messages/index.js";
+
 import type { RunAndroidFlowOptions } from "./runAndroidFlow.js";
 import type { RunWebFlowOptions } from "./runWebFlow.js";
+import { resolveAvdName } from "./runAndroidFlowUtils.js";
 
 import type {
+  AndroidResolvedFlow,
   FlowsRunDeps,
   FlowsRunFlags,
   ResolvedFlow,
@@ -37,6 +41,33 @@ export function buildRunOptions(flags: FlowsRunFlags): {
       recordVideo: flags.video !== "off",
     },
   };
+}
+
+/**
+ * Boots the AVDs needed by the given android flows. Returns an error message
+ * to surface (and abort on) when boot fails, or undefined when there is
+ * nothing to boot or boot succeeds.
+ */
+export async function bootAndroidFlows(
+  deps: Pick<FlowsRunDeps, "bootAndroid">,
+  androidFlows: readonly AndroidResolvedFlow[],
+): Promise<string | undefined> {
+  if (androidFlows.length === 0 || !deps.bootAndroid) return undefined;
+  const avdNames = [
+    ...new Set(
+      androidFlows.map((f) =>
+        resolveAvdName(f.target as Parameters<typeof resolveAvdName>[0]),
+      ),
+    ),
+  ];
+  try {
+    await deps.bootAndroid(avdNames);
+    return undefined;
+  } catch (err) {
+    return err instanceof Error
+      ? err.message
+      : runnerMessages.androidBootFailed;
+  }
 }
 
 export async function runFlows(

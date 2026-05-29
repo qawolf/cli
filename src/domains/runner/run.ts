@@ -5,7 +5,8 @@ import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
 import { runnerMessages } from "~/core/messages/index.js";
 
-import { buildRunOptions, runFlows } from "./runHelpers.js";
+import { bootAndroidFlows, buildRunOptions, runFlows } from "./runHelpers.js";
+import { runFlowsPooled } from "./runFlowsPooled.js";
 import {
   type AndroidResolvedFlow,
   type FlowsRunDeps,
@@ -13,7 +14,6 @@ import {
   type ResolvedFlow,
   type WebResolvedFlow,
 } from "./runInternals.js";
-import { resolveAvdName } from "./runAndroidFlowUtils.js";
 
 export async function flowsRun(
   ctx: CommandContext,
@@ -21,11 +21,6 @@ export async function flowsRun(
   flags: FlowsRunFlags,
   deps: FlowsRunDeps,
 ): Promise<CommandResult> {
-  if (flags.workers > 1) {
-    ctx.ui.error(runnerMessages.workersCapError);
-    return { error: runnerMessages.workersCapError, exitCode: 2 };
-  }
-
   const flows: ResolvedFlow[] = [];
   const skippedByType = new Map<string, number>();
   for await (const { file, ...meta } of batchMap(
@@ -87,34 +82,43 @@ export async function flowsRun(
     (f): f is AndroidResolvedFlow => f.kind === "android",
   );
 
+  // Worker subprocesses are web-only for now; android parallelism needs
+  // per-worker emulator orchestration (tracked separately).
+  if (flags.workers > 1 && androidFlows.length > 0) {
+    ctx.ui.error(runnerMessages.androidWorkersUnsupported);
+    return { error: runnerMessages.androidWorkersUnsupported, exitCode: 2 };
+  }
+
   const { webOptions, androidOptions } = buildRunOptions(flags);
   let counts: Awaited<ReturnType<typeof runFlows>>["counts"];
   let durationMs: number;
   try {
-    if (androidFlows.length > 0 && deps.bootAndroid) {
-      const avdNames = [
-        ...new Set(
-          androidFlows.map((f) =>
-            resolveAvdName(f.target as Parameters<typeof resolveAvdName>[0]),
-          ),
-        ),
-      ];
-      try {
-        await deps.bootAndroid(avdNames);
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : runnerMessages.androidBootFailed;
-        ctx.ui.error(message);
-        return { error: message };
+    if (flags.workers > 1) {
+      if (!deps.createPooledDispatch)
+        throw new Error("createPooledDispatch is not wired for pooled runs");
+      ({ counts, durationMs } = await runFlowsPooled({
+        flows: webFlows,
+        workers: flags.workers,
+        bail: flags.bail,
+        maxAttempts: flags.retries + 1,
+        reporter: deps.reporter,
+        now: deps.now,
+        dispatch: deps.createPooledDispatch({ webOptions, androidOptions }),
+      }));
+    } else {
+      const bootError = await bootAndroidFlows(deps, androidFlows);
+      if (bootError !== undefined) {
+        ctx.ui.error(bootError);
+        return { error: bootError };
       }
+      ({ counts, durationMs } = await runFlows(
+        flows,
+        flags,
+        deps,
+        webOptions,
+        androidOptions,
+      ));
     }
-    ({ counts, durationMs } = await runFlows(
-      flows,
-      flags,
-      deps,
-      webOptions,
-      androidOptions,
-    ));
   } finally {
     deps.shutdownAndroid?.();
   }

@@ -111,7 +111,7 @@ This checks your Node.js version, Playwright installation, browser availability,
 ## Known limitations
 
 - **iOS flows require macOS** — Xcode and iOS simulators are macOS-only.
-- **Parallel workers not yet supported** — `--workers` is accepted but capped at 1 in v0.1.
+- **Parallel workers are web-only** — Android flows must be run with `--workers 1`.
 - **File assets not pulled** — `flows pull` does not download file attachments in v0.1.
 - **Mobile flows require a local APK or IPA path** — set the path via an environment variable in your flow config.
 - **`--har` captures headers and timing only by default** — use `--har-content full` for response bodies (increases memory usage).

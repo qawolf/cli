@@ -16,3 +16,11 @@ export function resolveWorkerCommand(env: {
     throw new Error("Cannot resolve worker entrypoint: unknown script path");
   return { command: env.execPath, prefixArgs: [env.scriptPath] };
 }
+
+export function defaultWorkerCommand(): WorkerCommand {
+  return resolveWorkerCommand({
+    execPath: process.execPath,
+    scriptPath: process.argv[1],
+    compiled: process.env["QAWOLF_COMPILED"] === "true",
+  });
+}

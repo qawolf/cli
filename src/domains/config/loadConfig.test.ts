@@ -66,10 +66,13 @@ describe("loadConfig", () => {
     expect(config).toEqual(input);
   });
 
-  it("rejects workers !== 1 with a message naming workers and the cap", async () => {
-    expect(loadConfig(withConfig({ workers: 4 }))).rejects.toThrow(
-      /workers: must be 1 \(got 4\)/,
-    );
+  it("accepts workers > 1", async () => {
+    const config = await loadConfig(withConfig({ workers: 4 }));
+    expect(config.workers).toBe(4);
+  });
+
+  it("rejects workers below 1", async () => {
+    expect(loadConfig(withConfig({ workers: 0 }))).rejects.toThrow(/workers/);
   });
 
   it("rejects timeout: '60s' with a message naming timeout and expecting number", async () => {
@@ -118,7 +121,7 @@ describe("loadConfig", () => {
   });
 
   it("prefixes the error message with the config filename", async () => {
-    expect(loadConfig(withConfig({ workers: 2 }))).rejects.toThrow(
+    expect(loadConfig(withConfig({ workers: 0 }))).rejects.toThrow(
       /^Invalid qawolf\.config\.ts:/,
     );
   });

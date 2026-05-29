@@ -9,18 +9,44 @@ afterEach(() => {
 });
 
 describe("flowsRun pre-flight", () => {
-  it("exits 2 with workers cap message when --workers > 1", async () => {
+  it("routes web flows to the pooled dispatch when --workers > 1", async () => {
     const ctx = makeCtx();
-    const deps = makeDeps();
+    const dispatch = mock(() =>
+      Promise.resolve({ run: passResult(), durationMs: 1 }),
+    );
+    const createPooledDispatch = mock(() => dispatch);
+    const deps = makeDeps({
+      metaByFile: { "/web.flow.ts": { target: "Web - Chrome" } },
+      createPooledDispatch,
+    });
     const flags = { ...defaultFlags(), workers: 4 };
 
-    const result = await flowsRun(ctx, [], flags, deps);
+    const result = await flowsRun(ctx, ["/web.flow.ts"], flags, deps);
+
+    expect(result).toBeUndefined();
+    expect(createPooledDispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(deps.runWebFlow).not.toHaveBeenCalled();
+  });
+
+  it("exits 2 when --workers > 1 and android flows are present", async () => {
+    const ctx = makeCtx();
+    const deps = makeDeps({
+      metaByFile: {
+        "/a.flow.ts": { target: "Android - Pixel 9 (Android 15)" },
+      },
+    });
+    const flags = { ...defaultFlags(), workers: 2 };
+
+    const result = await flowsRun(ctx, ["/a.flow.ts"], flags, deps);
 
     expect(result).toEqual({
-      error: runnerMessages.workersCapError,
+      error: runnerMessages.androidWorkersUnsupported,
       exitCode: 2,
     });
-    expect(ctx.ui.error).toHaveBeenCalledWith(runnerMessages.workersCapError);
+    expect(ctx.ui.error).toHaveBeenCalledWith(
+      runnerMessages.androidWorkersUnsupported,
+    );
   });
 
   it("prints 'No flows matched.' and exits 0 when files is empty", async () => {
