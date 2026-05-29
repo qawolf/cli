@@ -49,6 +49,7 @@ export type Fs = {
   createReadStream(path: string): Readable;
   existsSync(path: string): boolean;
   readFileSync(path: string): string; // always UTF-8
+  writeFileSync(path: string, data: string): void; // always UTF-8
   mkdirSync(path: string, options?: { recursive?: boolean }): void;
 };
 
@@ -111,6 +112,9 @@ export function makeDefaultFs(): Fs {
     },
     readFileSync(path) {
       return fs.readFileSync(path, "utf-8");
+    },
+    writeFileSync(path, data) {
+      fs.writeFileSync(path, data, "utf8");
     },
     mkdirSync(path, options) {
       fs.mkdirSync(path, options);

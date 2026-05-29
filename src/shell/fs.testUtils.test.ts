@@ -356,6 +356,24 @@ describe("makeMemoryFs", () => {
     expect(fs.existsSync("/a/b/c")).toBe(true);
   });
 
+  // writeFileSync
+  it("should write a file synchronously, readable via readFileSync", () => {
+    const fs = makeMemoryFs();
+    fs.writeFileSync("/f.txt", "hello");
+    expect(fs.readFileSync("/f.txt")).toBe("hello");
+  });
+
+  it("should throw ENOENT when the parent directory does not exist", () => {
+    const fs = makeMemoryFs();
+    let caughtError: unknown;
+    try {
+      fs.writeFileSync("/missing/f.txt", "data");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(isNoEntError(caughtError)).toBe(true);
+  });
+
   // createReadStream
   it("should stream file content through data events", async () => {
     const fs = makeMemoryFs();

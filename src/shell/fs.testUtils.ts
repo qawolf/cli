@@ -212,6 +212,11 @@ export function makeMemoryFs(): Fs {
       if (data === undefined) throwNoEntError(path, "open");
       return textDecoder.decode(data);
     },
+    writeFileSync(path, data) {
+      const parent = dirname(path);
+      if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "open");
+      files.set(path, textEncoder.encode(data));
+    },
     mkdirSync(path, opts) {
       if (!opts?.recursive) {
         const parent = dirname(path);
