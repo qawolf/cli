@@ -207,6 +207,7 @@ describe("flowsRun pre-flight", () => {
     await flowsRun(ctx, ["/a.flow.ts"], defaultFlags(), deps);
 
     expect(ctx.ui.outro).toHaveBeenCalledWith("Running 1 flow");
+    expect(ctx.ui.write).toHaveBeenCalledWith("\n");
     expect(ctx.ui.gap).toHaveBeenCalled();
   });
 

@@ -3,7 +3,6 @@ import {
   makePeekFlowMeta,
 } from "~/domains/flows/expand.js";
 import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
-import { createTextStream } from "~/shell/ui/textStream.js";
 import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
@@ -108,11 +107,6 @@ export async function handleFlowsRun(
 
   await resolvedDeps.configureTestkit(resolvedDir);
   const android = createAndroidDeps(resolvedDir, ctx.signals);
-  const stream = createTextStream(ctx.ui);
-  const stdout =
-    ctx.outputMode === "json"
-      ? process.stdout
-      : { write: (text: string) => stream.write(text) };
   return resolvedDeps.flowsRun(ctx, expandedFiles, flags, {
     peekFlowMeta: makePeekFlowMeta(ctx.fs),
     installBrowsers: (innerCtx, browsers) =>
@@ -131,7 +125,11 @@ export async function handleFlowsRun(
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
     logger: ctx.log("runner"),
-    reporter: buildRunReporter(flags, { fs: ctx.fs, stdout }),
+    // Route reporter output through ctx.ui so streamed test logs stay inside the run's timeline.
+    reporter: buildRunReporter(flags, {
+      fs: ctx.fs,
+      stdout: { write: (text: string) => ctx.ui.write(text) },
+    }),
     now: () => Date.now(),
   });
 }

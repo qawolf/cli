@@ -112,8 +112,9 @@ export async function flowsRun(
         ctx.ui.error(bootError);
         return { error: bootError };
       }
-      // Close the intro block before the reporter streams its raw test output.
+      // Close the intro block and add a blank line before streamed test output.
       ctx.ui.outro(`Running ${pluralize(flows.length, "flow")}`);
+      ctx.ui.write("\n");
       ({ counts, durationMs } = await runFlows(
         flows,
         flags,
