@@ -24,7 +24,10 @@ function renderTestCase(flow: JUnitFlowRecord): string {
   if (flow.status === "pass") {
     return `    <testcase ${attrs}/>`;
   }
-  const message = flow.error ?? `Flow failed: ${flow.name}`;
+  const message =
+    flow.error && flow.error.trim() !== ""
+      ? flow.error
+      : `Flow failed: ${flow.name}`;
   return `    <testcase ${attrs}>
       <failure message="${escapeXml(message)}" type="Error">${escapeXml(message)}</failure>
     </testcase>`;

@@ -97,6 +97,23 @@ describe("generateJUnit", () => {
     );
   });
 
+  it("falls back to a synthesized message when a failed flow has an empty error", () => {
+    const xml = generateJUnit(
+      [
+        {
+          name: "Flow",
+          path: "f.ts",
+          status: "fail",
+          durationMs: 100,
+          error: "",
+        },
+      ],
+      100,
+    );
+    expect(xml).not.toContain('message=""');
+    expect(xml).toContain("Flow failed: Flow");
+  });
+
   it("produces an empty suite root when there are no flows", () => {
     const xml = generateJUnit([], 0);
     expect(xml).toMatch(/testsuites[^>]*tests="0"/);
