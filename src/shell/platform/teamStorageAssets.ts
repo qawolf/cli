@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { dirname, join, isAbsolute, normalize, sep } from "node:path";
 
 import { errorMessage } from "~/core/errors.js";
@@ -41,31 +42,66 @@ async function writeTeamStorageAssets(
   deps: DownloadTeamStorageAssetsDeps,
 ): Promise<SyncTeamStorageAssetsResult> {
   const fs = deps.fs ?? makeDefaultFs();
+  const tmpAssets = `${args.assetsAbs}.pull-${randomBytes(8).toString("hex")}`;
   let downloadedCount = 0;
   let skippedCount = 0;
 
-  for (const file of args.files) {
-    const relativePath = safeAssetPath(file.path);
-    if (relativePath === undefined) {
-      skippedCount++;
-      continue;
+  try {
+    await fs.mkdir(tmpAssets, { recursive: true });
+
+    for (const file of args.files) {
+      const relativePath = safeAssetPath(file.path);
+      if (relativePath === undefined) {
+        skippedCount++;
+        continue;
+      }
+
+      const dest = join(tmpAssets, relativePath);
+      await fs.mkdir(dirname(dest), { recursive: true });
+      const result = await fetchSignedUrl(
+        { url: file.signedUrl, dest },
+        { fetch: deps.fetch, fs },
+      );
+      if (!result.ok) {
+        throw new Error(
+          describeTeamStorageDownloadError(file.path, result.error),
+        );
+      }
+      downloadedCount++;
     }
 
-    const dest = join(args.assetsAbs, relativePath);
-    await fs.mkdir(dirname(dest), { recursive: true });
-    const result = await fetchSignedUrl(
-      { url: file.signedUrl, dest },
-      { fetch: deps.fetch, fs },
-    );
-    if (!result.ok) {
-      throw new Error(
-        describeTeamStorageDownloadError(file.path, result.error),
-      );
+    await replaceAssetsDir(args.assetsAbs, tmpAssets, fs);
+    return { downloadedCount, skippedCount };
+  } catch (error: unknown) {
+    await fs.rm(tmpAssets, { recursive: true, force: true }).catch(() => {});
+    throw error;
+  }
+}
+
+async function replaceAssetsDir(
+  assetsAbs: string,
+  tmpAssets: string,
+  fs: Fs,
+): Promise<void> {
+  const oldAssets = `${assetsAbs}.old-${randomBytes(8).toString("hex")}`;
+  let movedOldAssets = false;
+
+  try {
+    if (await fs.pathExists(assetsAbs)) {
+      await fs.rename(assetsAbs, oldAssets);
+      movedOldAssets = true;
     }
-    downloadedCount++;
+    await fs.rename(tmpAssets, assetsAbs);
+  } catch (error: unknown) {
+    if (movedOldAssets) {
+      await fs.rename(oldAssets, assetsAbs).catch(() => {});
+    }
+    throw error;
   }
 
-  return { downloadedCount, skippedCount };
+  if (movedOldAssets) {
+    await fs.rm(oldAssets, { recursive: true, force: true });
+  }
 }
 
 function safeAssetPath(path: string): string | undefined {

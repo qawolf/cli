@@ -64,6 +64,33 @@ describe("PlatformClient.syncTeamStorageAssets", () => {
     expect(await fs.readFile("/assets/root.txt")).toBe("root");
   });
 
+  it("replaces stale assets with the current storage snapshot", async () => {
+    await fs.writeFile("/assets/stale.txt", "old");
+    await fs.mkdir("/assets/stale-dir", { recursive: true });
+    await fs.writeFile("/assets/stale-dir/old.txt", "old");
+    const fakeFetch = makeFetch([
+      {
+        path: "root.txt",
+        signedUrl: "https://storage.example.com/root",
+        size: 4,
+      },
+    ]);
+
+    const result = await createPlatformClient("qawolf_key", {
+      baseUrl: "https://test.qawolf.com",
+      fetch: fakeFetch.fetch,
+      fs,
+    }).syncTeamStorageAssets(assetsDir);
+
+    expect(result).toEqual({
+      ok: true,
+      value: { downloadedCount: 1, skippedCount: 0 },
+    });
+    expect(await fs.pathExists("/assets/stale.txt")).toBe(false);
+    expect(await fs.pathExists("/assets/stale-dir")).toBe(false);
+    expect(await fs.readFile("/assets/root.txt")).toBe("root");
+  });
+
   it("skips unsupported paths without fetching their signed urls", async () => {
     const fakeFetch = makeFetch([
       {
