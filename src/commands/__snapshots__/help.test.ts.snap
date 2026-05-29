@@ -145,6 +145,8 @@ Options:
                         (default: "omit")
   --output-dir <path>   Directory for run artifacts (videos, traces, HAR)
                         (default: "qawolf-output")
+  --junit [path]        Write a JUnit XML report (default:
+                        <output-dir>/junit-report.xml)
   --headed              Show the browser window instead of headless (default:
                         false)
   --env <env>           Pull and run a flow from this environment (UUID or slug)
