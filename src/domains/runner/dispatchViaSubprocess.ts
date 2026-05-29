@@ -1,9 +1,11 @@
 import type { SpawnFn } from "~/shell/spawn.js";
 
 import { FlowRunError } from "./errors.js";
-import type { DispatchResult } from "./runFlowsPooled.js";
+import type { DispatchResult, PooledDispatch } from "./runFlowsPooled.js";
+import type { RunAndroidFlowOptions } from "./runAndroidFlow.js";
+import type { RunWebFlowOptions } from "./runWebFlow.js";
 import type { ResolvedFlow } from "./runInternals.js";
-import { parseWorkerResult } from "./workerProtocol.js";
+import { parseWorkerResult, serializeWorkerInput } from "./workerProtocol.js";
 
 function lastNonEmptyLine(text: string): string | undefined {
   const lines = text
@@ -48,4 +50,32 @@ export async function runWorkerOnce(args: {
     },
     durationMs: 0,
   };
+}
+
+/**
+ * Builds the {@link PooledDispatch} the scheduler uses in production: each call
+ * spawns a fresh worker subprocess for one flow. `resolvedDir` and the run
+ * options are bound once and sent to every worker on stdin.
+ */
+export function createSubprocessDispatch(env: {
+  spawn: SpawnFn;
+  command: string;
+  prefixArgs: readonly string[];
+  resolvedDir: string;
+  webOptions: RunWebFlowOptions;
+  androidOptions: RunAndroidFlowOptions;
+}): PooledDispatch {
+  return (flow) =>
+    runWorkerOnce({
+      spawn: env.spawn,
+      command: env.command,
+      prefixArgs: env.prefixArgs,
+      flow,
+      optionsJson: serializeWorkerInput({
+        resolvedDir: env.resolvedDir,
+        flow,
+        webOptions: env.webOptions,
+        androidOptions: env.androidOptions,
+      }),
+    });
 }

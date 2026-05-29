@@ -10,6 +10,7 @@ import {
   handleFlowsPull,
 } from "~/domains/flows/pull/handler.js";
 import { registerFlowsRunCommand } from "./run.register.js";
+import { registerRunWorkerCommand } from "./runWorker.register.js";
 
 const listExamples = `
 Examples:
@@ -35,6 +36,7 @@ export function registerFlowsCommand(
     .description("Manage and run QA Wolf flows");
 
   registerFlowsRunCommand(flows, signals);
+  registerRunWorkerCommand(flows, signals);
 
   flows
     .command("list [pattern]")

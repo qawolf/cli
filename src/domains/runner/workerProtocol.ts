@@ -2,7 +2,28 @@ import { errorMessage } from "~/core/errors.js";
 import type { FlowStamp } from "~/shell/manifest/types.js";
 
 import { FlowRunError } from "./errors.js";
+import type { RunAndroidFlowOptions } from "./runAndroidFlow.js";
+import type { RunWebFlowOptions } from "./runWebFlow.js";
+import type { ResolvedFlow } from "./runInternals.js";
 import type { FlowRunResult } from "./types.js";
+
+// Parent → worker payload (sent on the worker subprocess's stdin). All fields
+// are plain JSON. `resolvedDir` lets the worker rebuild its per-process deps
+// (testkit, Playwright); env vars propagate via the inherited process env.
+export type WorkerInput = {
+  resolvedDir: string;
+  flow: ResolvedFlow;
+  webOptions: RunWebFlowOptions;
+  androidOptions: RunAndroidFlowOptions;
+};
+
+export function serializeWorkerInput(input: WorkerInput): string {
+  return JSON.stringify(input);
+}
+
+export function parseWorkerInput(text: string): WorkerInput {
+  return JSON.parse(text) as WorkerInput;
+}
 
 // Wire form of a flow run, exchanged over the worker subprocess's stdout.
 // Mirrors FlowRunResult but flattens the FlowRunError (an Error subclass) into
