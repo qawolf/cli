@@ -8,7 +8,7 @@ import type {
 } from "./runInternals.js";
 import { dispatchFlow } from "./runInternals.js";
 
-type FlowCounts = {
+export type FlowCounts = {
   flowsPassed: number;
   flowsFailed: number;
   flowsSkipped: number;
