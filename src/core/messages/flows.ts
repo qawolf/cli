@@ -5,6 +5,8 @@ type PullSummaryInput = {
   readonly flowCount: number;
   readonly envVarCount: number;
   readonly flowsWithTeamStorageRefs: readonly string[];
+  readonly assetDownloadedCount?: number | undefined;
+  readonly assetSkippedCount?: number | undefined;
 };
 
 export const flowsMessages = {
@@ -18,21 +20,37 @@ export const flowsMessages = {
     needsYesError: "Re-run with --yes to overwrite locally-modified files",
     aborted: "Aborted; no changes.",
     extractingBundle: "Extracting bundle",
+    downloadingTeamStorageAssets: "Downloading team-storage assets",
     summary: (result: PullSummaryInput, assetsAbs: string) => {
       const flows = pluralize(result.flowCount, "flow");
       const envVars =
         result.envVarCount === 0
           ? ""
           : ` and ${pluralize(result.envVarCount, "environment variable")}`;
-      let summary = `Pulled ${flows}${envVars} into ${result.envDir}`;
+      const lines = [`Pulled ${flows}${envVars} into ${result.envDir}`];
       if (result.flowsWithTeamStorageRefs.length > 0) {
         const refs = pluralize(result.flowsWithTeamStorageRefs.length, "flow");
-        summary += `\nTeam-storage assets required for ${refs} — populate ${assetsAbs} before running:`;
+        lines.push(`Team-storage assets referenced by ${refs}:`);
         for (const path of result.flowsWithTeamStorageRefs) {
-          summary += `\n  - ${path}`;
+          lines.push(`  - ${path}`);
         }
       }
-      return summary;
+      const downloaded = result.assetDownloadedCount ?? 0;
+      const skipped = result.assetSkippedCount ?? 0;
+      if (downloaded > 0 || skipped > 0) {
+        let assetSummary = `Downloaded ${pluralize(
+          downloaded,
+          "team-storage asset",
+        )} into ${assetsAbs}`;
+        if (skipped > 0) {
+          assetSummary += ` (${pluralize(
+            skipped,
+            "unsafe or unsupported asset",
+          )} skipped)`;
+        }
+        lines.push(assetSummary);
+      }
+      return lines.join("\n");
     },
     symlinkRejected: (path: string) => `symlink entry rejected: ${path}`,
     entryTooLarge: (path: string, size: number, maxBytes: number) =>

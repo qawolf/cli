@@ -26,3 +26,18 @@ export const flowsBundleResponseSchema = z.object({
   url: z.url(),
 });
 export type FlowsBundleResponse = z.infer<typeof flowsBundleResponseSchema>;
+
+export const teamStorageFileSchema = z.object({
+  path: z.string(),
+  signedUrl: z.url(),
+  size: z.number(),
+});
+export type TeamStorageFile = z.infer<typeof teamStorageFileSchema>;
+
+export const teamStorageListResponseSchema = z.object({
+  files: z.array(teamStorageFileSchema),
+  nextPageToken: z.string().optional(),
+});
+export type TeamStorageListResponse = z.infer<
+  typeof teamStorageListResponseSchema
+>;

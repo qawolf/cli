@@ -1,9 +1,10 @@
-import { writeFile } from "node:fs/promises";
+import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import type { WireResult } from "./createTrpcClient.js";
 import { toError } from "./toError.js";
 
 type Deps = {
   fetch: typeof globalThis.fetch;
+  fs?: Fs | undefined;
 };
 
 const timeoutMs = 30_000;
@@ -37,7 +38,10 @@ export async function fetchSignedUrl(
   }
 
   try {
-    await writeFile(args.dest, response.body);
+    await (deps.fs ?? makeDefaultFs()).writeFile(
+      args.dest,
+      new Uint8Array(await response.arrayBuffer()),
+    );
   } catch (error: unknown) {
     return { ok: false, error: { cause: toError(error), kind: "network" } };
   }

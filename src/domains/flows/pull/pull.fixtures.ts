@@ -10,6 +10,7 @@ export const testSignedUrl = "https://gcs.example.com/bundle.tar.gz?sig=abc";
 const testExpiresAt = "2099-12-31T00:00:00.000Z";
 const flowsBundlePath = "gitwolf.getFlowsBundleUrl";
 const envVarsPath = "environment.getEnvironmentWithVariables";
+const teamStoragePath = "team.listStorageFiles";
 export const testEnvVars: Record<string, string> = {
   BASE_URL: "https://example.com",
   PASSWORD: "p@ss\"w'd",
@@ -119,6 +120,20 @@ export function makeFakeFetch(
       const body = {
         result: {
           data: superjson.serialize({ environmentVariables: vars }),
+        },
+      };
+      return new Response(JSON.stringify(body), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    if (url.includes(`/api/trpc/${teamStoragePath}`)) {
+      const body = {
+        result: {
+          data: superjson.serialize({
+            files: [],
+            nextPageToken: undefined,
+          }),
         },
       };
       return new Response(JSON.stringify(body), {

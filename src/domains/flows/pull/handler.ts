@@ -71,7 +71,7 @@ export async function handleFlowsPull(
       return;
     }
 
-    const [result] = await ctx.ui.withProgress(
+    const [result, assetResult] = await ctx.ui.withProgress(
       [
         {
           message: flowsMessages.pull.extractingBundle,
@@ -90,8 +90,24 @@ export async function handleFlowsPull(
               resolvedDeps.fs,
             ),
         },
+        {
+          message: flowsMessages.pull.downloadingTeamStorageAssets,
+          task: async () => {
+            const result = await ctx.platform.syncTeamStorageAssets(assetsAbs);
+            if (!result.ok) throw new Error(result.error);
+            return result.value;
+          },
+        },
       ],
-      (results) => flowsMessages.pull.summary(results[0], assetsAbs),
+      (results) =>
+        flowsMessages.pull.summary(
+          {
+            ...results[0],
+            assetDownloadedCount: results[1].downloadedCount,
+            assetSkippedCount: results[1].skippedCount,
+          },
+          assetsAbs,
+        ),
     );
 
     if (ctx.ui.mode === "json") {
@@ -104,6 +120,8 @@ export async function handleFlowsPull(
           flowCount: result.flowCount,
           envVarCount: result.envVarCount,
           flowsWithTeamStorageRefs: result.flowsWithTeamStorageRefs,
+          assetDownloadedCount: assetResult.downloadedCount,
+          assetSkippedCount: assetResult.skippedCount,
           manifestPath: join(result.envDir, manifestFilename),
         },
         "",

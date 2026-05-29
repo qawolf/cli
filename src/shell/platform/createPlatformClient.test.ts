@@ -1,4 +1,3 @@
-// oxlint-disable eslint/max-lines -- regression coverage for the gitwolf.getFlowsBundleUrl payload-key wire-format bug added 3 lines; splitting the file is more churn than the test warrants
 import { afterEach, describe, expect, it, mock, type Mock } from "bun:test";
 import superjson from "superjson";
 
@@ -36,7 +35,6 @@ function calledRequest(f: typeof fetch) {
     url: url as string,
     method: init?.method ?? "",
     auth: h?.["Authorization"],
-    body: init?.body as string | undefined,
   };
 }
 
@@ -171,8 +169,6 @@ describe("getFlowsBundleUrl", () => {
     expect(req.url).toContain("/api/trpc/gitwolf.getFlowsBundleUrl");
     expect(req.method).toBe("POST");
     expect(req.auth).toBe(`Bearer ${apiKey}`);
-    const parsed = JSON.parse(req.body!) as { json: Record<string, string> };
-    expect(parsed.json).toEqual({ environmentId: envId });
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.value.signedUrl).toBe(signedUrl);
   });

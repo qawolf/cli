@@ -9,6 +9,8 @@ export function makeMockPlatformClient(
     getRemoteFlows: mock<PlatformClient["getRemoteFlows"]>(),
     getFlowsBundleUrl: mock<PlatformClient["getFlowsBundleUrl"]>(),
     getEnvVars: mock<PlatformClient["getEnvVars"]>(),
+    listTeamStorageFiles: mock<PlatformClient["listTeamStorageFiles"]>(),
+    syncTeamStorageAssets: mock<PlatformClient["syncTeamStorageAssets"]>(),
     downloadBundle: mock<PlatformClient["downloadBundle"]>(),
     ...overrides,
   };

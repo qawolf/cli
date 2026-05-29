@@ -13,7 +13,7 @@ import { isNoEntError } from "~/core/errors.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { runnerMessages } from "~/core/messages/index.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
-import { selectReporter } from "~/shell/reporter/selectReporter.js";
+import { createConsoleReporter } from "~/shell/reporter/createConsoleReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
 // import { configureEmails } from "~/emails/configureEmails.js";
@@ -138,7 +138,7 @@ export async function handleFlowsRun(
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
     logger: ctx.log("runner"),
-    reporter: selectReporter(ctx.outputMode, {
+    reporter: createConsoleReporter({
       stdout: process.stdout,
       stderr: process.stderr,
     }),
