@@ -11,6 +11,7 @@ describe("flowsMessages.pull.summary", () => {
         envVarCount: 0,
         flowsWithTeamStorageRefs: [],
         assetDownloadedCount: 0,
+        assetReusedCount: 0,
         assetSkippedCount: 0,
       },
       "/tmp/assets",
@@ -27,6 +28,7 @@ describe("flowsMessages.pull.summary", () => {
         envVarCount: 1,
         flowsWithTeamStorageRefs: ["src/flows/a.flow.ts"],
         assetDownloadedCount: 2,
+        assetReusedCount: 1,
         assetSkippedCount: 1,
       },
       "/tmp/assets",
@@ -37,7 +39,7 @@ describe("flowsMessages.pull.summary", () => {
         "Pulled 2 flows and 1 environment variable into /tmp/env",
         "Team-storage assets referenced by 1 flow:",
         "  - src/flows/a.flow.ts",
-        "Downloaded 2 team-storage assets into /tmp/assets (1 unsafe or unsupported asset skipped)",
+        "Downloaded 2 team-storage assets and reused 1 team-storage asset into /tmp/assets (1 unsafe or unsupported asset skipped)",
       ].join("\n"),
     );
   });

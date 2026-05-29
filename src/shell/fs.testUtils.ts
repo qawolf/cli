@@ -204,6 +204,14 @@ export function makeMemoryFs(): Fs {
       if (data === undefined) throwNoEntError(path, "open");
       return Readable.from([data]);
     },
+    async copyFile(source, destination) {
+      const data = files.get(source);
+      if (data === undefined) throwNoEntError(source, "open");
+      const parent = dirname(destination);
+      if (parent !== "/" && !dirs.has(parent))
+        throwNoEntError(destination, "open");
+      files.set(destination, data.slice());
+    },
     existsSync(path) {
       return files.has(path) || dirs.has(path);
     },

@@ -47,6 +47,7 @@ export type Fs = {
   rename(oldPath: string, newPath: string): Promise<void>;
   utimes(path: string, atime: Date, mtime: Date): Promise<void>;
   createReadStream(path: string): Readable;
+  copyFile(source: string, destination: string): Promise<void>;
   existsSync(path: string): boolean;
   readFileSync(path: string): string; // always UTF-8
   mkdirSync(path: string, options?: { recursive?: boolean }): void;
@@ -105,6 +106,9 @@ export function makeDefaultFs(): Fs {
         throw err;
       }
       return fs.createReadStream(path);
+    },
+    async copyFile(source, destination) {
+      await fs.promises.copyFile(source, destination);
     },
     existsSync(path) {
       return fs.existsSync(path);

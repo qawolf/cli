@@ -36,7 +36,7 @@ describe("PlatformClient.syncTeamStorageAssets", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { downloadedCount: 2, skippedCount: 0 },
+      value: { downloadedCount: 2, reusedCount: 0, skippedCount: 0 },
     });
     expect(await fs.readFile("/assets/root.txt")).toBe("root");
     expect(await fs.readFile("/assets/nested/data.csv")).toBe("nested");
@@ -59,7 +59,7 @@ describe("PlatformClient.syncTeamStorageAssets", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { downloadedCount: 1, skippedCount: 0 },
+      value: { downloadedCount: 1, reusedCount: 0, skippedCount: 0 },
     });
     expect(await fs.readFile("/assets/root.txt")).toBe("root");
   });
@@ -84,7 +84,7 @@ describe("PlatformClient.syncTeamStorageAssets", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { downloadedCount: 1, skippedCount: 0 },
+      value: { downloadedCount: 1, reusedCount: 0, skippedCount: 0 },
     });
     expect(await fs.pathExists("/assets/stale.txt")).toBe(false);
     expect(await fs.pathExists("/assets/stale-dir")).toBe(false);
@@ -143,7 +143,7 @@ describe("PlatformClient.syncTeamStorageAssets", () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { downloadedCount: 1, skippedCount: 7 },
+      value: { downloadedCount: 1, reusedCount: 0, skippedCount: 7 },
     });
     expect(fakeFetch.assetUrls).toEqual(["https://storage.example.com/safe"]);
     expect(await fs.readFile("/assets/safe.txt")).toBe("safe");

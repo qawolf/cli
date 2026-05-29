@@ -6,6 +6,7 @@ type PullSummaryInput = {
   readonly envVarCount: number;
   readonly flowsWithTeamStorageRefs: readonly string[];
   readonly assetDownloadedCount?: number | undefined;
+  readonly assetReusedCount?: number | undefined;
   readonly assetSkippedCount?: number | undefined;
 };
 
@@ -36,12 +37,20 @@ export const flowsMessages = {
         }
       }
       const downloaded = result.assetDownloadedCount ?? 0;
+      const reused = result.assetReusedCount ?? 0;
       const skipped = result.assetSkippedCount ?? 0;
-      if (downloaded > 0 || skipped > 0) {
+      if (downloaded > 0 || reused > 0 || skipped > 0) {
         let assetSummary = `Downloaded ${pluralize(
           downloaded,
           "team-storage asset",
-        )} into ${assetsAbs}`;
+        )}`;
+        if (reused > 0) {
+          assetSummary += ` and reused ${pluralize(
+            reused,
+            "team-storage asset",
+          )}`;
+        }
+        assetSummary += ` into ${assetsAbs}`;
         if (skipped > 0) {
           assetSummary += ` (${pluralize(
             skipped,
