@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { CommandContext } from "~/shell/commandContext.js";
+import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
@@ -65,17 +66,7 @@ function makeCtx(): CommandContext {
     isInteractive: false,
     signals: noopSignals,
     log: () => makeNoopLogger(),
-    ui: {
-      withProgress: async (tasks: { task: () => Promise<void> }[]) => {
-        for (const t of tasks) await t.task();
-        return [];
-      },
-      info: uiInfoMock,
-      warn: () => {},
-      gap: () => {},
-      intro: uiIntroMock,
-      outro: () => {},
-    },
+    ui: { ...makeFakeUI("human"), info: uiInfoMock, intro: uiIntroMock },
   } as unknown as CommandContext;
 }
 

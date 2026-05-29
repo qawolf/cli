@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import type { CommandContext } from "~/shell/commandContext.js";
+import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import type {
   FlowsRunDeps,
   FlowsRunFlags,
@@ -45,14 +46,7 @@ function makeCtx(outputMode: OutputMode): CommandContext {
     signals: noopSignals,
     log: () => makeNoopLogger(),
     ui: {
-      withProgress: async (tasks: { task: () => Promise<void> }[]) => {
-        for (const t of tasks) await t.task();
-        return [];
-      },
-      warn: () => {},
-      gap: () => {},
-      intro: () => {},
-      outro: () => {},
+      ...makeFakeUI(outputMode),
       // Mirror real mode behavior: human→stdout, agent→stderr, json→no-op.
       // The stream routes reporter writes through ui.write, so the spy captures them.
       write:
