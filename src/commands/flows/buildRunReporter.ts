@@ -29,7 +29,9 @@ export function buildRunReporter(
   const stdout = deps.stdout ?? process.stdout;
   const stderr = deps.stderr ?? process.stderr;
   const console = createConsoleReporter({ stdout, stderr });
-  if (!flags.junit) return console;
+  // `undefined` means the flag was absent; an empty string (`--junit=`) still
+  // enables it and resolves to the default path.
+  if (flags.junit === undefined) return console;
 
   const junit = createJUnitReporter({
     outputPath: resolveJUnitOutputPath(flags.junit, flags.outputDir),

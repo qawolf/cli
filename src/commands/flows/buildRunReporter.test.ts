@@ -45,4 +45,16 @@ describe("buildRunReporter", () => {
 
     expect(fs.existsSync("/out/qawolf/junit-report.xml")).toBe(false);
   });
+
+  it("treats a bare --junit= (empty string) as enabled with the default path", () => {
+    const fs = makeMemoryFs();
+    const reporter = buildRunReporter(
+      { junit: "", outputDir: "/out/qawolf" },
+      { fs, stdout: sink(), stderr: sink() },
+    );
+
+    drivePassingFlow(reporter);
+
+    expect(fs.existsSync("/out/qawolf/junit-report.xml")).toBe(true);
+  });
 });

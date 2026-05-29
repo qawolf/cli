@@ -34,6 +34,15 @@ describe("resolveJUnitOutputPath", () => {
       "reports/ci.xml",
     );
   });
+
+  it("falls back to the default path for an empty or whitespace value", () => {
+    expect(resolveJUnitOutputPath("", "qawolf-output")).toBe(
+      "qawolf-output/junit-report.xml",
+    );
+    expect(resolveJUnitOutputPath("   ", "qawolf-output")).toBe(
+      "qawolf-output/junit-report.xml",
+    );
+  });
 });
 
 describe("createJUnitReporter", () => {
