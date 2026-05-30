@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import superjson from "superjson";
 
 import { createPlatformClient } from "./createPlatformClient.js";
+import type { TeamStorageFile } from "./types.js";
 
 let workDir = "";
 let assetsDir = "";
@@ -88,14 +89,6 @@ describe("PlatformClient.syncTeamStorageAssets etag reuse", () => {
     expect(await exists(join(assetsDir, "stale.txt"))).toBe(false);
   });
 });
-
-type TeamStorageFile = {
-  etag: string;
-  path: string;
-  signedUrl: string;
-  size: number;
-  updatedAt: string;
-};
 
 function teamStorageFiles(): TeamStorageFile[] {
   return [
