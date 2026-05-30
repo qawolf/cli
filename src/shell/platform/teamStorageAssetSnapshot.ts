@@ -31,7 +31,9 @@ export async function replaceAssetsDir(
         await fs.rename(oldAssets, assetsAbs);
       } catch (rollbackError: unknown) {
         throw new Error(
-          `Failed to replace team-storage assets and rollback also failed; previous assets may remain at ${oldAssets}. Replace error: ${errorMessage(error)}. Rollback error: ${errorMessage(rollbackError)}`,
+          `Failed to replace team-storage assets and rollback also failed; previous assets may remain at ${oldAssets}. Replace error: ${errorMessage(
+            error,
+          )}. Rollback error: ${errorMessage(rollbackError)}`,
           { cause: rollbackError },
         );
       }
@@ -94,8 +96,5 @@ async function collectEntries(
 
 function setsEqual(left: Set<string>, right: Set<string>): boolean {
   if (left.size !== right.size) return false;
-  for (const value of left) {
-    if (!right.has(value)) return false;
-  }
-  return true;
+  return [...left].every((value) => right.has(value));
 }
