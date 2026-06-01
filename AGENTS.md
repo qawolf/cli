@@ -32,36 +32,49 @@ Tests use Bun's test runner. Run a single test file with `bun run test <path>`. 
 src/
 ├── main.ts              # Entry point — createProgram().parse()
 ├── core/                # Pure functions and types — zero I/O
+│   ├── androidTargets.ts # Android target parsing helpers
+│   ├── batchMap.ts      # bounded-concurrency async map
 │   ├── errors.ts        # errorMessage, isNoEntError
-│   ├── paths.ts         # getConfigDir
 │   ├── flowMeta.ts      # extractFlowMeta, targetToBrowser, flowBasename
-│   ├── messages/        # authCopy — user-facing strings for auth commands
+│   ├── messages/        # user-facing strings (auth, doctor, flows, init, install, runner)
+│   ├── paths.ts         # getConfigDir
+│   ├── patternArgs.ts   # CLI pattern argument parsing
 │   ├── pluralize.ts     # pluralize
+│   ├── sleep.ts         # sleep
 │   └── types.ts         # BrowserName, VideoMode, TraceMode, HarMode, TestCounts
 ├── shell/               # I/O executors — process spawning, UI, API clients
+│   ├── appium/          # Android emulator + Appium server lifecycle
 │   ├── commandContext.ts # CommandContext, CommandResult types
-│   ├── spawn.ts         # defaultSpawn, SpawnFn
-│   ├── playwright.ts    # resolvePlaywrightCli
-│   ├── testkit.ts       # configureTestkit
 │   ├── exit.ts          # exitCodes, exit
-│   ├── platform/        # getIdentity — platform detection and API identity
-│   ├── reporter/        # Reporter interface, createConsoleReporter
-│   └── ui/              # createUI, detectOutputMode, OutputMode
+│   ├── fs.ts            # filesystem helpers
+│   ├── logger.ts        # pino-based structured logger
+│   ├── manifest/        # bundle manifest read/lookup
+│   ├── platform/        # tRPC client, getIdentity, signed-URL/bundle download, team storage
+│   ├── playwright.ts    # resolvePlaywrightCli
+│   ├── reporter/        # Reporter interface, console + JUnit + composite reporters
+│   ├── resolveExport.ts # ESM export resolution
+│   ├── signals/         # SignalRegistry for graceful shutdown
+│   ├── spawn.ts         # defaultSpawn, SpawnFn
+│   ├── testkit.ts       # configureTestkit
+│   ├── ui/              # createUI, detectOutputMode, OutputMode (clack + renderers)
+│   └── workerCommand.ts # worker-subprocess command wiring
 ├── domains/             # Business logic — one directory per bounded context
 │   ├── auth/            # resolveApiKey, validateApiKey, saveApiKey
 │   ├── config/          # loadConfig (not yet wired)
 │   ├── doctor/          # runChecks, renderResults
 │   ├── emails/          # configureEmails (not yet wired)
 │   ├── flows/           # expandPatterns, peekFlowMeta, flowsList, pull/
+│   ├── init/            # init handler + templates
 │   ├── install/         # installBrowsers, installBrowserList
-│   └── runner/          # flowsRun, runWebFlow, runAndroidFlow, run.fixtures
+│   └── runner/          # flowsRun, runWebFlow, runAndroidFlow, worker dispatch + pool
 └── commands/            # Thin CLI glue — Commander registration + composite root
     ├── context.ts       # withContext() Commander action wrapper
     ├── program.ts       # createProgram() factory
     ├── auth/            # login, logout, whoami handlers
     ├── doctor/          # doctor handler
-    ├── install/         # install browsers handler
-    └── flows/           # flows run/list/pull handlers; runDefaults composite root
+    ├── flows/           # flows run/list/pull handlers; runDefaults composite root
+    ├── init/            # init handler
+    └── install/         # install browsers/android handlers
 ```
 
 The codebase is organized into four strict layers. **`core/`** holds pure functions and types with zero I/O. **`shell/`** holds I/O executors (process spawning, Playwright, UI rendering, API clients). **`domains/`** holds bounded-context business logic; each domain may import `core/` and `shell/` but never a sibling domain. **`commands/`** is the composite root: thin Commander registration plus `runDefaults.ts`, which bridges multiple domains to assemble the `flows run` command. oxlint enforces these boundaries via per-layer `no-restricted-imports` overrides in `.oxlintrc.json`.
@@ -95,7 +108,7 @@ All required inputs are passable as flags so agents never hit interactive prompt
 Conventional commits: `type(scope): description`
 
 - **Types:** feat, fix, build, chore, docs, refactor, test
-- **Scopes:** scaffold, auth, flows, runs, diff, pr, config, cli, lib, clients
+- **Scopes:** scaffold, auth, flows, runs, diff, pr, config, cli, lib, clients, runner
 - Imperative mood ("add", not "added"). Subject line under 72 characters.
 
 ## Boundaries
