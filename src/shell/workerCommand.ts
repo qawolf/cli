@@ -21,6 +21,6 @@ export function defaultWorkerCommand(): WorkerCommand {
   return resolveWorkerCommand({
     execPath: process.execPath,
     scriptPath: process.argv[1],
-    compiled: process.env["QAWOLF_COMPILED"] === "true",
+    compiled: process.env.QAWOLF_COMPILED === "true",
   });
 }

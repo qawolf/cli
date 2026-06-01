@@ -37,10 +37,18 @@ export async function runWorkerOnce(args: {
   );
 
   const line = lastNonEmptyLine(result.stdout);
-  if (line !== undefined) return parseWorkerResult(line);
+  if (line !== undefined) {
+    try {
+      return parseWorkerResult(line);
+    } catch {
+      // Fall through to synthesize a per-flow failure from malformed output.
+    }
+  }
 
   const detail =
-    result.stderr.trim() || `worker exited with code ${result.exitCode}`;
+    result.stderr.trim() ||
+    line ||
+    `worker exited with code ${result.exitCode}`;
   return {
     run: {
       passed: false,

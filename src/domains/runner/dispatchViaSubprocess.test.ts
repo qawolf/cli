@@ -117,6 +117,28 @@ describe("runWorkerOnce", () => {
     expect(err.flowName).toBe("checkout");
     expect((err.cause as Error).message).toContain("Segmentation fault");
   });
+
+  it("synthesizes a failure when the worker output is not valid JSON", async () => {
+    const { spawn } = fakeSpawn({
+      exitCode: 1,
+      stdout: "worker log before crash\n",
+      stderr: "",
+    });
+
+    const out = await runWorkerOnce({
+      spawn,
+      command: "/bin/qawolf",
+      prefixArgs: [],
+      flow,
+      optionsJson: "{}",
+    });
+
+    expect(out.run.passed).toBe(false);
+    const err = out.run.error;
+    if (err === undefined) throw new Error("expected an error");
+    expect(err.flowName).toBe("checkout");
+    expect((err.cause as Error).message).toContain("worker log before crash");
+  });
 });
 
 describe("createSubprocessDispatch", () => {
