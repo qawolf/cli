@@ -33,7 +33,7 @@ export type HandleFlowsRunDeps = {
   expandPatterns: (
     patterns: string[],
     cwd: string,
-    logger?: Logger
+    logger?: Logger,
   ) => Promise<string[]>;
   resolveUniqueEnvDir: (files: string[]) => string | undefined;
   ensureFlowDeps: (envDir: string) => Promise<void>;
@@ -58,7 +58,7 @@ export async function handleFlowsRun(
   ctx: CommandContext,
   pattern: string | undefined,
   flags: FlowsRunFlags,
-  deps?: HandleFlowsRunDeps
+  deps?: HandleFlowsRunDeps,
 ): Promise<CommandResult> {
   const resolvedDeps = deps ?? makeDefaultDeps(ctx.fs);
   const cwd = process.cwd();
@@ -66,7 +66,7 @@ export async function handleFlowsRun(
   const expandedFiles = await resolvedDeps.expandPatterns(
     buildPatternArgs(pattern),
     cwd,
-    ctx.log("flows")
+    ctx.log("flows"),
   );
   ctx
     .log("flows")
@@ -97,7 +97,7 @@ export async function handleFlowsRun(
           task: () => resolvedDeps.ensureFlowDeps(dir),
         },
       ],
-      () => runnerMessages.environmentReady
+      () => runnerMessages.environmentReady,
     );
     await loadEnvFile(dir);
   }
