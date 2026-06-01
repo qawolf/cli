@@ -7,7 +7,7 @@ export const qawolfConfigSchema = z.strictObject({
   timeout: z.number().int().positive().default(60_000),
   retries: z.number().int().min(0).default(0),
   bail: z.boolean().default(false),
-  workers: z.literal(1).default(1),
+  workers: z.number().int().min(1).default(1),
   video: artifactModeSchema.default("retain-on-failure"),
   trace: artifactModeSchema.default("retain-on-failure"),
   apiUrl: z.url().default("https://app.qawolf.com"),

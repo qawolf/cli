@@ -133,7 +133,7 @@ Options:
   --retries <n>         Retry each failing flow up to this many times (default:
                         0)
   --bail                Stop the run after the first failure (default: false)
-  --workers <n>         Parallel worker count (capped at 1 in v0.1) (default: 1)
+  --workers <n>         Parallel worker count for web flows (default: 1)
   --timeout <ms>        Per-flow timeout in milliseconds (default: 30000)
   --video <mode>        Record video: on | off | retain-on-failure (default:
                         "off")

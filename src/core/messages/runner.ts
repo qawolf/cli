@@ -1,7 +1,8 @@
 import { pluralize } from "~/core/pluralize.js";
 
 export const runnerMessages = {
-  workersCapError: "--workers > 1 is deferred to v0.2; current cap is 1.",
+  androidWorkersUnsupported:
+    "Android flows are not yet supported with --workers > 1; rerun Android flows with --workers 1.",
   noFlowsMatched: "No flows matched.",
   androidBootFailed: "Android boot failed",
   preparingEnvironment: "Preparing environment",

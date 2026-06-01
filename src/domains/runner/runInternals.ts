@@ -14,6 +14,7 @@ import type {
   RunWebFlowOptions,
   runWebFlow as defaultRunWebFlow,
 } from "./runWebFlow.js";
+import type { PooledDispatch } from "./runFlowsPooled.js";
 import type { FlowRunResult } from "./types.js";
 import type {
   BrowserName,
@@ -55,6 +56,11 @@ export type FlowsRunDeps = {
   readonly findFlowStamp: typeof defaultFindFlowStamp;
   readonly warn: (message: string) => void;
   readonly logger?: Logger;
+  /** Builds the subprocess-backed dispatch for `--workers > 1` (pooled path only). */
+  readonly createPooledDispatch?: (opts: {
+    webOptions: RunWebFlowOptions;
+    androidOptions: RunAndroidFlowOptions;
+  }) => PooledDispatch;
   /** Boots the AVDs for the given names before any android flows are dispatched. */
   readonly bootAndroid?: (avdNames: string[]) => Promise<void>;
   /** Stops the Appium server and emulator pool after all flows complete. */

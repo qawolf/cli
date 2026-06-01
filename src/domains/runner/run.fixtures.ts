@@ -60,6 +60,7 @@ type DepsOverrides = {
   stampByFile?: Record<string, FlowStamp>;
   bootAndroid?: (avdNames: string[]) => Promise<void>;
   shutdownAndroid?: () => void;
+  createPooledDispatch?: FlowsRunDeps["createPooledDispatch"];
 };
 
 export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
@@ -100,6 +101,9 @@ export function makeDeps(overrides: DepsOverrides = {}): FlowsRunDeps {
       Promise.resolve(overrides.stampByFile?.[file]),
     ),
     warn: mock<FlowsRunDeps["warn"]>(() => {}),
+    ...(overrides.createPooledDispatch !== undefined
+      ? { createPooledDispatch: overrides.createPooledDispatch }
+      : {}),
     ...(overrides.bootAndroid !== undefined
       ? { bootAndroid: overrides.bootAndroid }
       : {}),

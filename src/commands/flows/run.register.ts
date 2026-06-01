@@ -46,7 +46,7 @@ export function registerFlowsRunCommand(
     .option("--bail", "Stop the run after the first failure", false)
     .option(
       "--workers <n>",
-      "Parallel worker count (capped at 1 in v0.1)",
+      "Parallel worker count for web flows",
       parseInteger("--workers", { min: 1 }),
       1,
     )
