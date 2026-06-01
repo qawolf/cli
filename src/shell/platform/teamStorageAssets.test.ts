@@ -4,6 +4,7 @@ import superjson from "superjson";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import type { Fs } from "~/shell/fs.js";
 import { createPlatformClient } from "./createPlatformClient.js";
+import type { TeamStorageFile } from "./types.js";
 
 let fs: Fs;
 const assetsDir = "/assets";
@@ -149,12 +150,6 @@ describe("PlatformClient.syncTeamStorageAssets", () => {
     expect(await fs.readFile("/assets/safe.txt")).toBe("safe");
   });
 });
-
-type TeamStorageFile = {
-  path: string;
-  signedUrl: string;
-  size: number;
-};
 
 function makeFetch(files: TeamStorageFile[]): {
   assetUrls: string[];

@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { Fs } from "~/shell/fs.js";
+import type { PlatformResult } from "./requestWithRetry.js";
 import { describeBundleDownloadError } from "./describeErrors.js";
 import { fetchSignedUrl } from "./fetchSignedUrl.js";
-import type { PlatformResult } from "./requestWithRetry.js";
 
 type Deps = {
   fetch: typeof globalThis.fetch;

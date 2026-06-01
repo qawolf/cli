@@ -4,6 +4,7 @@ import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
 import { runnerMessages } from "~/core/messages/index.js";
+import { pluralize } from "~/core/pluralize.js";
 
 import { bootAndroidFlows, buildRunOptions, runFlows } from "./runHelpers.js";
 import { runFlowsPooled } from "./runFlowsPooled.js";
@@ -96,6 +97,8 @@ export async function flowsRun(
     if (flags.workers > 1) {
       if (!deps.createPooledDispatch)
         throw new Error("createPooledDispatch is not wired for pooled runs");
+      ctx.ui.outro(`Running ${pluralize(flows.length, "flow")}`);
+      ctx.ui.write("\n");
       ({ counts, durationMs } = await runFlowsPooled({
         flows: webFlows,
         workers: flags.workers,
@@ -111,6 +114,9 @@ export async function flowsRun(
         ctx.ui.error(bootError);
         return { error: bootError };
       }
+      // Close the intro block and add a blank line before streamed test output.
+      ctx.ui.outro(`Running ${pluralize(flows.length, "flow")}`);
+      ctx.ui.write("\n");
       ({ counts, durationMs } = await runFlows(
         flows,
         flags,
@@ -124,11 +130,7 @@ export async function flowsRun(
   }
 
   const summary: RunSummary = {
-    flowsPassed: counts.flowsPassed,
-    flowsFailed: counts.flowsFailed,
-    flowsSkipped: counts.flowsSkipped,
-    testsPassed: counts.testsPassed,
-    testsTotal: counts.testsTotal,
+    ...counts,
     durationMs,
     meta: {
       browsers,
@@ -140,6 +142,7 @@ export async function flowsRun(
     },
   };
   deps.reporter.onRunComplete?.({ summary });
+  ctx.ui.gap();
 
   if (counts.flowsFailed > 0) {
     return { error: runnerMessages.flowsFailed(counts.flowsFailed) };

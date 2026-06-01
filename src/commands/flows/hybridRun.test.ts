@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { AuthCommandContext } from "~/shell/commandContext.js";
+import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import {
@@ -47,15 +48,7 @@ function makeCtx(): AuthCommandContext {
     apiKeySource: "env",
     platform: {} as unknown,
     signals: makeNoopSignals(),
-    ui: {
-      withProgress: async (
-        tasks: { task: () => Promise<void> }[],
-        _done: unknown,
-      ) => {
-        for (const t of tasks) await t.task();
-        return [];
-      },
-    },
+    ui: makeFakeUI("human"),
   } as unknown as AuthCommandContext;
 }
 

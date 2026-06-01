@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { CommandContext } from "~/shell/commandContext.js";
+import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
@@ -17,6 +18,7 @@ const configureTestkitMock = mock<(dir: string) => Promise<void>>();
 const flowsRunMock = mock<HandleFlowsRunDeps["flowsRun"]>();
 const runWebFlowDepsMock = mock<(...args: unknown[]) => Promise<unknown>>();
 const uiInfoMock = mock<(message: string) => void>();
+const uiIntroMock = mock<(title: string) => void>();
 
 const trackedMocks = [
   expandPatternsMock,
@@ -26,6 +28,7 @@ const trackedMocks = [
   flowsRunMock,
   runWebFlowDepsMock,
   uiInfoMock,
+  uiIntroMock,
 ];
 
 function makeDeps(): HandleFlowsRunDeps {
@@ -63,14 +66,7 @@ function makeCtx(): CommandContext {
     isInteractive: false,
     signals: noopSignals,
     log: () => makeNoopLogger(),
-    ui: {
-      withProgress: async (tasks: { task: () => Promise<void> }[]) => {
-        for (const t of tasks) await t.task();
-        return [];
-      },
-      info: uiInfoMock,
-      warn: () => {},
-    },
+    ui: { ...makeFakeUI("human"), info: uiInfoMock, intro: uiIntroMock },
   } as unknown as CommandContext;
 }
 
@@ -143,5 +139,22 @@ describe("handleFlowsRun", () => {
     expect(ensureFlowDepsMock).toHaveBeenCalledWith(envDir);
     expect(configureTestkitMock).toHaveBeenCalledWith(envDir);
     expect(flowsRunMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the run with an intro once flows are resolved", async () => {
+    expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
+    resolveUniqueEnvDirMock.mockReturnValue(undefined);
+
+    await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
+
+    expect(uiIntroMock).toHaveBeenCalledWith("flows run");
+  });
+
+  it("does not open an intro when no flows match", async () => {
+    expandPatternsMock.mockResolvedValue([]);
+
+    await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
+
+    expect(uiIntroMock).not.toHaveBeenCalled();
   });
 });

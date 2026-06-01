@@ -1,6 +1,3 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
-
 import {
   expandPatterns as defaultExpandPatterns,
   makePeekFlowMeta,
@@ -9,18 +6,15 @@ import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.j
 import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
-import { isNoEntError } from "~/core/errors.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { runnerMessages } from "~/core/messages/index.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { buildRunReporter } from "./buildRunReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
-// import { configureEmails } from "~/emails/configureEmails.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 
 import { pluralize } from "~/core/pluralize.js";
-import { parseDotenv } from "~/domains/flows/dotenv.js";
 import {
   ensureFlowDeps as defaultEnsureFlowDeps,
   resolveUniqueEnvDir as defaultResolveUniqueEnvDir,
@@ -33,19 +27,7 @@ import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
-export async function loadEnvFile(envDir: string): Promise<void> {
-  let content: string;
-  try {
-    content = await readFile(join(envDir, ".env"), "utf8");
-  } catch (err) {
-    if (isNoEntError(err)) return;
-    throw err;
-  }
-  const vars = parseDotenv(content);
-  for (const [key, value] of Object.entries(vars)) {
-    if (process.env[key] === undefined) process.env[key] = value;
-  }
-}
+import { loadEnvFile } from "./loadEnvFile.js";
 
 export type HandleFlowsRunDeps = {
   expandPatterns: (
@@ -103,6 +85,9 @@ export async function handleFlowsRun(
     return { error, exitCode: 2 };
   }
 
+  ctx.ui.gap();
+  ctx.ui.intro("flows run");
+
   if (envDir) {
     const dir = envDir;
     await ctx.ui.withProgress(
@@ -140,7 +125,12 @@ export async function handleFlowsRun(
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
     logger: ctx.log("runner"),
-    reporter: buildRunReporter(flags, { fs: ctx.fs }),
+    // Route reporter output through ctx.ui so streamed test logs stay inside the run's timeline.
+    reporter: buildRunReporter(flags, {
+      fs: ctx.fs,
+      stdout: { write: (text: string) => ctx.ui.write(text) },
+      stderr: { write: (text: string) => ctx.ui.write(text) },
+    }),
     now: () => Date.now(),
   });
 }

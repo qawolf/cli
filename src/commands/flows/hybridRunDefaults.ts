@@ -27,7 +27,7 @@ import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { runnerMessages } from "~/core/messages/index.js";
-import { loadEnvFile } from "./runDefaults.js";
+import { loadEnvFile } from "./loadEnvFile.js";
 
 export type HandleHybridFlowsRunDeps = {
   expandPatterns: (patterns: string[], cwd?: string) => Promise<string[]>;
@@ -83,6 +83,9 @@ export async function handleHybridFlowsRun(
     }
   }
 
+  ctx.ui.gap();
+  ctx.ui.intro("flows run");
+
   await ctx.ui.withProgress(
     [
       {
@@ -113,7 +116,12 @@ export async function handleHybridFlowsRun(
     createPooledDispatch: makePooledDispatch(envDir),
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
-    reporter: buildRunReporter(flags, { fs: ctx.fs }),
+    // Route reporter output through ctx.ui so streamed test logs stay inside the run's timeline.
+    reporter: buildRunReporter(flags, {
+      fs: ctx.fs,
+      stdout: { write: (text: string) => ctx.ui.write(text) },
+      stderr: { write: (text: string) => ctx.ui.write(text) },
+    }),
     now: () => Date.now(),
   });
 }
