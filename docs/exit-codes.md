@@ -1,6 +1,6 @@
 # Exit Codes
 
-CI consumers depend on consistent exit codes. The CLI commits to the following codes; do not introduce new ones without updating this document and the central helper in [`src/exit.ts`](../src/exit.ts).
+CI consumers depend on consistent exit codes. The CLI commits to the following codes; do not introduce new ones without updating this document and the central helper in [`src/shell/exit.ts`](../src/shell/exit.ts).
 
 | Code | Name          | Meaning                                                       |
 | ---- | ------------- | ------------------------------------------------------------- |
@@ -13,10 +13,10 @@ CI consumers depend on consistent exit codes. The CLI commits to the following c
 
 ## Using the helper
 
-Use `exit(code, message?)` from `src/exit.ts` to terminate command execution with a code from this spec. The helper writes `message` to stderr (when provided) and calls `process.exit(code)`. Existing command paths that still set `process.exitCode` directly will be migrated incrementally as per-command tickets land.
+Use `exit(code, message?)` from `src/shell/exit.ts` to terminate command execution with a code from this spec. The helper writes `message` to stderr (when provided) and calls `process.exit(code)`. Existing command paths that still set `process.exitCode` directly will be migrated incrementally as per-command tickets land.
 
 ```ts
-import { EXIT_CODES, exit } from "~/exit.js";
+import { exitCodes, exit } from "~/shell/exit.js";
 
-exit(EXIT_CODES.invalidArgs, 'Unknown command "foo"');
+exit(exitCodes.invalidArgs, 'Unknown command "foo"');
 ```

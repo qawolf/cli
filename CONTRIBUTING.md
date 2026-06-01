@@ -6,7 +6,7 @@
 bun install
 ```
 
-This also activates the pre-commit hook (runs lint, format check, knip, and typecheck before each commit) via the prepare script.
+This also activates the pre-commit hook (runs the naming check, lint, format check, typecheck, and knip before each commit) via the prepare script.
 
 ## Development
 
