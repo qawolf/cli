@@ -14,7 +14,7 @@ import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.j
 import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
-import { createConsoleReporter } from "~/shell/reporter/createConsoleReporter.js";
+import { buildRunReporter } from "./buildRunReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
@@ -111,10 +111,7 @@ export async function handleHybridFlowsRun(
     shutdownAndroid: android.shutdown,
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
-    reporter: createConsoleReporter({
-      stdout: process.stdout,
-      stderr: process.stderr,
-    }),
+    reporter: buildRunReporter(flags, { fs: ctx.fs }),
     now: () => Date.now(),
   });
 }

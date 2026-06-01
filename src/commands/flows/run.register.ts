@@ -85,6 +85,10 @@ export function registerFlowsRunCommand(
       "Directory for run artifacts (videos, traces, HAR)",
       "qawolf-output",
     )
+    .option(
+      "--junit [path]",
+      "Write a JUnit XML report (default: <output-dir>/junit-report.xml)",
+    )
     .option("--headed", "Show the browser window instead of headless", false)
     .option(
       "--env <env>",

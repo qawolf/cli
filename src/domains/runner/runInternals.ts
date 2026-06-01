@@ -35,6 +35,9 @@ export type FlowsRunFlags = {
   readonly harContent: HarContent;
   readonly outputDir: string;
   readonly headed: boolean;
+  /** `--junit` writes a JUnit XML report. Bare flag (true) uses a default path
+   * under outputDir; a string is an explicit output path. */
+  readonly junit?: string | boolean;
 };
 
 export type FlowsRunDeps = {

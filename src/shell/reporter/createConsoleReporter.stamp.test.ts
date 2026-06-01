@@ -1,17 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { createConsoleReporter } from "./createConsoleReporter.js";
 
-function makeSink() {
-  const calls: string[] = [];
-  return { write: (str: string) => void calls.push(str), calls };
-}
-
-function make() {
-  const out = makeSink();
-  const err = makeSink();
-  const r = createConsoleReporter({ stdout: out, stderr: err });
-  return { out, err, r };
-}
+import { makeConsoleHarness as make } from "./reporter.testUtils.js";
 
 const sampleStamp = {
   envId: "env-abc",
