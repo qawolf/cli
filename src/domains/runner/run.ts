@@ -20,14 +20,14 @@ export async function flowsRun(
   ctx: CommandContext,
   files: readonly string[],
   flags: FlowsRunFlags,
-  deps: FlowsRunDeps
+  deps: FlowsRunDeps,
 ): Promise<CommandResult> {
   const flows: ResolvedFlow[] = [];
   const skippedByType = new Map<string, number>();
   for await (const { file, ...meta } of batchMap(
     files,
     async (file) => ({ file, ...(await deps.peekFlowMeta(file)) }),
-    flowBatchSize
+    flowBatchSize,
   )) {
     if (!meta.target) continue;
     const classified = classifyTarget(meta.target);
@@ -80,7 +80,7 @@ export async function flowsRun(
   }
 
   const androidFlows = flows.filter(
-    (f): f is AndroidResolvedFlow => f.kind === "android"
+    (f): f is AndroidResolvedFlow => f.kind === "android",
   );
 
   // Worker subprocesses are web-only for now; android parallelism needs
@@ -120,7 +120,7 @@ export async function flowsRun(
         flags,
         deps,
         webOptions,
-        androidOptions
+        androidOptions,
       ));
     }
   } finally {
@@ -128,11 +128,7 @@ export async function flowsRun(
   }
 
   const summary: RunSummary = {
-    flowsPassed: counts.flowsPassed,
-    flowsFailed: counts.flowsFailed,
-    flowsSkipped: counts.flowsSkipped,
-    testsPassed: counts.testsPassed,
-    testsTotal: counts.testsTotal,
+    ...counts,
     durationMs,
     meta: {
       browsers,
