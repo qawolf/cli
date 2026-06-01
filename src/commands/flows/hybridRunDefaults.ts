@@ -116,7 +116,12 @@ export async function handleHybridFlowsRun(
     createPooledDispatch: makePooledDispatch(envDir),
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
-    reporter: buildRunReporter(flags, { fs: ctx.fs }),
+    // Route reporter output through ctx.ui so streamed test logs stay inside the run's timeline.
+    reporter: buildRunReporter(flags, {
+      fs: ctx.fs,
+      stdout: { write: (text: string) => ctx.ui.write(text) },
+      stderr: { write: (text: string) => ctx.ui.write(text) },
+    }),
     now: () => Date.now(),
   });
 }

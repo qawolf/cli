@@ -129,6 +129,7 @@ export async function handleFlowsRun(
     reporter: buildRunReporter(flags, {
       fs: ctx.fs,
       stdout: { write: (text: string) => ctx.ui.write(text) },
+      stderr: { write: (text: string) => ctx.ui.write(text) },
     }),
     now: () => Date.now(),
   });

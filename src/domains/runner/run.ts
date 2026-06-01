@@ -97,6 +97,8 @@ export async function flowsRun(
     if (flags.workers > 1) {
       if (!deps.createPooledDispatch)
         throw new Error("createPooledDispatch is not wired for pooled runs");
+      ctx.ui.outro(`Running ${pluralize(flows.length, "flow")}`);
+      ctx.ui.write("\n");
       ({ counts, durationMs } = await runFlowsPooled({
         flows: webFlows,
         workers: flags.workers,
