@@ -41,6 +41,7 @@ describe("saveApiKey", () => {
 
 describe("deleteApiKey", () => {
   it("should delete credentials file via injected fs", async () => {
+    spyOn(Entry.prototype, "deletePassword").mockReturnValue(true);
     const memFs = makeMemoryFs();
     await memFs.mkdir("/config", { recursive: true });
     await memFs.writeFile(
@@ -55,6 +56,7 @@ describe("deleteApiKey", () => {
   });
 
   it("should return not-found when credentials file does not exist", async () => {
+    spyOn(Entry.prototype, "deletePassword").mockReturnValue(true);
     const memFs = makeMemoryFs();
     await memFs.mkdir("/config", { recursive: true });
 
