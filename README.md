@@ -20,7 +20,16 @@ Try it without installing:
 npx @qawolf/cli --help
 ```
 
-Supported Node versions: active LTS and newer (currently Node 24+). See [nodejs.org](https://nodejs.org). Precompiled binaries for Linux, macOS, and Windows are also published on [GitHub Releases](https://github.com/qawolf/cli/releases).
+Supported Node versions: active LTS and newer (currently Node 22+). See [nodejs.org](https://nodejs.org).
+
+### Standalone binaries
+
+Precompiled binaries are attached to each [GitHub Release](https://github.com/qawolf/cli/releases) — no Node.js required: `qawolf-linux-x64`, `qawolf-linux-arm64`, `qawolf-darwin-x64`, `qawolf-darwin-arm64`, and `qawolf-windows-x64.exe`.
+
+```bash
+curl -fsSL -o qawolf https://github.com/qawolf/cli/releases/latest/download/qawolf-darwin-arm64
+chmod +x qawolf && ./qawolf --help
+```
 
 ## Quick start
 
@@ -60,6 +69,7 @@ Run any command with `--help` for its flags and options.
 - [Environment variables](https://docs.qawolf.com/qawolf/libraries/cli/api-reference/environment-variables)
 - [Exit codes](https://docs.qawolf.com/qawolf/libraries/cli/api-reference/index#exit-codes)
 - [Troubleshooting](https://docs.qawolf.com/qawolf/libraries/cli/troubleshooting)
+- [Known issues](docs/known-issues.md) — current limitations and workarounds
 
 ## Contributing
 
