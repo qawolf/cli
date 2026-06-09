@@ -1,6 +1,6 @@
 # Security Policy
 
-We take the security of `@qawolf/cli` seriously and appreciate responsible disclosure.
+We take security seriously at QA Wolf and appreciate responsible disclosure.
 
 ## Reporting a Vulnerability
 
