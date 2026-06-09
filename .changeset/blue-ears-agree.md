@@ -1,5 +1,5 @@
 ---
-"@qawolf/cli": patch
+"@qawolf/cli": major
 ---
 
 Initial release

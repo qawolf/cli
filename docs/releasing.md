@@ -7,7 +7,6 @@
 Before the first publish:
 
 - `NPM_TOKEN` must be set as a GitHub Actions secret (Settings → Secrets → Actions → New repository secret).
-- `"private": true` must be removed from `package.json` (tracked in WIZ-10378).
 
 ## How to add a changeset
 
