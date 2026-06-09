@@ -142,9 +142,7 @@ export async function dispatchFlow({
   const outcome = run.passed ? "pass" : "fail";
   const attempts = run.attempts;
   deps.logger?.info(
-    `${outcome}: ${flow.name} (${durationMs}ms, ${attempts} attempt${
-      attempts === 1 ? "" : "s"
-    })`,
+    `${outcome}: ${flow.name} (${durationMs}ms, ${attempts} attempt${attempts === 1 ? "" : "s"})`,
   );
   return { run, durationMs };
 }

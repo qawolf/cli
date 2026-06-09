@@ -65,7 +65,7 @@ export function registerRunWorkerCommand(
   flows
     .command("__run-worker <flowPath>", { hidden: true })
     .description(
-      "Run a single flow in an isolated subprocess (internal plumbing)",
+      "Run a single flow in an isolated subprocess (used by 'flows run'; not intended for direct use)",
     )
     .action(() => runWorker(signals));
 }
