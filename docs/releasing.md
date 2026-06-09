@@ -27,7 +27,7 @@ PRs that do not affect the published package (CI config, internal tooling, docs)
 3. Review the Version Packages PR and merge it when ready to ship.
 4. The Release workflow runs again. It detects no pending changesets, builds the package, and runs:
 
-   ```
+   ```bash
    bunx changeset publish
    ```
 
