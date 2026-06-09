@@ -29,8 +29,9 @@ jobs:
           - target: bun-linux-arm64
             runner: ubuntu-24.04-arm
             outfile: dist/qawolf-linux-arm64
+          # macos-15-intel is the last Intel macOS image (supported until fall 2027)
           - target: bun-darwin-x64
-            runner: macos-13
+            runner: macos-15-intel
             outfile: dist/qawolf-darwin-x64
           - target: bun-darwin-arm64
             runner: macos-latest
