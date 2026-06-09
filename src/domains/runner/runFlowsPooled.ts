@@ -43,7 +43,8 @@ export async function runFlowsPooled(args: {
     while (!bailed) {
       const index = next++;
       if (index >= flows.length) return;
-      const flow = flows[index]!;
+      const flow = flows[index];
+      if (!flow) return;
 
       reporter.onFlowStart?.({ name: flow.name, path: flow.file });
       const { run, durationMs } = await dispatch(flow);

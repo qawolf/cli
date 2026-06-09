@@ -30,7 +30,9 @@ describe("flowsRun Android dispatch", () => {
     expect(result).toEqual({ error: runnerMessages.flowsFailed(1) });
     expect(reporter.onFlowFail).toHaveBeenCalledTimes(1);
     const failCall = callsOf(reporter.onFlowFail!)[0]?.[0] as { err: Error };
-    expect((failCall.err.cause as Error).message).toContain("WIZ-10343");
+    expect((failCall.err.cause as Error).message).toContain(
+      "Android flows are not yet supported in this mode.",
+    );
   });
 
   it("dispatches an Android flow to runAndroidFlow and fires reporter events", async () => {
