@@ -1,0 +1,47 @@
+name: Release Binaries
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: bun-linux-x64
+            outfile: dist/qawolf-linux-x64
+          - target: bun-linux-arm64
+            outfile: dist/qawolf-linux-arm64
+          - target: bun-darwin-x64
+            outfile: dist/qawolf-darwin-x64
+          - target: bun-darwin-arm64
+            outfile: dist/qawolf-darwin-arm64
+          - target: bun-windows-x64
+            outfile: dist/qawolf-windows-x64.exe
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+
+      - run: bun install --frozen-lockfile
+
+      - name: Build binary
+        run: >
+          bun build --compile --target=${{ matrix.target }} ./src/main.ts
+          --outfile ${{ matrix.outfile }}
+          --external @qawolf/emails --external @qawolf/testkit
+          --define 'process.env.QAWOLF_COMPILED="true"'
+
+      - name: Upload to release
+        run: gh release upload ${{ github.event.release.tag_name }} ${{ matrix.outfile }} --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
