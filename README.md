@@ -1,5 +1,9 @@
 # QA Wolf CLI
 
+[![npm version](https://img.shields.io/npm/v/@qawolf/cli)](https://www.npmjs.com/package/@qawolf/cli)
+[![CI](https://github.com/qawolf/cli/actions/workflows/ci.yml/badge.svg)](https://github.com/qawolf/cli/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 Run QA Wolf flows from your terminal or in CI.
 
 The CLI runs and manages flows locally. Flow creation, AI-powered test generation, managed cloud execution, and team collaboration are part of the full QA Wolf platform. See [docs.qawolf.com](https://docs.qawolf.com) for the full docs, or [qawolf.com](https://www.qawolf.com) to get started.
@@ -7,19 +11,35 @@ The CLI runs and manages flows locally. Flow creation, AI-powered test generatio
 ## Install
 
 ```bash
-npm install -g @qawolf/cli
+npm install -g @qawolf/cli      # or: pnpm add -g @qawolf/cli  |  yarn global add @qawolf/cli
 ```
 
-Requires Node.js 24 or later. Precompiled binaries for Linux, macOS, and Windows are also published on [GitHub Releases](https://github.com/qawolf/cli/releases).
+Try it without installing:
+
+```bash
+npx @qawolf/cli --help
+```
+
+Supported Node versions: active LTS and newer (currently Node 24+). See [nodejs.org](https://nodejs.org). Precompiled binaries for Linux, macOS, and Windows are also published on [GitHub Releases](https://github.com/qawolf/cli/releases).
 
 ## Quick start
+
+You need a QA Wolf account — sign up at [qawolf.com](https://www.qawolf.com). The `<env-id>` comes from the QA Wolf dashboard under **Settings → Environments**.
 
 ```bash
 qawolf auth login                  # or set QAWOLF_API_KEY for CI
 qawolf flows run --env <env-id>
 ```
 
-`qawolf flows run --env` runs your team's flows from the local `.qawolf/<env>` cache, pulling them first only if they are not already cached locally, then installs the runtime dependencies they need and runs them. To refresh the local cache, run `qawolf flows pull --env <env-id>`. To author flows locally without the platform, run `qawolf init` first.
+`qawolf flows run --env` runs your team's flows from the local `.qawolf/<env>` cache (a per-environment copy of your flows on disk), pulling them first only if they are not already cached locally, then installs the runtime dependencies they need and runs them. To refresh the local cache, run `qawolf flows pull --env <env-id>`. To author flows locally without the platform, run `qawolf init` first.
+
+## Examples
+
+The [`examples/`](examples) directory contains sample flows you can run directly:
+
+```bash
+qawolf flows run examples/example.flow.ts
+```
 
 ## Commands
 
