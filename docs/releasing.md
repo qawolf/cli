@@ -27,8 +27,9 @@ PRs that do not affect the published package (CI config, internal tooling, docs)
 3. Review the Version Packages PR and merge it when ready to ship.
 4. The Release workflow runs again. It detects no pending changesets, builds the package, and runs:
    ```
-   npm publish --provenance --access public
+   bunx changeset publish
    ```
+   `changeset publish` publishes to npm and creates a git tag for the new version. The changesets action pushes that tag and creates a GitHub Release from it, which triggers the binary build pipeline. npm [provenance](https://docs.npmjs.com/generating-provenance-statements) is enabled via the `NPM_CONFIG_PROVENANCE: true` env var on the publish step.
 
 ## After publish
 
