@@ -1,10 +1,28 @@
-import { mock } from "bun:test";
+import { mock, type Mock } from "bun:test";
+import type { AnyPublicApiContract } from "@qawolf/api-contracts/v1";
+
 import type { PlatformClient } from "./createPlatformClient.js";
+import type { PlatformResult } from "./requestWithRetry.js";
+
+type CallPublicApiFn = (
+  contract: AnyPublicApiContract,
+  input: unknown,
+) => Promise<PlatformResult<unknown>>;
+
+// callPublicApi is a generic method, which bun's mock() cannot express;
+// build the mock against a loose signature and cast once at this boundary.
+export function makeCallPublicApiMock(): Mock<CallPublicApiFn> &
+  PlatformClient["callPublicApi"] {
+  return mock<CallPublicApiFn>() as Mock<CallPublicApiFn> &
+    PlatformClient["callPublicApi"];
+}
 
 export function makeMockPlatformClient(
   overrides?: Partial<PlatformClient>,
 ): PlatformClient {
   const client: PlatformClient = {
+    // Generic methods cannot be mocked generically; cast once here.
+    callPublicApi: mock() as unknown as PlatformClient["callPublicApi"],
     getIdentity: mock<PlatformClient["getIdentity"]>(),
     getRemoteFlows: mock<PlatformClient["getRemoteFlows"]>(),
     getFlowsBundleUrl: mock<PlatformClient["getFlowsBundleUrl"]>(),
