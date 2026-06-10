@@ -4,6 +4,11 @@
 
 QA Wolf currently maintains `@qawolf/cli` internally and isn't accepting external pull requests yet. Bug reports and feature requests via [GitHub Issues](https://github.com/qawolf/cli/issues) are very welcome.
 
+## Prerequisites
+
+- [Bun](https://bun.sh) — version is pinned in the `packageManager` field of `package.json`
+- [Node.js](https://nodejs.org) 22 or later
+
 ## Setup
 
 ```bash
