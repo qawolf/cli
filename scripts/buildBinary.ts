@@ -1,10 +1,5 @@
 #!/usr/bin/env bun
-// Single source of truth for compiling the standalone binary. Used by the
-// build:binary npm script (host build → dist/qawolf) and the release-binaries
-// workflow, which passes --target/--outfile to build each platform.
-// Unlike the npm bundle (scripts/build.ts), the binary must bundle everything
-// it can — only @qawolf/emails and @qawolf/testkit stay external because
-// ensureDeps installs them into the flow env cache on demand at runtime.
+// Compiles the standalone binary (default dist/qawolf); the release-binaries workflow passes --target/--outfile per platform.
 import { spawnSync } from "node:child_process";
 import { parseArgs } from "node:util";
 
@@ -22,6 +17,7 @@ const buildArgs = [
   "./src/main.ts",
   "--outfile",
   values.outfile,
+  // unlike the npm bundle (build.ts), only these stay external — ensureDeps installs them on demand
   "--external",
   "@qawolf/emails",
   "--external",

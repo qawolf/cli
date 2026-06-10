@@ -10,10 +10,8 @@ permissions:
 jobs:
   build:
     name: Build ${{ matrix.target }}
-    # Each target builds on its native runner: @napi-rs/keyring installs a
-    # host-specific native addon that gets bundled into the compiled binary,
-    # so cross-compiled binaries crash at startup with
-    # "Failed to load native binding".
+    # Native runner per target: cross-compiles bundle the host's @napi-rs/keyring
+    # native addon, and the binary crashes on every other platform.
     runs-on: ${{ matrix.runner }}
     defaults:
       run:
@@ -50,7 +48,6 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      # Same script as the build:binary npm script — one source of truth for the compile command
       - name: Build binary
         run: bun scripts/buildBinary.ts --target "${{ matrix.target }}" --outfile "${{ matrix.outfile }}"
 
