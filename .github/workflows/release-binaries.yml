@@ -40,7 +40,7 @@ jobs:
             runner: windows-latest
             outfile: dist/qawolf-windows-x64.exe
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
@@ -50,13 +50,9 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      # Mirrors the build:binary script in package.json — keep externals/define in sync
+      # Same script as the build:binary npm script — one source of truth for the compile command
       - name: Build binary
-        run: >
-          bun build --compile --target=${{ matrix.target }} ./src/main.ts
-          --outfile ${{ matrix.outfile }}
-          --external @qawolf/emails --external @qawolf/testkit
-          --define 'process.env.QAWOLF_COMPILED="true"'
+        run: bun scripts/buildBinary.ts --target "${{ matrix.target }}" --outfile "${{ matrix.outfile }}"
 
       - name: Smoke test binary
         run: ./${{ matrix.outfile }} --version
