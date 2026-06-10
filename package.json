@@ -34,13 +34,13 @@
     "uninstall:binary": "rm ~/.local/bin/qawolf"
   },
   "dependencies": {
-    "@clack/prompts": "1.4.0",
+    "@clack/prompts": "1.5.1",
     "@napi-rs/keyring": "1.3.0",
     "@playwright/test": "1.60.0",
-    "@qawolf/emails": "1.0.0",
+    "@qawolf/emails": "1.1.1",
     "@qawolf/flow-targets": "1.0.0",
     "@qawolf/flows": "0.1.1",
-    "@qawolf/testkit": "1.0.0",
+    "@qawolf/testkit": "1.1.1",
     "appium": "2.11.3",
     "appium-uiautomator2-driver": "3.7.0",
     "appium-xcuitest-driver": "9.10.5",
@@ -50,8 +50,8 @@
     "pino": "10.3.1",
     "playwright": "1.58.2",
     "superjson": "2.2.6",
-    "tar": "7.5.15",
-    "tinyglobby": "0.2.16",
+    "tar": "7.5.16",
+    "tinyglobby": "0.2.17",
     "webdriverio": "9.27.1",
     "zod": "4.4.3"
   },
@@ -61,10 +61,10 @@
     "@tsconfig/strictest": "2.0.8",
     "@types/bun": "1.3.14",
     "@types/picomatch": "4.0.3",
-    "knip": "6.14.0",
-    "oxfmt": "0.50.0",
-    "oxlint": "1.65.0",
-    "oxlint-tsgolint": "0.22.1",
+    "knip": "6.16.1",
+    "oxfmt": "0.54.0",
+    "oxlint": "1.69.0",
+    "oxlint-tsgolint": "0.23.0",
     "typescript": "6.0.3"
   },
   "engines": {
