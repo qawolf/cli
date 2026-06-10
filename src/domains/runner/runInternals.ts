@@ -110,10 +110,8 @@ export async function dispatchFlow({
     } else {
       // flow.kind === "android"
       if (deps.runAndroidFlowDeps === "not-wired") {
-        throw new Error(
-          "Android flow dispatch requires wired AndroidLaunchDeps; " +
-            "tracked in WIZ-10343",
-        );
+        // TODO WIZ-10343
+        throw new Error("Android flows are not yet supported in this mode.");
       }
       run = await deps.runAndroidFlow({
         deps: { ...deps.runAndroidFlowDeps, ...loggerPatch },

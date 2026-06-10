@@ -48,7 +48,10 @@ export async function fetchBundleAndEnvVars(
     envVars === undefined ||
     envVarsFetchedAt === undefined
   ) {
-    throw new Error("internal: fetch phase did not populate all results");
+    throw new Error(
+      "Unexpected state: the bundle and env vars were not fetched. " +
+        "This is a bug - please report it at https://github.com/qawolf/cli/issues",
+    );
   }
   return { tmpArchive, bundleFetchedAt, envVars, envVarsFetchedAt };
 }

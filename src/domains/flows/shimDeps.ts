@@ -152,10 +152,11 @@ export async function shimFlowsDeps(
     });
     const [output] = result.outputs;
     if (!result.success || !output) {
-      console.debug(
-        `[qawolf] bun.build failed for ${dep}:`,
-        result.logs.map((l) => l.message).join("; "),
-      );
+      const logs = result.logs.map((l) => l.message).join("; ");
+      // No logger is threaded into this shimming routine; write the build
+      // diagnostic to stderr directly (same channel as the worker error path).
+      // oxlint-disable-next-line no-restricted-properties
+      process.stderr.write(`[qawolf] bun.build failed for ${dep}: ${logs}\n`);
       continue;
     }
     const shimCode = await output.text();
