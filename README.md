@@ -11,7 +11,10 @@ The CLI runs and manages flows locally. Flow creation, AI-powered test generatio
 ## Install
 
 ```bash
-npm install -g @qawolf/cli      # or: pnpm add -g @qawolf/cli  |  yarn global add @qawolf/cli
+npm install -g @qawolf/cli
+# or: pnpm add -g @qawolf/cli
+# or: yarn global add @qawolf/cli
+# or: bun add -g @qawolf/cli
 ```
 
 Try it without installing:
