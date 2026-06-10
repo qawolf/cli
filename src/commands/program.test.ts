@@ -90,3 +90,13 @@ describe("createProgram", () => {
     expect((err as CommanderError).code).toBe("commander.unknownOption");
   });
 });
+
+describe("public API commands", () => {
+  it("registers `run create` from the published contracts", () => {
+    const program = createProgram({ signals: noopSignals });
+
+    const run = program.commands.find((command) => command.name() === "run");
+    const create = run?.commands.find((command) => command.name() === "create");
+    expect(create).toBeDefined();
+  });
+});

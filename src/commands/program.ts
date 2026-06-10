@@ -6,6 +6,7 @@ import { registerDoctorCommand } from "./doctor/index.js";
 import { registerFlowsCommand } from "./flows/index.js";
 import { registerInitCommand } from "./init/index.js";
 import { registerInstallCommand } from "./install/index.js";
+import { registerPublicApiCommands } from "./publicApi/index.js";
 import { exitCodes, exit } from "~/shell/exit.js";
 import packageJson from "../../package.json" with { type: "json" };
 
@@ -30,6 +31,7 @@ export function createProgram({
   registerFlowsCommand(program, signals);
   registerInitCommand(program, signals);
   registerInstallCommand(program, signals);
+  registerPublicApiCommands(program, signals);
 
   return program;
 }
