@@ -1,5 +1,9 @@
 # Contributing
 
+## Contribution policy
+
+QA Wolf currently maintains `@qawolf/cli` internally and isn't accepting external pull requests yet. Bug reports and feature requests via [GitHub Issues](https://github.com/qawolf/cli/issues) are very welcome.
+
 ## Setup
 
 ```bash
