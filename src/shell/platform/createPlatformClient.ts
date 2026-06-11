@@ -1,5 +1,9 @@
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
+import {
+  type CallPublicApiMethod,
+  makeCallPublicApiMethod,
+} from "./callPublicApi.js";
 import { createTrpcClient } from "./createTrpcClient.js";
 import {
   describeIdentityError,
@@ -21,6 +25,7 @@ import {
 } from "./types.js";
 
 export type PlatformClient = {
+  callPublicApi: CallPublicApiMethod;
   getIdentity: () => Promise<PlatformResult<IdentityResponse>>;
   getRemoteFlows: () => Promise<PlatformResult<RemoteFlowsResponse>>;
   getFlowsBundleUrl: (
@@ -94,6 +99,8 @@ export function createPlatformClient(
     },
 
     getFlowsBundleUrl: getFlowsBundleUrlImpl,
+
+    callPublicApi: makeCallPublicApiMethod(trpc, deps, requestBackoffMs),
 
     async getEnvVars(envId) {
       const result = await requestWithRetry({
