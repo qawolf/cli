@@ -21,8 +21,7 @@ export function makeMockPlatformClient(
   overrides?: Partial<PlatformClient>,
 ): PlatformClient {
   const client: PlatformClient = {
-    // Generic methods cannot be mocked generically; cast once here.
-    callPublicApi: mock() as unknown as PlatformClient["callPublicApi"],
+    callPublicApi: makeCallPublicApiMock(),
     getIdentity: mock<PlatformClient["getIdentity"]>(),
     getRemoteFlows: mock<PlatformClient["getRemoteFlows"]>(),
     getFlowsBundleUrl: mock<PlatformClient["getFlowsBundleUrl"]>(),

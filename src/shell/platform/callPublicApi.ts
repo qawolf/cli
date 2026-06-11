@@ -1,36 +1,41 @@
-import {
-  type AnyPublicApiContract,
-  type PublicApiInput,
-  type PublicApiOutput,
-} from "@qawolf/api-contracts/v1";
+import { type PublicApiContractKind } from "@qawolf/api-contracts/v1";
 import type { z } from "zod";
 
 import { describeRequestError } from "./describeErrors.js";
 import type { TrpcClient, WireResult } from "./createTrpcClient.js";
 import { type PlatformResult, requestWithRetry } from "./requestWithRetry.js";
 
+// Structural view of a public API contract, parameterized by the wire
+// input/output types. Being generic over the whole contract instead would
+// widen `contract.output` to its constraint (TypeScript resolves indexed
+// accesses on a generic to the constraint), forcing a cast to recover the
+// output type.
+export type PublicApiContractOf<Input, Output> = {
+  kind: PublicApiContractKind;
+  name: string;
+  input: z.ZodType<unknown, Input>;
+  output: z.ZodType<Output>;
+};
+
 // Calls a public API contract endpoint. The public contract router is
 // mounted under the `public` tRPC namespace, and contract names are the
 // route paths below it.
-export function callPublicApi<Contract extends AnyPublicApiContract>(
+export function callPublicApi<Input, Output>(
   trpc: TrpcClient,
-  contract: Contract,
-  input: PublicApiInput<Contract>,
-): Promise<WireResult<PublicApiOutput<Contract>>> {
+  contract: PublicApiContractOf<Input, Output>,
+  input: Input,
+): Promise<WireResult<Output>> {
   const path = `public.${contract.name}`;
-  // The generic can't prove contract.output infers to the contract's output
-  // type, so connect the two here once for all callers.
-  const outputSchema = contract.output as z.ZodType<PublicApiOutput<Contract>>;
   if (contract.kind === "read") {
-    return trpc.query(path, input, outputSchema);
+    return trpc.query(path, input, contract.output);
   }
-  return trpc.mutation(path, input, outputSchema);
+  return trpc.mutation(path, input, contract.output);
 }
 
-export type CallPublicApiMethod = <Contract extends AnyPublicApiContract>(
-  contract: Contract,
-  input: PublicApiInput<Contract>,
-) => Promise<PlatformResult<PublicApiOutput<Contract>>>;
+export type CallPublicApiMethod = <Input, Output>(
+  contract: PublicApiContractOf<Input, Output>,
+  input: Input,
+) => Promise<PlatformResult<Output>>;
 
 type MethodDeps = {
   baseUrl: string;
