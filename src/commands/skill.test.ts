@@ -24,11 +24,11 @@ describe("renderCommandsTable", () => {
     expect(table).not.toContain("__run-worker");
   });
 
-  it("throws on a command with no classified kind", () => {
+  it("throws on a command with no declared kind", () => {
     const program = new Command().name("qawolf");
     program.command("mystery").description("Unclassified command");
     expect(() => renderCommandsTable(program)).toThrow(
-      'Command "mystery" has no kind',
+      'Command "mystery" has no kind. Declare it with declareCommandKind where the command is defined.',
     );
   });
 });

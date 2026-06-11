@@ -8,6 +8,7 @@ import {
   type ContractTree,
 } from "~/domains/publicApi/commandSpecs.js";
 import { handlePublicApiCommand } from "~/domains/publicApi/handle.js";
+import { declareCommandKind } from "~/commands/commandKind.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 type AuthDeps = Parameters<typeof withAuthContext>[2];
@@ -50,7 +51,10 @@ function registerSpec(
     );
   }
 
-  const command = parent.command(leafName).description(spec.description);
+  const command = declareCommandKind(
+    parent.command(leafName),
+    spec.kind,
+  ).description(spec.description);
   for (const flag of spec.flags) {
     if (flag.required) {
       command.requiredOption(flag.flag, flag.description);

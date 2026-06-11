@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 
+import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext, withContext } from "~/commands/context.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
@@ -38,8 +39,7 @@ export function registerFlowsCommand(
   registerFlowsRunCommand(flows, signals);
   registerRunWorkerCommand(flows, signals);
 
-  flows
-    .command("list [pattern]")
+  declareCommandKind(flows.command("list [pattern]"), "local")
     .description(
       "List flows matching [pattern] from the local project, or from QA Wolf with --remote",
     )
@@ -67,8 +67,7 @@ export function registerFlowsCommand(
       },
     );
 
-  flows
-    .command("pull")
+  declareCommandKind(flows.command("pull"), "read")
     .description(
       "Download an environment's flows into the local .qawolf/<env>/ cache",
     )

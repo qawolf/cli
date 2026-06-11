@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 
+import { declareCommandKind } from "~/commands/commandKind.js";
 import { withContext } from "~/commands/context.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
@@ -11,8 +12,7 @@ export function registerInstallCommand(
   program: Command,
   signals: SignalRegistry,
 ): void {
-  const install = program
-    .command("install")
+  const install = declareCommandKind(program.command("install"), "local")
     .description("Install every runtime dependency the project's flows need")
     .argument(
       "[pattern]",
@@ -32,8 +32,7 @@ Examples:
       );
     });
 
-  install
-    .command("browsers [pattern]")
+  declareCommandKind(install.command("browsers [pattern]"), "local")
     .description("Install Playwright browsers used by the project's web flows")
     .addHelpText(
       "after",
@@ -49,8 +48,7 @@ Examples:
       );
     });
 
-  install
-    .command("android [pattern]")
+  declareCommandKind(install.command("android [pattern]"), "local")
     .description(
       "Install Android system images, AVDs, and the Appium driver used by the project's Android flows",
     )
