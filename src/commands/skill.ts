@@ -28,13 +28,15 @@ function listVisibleLeaves(
 }
 
 function resolveKind(command: Command, path: string): string {
-  const kind = getCommandKind(command);
-  if (kind === undefined) {
+  const declared = getCommandKind(command);
+  if (declared === undefined) {
     throw new Error(
       `Command "${path}" has no kind. Declare it with declareCommandKind where the command is defined.`,
     );
   }
-  return kind;
+  return declared.kindNote === undefined
+    ? declared.kind
+    : `${declared.kind} (${declared.kindNote})`;
 }
 
 function renderTable(rows: string[][]): string {

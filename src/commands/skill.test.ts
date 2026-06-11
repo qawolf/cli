@@ -24,6 +24,14 @@ describe("renderCommandsTable", () => {
     expect(table).not.toContain("__run-worker");
   });
 
+  it("renders a conditional kind note when declared", () => {
+    const table = renderCommandsTable(
+      createProgram({ signals: makeNoopSignals() }),
+    );
+    expect(table).toContain("local (read with --remote)");
+    expect(table).toContain("local (read with --env)");
+  });
+
   it("throws on a command with no declared kind", () => {
     const program = new Command().name("qawolf");
     program.command("mystery").description("Unclassified command");

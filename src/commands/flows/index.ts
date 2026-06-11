@@ -39,7 +39,9 @@ export function registerFlowsCommand(
   registerFlowsRunCommand(flows, signals);
   registerRunWorkerCommand(flows, signals);
 
-  declareCommandKind(flows.command("list [pattern]"), "local")
+  declareCommandKind(flows.command("list [pattern]"), "local", {
+    kindNote: "read with --remote",
+  })
     .description(
       "List flows matching [pattern] from the local project, or from QA Wolf with --remote",
     )
