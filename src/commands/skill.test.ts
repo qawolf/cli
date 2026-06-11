@@ -1,42 +1,48 @@
 import { describe, expect, it } from "bun:test";
-import { type Command, Help } from "commander";
+import { Command } from "commander";
 import { join } from "node:path";
 
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { createProgram } from "./program.js";
+import { renderCommandsTable, spliceCommandsTable } from "./skill.js";
 
 const skillMdPath = join(
   import.meta.dirname,
   "../../skills/qawolf-cli/SKILL.md",
 );
 
-function listLeafCommandPaths(command: Command, prefix: string[]): string[][] {
-  // visibleCommands excludes commands registered with { hidden: true },
-  // which are internal and must stay out of the skill.
-  const children = new Help()
-    .visibleCommands(command)
-    .filter((child) => child.name() !== "help");
-  if (children.length === 0) return [prefix];
-  return children.flatMap((child) =>
-    listLeafCommandPaths(child, [...prefix, child.name()]),
-  );
-}
-
-// The skill is hand-written; this guards the one real drift risk: adding a
-// command and forgetting to mention it. Flags are intentionally not in the
-// skill — `qawolf <command> --help` is the authoritative reference.
-describe("qawolf-cli skill", () => {
-  it("mentions every registered command", async () => {
-    const program = createProgram({ signals: makeNoopSignals() });
-    const skillMd = await Bun.file(skillMdPath).text();
-
-    const commandPaths = listLeafCommandPaths(program, []).map(
-      (path) => `qawolf ${path.join(" ")}`,
+describe("renderCommandsTable", () => {
+  it("lists every visible command with its kind", () => {
+    const table = renderCommandsTable(
+      createProgram({ signals: makeNoopSignals() }),
     );
-    expect(commandPaths.length).toBeGreaterThan(0);
-    for (const commandPath of commandPaths) {
-      expect(skillMd).toContain(`\`${commandPath}\``);
-    }
+    expect(table).toContain("`qawolf run create`");
+    expect(table).toContain("write");
+    expect(table).toContain("`qawolf flows run`");
+    expect(table).toContain("`qawolf install browsers`");
+    // Hidden internals stay out of the skill.
+    expect(table).not.toContain("__run-worker");
+  });
+
+  it("throws on a command with no classified kind", () => {
+    const program = new Command().name("qawolf");
+    program.command("mystery").description("Unclassified command");
+    expect(() => renderCommandsTable(program)).toThrow(
+      'Command "mystery" has no kind',
+    );
+  });
+});
+
+// The table is generated; this guards the one real drift risk: changing
+// commands and forgetting `bun run generate`. Flags are intentionally not in
+// the skill — `qawolf <command> --help` is the authoritative reference.
+describe("qawolf-cli skill", () => {
+  it("contains the up-to-date generated commands table", async () => {
+    const skillMd = await Bun.file(skillMdPath).text();
+    const table = renderCommandsTable(
+      createProgram({ signals: makeNoopSignals() }),
+    );
+    expect(skillMd).toBe(spliceCommandsTable(skillMd, table));
   });
 
   it("has frontmatter naming the skill", async () => {
