@@ -116,7 +116,8 @@ Options:
 
 Commands:
   run [options] [pattern]   Run flows matching [pattern], or every flow when
-                            omitted
+                            omitted; with --env, pull missing flows from that QA
+                            Wolf environment
   list [options] [pattern]  List flows matching [pattern] from the local
                             project, or from QA Wolf with --remote
   pull [options]            Download an environment's flows into the local
@@ -128,7 +129,8 @@ Commands:
 exports[`--help output qawolf flows run 1`] = `
 "Usage: qawolf flows run [options] [pattern]
 
-Run flows matching [pattern], or every flow when omitted
+Run flows matching [pattern], or every flow when omitted; with --env, pull
+missing flows from that QA Wolf environment
 
 Options:
   --retries <n>         Retry each failing flow up to this many times (default:

@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 
 import { withAuthContext, withContext } from "~/commands/context.js";
+import { declareCommandKind } from "~/commands/commandKind.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import type {
   HarContent,
@@ -34,9 +35,12 @@ export function registerFlowsRunCommand(
   flows: Command,
   signals: SignalRegistry,
 ): void {
-  flows
-    .command("run [pattern]")
-    .description("Run flows matching [pattern], or every flow when omitted")
+  declareCommandKind(flows.command("run [pattern]"), "local", {
+    kindNote: "read with --env",
+  })
+    .description(
+      "Run flows matching [pattern], or every flow when omitted; with --env, pull missing flows from that QA Wolf environment",
+    )
     .option(
       "--retries <n>",
       "Retry each failing flow up to this many times",

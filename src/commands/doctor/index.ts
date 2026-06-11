@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 
 import { withContext } from "~/commands/context.js";
+import { declareCommandKind } from "~/commands/commandKind.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { handleDoctor } from "./handler.js";
@@ -11,8 +12,7 @@ export function registerDoctorCommand(
   program: Command,
   signals: SignalRegistry,
 ): void {
-  program
-    .command("doctor")
+  declareCommandKind(program.command("doctor"), "local")
     .description("Diagnose problems running flows locally")
     .option(
       "--all",

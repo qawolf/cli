@@ -27,7 +27,8 @@
   "files": [
     "LICENSE",
     "README.md",
-    "dist/cli.js"
+    "dist/cli.js",
+    "skills"
   ],
   "type": "module",
   "publishConfig": {
@@ -39,7 +40,7 @@
     "dev": "bun run src/main.ts",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "generate": "bun scripts/genDependencyVersions.ts",
+    "generate": "bun scripts/genDependencyVersions.ts && bun scripts/genSkillMd.ts",
     "install:binary": "bun run build:binary && mkdir -p ~/.local/bin && cp dist/qawolf ~/.local/bin/qawolf",
     "install:local": "bun run build && npm link",
     "knip": "knip",

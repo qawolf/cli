@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 
 import { withContext } from "~/commands/context.js";
+import { declareCommandKind } from "~/commands/commandKind.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { makeDefaultInitDeps, handleInit } from "~/domains/init/init.js";
 
@@ -12,8 +13,7 @@ export function registerInitCommand(
   program: Command,
   signals: SignalRegistry,
 ): void {
-  program
-    .command("init")
+  declareCommandKind(program.command("init"), "local")
     .description("Scaffold a QA Wolf project in the current directory")
     .option("--yes", "Overwrite existing files without prompting", false)
     .addHelpText(
