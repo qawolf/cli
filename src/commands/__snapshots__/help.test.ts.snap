@@ -18,6 +18,7 @@ Commands:
   flows              Manage and run QA Wolf flows
   init [options]     Scaffold a QA Wolf project in the current directory
   install [pattern]  Install every runtime dependency the project's flows need
+  run                QA Wolf public API run commands
   help [command]     display help for command
 "
 `;
