@@ -27,7 +27,8 @@
   "files": [
     "LICENSE",
     "README.md",
-    "dist/cli.js"
+    "dist/cli.js",
+    "skills"
   ],
   "type": "module",
   "publishConfig": {
