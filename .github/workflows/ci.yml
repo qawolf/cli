@@ -28,7 +28,8 @@ jobs:
           output=$(bun pm pack --dry-run 2>&1)
           echo "$output"
           echo "$output" | grep -qE 'dist/cli\.js$'
-          echo "$output" | grep -qE 'dist/cli\.js\.map$'
+          ! echo "$output" | grep -qE 'dist/cli\.js\.map$' || exit 1
+          ! echo "$output" | grep -qE 'dist/qawolf$' || exit 1
       # - name: PR size check
       #   if: github.event_name == 'pull_request'
       #   env:
