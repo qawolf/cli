@@ -41,6 +41,34 @@ describe("checkEntrySize", () => {
     expect(resume).toHaveBeenCalledTimes(1);
   });
 
+  it("accepts an entry exactly at the per-entry cap", () => {
+    const { entry, resume } = makeEntry(50);
+
+    const size = checkEntrySize({
+      entry,
+      maxEntryBytes: 50,
+      maxTotalBytes: 100,
+      total: 0,
+    });
+
+    expect(size).toBe(50);
+    expect(resume).not.toHaveBeenCalled();
+  });
+
+  it("accepts an entry that lands exactly on the total cap", () => {
+    const { entry, resume } = makeEntry(30);
+
+    const size = checkEntrySize({
+      entry,
+      maxEntryBytes: 50,
+      maxTotalBytes: 100,
+      total: 70,
+    });
+
+    expect(size).toBe(30);
+    expect(resume).not.toHaveBeenCalled();
+  });
+
   it("rejects an entry exceeding the per-entry cap", () => {
     const { entry, resume } = makeEntry(60);
 
