@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
+import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import {
   handleHybridFlowsRun,
@@ -12,8 +13,7 @@ afterEach(() => {
   mock.restore();
 });
 
-const expandPatternsMock =
-  mock<(patterns: string[], cwd?: string) => Promise<string[]>>();
+const expandPatternsMock = mock<HandleHybridFlowsRunDeps["expandPatterns"]>();
 const pullEnvMock = mock<HandleHybridFlowsRunDeps["pullEnv"]>();
 const ensureFlowDepsMock = mock<(envDir: string) => Promise<void>>();
 const configureTestkitMock = mock<(dir: string) => Promise<void>>();
@@ -49,6 +49,7 @@ function makeCtx(): AuthCommandContext {
     platform: {} as unknown,
     signals: makeNoopSignals(),
     ui: makeFakeUI("human"),
+    log: () => makeNoopLogger(),
   } as unknown as AuthCommandContext;
 }
 
@@ -113,6 +114,7 @@ describe("handleHybridFlowsRun", () => {
     expect(expandPatternsMock).toHaveBeenCalledWith(
       ["**/login.flow.ts"],
       expect.any(String),
+      expect.anything(),
     );
     expect(flowsRunMock).toHaveBeenCalledWith(
       expect.anything(),
@@ -120,6 +122,8 @@ describe("handleHybridFlowsRun", () => {
       expect.anything(),
       expect.anything(),
     );
+    const flowsRunDeps = flowsRunMock.mock.calls[0]?.[3];
+    expect(flowsRunDeps?.logger).toBeDefined();
   });
 
   it("pulls env on cache miss and runs matched files", async () => {
@@ -207,7 +211,11 @@ describe("handleHybridFlowsRun", () => {
       expect.anything(),
       expect.anything(),
     );
-    expect(expandPatternsMock).toHaveBeenCalledWith([], expect.any(String));
+    expect(expandPatternsMock).toHaveBeenCalledWith(
+      [],
+      expect.any(String),
+      expect.anything(),
+    );
   });
 
   it("returns error when no flows found in env after pull (pattern undefined)", async () => {
