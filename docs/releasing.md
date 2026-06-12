@@ -7,7 +7,6 @@
 Before the first publish:
 
 - `NPM_TOKEN` must be set as a GitHub Actions secret (Settings → Secrets → Actions → New repository secret).
-- `"private": true` must be removed from `package.json` (tracked in WIZ-10378).
 
 ## How to add a changeset
 
@@ -27,9 +26,12 @@ PRs that do not affect the published package (CI config, internal tooling, docs)
 2. The [Release workflow](../.github/workflows/release.yml) detects the pending changesets and creates (or updates) a **"Version Packages"** PR. This PR bumps `package.json` version and updates `CHANGELOG.md`.
 3. Review the Version Packages PR and merge it when ready to ship.
 4. The Release workflow runs again. It detects no pending changesets, builds the package, and runs:
+
+   ```bash
+   bunx changeset publish
    ```
-   npm publish --provenance --access public
-   ```
+
+   `changeset publish` publishes to npm and creates a git tag for the new version. The changesets action pushes that tag and creates a GitHub Release from it, which triggers the binary build pipeline. npm [provenance](https://docs.npmjs.com/generating-provenance-statements) is enabled via the `NPM_CONFIG_PROVENANCE: true` env var on the publish step.
 
 ## After publish
 
