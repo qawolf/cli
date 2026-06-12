@@ -1,4 +1,10 @@
 #!/bin/sh
+
+# CI validates via ci.yml; the changesets release commit must not re-run these checks
+if [ "$CI" = "true" ]; then
+  exit 0
+fi
+
 set -e
 bash scripts/check-naming.sh
 bun run lint --max-warnings 0

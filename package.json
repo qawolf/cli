@@ -53,7 +53,7 @@
     "typecheck": "bun run generate && tsc --noEmit",
     "uninstall:binary": "rm ~/.local/bin/qawolf",
     "uninstall:local": "npm unlink -g @qawolf/cli",
-    "version-packages": "changeset version"
+    "version-packages": "changeset version && bun run format"
   },
   "dependencies": {
     "@clack/prompts": "1.5.1",
