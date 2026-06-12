@@ -20,6 +20,7 @@ import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js"
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 import { ensureFlowDeps as defaultEnsureFlowDeps } from "~/domains/flows/ensureDeps.js";
 import type { Fs } from "~/shell/fs.js";
+import type { Logger } from "~/shell/logger.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
 import { makePooledDispatch } from "~/domains/runner/makePooledDispatch.js";
 import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
@@ -30,7 +31,11 @@ import { runnerMessages } from "~/core/messages/index.js";
 import { loadEnvFile } from "./loadEnvFile.js";
 
 export type HandleHybridFlowsRunDeps = {
-  expandPatterns: (patterns: string[], cwd?: string) => Promise<string[]>;
+  expandPatterns: (
+    patterns: string[],
+    cwd: string,
+    logger?: Logger,
+  ) => Promise<string[]>;
   pullEnv: (ctx: AuthCommandContext, envId: string) => Promise<CommandResult>;
   ensureFlowDeps: (envDir: string) => Promise<void>;
   configureTestkit: (dir: string) => Promise<void>;
@@ -40,8 +45,8 @@ export type HandleHybridFlowsRunDeps = {
 
 function makeDefaultHybridDeps(fs: Fs): HandleHybridFlowsRunDeps {
   return {
-    expandPatterns: (patterns, cwd) =>
-      defaultExpandPatterns(patterns, cwd ?? process.cwd(), undefined, fs),
+    expandPatterns: (patterns, cwd, logger) =>
+      defaultExpandPatterns(patterns, cwd, logger, fs),
     pullEnv: (ctx, envId) => handleFlowsPull(ctx, { env: envId, yes: true }),
     ensureFlowDeps: (envDir) => defaultEnsureFlowDeps(envDir, fs),
     configureTestkit: defaultConfigureTestkit,
@@ -65,13 +70,21 @@ export async function handleHybridFlowsRun(
   const envDir = resolve(join(".qawolf", flags.env));
   const patternArgs = buildPatternArgs(pattern);
 
-  let files = await resolvedDeps.expandPatterns(patternArgs, envDir);
+  let files = await resolvedDeps.expandPatterns(
+    patternArgs,
+    envDir,
+    ctx.log("flows"),
+  );
 
   if (files.length === 0) {
     const pullResult = await resolvedDeps.pullEnv(ctx, flags.env);
     if (pullResult !== undefined) return pullResult;
 
-    files = await resolvedDeps.expandPatterns(patternArgs, envDir);
+    files = await resolvedDeps.expandPatterns(
+      patternArgs,
+      envDir,
+      ctx.log("flows"),
+    );
     if (files.length === 0) {
       return {
         error:
@@ -116,6 +129,7 @@ export async function handleHybridFlowsRun(
     createPooledDispatch: makePooledDispatch(envDir),
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
+    logger: ctx.log("runner"),
     // Route reporter output through ctx.ui so streamed test logs stay inside the run's timeline.
     reporter: buildRunReporter(flags, {
       fs: ctx.fs,

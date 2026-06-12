@@ -73,7 +73,8 @@ export function createEmulatorPool(params: {
       }
       const results = successes.map((r) => r.value);
 
-      if (!freeSlots.has(avdName)) freeSlots.set(avdName, []);
+      const free = freeSlots.get(avdName) ?? [];
+      freeSlots.set(avdName, free);
       for (const r of results) {
         handles.push(r);
         const slot: EmulatorSlot = { serial: r.serial, avdName };
@@ -81,18 +82,19 @@ export function createEmulatorPool(params: {
         if (waiter) {
           waiter.resolve(slot);
         } else {
-          freeSlots.get(avdName)!.push(slot);
+          free.push(slot);
         }
       }
     },
 
     checkOut(avdName: string) {
-      const free = freeSlots.get(avdName);
-      if (free?.length) return Promise.resolve(free.shift()!);
+      const next = freeSlots.get(avdName)?.shift();
+      if (next) return Promise.resolve(next);
 
       return new Promise<EmulatorSlot>((resolve, reject) => {
-        if (!waiters.has(avdName)) waiters.set(avdName, []);
-        waiters.get(avdName)!.push({ resolve, reject });
+        const pending = waiters.get(avdName) ?? [];
+        waiters.set(avdName, pending);
+        pending.push({ resolve, reject });
       });
     },
 
@@ -102,8 +104,9 @@ export function createEmulatorPool(params: {
       if (waiter) {
         waiter.resolve(slot);
       } else {
-        if (!freeSlots.has(slot.avdName)) freeSlots.set(slot.avdName, []);
-        freeSlots.get(slot.avdName)!.push(slot);
+        const free = freeSlots.get(slot.avdName) ?? [];
+        freeSlots.set(slot.avdName, free);
+        free.push(slot);
       }
     },
 

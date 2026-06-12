@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
+import { z } from "zod";
 
 import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { makeCtx, makeFakeUI } from "~/shell/commandContext.testUtils.js";
@@ -22,6 +23,23 @@ const runCreateSpec = (): CommandSpec => {
     run: { create: publicContractsV1.run.create },
   }).find((candidate) => candidate.trpcPath === "public.run.create");
   if (!spec) throw new Error("run.create spec missing");
+  return spec;
+};
+
+// Synthetic contract exercising the number flag kind, which no real public
+// contract uses yet.
+const countSpec = (): CommandSpec => {
+  const contract = {
+    name: "fake.count",
+    kind: "write" as const,
+    description: "synthetic number-flag contract",
+    input: z.object({ count: z.number() }),
+    output: z.object({ ok: z.boolean() }),
+  };
+  const spec = buildCommandSpecs({ fake: { count: contract } }).find(
+    (candidate) => candidate.trpcPath === "public.fake.count",
+  );
+  if (!spec) throw new Error("fake.count spec missing");
   return spec;
 };
 
@@ -83,6 +101,76 @@ describe("handlePublicApiCommand", () => {
       error:
         'Invalid --environment-variables value "MISSING_SEPARATOR": expected KEY=VALUE.',
     });
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-array key-value-record value before calling the platform", async () => {
+    const callPublicApi = makeCallPublicApiMock();
+    const ctx = ctxWith(
+      makeFakeUI(),
+      makeMockPlatformClient({ callPublicApi }),
+    );
+
+    const result = await handlePublicApiCommand(ctx, runCreateSpec(), {
+      environmentId: "environment-id",
+      environmentVariables: "FOO=bar",
+      flowIds: ["flow-id"],
+    });
+
+    expect(result).toEqual({
+      error: "Invalid --environment-variables value: expected KEY=VALUE pairs.",
+    });
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
+  it("parses number flag values before calling the platform", async () => {
+    const callPublicApi = makeCallPublicApiMock().mockResolvedValue({
+      ok: true,
+      value: { ok: true },
+    });
+    const spec = countSpec();
+    const ctx = ctxWith(
+      makeFakeUI(),
+      makeMockPlatformClient({ callPublicApi }),
+    );
+
+    const result = await handlePublicApiCommand(ctx, spec, { count: "5" });
+
+    expect(result).toBeUndefined();
+    expect(callPublicApi).toHaveBeenCalledWith(spec.contract, { count: 5 });
+  });
+
+  it("passes an empty number flag value through as 0 (Number('') coercion)", async () => {
+    const callPublicApi = makeCallPublicApiMock().mockResolvedValue({
+      ok: true,
+      value: { ok: true },
+    });
+    const spec = countSpec();
+    const ctx = ctxWith(
+      makeFakeUI(),
+      makeMockPlatformClient({ callPublicApi }),
+    );
+
+    const result = await handlePublicApiCommand(ctx, spec, { count: "" });
+
+    expect(result).toBeUndefined();
+    expect(callPublicApi).toHaveBeenCalledWith(spec.contract, { count: 0 });
+  });
+
+  it("rejects a non-numeric number flag value before calling the platform", async () => {
+    const callPublicApi = makeCallPublicApiMock();
+    const ctx = ctxWith(
+      makeFakeUI(),
+      makeMockPlatformClient({ callPublicApi }),
+    );
+
+    const result = await handlePublicApiCommand(ctx, countSpec(), {
+      count: "abc",
+    });
+
+    expect(result).toBeDefined();
+    if (!result) return;
+    expect(result.error).toContain("count");
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 

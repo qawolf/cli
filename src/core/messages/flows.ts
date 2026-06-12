@@ -62,6 +62,8 @@ export const flowsMessages = {
       return lines.join("\n");
     },
     symlinkRejected: (path: string) => `symlink entry rejected: ${path}`,
+    unknownEntrySize: (path: string) =>
+      `entry with unknown size rejected: ${path}`,
     entryTooLarge: (path: string, size: number, maxBytes: number) =>
       `entry exceeds max size (${path}): ${String(size)} > ${String(maxBytes)}`,
     localModsWouldOverwrite: (
