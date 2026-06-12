@@ -1,7 +1,7 @@
 {
   "name": "@qawolf/cli",
   "version": "0.0.0",
-  "description": "Tools for agents, CI, and humans to interact with QA Wolf",
+  "description": "Run and manage QA Wolf flows from the terminal, CI, or an AI agent",
   "keywords": [
     "automation",
     "cli",

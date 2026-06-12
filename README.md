@@ -43,13 +43,14 @@ qawolf auth login                  # or set QAWOLF_API_KEY for CI
 qawolf flows run --env <env-id>
 ```
 
-`qawolf flows run --env` runs your team's flows from the local `.qawolf/<env>` cache (a per-environment copy of your flows on disk), pulling them first only if they are not already cached locally, then installs the runtime dependencies they need and runs them. To refresh the local cache, run `qawolf flows pull --env <env-id>`. To author flows locally without the platform, run `qawolf init` first.
+`qawolf flows run --env` runs your team's flows from the local `.qawolf/<env>` cache (a per-environment copy of your flows on disk), pulling them first only if they are not already cached locally and installing the runtime dependencies they need. To refresh the local cache, run `qawolf flows pull --env <env-id>`; to author flows locally without the platform, run `qawolf init` first.
 
 ## Examples
 
 The [`examples/`](examples) directory contains sample flows you can run directly:
 
 ```bash
+qawolf install   # one-time: install the browser runtime
 qawolf flows run examples/example.flow.ts
 ```
 
@@ -59,11 +60,16 @@ qawolf flows run examples/example.flow.ts
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `qawolf auth`    | [Authenticate with QA Wolf](https://docs.qawolf.com/qawolf/local-execution/authenticate)                                                                       |
 | `qawolf flows`   | [Run flows locally](https://docs.qawolf.com/qawolf/local-execution/run-flows-locally), [pull flows](https://docs.qawolf.com/qawolf/local-execution/pull-flows) |
+| `qawolf run`     | Trigger and manage QA Wolf runs on the platform (public API)                                                                                                   |
 | `qawolf install` | [Install runtime dependencies](https://docs.qawolf.com/qawolf/local-execution/install-dependencies)                                                            |
 | `qawolf init`    | [Set up a local-only project](https://docs.qawolf.com/qawolf/local-execution/set-up-a-project)                                                                 |
 | `qawolf doctor`  | [Diagnose problems](https://docs.qawolf.com/qawolf/local-execution/diagnose-problems)                                                                          |
 
 Run any command with `--help` for its flags and options.
+
+## Agent integration
+
+The npm package ships [`skills/qawolf-cli/SKILL.md`](skills/qawolf-cli/SKILL.md), a Claude Code agent skill that describes the CLI's command surface for AI agents. It is auto-generated from the command tree (`bun run generate`) and kept in sync by the test suite.
 
 ## Reference
 

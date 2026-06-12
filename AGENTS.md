@@ -93,7 +93,7 @@ Commands register in one of two ways: platform public-API endpoints are generate
 
 Run `bun run lint:fix` and `bun run format` on changed files. Do not make cosmetic or stylistic changes to files unrelated to your task.
 
-A pre-commit hook (`.githooks/pre-commit`) runs lint, format check, `knip`, and typecheck automatically. Activate it once per clone with `bun install`.
+A pre-commit hook (`.githooks/pre-commit`) runs the naming check, lint, format check, typecheck, and `knip` automatically. Activate it once per clone with `bun install`.
 
 ## Output Modes
 
