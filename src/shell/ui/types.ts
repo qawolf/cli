@@ -30,7 +30,6 @@ export type UI = {
 
   // data
   json(data: unknown): void;
-  // primary command result — humanMessage in human mode; a JSON line of data on stdout otherwise
   output(data: unknown, humanMessage: string): void;
 
   // diagnostics
