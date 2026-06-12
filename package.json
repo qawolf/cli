@@ -22,7 +22,7 @@
     "url": "git+https://github.com/qawolf/cli.git"
   },
   "bin": {
-    "qawolf": "./dist/cli.js"
+    "qawolf": "dist/cli.js"
   },
   "files": [
     "LICENSE",
