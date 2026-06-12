@@ -27,8 +27,6 @@ export function createAgentRenderers(): RendererSet {
     error: (title, body) => {
       process.stderr.write(formatCIError(title, body));
     },
-    // Same stdout contract as json mode so agents can parse the result,
-    // while the human-readable summary stays on stderr.
     output: (data, humanMessage) => {
       writeJsonLine(data);
       writeStderrLine(humanMessage);
