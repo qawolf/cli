@@ -14,6 +14,12 @@ on:
         required: true
         type: string
 
+# Serialize runs per tag: release/workflow_call/workflow_dispatch can otherwise
+# race on uploading assets for the same release.
+concurrency:
+  group: release-binaries-${{ inputs.tag || github.event.release.tag_name }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -65,6 +71,13 @@ jobs:
         run: ./${{ matrix.outfile }} --version
 
       - name: Upload to release
-        run: gh release upload "${{ inputs.tag || github.event.release.tag_name }}" "${{ matrix.outfile }}" --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # env indirection keeps the dispatch-provided tag out of shell template expansion
+          RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]] || {
+            echo "Invalid release tag: $RELEASE_TAG" >&2
+            exit 1
+          }
+          gh release upload "$RELEASE_TAG" "${{ matrix.outfile }}" --clobber
