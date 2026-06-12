@@ -58,10 +58,8 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - run: bun run generate
-
       - name: Build binary
-        run: bun scripts/buildBinary.ts --target "${{ matrix.target }}" --outfile "${{ matrix.outfile }}"
+        run: bun run build:binary --target="${{ matrix.target }}" --outfile="${{ matrix.outfile }}"
 
       - name: Smoke test binary
         run: ./${{ matrix.outfile }} --version
