@@ -15,6 +15,9 @@ type AssembledInput =
 const flagName = (flag: FlagSpec): string =>
   flag.flag.split(" ", 1)[0] ?? flag.flag;
 
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === "string");
+
 function parseKeyValueRecord(
   flag: FlagSpec,
   pairs: string[],
@@ -44,7 +47,13 @@ function assembleInput(
     const value = options[flag.field];
     if (value === undefined) continue;
     if (flag.kind === "key-value-record") {
-      const parsed = parseKeyValueRecord(flag, value as string[]);
+      if (!isStringArray(value)) {
+        return {
+          ok: false,
+          error: `Invalid ${flagName(flag)} value: expected KEY=VALUE pairs.`,
+        };
+      }
+      const parsed = parseKeyValueRecord(flag, value);
       if (!parsed.ok) return parsed;
       input[flag.field] = parsed.record;
     } else if (flag.kind === "number") {
@@ -61,7 +70,11 @@ function renderHuman(value: unknown): string {
     return Object.entries(value)
       .map(
         ([key, fieldValue]) =>
-          `${key}: ${typeof fieldValue === "string" ? fieldValue : JSON.stringify(fieldValue)}`,
+          `${key}: ${
+            typeof fieldValue === "string"
+              ? fieldValue
+              : JSON.stringify(fieldValue)
+          }`,
       )
       .join("\n");
   }
