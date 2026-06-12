@@ -6,6 +6,7 @@ import {
   withAuthContext,
   withContext,
 } from "~/commands/context.js";
+import { exitCodes } from "~/shell/exit.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
 
@@ -41,12 +42,12 @@ describe("withAuthContext exit code plumbing", () => {
     );
   };
 
-  it("sets exitCode to 1 when requireApiKey throws", async () => {
+  it("sets exitCode to exitCodes.auth (3) when requireApiKey throws", async () => {
     await withAuthContext(noopSignals, async () => undefined, {
       requireApiKey: failRequireApiKey,
     })({}, fakeCommand());
 
-    expect(process.exitCode).toBe(1);
+    expect(process.exitCode).toBe(exitCodes.auth);
   });
 
   it("sets exitCode to 1 when the action throws after auth succeeds", async () => {

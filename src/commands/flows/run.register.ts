@@ -68,7 +68,7 @@ export function registerFlowsRunCommand(
     )
     .option(
       "--trace <mode>",
-      "Record Playwright trace: on | off | retain-on-failure (capture pending)",
+      "Record Playwright trace: on | off | retain-on-failure",
       parseEnum<TraceMode>("--trace", traceModes),
       traceDefault,
     )
