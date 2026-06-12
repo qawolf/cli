@@ -3,6 +3,16 @@ name: Release Binaries
 on:
   release:
     types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -48,6 +58,8 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
+      - run: bun run generate
+
       - name: Build binary
         run: bun scripts/buildBinary.ts --target "${{ matrix.target }}" --outfile "${{ matrix.outfile }}"
 
@@ -55,6 +67,6 @@ jobs:
         run: ./${{ matrix.outfile }} --version
 
       - name: Upload to release
-        run: gh release upload "${{ github.event.release.tag_name }}" "${{ matrix.outfile }}" --clobber
+        run: gh release upload "${{ inputs.tag || github.event.release.tag_name }}" "${{ matrix.outfile }}" --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
