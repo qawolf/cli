@@ -8,6 +8,10 @@ function stderrSpy() {
   return spyOn(process.stderr, "write").mockImplementation(() => true);
 }
 
+function stdoutSpy() {
+  return spyOn(process.stdout, "write").mockImplementation(() => true);
+}
+
 describe("agent renderers", () => {
   afterEach(() => {
     mock.restore();
@@ -101,10 +105,13 @@ describe("agent renderers", () => {
   });
 
   describe("output", () => {
-    it("writes humanMessage to stderr", () => {
-      const spy = stderrSpy();
-      createAgentRenderers().output({ id: 1 }, "Operation succeeded");
-      expect(spy).toHaveBeenCalledWith("Operation succeeded\n");
+    it("writes data as a JSON line to stdout and humanMessage to stderr", () => {
+      const stdout = stdoutSpy();
+      const stderr = stderrSpy();
+      const data = { id: 1 };
+      createAgentRenderers().output(data, "Operation succeeded");
+      expect(stdout).toHaveBeenCalledWith(JSON.stringify(data) + "\n");
+      expect(stderr).toHaveBeenCalledWith("Operation succeeded\n");
     });
   });
 

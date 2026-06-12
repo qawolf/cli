@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { Command } from "commander";
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { z } from "zod";
@@ -79,6 +79,47 @@ describe("registerPublicApiCommands", () => {
       flowIds: [flowId],
       ignoreRules: false,
     });
+  });
+
+  it("emits the structured response as a JSON line on stdout in agent mode", async () => {
+    const stdout = spyOn(process.stdout, "write").mockImplementation(
+      () => true,
+    );
+    const stderr = spyOn(process.stderr, "write").mockImplementation(
+      () => true,
+    );
+    const callPublicApi = makeCallPublicApiMock().mockResolvedValue({
+      ok: true,
+      value: { runId: "run-id" },
+    });
+    const program = makeProgram().option(
+      "--agent",
+      "Output for agent consumption",
+    );
+    registerPublicApiCommands(program, createSignalRegistry(), {
+      authDeps: {
+        requireApiKey: async () => ({ key: "qawolf_key", source: "env" }),
+        createPlatform: () => makeMockPlatformClient({ callPublicApi }),
+      },
+    });
+
+    await program.parseAsync(
+      [
+        "--agent",
+        "run",
+        "create",
+        "--environment-id",
+        "environment-id",
+        "--flow-ids",
+        "flow-id",
+      ],
+      { from: "user" },
+    );
+
+    expect(stdout).toHaveBeenCalledWith(
+      JSON.stringify({ runId: "run-id" }) + "\n",
+    );
+    expect(stderr).toHaveBeenCalledWith("runId: run-id\n");
   });
 
   it("throws when a generated command collides with an existing command", () => {

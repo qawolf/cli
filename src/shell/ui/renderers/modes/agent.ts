@@ -1,5 +1,9 @@
 import { formatCIError } from "~/shell/ui/renderers/formatters/ci.js";
-import { writeStderrLine, writeStderrRaw } from "~/shell/ui/renderers/write.js";
+import {
+  writeJsonLine,
+  writeStderrLine,
+  writeStderrRaw,
+} from "~/shell/ui/renderers/write.js";
 import { finalizeResults } from "./progress.js";
 import type { RendererSet } from "./types.js";
 
@@ -23,7 +27,12 @@ export function createAgentRenderers(): RendererSet {
     error: (title, body) => {
       process.stderr.write(formatCIError(title, body));
     },
-    output: (_data, humanMessage) => writeStderrLine(humanMessage),
+    // Same stdout contract as json mode so agents can parse the result,
+    // while the human-readable summary stays on stderr.
+    output: (data, humanMessage) => {
+      writeJsonLine(data);
+      writeStderrLine(humanMessage);
+    },
     gap: () => writeStderrLine(""),
     write: (text) => writeStderrRaw(text),
     withProgress: async (steps, done) => {
