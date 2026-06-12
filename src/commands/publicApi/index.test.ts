@@ -28,6 +28,9 @@ describe("registerPublicApiCommands", () => {
 
     const run = program.commands.find((command) => command.name() === "run");
     expect(run).toBeDefined();
+    expect(run?.description()).toBe(
+      "Trigger and manage QA Wolf runs on the platform",
+    );
     const create = run?.commands.find((command) => command.name() === "create");
     expect(create).toBeDefined();
     expect(create?.description()).toBe(
@@ -104,10 +107,11 @@ describe("registerPublicApiCommands", () => {
       contracts: { run: { attempt: { get: contract } } },
     });
 
-    const get = program.commands
+    const attempt = program.commands
       .find((command) => command.name() === "run")
-      ?.commands.find((command) => command.name() === "attempt")
-      ?.commands.find((command) => command.name() === "get");
+      ?.commands.find((command) => command.name() === "attempt");
+    expect(attempt?.description()).toBe("QA Wolf public API attempt commands");
+    const get = attempt?.commands.find((command) => command.name() === "get");
     expect(get).toBeDefined();
     expect(get?.description()).toBe("Look up a run attempt.");
   });

@@ -20,6 +20,12 @@ type Options = {
   authDeps?: AuthDeps;
 };
 
+// Curated descriptions for generated command groups so top-level --help reads
+// like the hand-written entries; unlisted namespaces fall back to a generic line.
+const groupDescriptions: Record<string, string> = {
+  run: "Trigger and manage QA Wolf runs on the platform",
+};
+
 function resolveGroup(parent: Command, segment: string): Command {
   const existing = parent.commands.find(
     (command) => command.name() === segment,
@@ -28,7 +34,9 @@ function resolveGroup(parent: Command, segment: string): Command {
     existing ??
     parent
       .command(segment)
-      .description(`QA Wolf public API ${segment} commands`)
+      .description(
+        groupDescriptions[segment] ?? `QA Wolf public API ${segment} commands`,
+      )
   );
 }
 
@@ -47,7 +55,9 @@ function registerSpec(
   const parent = groupPath.reduce(resolveGroup, program);
   if (parent.commands.some((command) => command.name() === leafName)) {
     throw new Error(
-      `Generated command "${spec.commandPath.join(" ")}" collides with an existing command.`,
+      `Generated command "${spec.commandPath.join(
+        " ",
+      )}" collides with an existing command.`,
     );
   }
 

@@ -3,6 +3,7 @@ import type { Command } from "commander";
 import { errorMessage } from "~/core/errors.js";
 import { authMessages } from "~/core/messages/index.js";
 import { getConfigDir } from "~/core/paths.js";
+import { exitCodes } from "~/shell/exit.js";
 import { makeDefaultFs } from "~/shell/fs.js";
 import { requireApiKey } from "~/domains/auth/index.js";
 import {
@@ -121,7 +122,7 @@ export function withAuthContext(
       ctx.fs,
     ).catch((err: unknown) => {
       ctx.ui.error(authMessages.notAuthenticated, errorMessage(err));
-      process.exitCode = 1;
+      process.exitCode = exitCodes.auth;
       return undefined;
     });
     if (resolved === undefined) {
