@@ -18,7 +18,12 @@
         ]
       }
     ],
-    "eslint/max-lines": ["error", { "max": 150 }],
+    "eslint/max-lines": [
+      "error",
+      {
+        "max": 150
+      }
+    ],
     "eslint/no-restricted-globals": [
       "error",
       {
@@ -57,9 +62,17 @@
     "import/extensions": [
       "error",
       "ignorePackages",
-      { "ts": "never", "js": "always" }
+      {
+        "ts": "never",
+        "js": "always"
+      }
     ],
-    "unicorn/filename-case": ["error", { "case": "camelCase" }],
+    "unicorn/filename-case": [
+      "error",
+      {
+        "case": "camelCase"
+      }
+    ],
     "unicorn/no-instanceof-array": "error",
     "unicorn/no-null": "error",
     "unicorn/no-typeof-undefined": "error",
@@ -68,7 +81,6 @@
     "unicorn/prefer-node-protocol": "error",
     "unicorn/prefer-optional-catch-binding": "error",
     "unicorn/prefer-string-trim-start-end": "error",
-
     "typescript/ban-ts-comment": "error",
     "typescript/consistent-type-exports": "error",
     "typescript/no-deprecated": "error",
@@ -208,6 +220,10 @@
                 "message": "Cross-domain import: shared types belong in core/ or shell/."
               },
               {
+                "group": ["~/domains/publicApi/*", "~/domains/publicApi/**"],
+                "message": "Cross-domain import: shared types belong in core/ or shell/."
+              },
+              {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
                 "message": "domains/ must not import node:fs — file I/O belongs in shell/."
               },
@@ -265,6 +281,10 @@
               },
               {
                 "group": ["~/domains/runner/*", "~/domains/runner/**"],
+                "message": "Cross-domain import: shared types belong in core/ or shell/."
+              },
+              {
+                "group": ["~/domains/publicApi/*", "~/domains/publicApi/**"],
                 "message": "Cross-domain import: shared types belong in core/ or shell/."
               },
               {
@@ -328,6 +348,10 @@
                 "message": "Cross-domain import: shared types belong in core/ or shell/."
               },
               {
+                "group": ["~/domains/publicApi/*", "~/domains/publicApi/**"],
+                "message": "Cross-domain import: shared types belong in core/ or shell/."
+              },
+              {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
                 "message": "domains/ must not import node:fs — file I/O belongs in shell/."
               },
@@ -385,6 +409,10 @@
               },
               {
                 "group": ["~/domains/runner/*", "~/domains/runner/**"],
+                "message": "Cross-domain import: shared types belong in core/ or shell/."
+              },
+              {
+                "group": ["~/domains/publicApi/*", "~/domains/publicApi/**"],
                 "message": "Cross-domain import: shared types belong in core/ or shell/."
               },
               {
@@ -448,6 +476,10 @@
                 "message": "Cross-domain import: shared types belong in core/ or shell/."
               },
               {
+                "group": ["~/domains/publicApi/*", "~/domains/publicApi/**"],
+                "message": "Cross-domain import: shared types belong in core/ or shell/."
+              },
+              {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
                 "message": "domains/ must not import node:fs — file I/O belongs in shell/."
               },
@@ -505,6 +537,10 @@
               },
               {
                 "group": ["~/domains/runner/*", "~/domains/runner/**"],
+                "message": "Cross-domain import: shared types belong in core/ or shell/."
+              },
+              {
+                "group": ["~/domains/publicApi/*", "~/domains/publicApi/**"],
                 "message": "Cross-domain import: shared types belong in core/ or shell/."
               },
               {
@@ -632,6 +668,10 @@
                 "message": "Cross-domain import: shared types belong in core/ or shell/."
               },
               {
+                "group": ["~/domains/publicApi/*", "~/domains/publicApi/**"],
+                "message": "Cross-domain import: shared types belong in core/ or shell/."
+              },
+              {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
                 "message": "domains/ must not import node:fs — file I/O belongs in shell/."
               },
@@ -681,7 +721,12 @@
       ],
       "rules": {
         "typescript/unbound-method": "off",
-        "eslint/max-lines": ["error", { "max": 250 }],
+        "eslint/max-lines": [
+          "error",
+          {
+            "max": 250
+          }
+        ],
         "eslint/no-restricted-globals": "off",
         "eslint/no-restricted-properties": "off",
         "eslint/no-restricted-imports": [
