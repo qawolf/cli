@@ -5,6 +5,7 @@ import { createGunzip } from "node:zlib";
 import { Parser, type ReadEntry } from "tar";
 
 import { flowsMessages } from "~/core/messages/index.js";
+import { checkEntrySize } from "./entrySize.js";
 import { validateEntryPath } from "./entryPath.js";
 
 const defaultMaxEntryBytes = 50 * 1024 * 1024;
@@ -110,17 +111,12 @@ async function handleEntry(args: HandleArgs): Promise<void> {
     return;
   }
 
-  const size = entry.size ?? 0;
-  if (size > maxEntryBytes) {
-    entry.resume();
-    throw new Error(
-      flowsMessages.pull.entryTooLarge(entry.path, size, maxEntryBytes),
-    );
-  }
-  if (args.getTotal() + size > maxTotalBytes) {
-    entry.resume();
-    throw new Error(`total uncompressed size exceeds cap`);
-  }
+  const size = checkEntrySize({
+    entry,
+    maxEntryBytes,
+    maxTotalBytes,
+    total: args.getTotal(),
+  });
   args.addTotal(size);
 
   // mkdirSync (not async) to keep entry-consumer attachment synchronous.
