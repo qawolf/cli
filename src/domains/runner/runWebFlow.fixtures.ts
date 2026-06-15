@@ -43,6 +43,7 @@ export const baseOptions: RunWebFlowOptions = {
   headed: false,
   slowMo: 0,
   video: "off",
+  trace: "off",
   timeout: 30_000,
 };
 

@@ -16,4 +16,9 @@ describe("buildRunOptions", () => {
     const { webOptions } = buildRunOptions({ ...defaultFlags(), headed: true });
     expect(webOptions.headed).toBe(true);
   });
+
+  it("passes the trace mode through to webOptions", () => {
+    const { webOptions } = buildRunOptions({ ...defaultFlags(), trace: "on" });
+    expect(webOptions.trace).toBe("on");
+  });
 });

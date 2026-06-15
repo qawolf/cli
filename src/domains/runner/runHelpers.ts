@@ -31,6 +31,7 @@ export function buildRunOptions(flags: FlowsRunFlags): {
       headed: flags.headed,
       slowMo: 0,
       video: flags.video,
+      trace: flags.trace,
       timeout: flags.timeout,
       har: flags.har,
       harContent: flags.harContent,

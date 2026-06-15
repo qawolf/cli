@@ -19,6 +19,7 @@ const webOptions: RunWebFlowOptions = {
   headed: false,
   slowMo: 0,
   video: "off",
+  trace: "off",
   timeout: 30_000,
   har: "off",
   harContent: "omit",
