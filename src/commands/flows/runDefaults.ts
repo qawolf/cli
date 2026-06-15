@@ -28,6 +28,7 @@ import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
 import { loadEnvFile } from "./loadEnvFile.js";
+import { createFlowRuntimeDeps as defaultCreateFlowRuntimeDeps } from "./flowRuntimeDeps.js";
 
 export type HandleFlowsRunDeps = {
   expandPatterns: (
@@ -39,6 +40,7 @@ export type HandleFlowsRunDeps = {
   ensureFlowDeps: (envDir: string) => Promise<void>;
   configureTestkit: (dir: string) => Promise<void>;
   runWebFlowDeps: typeof defaultRunWebFlowDeps;
+  createFlowRuntimeDeps: typeof defaultCreateFlowRuntimeDeps;
   flowsRun: typeof defaultFlowsRun;
 };
 
@@ -50,6 +52,7 @@ function makeDefaultDeps(fs: Fs): HandleFlowsRunDeps {
     ensureFlowDeps: (envDir) => defaultEnsureFlowDeps(envDir, fs),
     configureTestkit: defaultConfigureTestkit,
     runWebFlowDeps: defaultRunWebFlowDeps,
+    createFlowRuntimeDeps: defaultCreateFlowRuntimeDeps,
     flowsRun: defaultFlowsRun,
   };
 }
@@ -106,6 +109,10 @@ export async function handleFlowsRun(
   const resolvedDir = envDir ?? cwd;
 
   await resolvedDeps.configureTestkit(resolvedDir);
+  const flowRuntimeDeps = resolvedDeps.createFlowRuntimeDeps({
+    envDir: resolvedDir,
+    ctx,
+  });
   const android = createAndroidDeps(resolvedDir, ctx.signals);
   return resolvedDeps.flowsRun(ctx, expandedFiles, flags, {
     peekFlowMeta: makePeekFlowMeta(ctx.fs),
@@ -116,9 +123,12 @@ export async function handleFlowsRun(
         playwrightCliPath: resolvePlaywrightCli(resolvedDir, process.platform),
       }),
     runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: await resolvedDeps.runWebFlowDeps(resolvedDir, ctx.signals),
+    runWebFlowDeps: {
+      ...(await resolvedDeps.runWebFlowDeps(resolvedDir, ctx.signals)),
+      flowRuntimeDeps,
+    },
     runAndroidFlow: defaultRunAndroidFlow,
-    runAndroidFlowDeps: android.deps,
+    runAndroidFlowDeps: { ...android.deps, flowRuntimeDeps },
     bootAndroid: android.boot,
     shutdownAndroid: android.shutdown,
     createPooledDispatch: makePooledDispatch(resolvedDir),

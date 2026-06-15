@@ -17,6 +17,7 @@ import type {
   RunnerDeps,
   RunnerOptions,
 } from "./types.js";
+import type { FlowRuntimeDeps } from "./flowRuntimeDeps.js";
 import { FailWithoutRetryError } from "./errors.js";
 import { notSupported } from "./runWebFlowUtils.js";
 import {
@@ -24,7 +25,10 @@ import {
   unsupportedAndroidDepNames,
 } from "./runAndroidFlowUtils.js";
 
-export type RunAndroidFlowDeps = RunnerDeps & AndroidLaunchDeps;
+export type RunAndroidFlowDeps = RunnerDeps &
+  AndroidLaunchDeps & {
+    readonly flowRuntimeDeps?: FlowRuntimeDeps;
+  };
 
 export type RunAndroidFlowOptions = RunnerOptions &
   Omit<AndroidLaunchOptions, "avdName"> & {
@@ -94,6 +98,7 @@ export async function runAndroidFlow({
         ...Object.fromEntries(
           unsupportedAndroidDepNames.map((name) => [name, notSupported(name)]),
         ),
+        ...deps.flowRuntimeDeps,
         inputs: flowDeps.flowInputs,
         workflowInputs: flowDeps.flowInputs,
         setOutput: flowDeps.setOutput,

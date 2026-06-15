@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { CommandContext } from "~/shell/commandContext.js";
 import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
-import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
+import type {
+  FlowsRunDeps,
+  FlowsRunFlags,
+} from "~/domains/runner/runInternals.js";
+import type { FlowRuntimeDeps } from "~/domains/runner/flowRuntimeDeps.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { runnerMessages } from "~/core/messages/index.js";
@@ -17,6 +21,10 @@ const ensureFlowDepsMock = mock<(envDir: string) => Promise<void>>();
 const configureTestkitMock = mock<(dir: string) => Promise<void>>();
 const flowsRunMock = mock<HandleFlowsRunDeps["flowsRun"]>();
 const runWebFlowDepsMock = mock<(...args: unknown[]) => Promise<unknown>>();
+const createFlowRuntimeDepsMock = mock<(...args: unknown[]) => unknown>();
+const sharedFlowRuntimeDeps: FlowRuntimeDeps = {
+  fetchLatestEnvironmentVariables: async () => {},
+};
 const uiInfoMock = mock<(message: string) => void>();
 const uiIntroMock = mock<(title: string) => void>();
 
@@ -27,6 +35,7 @@ const trackedMocks = [
   configureTestkitMock,
   flowsRunMock,
   runWebFlowDepsMock,
+  createFlowRuntimeDepsMock,
   uiInfoMock,
   uiIntroMock,
 ];
@@ -40,6 +49,8 @@ function makeDeps(): HandleFlowsRunDeps {
     flowsRun: flowsRunMock,
     runWebFlowDeps:
       runWebFlowDepsMock as unknown as HandleFlowsRunDeps["runWebFlowDeps"],
+    createFlowRuntimeDeps:
+      createFlowRuntimeDepsMock as unknown as HandleFlowsRunDeps["createFlowRuntimeDeps"],
   };
 }
 
@@ -78,6 +89,7 @@ beforeEach(() => {
   configureTestkitMock.mockResolvedValue(undefined);
   flowsRunMock.mockResolvedValue(undefined);
   runWebFlowDepsMock.mockResolvedValue({});
+  createFlowRuntimeDepsMock.mockReturnValue(sharedFlowRuntimeDeps);
 });
 
 describe("handleFlowsRun", () => {
@@ -127,6 +139,13 @@ describe("handleFlowsRun", () => {
     expect(configureTestkitMock).toHaveBeenCalledTimes(1);
     expect(flowsRunMock).toHaveBeenCalledTimes(1);
     expect(runWebFlowDepsMock).toHaveBeenCalledTimes(1);
+    const runDeps = flowsRunMock.mock.calls[0]?.[3] as FlowsRunDeps;
+    expect(runDeps.runWebFlowDeps.flowRuntimeDeps).toBe(sharedFlowRuntimeDeps);
+    expect(
+      runDeps.runAndroidFlowDeps !== "not-wired"
+        ? runDeps.runAndroidFlowDeps.flowRuntimeDeps
+        : undefined,
+    ).toBe(sharedFlowRuntimeDeps);
   });
 
   it("calls ensureFlowDeps and configureTestkit with envDir when envDir is present", async () => {

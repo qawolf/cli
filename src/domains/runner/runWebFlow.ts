@@ -13,6 +13,7 @@ import type {
   RunnerOptions,
 } from "./types.js";
 import type { WebLaunchDeps, WebLaunchOptions } from "./web/types.js";
+import type { FlowRuntimeDeps } from "./flowRuntimeDeps.js";
 import { FailWithoutRetryError } from "./errors.js";
 import { initFlowRuntime } from "./initFlowRuntime.js";
 import {
@@ -26,7 +27,10 @@ import {
   maybeCleanupHar,
 } from "./web/contextSetup.js";
 
-export type RunWebFlowDeps = RunnerDeps & WebLaunchDeps;
+export type RunWebFlowDeps = RunnerDeps &
+  WebLaunchDeps & {
+    readonly flowRuntimeDeps?: FlowRuntimeDeps;
+  };
 // trace is not yet implemented
 export type RunWebFlowOptions = RunnerOptions &
   Omit<WebLaunchOptions, "browser" | "trace">;
@@ -84,6 +88,7 @@ export async function runWebFlow({
         ...Object.fromEntries(
           unsupportedWebDepNames.map((name) => [name, notSupported(name)]),
         ),
+        ...deps.flowRuntimeDeps,
         launch,
         launchWithGpu: launch,
         isGpuAvailable: () => false,

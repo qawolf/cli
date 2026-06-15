@@ -9,7 +9,7 @@ const fakeClient: EmailsClient = {
 };
 
 describe("configureEmails", () => {
-  it("should call createEmailsClient with the correct options", async () => {
+  it("passes an emailerUrl config through with defaults", async () => {
     let capturedOpts: unknown;
     const deps = {
       createEmailsClient: async (opts: unknown) => {
@@ -19,16 +19,49 @@ describe("configureEmails", () => {
       configureEmailsClient: () => {},
     };
 
-    await configureEmails("https://app.qawolf.com", "/test", deps);
+    await configureEmails(
+      { emailerUrl: "https://emailer.example" },
+      "/test",
+      deps,
+    );
 
     expect(capturedOpts).toEqual({
-      emailerUrl: "https://app.qawolf.com",
+      emailerUrl: "https://emailer.example",
       pollForEmailsDefaultTimeoutMs: 60_000,
       waitForMessagesDefaultDelayMs: 1_000,
     });
   });
 
-  it("should register the client returned by createEmailsClient", async () => {
+  it("passes an apiKey/url config (with teamId) through with defaults", async () => {
+    let capturedOpts: unknown;
+    const deps = {
+      createEmailsClient: async (opts: unknown) => {
+        capturedOpts = opts;
+        return fakeClient;
+      },
+      configureEmailsClient: () => {},
+    };
+
+    await configureEmails(
+      {
+        apiKey: "key_123",
+        url: "https://app.qawolf.com/api",
+        teamId: "team_123",
+      },
+      "/test",
+      deps,
+    );
+
+    expect(capturedOpts).toEqual({
+      apiKey: "key_123",
+      url: "https://app.qawolf.com/api",
+      teamId: "team_123",
+      pollForEmailsDefaultTimeoutMs: 60_000,
+      waitForMessagesDefaultDelayMs: 1_000,
+    });
+  });
+
+  it("registers and returns the client created by createEmailsClient", async () => {
     let registeredClient: EmailsClient | undefined;
     const deps = {
       createEmailsClient: async () => fakeClient,
@@ -37,12 +70,17 @@ describe("configureEmails", () => {
       },
     };
 
-    await configureEmails("https://example.com", "/test", deps);
+    const returned = await configureEmails(
+      { emailerUrl: "https://emailer.example" },
+      "/test",
+      deps,
+    );
 
     expect(registeredClient).toBe(fakeClient);
+    expect(returned).toBe(fakeClient);
   });
 
-  it("should propagate errors thrown by createEmailsClient", async () => {
+  it("propagates errors thrown by createEmailsClient", async () => {
     const deps = {
       createEmailsClient: async (): Promise<EmailsClient> => {
         throw new Error("service unavailable");
@@ -52,7 +90,11 @@ describe("configureEmails", () => {
 
     let caughtError: unknown;
     try {
-      await configureEmails("https://example.com", "/test", deps);
+      await configureEmails(
+        { emailerUrl: "https://emailer.example" },
+        "/test",
+        deps,
+      );
     } catch (e) {
       caughtError = e;
     }
@@ -61,7 +103,7 @@ describe("configureEmails", () => {
     expect((caughtError as Error).message).toBe("service unavailable");
   });
 
-  it("should propagate errors thrown by configureEmailsClient", async () => {
+  it("propagates errors thrown by configureEmailsClient", async () => {
     const deps = {
       createEmailsClient: async () => fakeClient,
       configureEmailsClient: (): void => {
@@ -71,7 +113,11 @@ describe("configureEmails", () => {
 
     let caughtError: unknown;
     try {
-      await configureEmails("https://example.com", "/test", deps);
+      await configureEmails(
+        { emailerUrl: "https://emailer.example" },
+        "/test",
+        deps,
+      );
     } catch (e) {
       caughtError = e;
     }

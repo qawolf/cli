@@ -1,5 +1,4 @@
 import { join, resolve } from "node:path";
-
 import { validateEnvId } from "~/domains/flows/pull/pull.js";
 import { handleFlowsPull } from "~/domains/flows/pull/handler.js";
 import type {
@@ -29,6 +28,7 @@ import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { runnerMessages } from "~/core/messages/index.js";
 import { loadEnvFile } from "./loadEnvFile.js";
+import { createFlowRuntimeDeps as defaultCreateFlowRuntimeDeps } from "./flowRuntimeDeps.js";
 
 export type HandleHybridFlowsRunDeps = {
   expandPatterns: (
@@ -41,6 +41,7 @@ export type HandleHybridFlowsRunDeps = {
   configureTestkit: (dir: string) => Promise<void>;
   flowsRun: typeof defaultFlowsRun;
   runWebFlowDeps: typeof defaultRunWebFlowDeps;
+  createFlowRuntimeDeps: typeof defaultCreateFlowRuntimeDeps;
 };
 
 function makeDefaultHybridDeps(fs: Fs): HandleHybridFlowsRunDeps {
@@ -52,6 +53,7 @@ function makeDefaultHybridDeps(fs: Fs): HandleHybridFlowsRunDeps {
     configureTestkit: defaultConfigureTestkit,
     flowsRun: defaultFlowsRun,
     runWebFlowDeps: defaultRunWebFlowDeps,
+    createFlowRuntimeDeps: defaultCreateFlowRuntimeDeps,
   };
 }
 
@@ -110,6 +112,11 @@ export async function handleHybridFlowsRun(
   );
   await loadEnvFile(envDir);
   await resolvedDeps.configureTestkit(envDir);
+  const flowRuntimeDeps = resolvedDeps.createFlowRuntimeDeps({
+    envDir,
+    ctx,
+    platform: ctx.platform,
+  });
   const android = createAndroidDeps(envDir, ctx.signals);
 
   return resolvedDeps.flowsRun(ctx, files, flags, {
@@ -121,16 +128,18 @@ export async function handleHybridFlowsRun(
         playwrightCliPath: resolvePlaywrightCli(envDir, process.platform),
       }),
     runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: await resolvedDeps.runWebFlowDeps(envDir, ctx.signals),
+    runWebFlowDeps: {
+      ...(await resolvedDeps.runWebFlowDeps(envDir, ctx.signals)),
+      flowRuntimeDeps,
+    },
     runAndroidFlow: defaultRunAndroidFlow,
-    runAndroidFlowDeps: android.deps,
+    runAndroidFlowDeps: { ...android.deps, flowRuntimeDeps },
     bootAndroid: android.boot,
     shutdownAndroid: android.shutdown,
     createPooledDispatch: makePooledDispatch(envDir),
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
     logger: ctx.log("runner"),
-    // Route reporter output through ctx.ui so streamed test logs stay inside the run's timeline.
     reporter: buildRunReporter(flags, {
       fs: ctx.fs,
       stdout: { write: (text: string) => ctx.ui.write(text) },
