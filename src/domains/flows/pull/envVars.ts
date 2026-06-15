@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { makeDefaultFs } from "~/shell/fs.js";
 import type { Fs } from "~/shell/fs.js";
 
-import { serializeDotenv } from "~/domains/flows/dotenv.js";
+import { serializeDotenv } from "~/core/dotenv.js";
 
 export async function writeEnvFile(
   envDir: string,

@@ -7,15 +7,40 @@ import { flowsMessages } from "~/core/messages/index.js";
 const envKeyPattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const lineRe = /^([A-Za-z_][A-Za-z0-9_]*)="((?:[^"\\]|\\.)*)"$/;
 
+export type SerializeDotenvSkippingInvalidResult = {
+  readonly content: string;
+  // Keys that are not valid POSIX shell identifiers (e.g. they contain a `.`
+  // or a space). A `.env` file cannot represent them, so pull callers can
+  // choose to skip them while surfacing the names to the user.
+  readonly skippedKeys: readonly string[];
+};
+
+export function isDotenvKey(key: string): boolean {
+  return envKeyPattern.test(key);
+}
+
 export function serializeDotenv(vars: Record<string, string>): string {
   const keys = Object.keys(vars).sort();
   for (const key of keys) {
-    if (!envKeyPattern.test(key)) {
+    if (!isDotenvKey(key)) {
       throw new Error(flowsMessages.dotenv.invalidKey(key));
     }
   }
   if (keys.length === 0) return "";
   return `${keys.map((key) => `${key}=${quote(vars[key] ?? "")}`).join("\n")}\n`;
+}
+
+export function serializeDotenvSkippingInvalid(
+  vars: Record<string, string>,
+): SerializeDotenvSkippingInvalidResult {
+  const keys = Object.keys(vars).sort();
+  const validVars: Record<string, string> = {};
+  const skippedKeys: string[] = [];
+  for (const key of keys) {
+    if (isDotenvKey(key)) validVars[key] = vars[key] ?? "";
+    else skippedKeys.push(key);
+  }
+  return { content: serializeDotenv(validVars), skippedKeys };
 }
 
 function quote(value: string): string {
