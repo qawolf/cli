@@ -88,14 +88,19 @@ export function createLaunch({
     for (const unreg of unregisters) unreg();
     // Stop tracing before closing the context — Playwright writes the trace
     // zip on stop(), and stop() is not valid once the context has closed.
+    // TODO WIZ-10839: a flow with multiple launch() calls stops every context
+    // to the same tracePath, so only one trace zip survives (mirrors HAR).
     if (tracingEnabled && tracePath !== undefined) {
       await Promise.allSettled(
         openContexts.map((c) => c.tracing.stop({ path: tracePath })),
       );
     }
-    // Close contexts fully before browsers: Playwright flushes HAR/video/trace
+    // Close contexts fully before browsers: Playwright flushes HAR and video
     // during context.close(), and a concurrent browser.close() can terminate
-    // the connection mid-flush, silently dropping those artifacts.
+    // the connection mid-flush, silently dropping those artifacts. (Trace is
+    // already written by the tracing.stop() above.) Note: the signal handlers
+    // registered above only close the context, so a SIGINT-interrupted run
+    // preserves HAR/video but not the trace.
     await Promise.allSettled(openContexts.map((c) => c.close()));
     await Promise.allSettled(openBrowsers.map((b) => b.close()));
   };
