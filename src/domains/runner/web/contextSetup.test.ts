@@ -82,6 +82,24 @@ describe("maybeCleanupHar", () => {
     );
     expect(result).resolves.toBeUndefined();
   });
+
+  it("should warn with the HAR path when unlink rejects", async () => {
+    const warn = mock((_msg: string) => {});
+    const fs = {
+      unlink: mock(async () => {
+        throw new Error("EPERM");
+      }),
+    };
+    await maybeCleanupHar(
+      fs,
+      "/out/har/flow.har",
+      true,
+      "retain-on-failure",
+      warn,
+    );
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain("/out/har/flow.har");
+  });
 });
 
 describe("initHar", () => {

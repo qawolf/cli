@@ -94,4 +94,22 @@ describe("maybeCleanupTrace", () => {
     );
     expect(result).resolves.toBeUndefined();
   });
+
+  it("should warn with the trace path when unlink rejects", async () => {
+    const warn = mock((_msg: string) => {});
+    const fs = {
+      unlink: mock(async () => {
+        throw new Error("EPERM");
+      }),
+    };
+    await maybeCleanupTrace(
+      fs,
+      "/out/trace/flow.zip",
+      true,
+      "retain-on-failure",
+      warn,
+    );
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain("/out/trace/flow.zip");
+  });
 });

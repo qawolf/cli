@@ -110,11 +110,12 @@ export async function runWebFlow({
     return result;
   } finally {
     await cleanup();
+    const warn = (message: string) => deps.logger?.warn(message);
     if (harPath !== undefined) {
-      await maybeCleanupHar(deps.fs, harPath, passed, harMode);
+      await maybeCleanupHar(deps.fs, harPath, passed, harMode, warn);
     }
     if (tracePath !== undefined) {
-      await maybeCleanupTrace(deps.fs, tracePath, passed, traceMode);
+      await maybeCleanupTrace(deps.fs, tracePath, passed, traceMode, warn);
     }
   }
 }

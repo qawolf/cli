@@ -16,6 +16,10 @@ export const runnerMessages = {
     `retries must be a non-negative integer, got ${String(retries)}`,
   manifestStampReadFailed: (file: string, message: string) =>
     `failed to read manifest stamp for ${file}: ${message}`,
+  harCleanupFailed: (file: string, message: string) =>
+    `failed to delete HAR file ${file} (retain-on-failure); remove it manually: ${message}`,
+  traceCleanupFailed: (file: string, message: string) =>
+    `failed to delete trace file ${file} (retain-on-failure); remove it manually: ${message}`,
   notSupportedInCli: (name: string) =>
     `${name} is not supported in the CLI runner`,
   notAvailableLocally: (name: string) =>

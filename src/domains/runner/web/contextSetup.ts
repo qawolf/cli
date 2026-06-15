@@ -1,4 +1,6 @@
 import path from "node:path";
+import { errorMessage } from "~/core/errors.js";
+import { runnerMessages } from "~/core/messages/index.js";
 import type {
   HarContent,
   HarMode,
@@ -72,19 +74,21 @@ export async function initTrace(
 /**
  * Deletes the trace file when `traceMode` is `"retain-on-failure"` and the flow
  * passed. No-ops for `"on"` and `"off"` modes.
- * Errors from `unlink` are swallowed — cleanup failure must not fail a passing flow.
+ * A failed `unlink` must not fail a passing flow, so the error is swallowed —
+ * but `warn` is called with the path so the user can remove the file manually.
  */
 export async function maybeCleanupTrace(
   fs: { unlink: (p: string) => Promise<void> },
   tracePath: string,
   passed: boolean,
   traceMode: TraceMode,
+  warn?: (message: string) => void,
 ): Promise<void> {
   if (traceMode !== "retain-on-failure" || !passed) return;
   try {
     await fs.unlink(tracePath);
-  } catch {
-    // best-effort; do not surface cleanup errors
+  } catch (err) {
+    warn?.(runnerMessages.traceCleanupFailed(tracePath, errorMessage(err)));
   }
 }
 
@@ -118,18 +122,20 @@ export function buildContextSetup(
 /**
  * Deletes the HAR file when `harMode` is `"retain-on-failure"` and the flow
  * passed. No-ops for `"on"` and `"off"` modes.
- * Errors from `unlink` are swallowed — cleanup failure must not fail a passing flow.
+ * A failed `unlink` must not fail a passing flow, so the error is swallowed —
+ * but `warn` is called with the path so the user can remove the file manually.
  */
 export async function maybeCleanupHar(
   fs: { unlink: (p: string) => Promise<void> },
   harPath: string,
   passed: boolean,
   harMode: HarMode,
+  warn?: (message: string) => void,
 ): Promise<void> {
   if (harMode !== "retain-on-failure" || !passed) return;
   try {
     await fs.unlink(harPath);
-  } catch {
-    // best-effort; do not surface cleanup errors
+  } catch (err) {
+    warn?.(runnerMessages.harCleanupFailed(harPath, errorMessage(err)));
   }
 }
