@@ -15,7 +15,7 @@ export type SerializeDotenvSkippingInvalidResult = {
   readonly skippedKeys: readonly string[];
 };
 
-export function isDotenvKey(key: string): boolean {
+function isDotenvKey(key: string): boolean {
   return envKeyPattern.test(key);
 }
 
