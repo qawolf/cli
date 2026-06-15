@@ -6,6 +6,7 @@ import {
   makeDep,
 } from "./web/createWebLaunchContext.fixtures.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
+import { createSignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 afterEach(() => {
   mock.restore();
@@ -38,6 +39,35 @@ describe("createLaunch cleanup", () => {
 
     await launch();
     await cleanup();
+
+    expect(order).toEqual(["context:start", "context:end", "browser:start"]);
+  });
+
+  it("should close contexts before browsers on signal-driven shutdown", async () => {
+    const order: string[] = [];
+    const ctx = makeContext();
+    ctx.close = mock(async () => {
+      order.push("context:start");
+      await Promise.resolve();
+      order.push("context:end");
+    });
+    const browser = makeBrowser(ctx);
+    browser.close = mock(async () => {
+      order.push("browser:start");
+    });
+    const dep = makeDep(browser, ctx);
+    const signals = createSignalRegistry();
+
+    const { launch } = createLaunch({
+      browsers: { chromium: dep, firefox: dep, webkit: dep },
+      contextSetup: {},
+      launchBrowserOpts,
+      signals,
+      timeout: 30_000,
+    });
+
+    await launch();
+    await signals.shutdown("SIGINT");
 
     expect(order).toEqual(["context:start", "context:end", "browser:start"]);
   });
