@@ -10,20 +10,47 @@ afterEach(() => {
 
 const thisDir = import.meta.dirname;
 
+/** Reads back the expect timeout the runner configured on @qawolf/flows. */
+async function readConfiguredExpectTimeout(): Promise<number> {
+  const idxUrl = import.meta.resolve("@qawolf/flows");
+  const attrsUrl = new URL("./web/expect/attributes.js", idxUrl).href;
+  const { getWebExpectAttributes } = (await import(attrsUrl)) as {
+    getWebExpectAttributes: () => { defaultExpectTimeoutMs: number };
+  };
+  return getWebExpectAttributes().defaultExpectTimeoutMs;
+}
+
 describe("initFlowRuntime", () => {
   it("resolves using the CLI's own @qawolf/flows", async () => {
-    await initFlowRuntime(path.join(thisDir, "fake.flow.ts"));
+    await initFlowRuntime(path.join(thisDir, "fake.flow.ts"), {
+      timeout: 30_000,
+    });
+  });
+
+  it("configures the @qawolf/flows expect timeout from the passed timeout", async () => {
+    await initFlowRuntime(path.join(thisDir, "fake.flow.ts"), {
+      timeout: 5_000,
+    });
+    expect(await readConfiguredExpectTimeout()).toBe(5_000);
   });
 
   it("returns the same promise for repeated calls from the same directory", () => {
-    const p1 = initFlowRuntime(path.join(thisDir, "a.flow.ts"));
-    const p2 = initFlowRuntime(path.join(thisDir, "b.flow.ts"));
+    const p1 = initFlowRuntime(path.join(thisDir, "a.flow.ts"), {
+      timeout: 30_000,
+    });
+    const p2 = initFlowRuntime(path.join(thisDir, "b.flow.ts"), {
+      timeout: 30_000,
+    });
     expect(p1).toBe(p2);
   });
 
   it("returns a different promise for a different starting directory", () => {
-    const p1 = initFlowRuntime(path.join(thisDir, "a.flow.ts"));
-    const p2 = initFlowRuntime(path.join(thisDir, "sub", "b.flow.ts"));
+    const p1 = initFlowRuntime(path.join(thisDir, "a.flow.ts"), {
+      timeout: 30_000,
+    });
+    const p2 = initFlowRuntime(path.join(thisDir, "sub", "b.flow.ts"), {
+      timeout: 30_000,
+    });
     expect(p1).not.toBe(p2);
     // settle both so they don't leak into subsequent tests
     return Promise.allSettled([p1, p2]);
@@ -34,7 +61,9 @@ describe("initFlowRuntime", () => {
     try {
       let caught: unknown;
       try {
-        await initFlowRuntime(path.join(tmp, "my.flow.ts"));
+        await initFlowRuntime(path.join(tmp, "my.flow.ts"), {
+          timeout: 30_000,
+        });
       } catch (e) {
         caught = e;
       }
@@ -60,7 +89,9 @@ describe("initFlowRuntime", () => {
       );
       let caught: unknown;
       try {
-        await initFlowRuntime(path.join(tmp, "my.flow.ts"));
+        await initFlowRuntime(path.join(tmp, "my.flow.ts"), {
+          timeout: 30_000,
+        });
       } catch (e) {
         caught = e;
       }
@@ -82,7 +113,9 @@ describe("initFlowRuntime", () => {
       await mkdir(path.join(pkgDir, "package.json"));
       let caught: unknown;
       try {
-        await initFlowRuntime(path.join(tmp, "my.flow.ts"));
+        await initFlowRuntime(path.join(tmp, "my.flow.ts"), {
+          timeout: 30_000,
+        });
       } catch (e) {
         caught = e;
       }

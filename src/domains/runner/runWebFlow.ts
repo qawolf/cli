@@ -40,7 +40,7 @@ export async function runWebFlow({
   options: RunWebFlowOptions;
   flowPath: string;
 }): Promise<FlowRunResult> {
-  await initFlowRuntime(flowPath);
+  await initFlowRuntime(flowPath, { timeout: options.timeout });
 
   const exported = await loadFlowDefault<WebFlowApiReturnValue>(flowPath);
 

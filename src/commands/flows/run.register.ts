@@ -56,7 +56,7 @@ export function registerFlowsRunCommand(
     )
     .option(
       "--timeout <ms>",
-      "Per-flow timeout in milliseconds",
+      "Default timeout for actions and assertions, in milliseconds",
       parseInteger("--timeout", { min: 0 }),
       30_000,
     )

@@ -17,7 +17,27 @@ afterEach(() => {
   mock.restore();
 });
 
+/** Reads back the expect timeout configured on @qawolf/flows. */
+async function readConfiguredExpectTimeout(): Promise<number> {
+  const idxUrl = import.meta.resolve("@qawolf/flows");
+  const attrsUrl = new URL("./web/expect/attributes.js", idxUrl).href;
+  const { getWebExpectAttributes } = (await import(attrsUrl)) as {
+    getWebExpectAttributes: () => { defaultExpectTimeoutMs: number };
+  };
+  return getWebExpectAttributes().defaultExpectTimeoutMs;
+}
+
 describe("runWebFlow", () => {
+  it("should configure the @qawolf/flows expect timeout from options.timeout", async () => {
+    await runWebFlow({
+      deps: makeWebDeps(),
+      options: { ...baseOptions, timeout: 7_777 },
+      flowPath: fixturePath("pass"),
+    });
+
+    expect(await readConfiguredExpectTimeout()).toBe(7_777);
+  });
+
   it("should return passed: true when the flow succeeds", async () => {
     const result = await runWebFlow({
       deps: makeWebDeps(),
