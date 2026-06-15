@@ -7,6 +7,7 @@ import {
   makeUniformDeps,
 } from "./web/createWebLaunchContext.fixtures.js";
 import { runWebFlow } from "./runWebFlow.js";
+import { _resetInitCache } from "./initFlowRuntime.js";
 import {
   baseOptions,
   fixturePath,
@@ -29,6 +30,11 @@ async function readConfiguredExpectTimeout(): Promise<number> {
 
 describe("runWebFlow", () => {
   it("should configure the @qawolf/flows expect timeout from options.timeout", async () => {
+    // initFlowRuntime memoizes per flow directory and configures a
+    // process-global on @qawolf/flows. Other runner tests share this
+    // directory, so clear the cache to force a fresh configure here.
+    _resetInitCache();
+
     await runWebFlow({
       deps: makeWebDeps(),
       options: { ...baseOptions, timeout: 7_777 },
