@@ -15,6 +15,9 @@ import {
 } from "./runWebFlow.fixtures.js";
 
 afterEach(() => {
+  // The expect-timeout readback test configures a process-global on
+  // @qawolf/flows; clear the init cache so it does not leak into later tests.
+  _resetInitCache();
   mock.restore();
 });
 
