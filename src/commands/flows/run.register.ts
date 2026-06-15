@@ -9,6 +9,7 @@ import type {
   TraceMode,
   VideoMode,
 } from "~/core/types.js";
+import { defaultOutputDir } from "~/core/paths.js";
 import { parseEnum, parseInteger } from "~/domains/runner/runFlagParsers.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
@@ -87,7 +88,7 @@ export function registerFlowsRunCommand(
     .option(
       "--output-dir <path>",
       "Directory for run artifacts (videos, traces, HAR)",
-      "qawolf-output",
+      defaultOutputDir,
     )
     .option(
       "--junit [path]",

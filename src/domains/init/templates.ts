@@ -1,5 +1,5 @@
 export const qawolfConfigTs = `export default {
-  outputDir: ".qawolf",
+  outputDir: ".qawolf/output",
   timeout: 60_000,
   retries: 0,
   video: "retain-on-failure",

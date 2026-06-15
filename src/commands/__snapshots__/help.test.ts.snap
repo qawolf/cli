@@ -148,7 +148,7 @@ Options:
   --har-content <mode>  HAR response bodies: omit | full (full uses more memory)
                         (default: "omit")
   --output-dir <path>   Directory for run artifacts (videos, traces, HAR)
-                        (default: "qawolf-output")
+                        (default: ".qawolf/output")
   --junit [path]        Write a JUnit XML report (default:
                         <output-dir>/junit-report.xml)
   --headed              Show the browser window instead of headless (default:
