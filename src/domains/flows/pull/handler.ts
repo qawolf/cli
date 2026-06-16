@@ -111,10 +111,6 @@ export async function handleFlowsPull(
         ),
     );
 
-    if (result.skippedEnvVarKeys.length > 0) {
-      ctx.ui.warn(flowsMessages.dotenv.skippedKeys(result.skippedEnvVarKeys));
-    }
-
     if (ctx.ui.mode === "json") {
       ctx.ui.output(
         {
@@ -124,7 +120,6 @@ export async function handleFlowsPull(
           fetchedAt: fetched.bundleFetchedAt.toISOString(),
           flowCount: result.flowCount,
           envVarCount: result.envVarCount,
-          skippedEnvVarKeys: result.skippedEnvVarKeys,
           flowsWithTeamStorageRefs: result.flowsWithTeamStorageRefs,
           assetDownloadedCount: assetResult.downloadedCount,
           assetReusedCount: assetResult.reusedCount,
