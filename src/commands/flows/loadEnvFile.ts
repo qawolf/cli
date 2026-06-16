@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { isNoEntError } from "~/core/errors.js";
-import { parseDotenv } from "~/domains/flows/dotenv.js";
+import { parseDotenv } from "~/core/dotenv.js";
 
 export async function loadEnvFile(envDir: string): Promise<void> {
   let content: string;

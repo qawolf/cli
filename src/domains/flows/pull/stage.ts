@@ -30,6 +30,7 @@ type StageBundleResult = {
   flowCount: number;
   envVarCount: number;
   flowsWithTeamStorageRefs: string[];
+  skippedEnvVarKeys: readonly string[];
 };
 
 export async function stageBundle(
@@ -61,7 +62,11 @@ export async function stageBundle(
       ...args.envVars,
       TEAM_STORAGE_DIR: args.assetsAbs,
     };
-    await writeEnvFile(tmpDir, effectiveEnvVars, fs);
+    const { skippedKeys: skippedEnvVarKeys } = await writeEnvFile(
+      tmpDir,
+      effectiveEnvVars,
+      fs,
+    );
     const manifest = await buildManifest(
       {
         envId: args.envId,
@@ -93,8 +98,11 @@ export async function stageBundle(
     return {
       envDir: args.destAbs,
       flowCount: manifest.flows.length,
-      envVarCount: Object.keys(effectiveEnvVars).length,
+      // Skipped keys never made it into the .env, so don't count them.
+      envVarCount:
+        Object.keys(effectiveEnvVars).length - skippedEnvVarKeys.length,
       flowsWithTeamStorageRefs,
+      skippedEnvVarKeys,
     };
   } catch (err) {
     await removeTempDir(tmpDir, registry, fs).catch(() => {});

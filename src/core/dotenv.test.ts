@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
 
-import { parseDotenv, serializeDotenv } from "./dotenv.js";
+import {
+  parseDotenv,
+  serializeDotenv,
+  serializeDotenvSkippingInvalid,
+} from "./dotenv.js";
 
 describe("serializeDotenv", () => {
   it('emits KEY="value" lines sorted by key with trailing newline', () => {
@@ -41,6 +45,29 @@ describe("serializeDotenv", () => {
   });
 });
 
+describe("serializeDotenvSkippingInvalid", () => {
+  it("skips keys that violate POSIX env-var shape and reports them", () => {
+    expect(
+      serializeDotenvSkippingInvalid({
+        VALID: "ok",
+        "BAD KEY": "x",
+        "1LEADING_DIGIT": "y",
+        "DOTTED.KEY": "z",
+      }),
+    ).toEqual({
+      content: 'VALID="ok"\n',
+      skippedKeys: ["1LEADING_DIGIT", "BAD KEY", "DOTTED.KEY"],
+    });
+  });
+
+  it("returns empty content when every key is invalid", () => {
+    expect(serializeDotenvSkippingInvalid({ "BAD KEY": "x" })).toEqual({
+      content: "",
+      skippedKeys: ["BAD KEY"],
+    });
+  });
+});
+
 describe("parseDotenv", () => {
   it('parses simple KEY="value" lines', () => {
     expect(parseDotenv('TOKEN="abc"\nURL="https://example.com"\n')).toEqual({
@@ -61,7 +88,7 @@ describe("parseDotenv", () => {
     expect(parseDotenv('A="1"\r\n  B="2"  \r\n')).toEqual({ A: "1", B: "2" });
   });
 
-  it('unescapes \\\\, \\", \\n, \\r, \\t inside values', () => {
+  it('unescapes \\\\, ", \\n, \\r, \\t inside values', () => {
     expect(
       parseDotenv(
         'BACK="a\\\\b"\nCR="a\\rb"\nNL="a\\nb"\nQUOTE="a\\"b"\nTAB="a\\tb"\n',
