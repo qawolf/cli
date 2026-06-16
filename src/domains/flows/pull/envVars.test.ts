@@ -32,6 +32,26 @@ describe("writeEnvFile", () => {
 
     expect(await pathExists(join(workDir, ".env"))).toBe(false);
   });
+
+  it("writes valid vars, drops invalid keys, and reports them", async () => {
+    const { skippedKeys } = await writeEnvFile(workDir, {
+      TOKEN: "abc",
+      "BRIAN_2.0_AUTH_TOKEN": "secret",
+    });
+
+    expect(skippedKeys).toEqual(["BRIAN_2.0_AUTH_TOKEN"]);
+    const body = await readFile(join(workDir, ".env"), "utf8");
+    expect(body).toBe('TOKEN="abc"\n');
+  });
+
+  it("does not write an empty .env when every key is invalid", async () => {
+    const { skippedKeys } = await writeEnvFile(workDir, {
+      "BRIAN_2.0_AUTH_TOKEN": "secret",
+    });
+
+    expect(skippedKeys).toEqual(["BRIAN_2.0_AUTH_TOKEN"]);
+    expect(await pathExists(join(workDir, ".env"))).toBe(false);
+  });
 });
 
 describe("writeEnvFile (memory fs)", () => {

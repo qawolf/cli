@@ -114,6 +114,7 @@ describe("handleFlowsPull json mode output", () => {
       "flowCount",
       "flowsWithTeamStorageRefs",
       "manifestPath",
+      "skippedEnvVarKeys",
     ]);
     expect(payload).toEqual({
       assetsDir: expect.stringContaining("/assets"),
@@ -127,6 +128,7 @@ describe("handleFlowsPull json mode output", () => {
       ),
       flowCount: 2,
       envVarCount: 2,
+      skippedEnvVarKeys: [],
       flowsWithTeamStorageRefs: [],
       manifestPath: join(destDir, manifestFilename),
     });

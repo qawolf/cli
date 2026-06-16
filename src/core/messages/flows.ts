@@ -82,6 +82,13 @@ export const flowsMessages = {
   dotenv: {
     invalidKey: (key: string) =>
       `Cannot serialize env var with invalid key: ${JSON.stringify(key)}`,
+    skippedKeys: (keys: readonly string[]) =>
+      `Skipped ${pluralize(
+        keys.length,
+        "environment variable",
+      )} with key(s) that are not valid POSIX shell identifiers (cannot be written to .env): ${keys
+        .map((key) => JSON.stringify(key))
+        .join(", ")}`,
     unparseableLine: (line: string) =>
       `Cannot parse .env line: ${JSON.stringify(line)}`,
   },

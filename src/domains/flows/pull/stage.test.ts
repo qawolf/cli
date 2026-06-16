@@ -47,6 +47,7 @@ describe("stageBundle", () => {
       flowCount: 2,
       envVarCount: 1,
       flowsWithTeamStorageRefs: [],
+      skippedEnvVarKeys: [],
     });
     expect(await readFile(join(destDir, "checkout.flow.ts"), "utf8")).toBe(
       "// checkout\n",
