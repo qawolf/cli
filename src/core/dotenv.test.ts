@@ -1,10 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import {
-  parseDotenv,
-  serializeDotenv,
-  serializeDotenvSkippingInvalid,
-} from "./dotenv.js";
+import { parseDotenv, serializeDotenv } from "./dotenv.js";
 
 describe("serializeDotenv", () => {
   it('emits KEY="value" lines sorted by key with trailing newline', () => {
@@ -37,34 +33,19 @@ describe("serializeDotenv", () => {
     expect(serializeDotenv({ URL: "a=b c#d" })).toBe('URL="a=b c#d"\n');
   });
 
-  it("throws when a key violates POSIX env-var shape", () => {
-    expect(() => serializeDotenv({ "BAD KEY": "x" })).toThrow(/invalid key/i);
-    expect(() => serializeDotenv({ "1LEADING_DIGIT": "x" })).toThrow(
-      /invalid key/i,
-    );
-  });
-});
-
-describe("serializeDotenvSkippingInvalid", () => {
-  it("skips keys that violate POSIX env-var shape and reports them", () => {
+  it("quotes a key that contains special characters (email-style OTP key)", () => {
     expect(
-      serializeDotenvSkippingInvalid({
-        VALID: "ok",
-        "BAD KEY": "x",
-        "1LEADING_DIGIT": "y",
-        "DOTTED.KEY": "z",
+      serializeDotenv({
+        "app+user@example.com_OTP_URI": "otpauth://totp/x",
       }),
-    ).toEqual({
-      content: 'VALID="ok"\n',
-      skippedKeys: ["1LEADING_DIGIT", "BAD KEY", "DOTTED.KEY"],
-    });
+    ).toBe('"app+user@example.com_OTP_URI"="otpauth://totp/x"\n');
   });
 
-  it("returns empty content when every key is invalid", () => {
-    expect(serializeDotenvSkippingInvalid({ "BAD KEY": "x" })).toEqual({
-      content: "",
-      skippedKeys: ["BAD KEY"],
-    });
+  it("quotes a key with a space or a leading digit", () => {
+    expect(serializeDotenv({ "BAD KEY": "x" })).toBe('"BAD KEY"="x"\n');
+    expect(serializeDotenv({ "1LEADING_DIGIT": "x" })).toBe(
+      '"1LEADING_DIGIT"="x"\n',
+    );
   });
 });
 
@@ -106,10 +87,20 @@ describe("parseDotenv", () => {
     expect(() => parseDotenv("not-a-valid-line\n")).toThrow(/Cannot parse/i);
     expect(() => parseDotenv('UNTERMINATED="oops\n')).toThrow(/Cannot parse/i);
   });
+
+  it("parses a quoted-key line", () => {
+    expect(
+      parseDotenv('"weird+key@host.com_OTP_URI"="otpauth://totp/x"\n'),
+    ).toEqual({ "weird+key@host.com_OTP_URI": "otpauth://totp/x" });
+  });
+
+  it("parses a quoted key containing an escaped double-quote", () => {
+    expect(parseDotenv('"a\\"b"="v"\n')).toEqual({ 'a"b': "v" });
+  });
 });
 
 describe("serializeDotenv ↔ parseDotenv round trip", () => {
-  it("preserves arbitrary values exactly", () => {
+  it("preserves arbitrary values and non-POSIX keys exactly", () => {
     const sample = {
       ALPHA: "simple",
       BETA: 'with "quotes"',
@@ -117,6 +108,7 @@ describe("serializeDotenv ↔ parseDotenv round trip", () => {
       DELTA: "back\\slash",
       EPSILON: "spaces and = and # and / inside",
       ZETA: "",
+      "weird+key@host.com_OTP_URI": 'value with = and " and \n',
     };
 
     const round = parseDotenv(serializeDotenv(sample));
