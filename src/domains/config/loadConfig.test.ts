@@ -30,7 +30,7 @@ describe("loadConfig", () => {
   it("returns defaults when qawolf.config.ts is missing", async () => {
     const config = await loadConfig(missingConfig());
     expect(config).toEqual({
-      outputDir: ".qawolf",
+      outputDir: ".qawolf/output",
       timeout: 60_000,
       retries: 0,
       bail: false,

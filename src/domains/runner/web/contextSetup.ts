@@ -1,10 +1,22 @@
 import path from "node:path";
-import type { HarContent, HarMode, VideoMode } from "~/core/types.js";
+import { errorMessage } from "~/core/errors.js";
+import { runnerMessages } from "~/core/messages/index.js";
+import type {
+  HarContent,
+  HarMode,
+  TraceMode,
+  VideoMode,
+} from "~/core/types.js";
 import type { ContextSetupOptions } from "./types.js";
 
 /** Returns the path where Playwright writes the HAR file for a single flow run. */
 export function harFlowPath(outputDir: string, flowName: string): string {
   return path.join(outputDir, "har", `${flowName}.har`);
+}
+
+/** Returns the path where Playwright writes the trace zip for a single flow run. */
+export function traceFlowPath(outputDir: string, flowName: string): string {
+  return path.join(outputDir, "trace", `${flowName}.zip`);
 }
 
 /**
@@ -46,6 +58,40 @@ export async function initHar(
   return { harMode, harPath };
 }
 
+/** Resolves traceMode and tracePath, creating the output directory when needed. */
+export async function initTrace(
+  fs: { mkdir: (p: string, opts?: { recursive?: boolean }) => Promise<void> },
+  options: { trace?: TraceMode; outputDir: string },
+  flowName: string,
+): Promise<{ traceMode: TraceMode; tracePath: string | undefined }> {
+  const traceMode = options.trace ?? "off";
+  if (traceMode === "off") return { traceMode, tracePath: undefined };
+  const tracePath = traceFlowPath(options.outputDir, flowName);
+  await fs.mkdir(path.dirname(tracePath), { recursive: true });
+  return { traceMode, tracePath };
+}
+
+/**
+ * Deletes the trace file when `traceMode` is `"retain-on-failure"` and the flow
+ * passed. No-ops for `"on"` and `"off"` modes.
+ * A failed `unlink` must not fail a passing flow, so the error is swallowed —
+ * but `warn` is called with the path so the user can remove the file manually.
+ */
+export async function maybeCleanupTrace(
+  fs: { unlink: (p: string) => Promise<void> },
+  tracePath: string,
+  passed: boolean,
+  traceMode: TraceMode,
+  warn?: (message: string) => void,
+): Promise<void> {
+  if (traceMode !== "retain-on-failure" || !passed) return;
+  try {
+    await fs.unlink(tracePath);
+  } catch (err) {
+    warn?.(runnerMessages.traceCleanupFailed(tracePath, errorMessage(err)));
+  }
+}
+
 /** Builds the Playwright context setup options for video and HAR recording. */
 export function buildContextSetup(
   videoSize: { width: number; height: number },
@@ -76,18 +122,20 @@ export function buildContextSetup(
 /**
  * Deletes the HAR file when `harMode` is `"retain-on-failure"` and the flow
  * passed. No-ops for `"on"` and `"off"` modes.
- * Errors from `unlink` are swallowed — cleanup failure must not fail a passing flow.
+ * A failed `unlink` must not fail a passing flow, so the error is swallowed —
+ * but `warn` is called with the path so the user can remove the file manually.
  */
 export async function maybeCleanupHar(
   fs: { unlink: (p: string) => Promise<void> },
   harPath: string,
   passed: boolean,
   harMode: HarMode,
+  warn?: (message: string) => void,
 ): Promise<void> {
   if (harMode !== "retain-on-failure" || !passed) return;
   try {
     await fs.unlink(harPath);
-  } catch {
-    // best-effort; do not surface cleanup errors
+  } catch (err) {
+    warn?.(runnerMessages.harCleanupFailed(harPath, errorMessage(err)));
   }
 }

@@ -1,5 +1,7 @@
+import { defaultOutputDir } from "~/core/paths.js";
+
 export const qawolfConfigTs = `export default {
-  outputDir: ".qawolf",
+  outputDir: "${defaultOutputDir}",
   timeout: 60_000,
   retries: 0,
   video: "retain-on-failure",

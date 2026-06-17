@@ -23,13 +23,14 @@ import {
 import {
   buildContextSetup,
   initHar,
+  initTrace,
   maybeCleanupHar,
+  maybeCleanupTrace,
 } from "./web/contextSetup.js";
 
 export type RunWebFlowDeps = RunnerDeps & WebLaunchDeps;
-// trace is not yet implemented
 export type RunWebFlowOptions = RunnerOptions &
-  Omit<WebLaunchOptions, "browser" | "trace">;
+  Omit<WebLaunchOptions, "browser">;
 
 export async function runWebFlow({
   deps,
@@ -40,7 +41,7 @@ export async function runWebFlow({
   options: RunWebFlowOptions;
   flowPath: string;
 }): Promise<FlowRunResult> {
-  await initFlowRuntime(flowPath);
+  await initFlowRuntime(flowPath, { timeout: options.timeout });
 
   const exported = await loadFlowDefault<WebFlowApiReturnValue>(flowPath);
 
@@ -53,6 +54,7 @@ export async function runWebFlow({
     : (exported as WebFlowDefinition).run;
 
   const { harMode, harPath } = await initHar(deps.fs, options, flowName);
+  const { traceMode, tracePath } = await initTrace(deps.fs, options, flowName);
   const videoSize = { width: 1280, height: 720 };
   const contextSetup = buildContextSetup(videoSize, options, harPath);
 
@@ -74,6 +76,8 @@ export async function runWebFlow({
     launchBrowserOpts,
     signals: deps.signals,
     timeout: options.timeout,
+    traceMode,
+    tracePath,
   });
 
   const flowDef: FlowDefinition = {
@@ -106,8 +110,12 @@ export async function runWebFlow({
     return result;
   } finally {
     await cleanup();
+    const warn = (message: string) => deps.logger?.warn(message);
     if (harPath !== undefined) {
-      await maybeCleanupHar(deps.fs, harPath, passed, harMode);
+      await maybeCleanupHar(deps.fs, harPath, passed, harMode, warn);
+    }
+    if (tracePath !== undefined) {
+      await maybeCleanupTrace(deps.fs, tracePath, passed, traceMode, warn);
     }
   }
 }

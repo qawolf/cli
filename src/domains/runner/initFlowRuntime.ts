@@ -6,8 +6,19 @@ import { isNoEntError } from "~/core/errors.js";
 
 type ConfigureFlowRuntime = (opts: {
   target: unknown;
-  webExpectAttributes?: unknown;
+  webExpectAttributes?: { defaultExpectTimeoutMs: number };
 }) => Promise<void>;
+
+export type InitFlowRuntimeOptions = {
+  /**
+   * Default timeout (ms) for flow actions and assertions. Threaded into
+   * @qawolf/flows as `defaultExpectTimeoutMs` so the package's `expect`
+   * wrapper honors `--timeout`; without it the wrapper pins every assertion
+   * to its hardcoded 30s default. The matching Playwright action timeout is
+   * applied separately via `context.setDefaultTimeout` at launch.
+   */
+  timeout: number;
+};
 
 async function findFlowsRunnerPath(flowPath: string, fs: Fs): Promise<string> {
   let dir = path.dirname(flowPath);
@@ -47,7 +58,11 @@ async function findFlowsRunnerPath(flowPath: string, fs: Fs): Promise<string> {
 
 const initCache = new Map<string, Promise<void>>();
 
-async function doInit(flowPath: string, fs: Fs): Promise<void> {
+async function doInit(
+  flowPath: string,
+  timeout: number,
+  fs: Fs,
+): Promise<void> {
   const runnerPath = await findFlowsRunnerPath(flowPath, fs);
   const mod = (await import(pathToFileURL(runnerPath).href)) as {
     configureFlowRuntime?: ConfigureFlowRuntime;
@@ -63,18 +78,22 @@ async function doInit(flowPath: string, fs: Fs): Promise<void> {
       runnerName: "node20WithPlaywright",
       meta: "legacy",
     },
+    webExpectAttributes: { defaultExpectTimeoutMs: timeout },
   });
 }
 
 export function initFlowRuntime(
   flowPath: string,
+  options: InitFlowRuntimeOptions,
   fs: Fs = makeDefaultFs(),
 ): Promise<void> {
   const startDir = path.dirname(flowPath);
-  // Cache key is startDir, not fs — tests reusing the same startDir must call _resetInitCache() between runs.
+  // Cache key is startDir, not fs — tests reusing the same startDir must call
+  // _resetInitCache() between runs. Timeout is omitted deliberately: it is a
+  // single run-global flag, so every flow in a process shares one value.
   let p = initCache.get(startDir);
   if (!p) {
-    p = doInit(flowPath, fs);
+    p = doInit(flowPath, options.timeout, fs);
     initCache.set(startDir, p);
   }
   return p;

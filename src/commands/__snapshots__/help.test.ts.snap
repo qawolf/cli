@@ -137,7 +137,8 @@ Options:
                         0)
   --bail                Stop the run after the first failure (default: false)
   --workers <n>         Parallel worker count for web flows (default: 1)
-  --timeout <ms>        Per-flow timeout in milliseconds (default: 30000)
+  --timeout <ms>        Default timeout for actions and assertions, in
+                        milliseconds (default: 30000)
   --video <mode>        Record video: on | off | retain-on-failure (default:
                         "off")
   --trace <mode>        Record Playwright trace: on | off | retain-on-failure
@@ -147,7 +148,7 @@ Options:
   --har-content <mode>  HAR response bodies: omit | full (full uses more memory)
                         (default: "omit")
   --output-dir <path>   Directory for run artifacts (videos, traces, HAR)
-                        (default: "qawolf-output")
+                        (default: ".qawolf/output")
   --junit [path]        Write a JUnit XML report (default:
                         <output-dir>/junit-report.xml)
   --headed              Show the browser window instead of headless (default:

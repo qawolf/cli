@@ -7,6 +7,7 @@ import {
   makeUniformDeps,
 } from "./web/createWebLaunchContext.fixtures.js";
 import { runWebFlow } from "./runWebFlow.js";
+import { _resetInitCache } from "./initFlowRuntime.js";
 import {
   baseOptions,
   fixturePath,
@@ -14,10 +15,38 @@ import {
 } from "./runWebFlow.fixtures.js";
 
 afterEach(() => {
+  // The expect-timeout readback test configures a process-global on
+  // @qawolf/flows; clear the init cache so it does not leak into later tests.
+  _resetInitCache();
   mock.restore();
 });
 
+/** Reads back the expect timeout configured on @qawolf/flows. */
+async function readConfiguredExpectTimeout(): Promise<number> {
+  const idxUrl = import.meta.resolve("@qawolf/flows");
+  const attrsUrl = new URL("./web/expect/attributes.js", idxUrl).href;
+  const { getWebExpectAttributes } = (await import(attrsUrl)) as {
+    getWebExpectAttributes: () => { defaultExpectTimeoutMs: number };
+  };
+  return getWebExpectAttributes().defaultExpectTimeoutMs;
+}
+
 describe("runWebFlow", () => {
+  it("should configure the @qawolf/flows expect timeout from options.timeout", async () => {
+    // initFlowRuntime memoizes per flow directory and configures a
+    // process-global on @qawolf/flows. Other runner tests share this
+    // directory, so clear the cache to force a fresh configure here.
+    _resetInitCache();
+
+    await runWebFlow({
+      deps: makeWebDeps(),
+      options: { ...baseOptions, timeout: 7_777 },
+      flowPath: fixturePath("pass"),
+    });
+
+    expect(await readConfiguredExpectTimeout()).toBe(7_777);
+  });
+
   it("should return passed: true when the flow succeeds", async () => {
     const result = await runWebFlow({
       deps: makeWebDeps(),
