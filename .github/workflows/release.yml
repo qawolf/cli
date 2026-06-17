@@ -33,6 +33,16 @@ jobs:
 
       - run: bun run build
 
+      # Mint a short-lived token for the qa-wolf-ops App so the changesets action can
+      # open the "Version Packages" PR. The default GITHUB_TOKEN cannot create PRs (org
+      # policy), and PRs it opens would not trigger CI; the App token does both.
+      - name: Generate qa-wolf-ops token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.QA_WOLF_OPS_CLIENT_ID }}
+          private-key: ${{ secrets.QA_WOLF_OPS_PRIVATE_KEY }}
+
       - name: Create Release PR or Publish
         id: changesets
         uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1.8.0
@@ -40,7 +50,7 @@ jobs:
           version: bun run version-packages
           publish: bunx changeset publish
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
 
