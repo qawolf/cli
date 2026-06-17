@@ -1,5 +1,15 @@
 # @qawolf/cli
 
+## 1.0.1
+
+### Patch Changes
+
+- 99e891c: Change the default `flows run` output directory from `qawolf-output` to `.qawolf/output`, so run artifacts (videos, traces, HAR) land under the `.qawolf/` directory that `qawolf init` gitignores. Pass `--output-dir` to override.
+- f58d9cd: Save HAR and trace artifacts reliably from `flows run`. HAR (and video) could be silently dropped because contexts and browsers were closed concurrently, racing Playwright's artifact flush; contexts now close first. The `--trace` flag is now wired end-to-end and writes a Playwright trace to `<output-dir>/trace/<flow>.zip`, honoring `on`, `off`, and `retain-on-failure`.
+- 3b4fdb7: Normalize the `bin` entry to `dist/cli.js` so npm no longer rewrites it (with a publish warning) when publishing.
+- 238d11a: Round-trip environment variables whose keys are not POSIX shell identifiers (e.g. OTP URIs keyed by email) when running flows locally, instead of failing or dropping them.
+- 51e8fc3: Wire `flows run --timeout` into the web flow expect timeout. Previously the flag only set Playwright's per-action timeout, so assertion failures still waited the hardcoded 30s default; it now applies to actions and assertions alike.
+
 ## 1.0.0
 
 ### Major Changes
