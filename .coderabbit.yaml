@@ -1,0 +1,102 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit settings for @qawolf/cli. This file takes precedence over the
+# dashboard UI. Coding conventions live in the repo (AGENTS.md, CLAUDE.md, and
+# .claude/rules/); the path instructions below route CodeRabbit to them.
+
+tone_instructions: >-
+  Be professional, precise, and concise. Anchor every comment to a specific
+  file and line, state the concrete impact, and propose a fix. Skip filler
+  praise. If you are not confident a finding is real, say so or leave it out.
+
+reviews:
+  # Assertive surfaces more; tone_instructions keeps it terse.
+  profile: assertive
+
+  # The PR template owns the PR body; allow a summary only in the walkthrough.
+  high_level_summary: false
+  high_level_summary_in_walkthrough: true
+
+  # Keep the walkthrough expanded; drop the changed-files table.
+  collapse_walkthrough: false
+  changed_files_summary: false
+
+  # Comment-only reviews; never block with Request Changes.
+  request_changes_workflow: false
+
+  # Keep output technical — no poems or fortunes.
+  poem: false
+  in_progress_fortune: false
+
+  # dist/ is build output and must not be reviewed (AGENTS.md "Boundaries").
+  path_filters:
+    - "!dist/**"
+
+  path_instructions:
+    - path: "**/*"
+      instructions: >-
+        Review for code quality and adherence to this repository's
+        conventions. Before reviewing, read these if present (skip silently if
+        a file does not exist):
+
+
+        1. AGENTS.md and CLAUDE.md — project layout and the four-layer
+        architecture (core / shell / domains / commands) with its import rules.
+
+        2. .claude/rules/ — codified rules with examples (domain structure,
+        commit conventions, TypeScript, testing, code style).
+
+
+        Do not invent rules beyond these sources.
+
+  auto_review:
+    # No head-branch-name filter exists, so skip changeset release PRs by their
+    # deterministic title. Those only bump the version and CHANGELOG.
+    ignore_title_keywords:
+      - "Version Packages"
+
+  # Flag low-quality / AI-slop PRs with a label for triage; don't block.
+  slop_detection:
+    label: coderabbit-potential-slop
+
+  finishing_touches:
+    # Generated docstrings conflict with our names-over-comments style; unit
+    # test generation stays enabled.
+    docstrings:
+      enabled: false
+
+  pre_merge_checks:
+    # Names over comments; no docstring-coverage target.
+    docstrings:
+      mode: "off"
+    description:
+      mode: "warning"
+    title:
+      mode: "warning"
+      requirements: >-
+        Titles follow Conventional Commits: `type(scope): description`.
+
+
+        Rules:
+
+        - type is one of: feat, fix, build, chore, docs, refactor, test.
+
+        - scope is optional; when present, prefer one of: scaffold, auth,
+        flows, runs, diff, pr, config, cli, lib, clients, runner.
+
+        - Imperative mood in the description ("add", "fix", "remove"), not past
+        tense ("added") or gerund ("adding").
+
+        - The description must be specific and self-contained. Reject vague
+        titles like "Fix bug", "Update code", "Address feedback", "WIP".
+
+        - Keep the subject under 72 characters and use no trailing punctuation.
+
+chat:
+  art: false
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    # Defaults already scan CLAUDE.md and AGENTS.md; add the codified rules.
+    filePatterns:
+      - ".claude/rules/**"
