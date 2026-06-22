@@ -98,4 +98,18 @@ describe("allPinnedResolved", () => {
 
     expect(allPinnedResolved(dir, fs)).toBe(false);
   });
+
+  it("returns true when only the Windows .bin/playwright.cmd shim exists", () => {
+    const fs = makeMemoryFs();
+    for (const { name, version } of pinnedPackages) {
+      seedPackage(fs, name, version);
+    }
+    fs.mkdirSync(join(dir, "node_modules", ".bin"), { recursive: true });
+    fs.writeFileSync(
+      join(dir, "node_modules", ".bin", "playwright.cmd"),
+      "@echo off",
+    );
+
+    expect(allPinnedResolved(dir, fs)).toBe(true);
+  });
 });

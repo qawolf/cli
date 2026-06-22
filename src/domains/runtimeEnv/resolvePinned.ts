@@ -35,7 +35,13 @@ export function readInstalledVersion(
  * and installBrowserList).
  */
 export function allPinnedResolved(dir: string, fs: Fs): boolean {
-  if (!fs.existsSync(join(dir, "node_modules", ".bin", "playwright"))) {
+  // npm/bun create an extension-less POSIX shim and a .cmd wrapper on Windows;
+  // either one satisfies resolvePlaywrightCli, so accept both names.
+  const binDir = join(dir, "node_modules", ".bin");
+  const hasPlaywrightShim =
+    fs.existsSync(join(binDir, "playwright")) ||
+    fs.existsSync(join(binDir, "playwright.cmd"));
+  if (!hasPlaywrightShim) {
     return false;
   }
   return pinnedPackages.every(

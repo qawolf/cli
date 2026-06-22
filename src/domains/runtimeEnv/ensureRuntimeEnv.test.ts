@@ -86,7 +86,12 @@ describe("ensureRuntimeEnv", () => {
 
   it("installs managed env and returns installed:true when no resolved dir exists", async () => {
     const fs = makeMemoryFs();
-    const { install, wasCalled } = makeNoopInstall();
+    let called = false;
+    // Fake install materializes the managed dir so the post-install check passes.
+    const install = async (targetDir: string): Promise<void> => {
+      called = true;
+      seedFullEnv(fs, targetDir);
+    };
 
     const result = await ensureRuntimeEnv(
       {},
@@ -98,7 +103,29 @@ describe("ensureRuntimeEnv", () => {
       source: "managed",
       installed: true,
     });
-    expect(wasCalled()).toBe(true);
+    expect(called).toBe(true);
+  });
+
+  it("throws when install does not materialize the managed deps", async () => {
+    const fs = makeMemoryFs();
+    // Install resolves but leaves the managed dir incomplete.
+    const { install } = makeNoopInstall();
+
+    let caughtError: unknown;
+    try {
+      await ensureRuntimeEnv(
+        {},
+        { fs, install, resolveManagedDir: () => managedDir },
+      );
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeInstanceOf(Error);
+    expect((caughtError as Error).message).toContain(
+      "incomplete after install",
+    );
+    expect((caughtError as Error).message).toContain(managedDir);
   });
 
   it("returns installed:false when managed env is already complete", async () => {

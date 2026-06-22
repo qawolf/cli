@@ -4,12 +4,26 @@ import { join } from "node:path";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { installPinned } from "./installPinned.js";
+import { pinnedPackages } from "./pinnedPackages.js";
 
 const targetDir = "/runtime/env/abc123";
 const tempDir = `${targetDir}.installing.${process.pid}`;
 
 function makeSpawnInstall(exitCode: number, stderr = "") {
   return async (_cwd: string) => ({ exitCode, stderr });
+}
+
+// Seeds a dir so allPinnedResolved returns true: every pinned package at its
+// exact version plus the .bin/playwright shim.
+function seedFullEnv(fs: ReturnType<typeof makeMemoryFs>, dir: string): void {
+  for (const { name, version } of pinnedPackages) {
+    const pkgDir = join(dir, "node_modules", ...name.split("/"));
+    fs.mkdirSync(pkgDir, { recursive: true });
+    fs.writeFileSync(join(pkgDir, "package.json"), JSON.stringify({ version }));
+  }
+  const binDir = join(dir, "node_modules", ".bin");
+  fs.mkdirSync(binDir, { recursive: true });
+  fs.writeFileSync(join(binDir, "playwright"), "#!/bin/sh");
 }
 
 describe("installPinned", () => {
@@ -49,12 +63,10 @@ describe("installPinned", () => {
     expect(fs.existsSync(targetDir)).toBe(false);
   });
 
-  it("short-circuits without calling spawnInstall when .bin/playwright exists", async () => {
+  it("short-circuits without calling spawnInstall when target is fully resolved", async () => {
     const fs = makeMemoryFs();
-    // Simulate a previously completed install
-    const binDir = join(targetDir, "node_modules", ".bin");
-    fs.mkdirSync(binDir, { recursive: true });
-    fs.writeFileSync(join(binDir, "playwright"), "#!/bin/sh");
+    // Simulate a previously completed install with all pinned versions present
+    seedFullEnv(fs, targetDir);
 
     let spawnCalled = false;
     await installPinned(targetDir, {

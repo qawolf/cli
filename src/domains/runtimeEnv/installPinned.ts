@@ -1,9 +1,8 @@
-import { join } from "node:path";
-
 import { type Fs, makeDefaultFs } from "~/shell/fs.js";
 import { spawn as nodeSpawn } from "~/shell/spawn.js";
 
 import { scaffoldManagedEnv } from "./managedEnvDir.js";
+import { allPinnedResolved } from "./resolvePinned.js";
 import { shimFlowsDeps } from "./shimDeps.js";
 
 type SpawnInstallResult = { exitCode: number; stderr: string };
@@ -33,9 +32,7 @@ export async function installPinned(
   },
 ): Promise<void> {
   // Short-circuit: another process or a previous run already completed the install.
-  if (
-    deps.fs.existsSync(join(targetDir, "node_modules", ".bin", "playwright"))
-  ) {
+  if (allPinnedResolved(targetDir, deps.fs)) {
     return;
   }
 
@@ -61,9 +58,7 @@ export async function installPinned(
   try {
     await deps.fs.rename(tempDir, targetDir);
   } catch (err) {
-    const anotherShardWon = deps.fs.existsSync(
-      join(targetDir, "node_modules", ".bin", "playwright"),
-    );
+    const anotherShardWon = allPinnedResolved(targetDir, deps.fs);
     if (anotherShardWon) {
       await deps.fs.rm(tempDir, { recursive: true, force: true });
       return;

@@ -62,5 +62,10 @@ export async function ensureRuntimeEnv(
   }
 
   await install(managed);
+  if (!allPinnedResolved(managed, fs)) {
+    throw new Error(
+      `Managed runtime is incomplete after install at ${managed}.`,
+    );
+  }
   return { depsRoot: managed, source: "managed", installed: true };
 }
