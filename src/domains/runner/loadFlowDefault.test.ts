@@ -73,9 +73,9 @@ describe("loadFlowDefault", () => {
         path.join(tmp, "flow.mjs"),
         "export default { name: 'test-flow' };\n",
       );
-      const result = await loadFlowDefault<{ name: string }>(
-        path.join(tmp, "flow.mjs"),
-      );
+      const result = await loadFlowDefault<{ name: string }>({
+        flowPath: path.join(tmp, "flow.mjs"),
+      });
       expect(result).toEqual({ name: "test-flow" });
     } finally {
       await rm(tmp, { recursive: true });
@@ -88,7 +88,9 @@ describe("loadFlowDefault", () => {
       await writeFile(path.join(tmp, "flow.mjs"), "export const foo = 1;\n");
       let caught: unknown;
       try {
-        await loadFlowDefault<unknown>(path.join(tmp, "flow.mjs"));
+        await loadFlowDefault<unknown>({
+          flowPath: path.join(tmp, "flow.mjs"),
+        });
       } catch (e) {
         caught = e;
       }
@@ -137,7 +139,7 @@ describe("loadFlowDefault (compiled binary mode)", () => {
         flowPath,
         `import {} from '@qawolf/flows';\nexport default { ok: true };\n`,
       );
-      const result = await loadFlowDefault<{ ok: boolean }>(flowPath);
+      const result = await loadFlowDefault<{ ok: boolean }>({ flowPath });
       expect(result).toEqual({ ok: true });
     } finally {
       await rm(tmp, { recursive: true });
@@ -153,7 +155,7 @@ describe("loadFlowDefault (compiled binary mode)", () => {
         flowPath,
         `import {} from '@qawolf/flows/helpers';\nexport default { sub: true };\n`,
       );
-      const result = await loadFlowDefault<{ sub: boolean }>(flowPath);
+      const result = await loadFlowDefault<{ sub: boolean }>({ flowPath });
       expect(result).toEqual({ sub: true });
     } finally {
       await rm(tmp, { recursive: true });
@@ -169,7 +171,7 @@ describe("loadFlowDefault (compiled binary mode)", () => {
         flowPath,
         `import {} from '@qawolf/flows';\nexport default 42;\n`,
       );
-      const result = await loadFlowDefault<number>(flowPath);
+      const result = await loadFlowDefault<number>({ flowPath });
       expect(result).toBe(42);
     } finally {
       await rm(tmp, { recursive: true });
@@ -182,10 +184,47 @@ describe("loadFlowDefault (compiled binary mode)", () => {
     try {
       const flowPath = path.join(flowsDir2, "flow.mjs");
       await writeFile(flowPath, `export default { plain: true };\n`);
-      const result = await loadFlowDefault<{ plain: boolean }>(flowPath);
+      const result = await loadFlowDefault<{ plain: boolean }>({ flowPath });
       expect(result).toEqual({ plain: true });
     } finally {
       await rm(tmp, { recursive: true });
+    }
+  });
+
+  it("uses depsRoot to resolve @qawolf/flows when provided, even without @qawolf/flows in parent dirs", async () => {
+    process.env.QAWOLF_COMPILED = "true";
+    // Create depsRoot with @qawolf/flows
+    const depsRoot = await mkdtemp(path.join(tmpdir(), "load-flow-depsroot-"));
+    // Create a separate tmpdir for the flow with no @qawolf/flows ancestor
+    const flowTmp = await mkdtemp(path.join(tmpdir(), "load-flow-isolated-"));
+    try {
+      const flowsDir = path.join(depsRoot, "node_modules", "@qawolf", "flows");
+      await mkdir(flowsDir, { recursive: true });
+      await writeFile(
+        path.join(flowsDir, "package.json"),
+        JSON.stringify({
+          exports: { ".": "./index.js" },
+        }),
+      );
+      await writeFile(
+        path.join(flowsDir, "index.js"),
+        "export const flows = {};\n",
+      );
+
+      const flowPath = path.join(flowTmp, "flow.mjs");
+      await writeFile(
+        flowPath,
+        `import {} from '@qawolf/flows';\nexport default { fromDepsRoot: true };\n`,
+      );
+
+      const result = await loadFlowDefault<{ fromDepsRoot: boolean }>({
+        flowPath,
+        depsRoot,
+      });
+      expect(result).toEqual({ fromDepsRoot: true });
+    } finally {
+      await rm(depsRoot, { recursive: true });
+      await rm(flowTmp, { recursive: true });
     }
   });
 });

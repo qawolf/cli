@@ -8,6 +8,7 @@ import { renderResults } from "~/domains/doctor/render.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
 import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
 import { expandPatterns, makePeekFlowMeta } from "~/domains/flows/expand.js";
+import { resolveDepsRootIfPresent } from "~/domains/runtimeEnv/index.js";
 import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
 import {
   type CommandContext,
@@ -39,17 +40,22 @@ export async function handleDoctor(
   const cwd = process.cwd();
   const flowFiles = await expandPatterns([], cwd, undefined, fs);
 
-  // Playwright lives in the env dir (installed by ensureFlowDeps), not in cwd.
-  // Silently fall back to cwd when no env dir is found or flows span multiple packages.
-  let envDir: string | undefined;
+  // Playwright/Appium live in the resolved runtime dir (managed env or project), not cwd.
+  let projectDir: string | undefined;
   try {
-    envDir = resolveUniqueEnvDir([...flowFiles], fs);
+    projectDir = resolveUniqueEnvDir([...flowFiles], fs);
   } catch {
-    // multiple env dirs — fall back to cwd
+    projectDir = undefined;
   }
+  const envDir = resolveDepsRootIfPresent(
+    projectDir !== undefined ? { projectDir } : {},
+    fs,
+  );
   let playwrightCliPath: string | undefined;
   try {
-    playwrightCliPath = resolvePlaywrightCli(envDir ?? cwd, process.platform);
+    playwrightCliPath = envDir
+      ? resolvePlaywrightCli(envDir, process.platform)
+      : undefined;
   } catch {
     playwrightCliPath = undefined;
   }

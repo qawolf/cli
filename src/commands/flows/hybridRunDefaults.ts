@@ -18,7 +18,7 @@ import { buildRunReporter } from "./buildRunReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
-import { ensureFlowDeps as defaultEnsureFlowDeps } from "~/domains/flows/ensureDeps.js";
+import { ensureRuntimeEnv } from "~/domains/runtimeEnv/index.js";
 import type { Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
@@ -37,7 +37,7 @@ export type HandleHybridFlowsRunDeps = {
     logger?: Logger,
   ) => Promise<string[]>;
   pullEnv: (ctx: AuthCommandContext, envId: string) => Promise<CommandResult>;
-  ensureFlowDeps: (envDir: string) => Promise<void>;
+  ensureRuntimeEnv: typeof ensureRuntimeEnv;
   configureTestkit: (dir: string) => Promise<void>;
   flowsRun: typeof defaultFlowsRun;
   runWebFlowDeps: typeof defaultRunWebFlowDeps;
@@ -48,7 +48,7 @@ function makeDefaultHybridDeps(fs: Fs): HandleHybridFlowsRunDeps {
     expandPatterns: (patterns, cwd, logger) =>
       defaultExpandPatterns(patterns, cwd, logger, fs),
     pullEnv: (ctx, envId) => handleFlowsPull(ctx, { env: envId, yes: true }),
-    ensureFlowDeps: (envDir) => defaultEnsureFlowDeps(envDir, fs),
+    ensureRuntimeEnv: (args) => ensureRuntimeEnv(args, { fs }),
     configureTestkit: defaultConfigureTestkit,
     flowsRun: defaultFlowsRun,
     runWebFlowDeps: defaultRunWebFlowDeps,
@@ -99,18 +99,27 @@ export async function handleHybridFlowsRun(
   ctx.ui.gap();
   ctx.ui.intro("flows run");
 
-  await ctx.ui.withProgress(
+  const [runtimeEnv] = await ctx.ui.withProgress(
     [
       {
         message: runnerMessages.preparingEnvironment,
-        task: () => resolvedDeps.ensureFlowDeps(envDir),
+        task: () =>
+          resolvedDeps.ensureRuntimeEnv({
+            projectDir: envDir,
+            ...(flags.deps !== undefined ? { overrideDir: flags.deps } : {}),
+          }),
       },
     ],
     () => runnerMessages.environmentReady,
   );
+  if (runtimeEnv.source === "managed") {
+    const note = runnerMessages.managedRuntimeNote(runtimeEnv.depsRoot);
+    ctx.ui.note(note, "Runtime");
+  }
   await loadEnvFile(envDir);
-  await resolvedDeps.configureTestkit(envDir);
-  const android = createAndroidDeps(envDir, ctx.signals);
+  const resolvedDir = runtimeEnv.depsRoot;
+  await resolvedDeps.configureTestkit(resolvedDir);
+  const android = createAndroidDeps(resolvedDir, ctx.signals);
 
   return resolvedDeps.flowsRun(ctx, files, flags, {
     peekFlowMeta: makePeekFlowMeta(ctx.fs),
@@ -118,15 +127,15 @@ export async function handleHybridFlowsRun(
       installBrowserList(innerCtx, browsers, {
         spawn: defaultSpawn,
         platform: process.platform,
-        playwrightCliPath: resolvePlaywrightCli(envDir, process.platform),
+        playwrightCliPath: resolvePlaywrightCli(resolvedDir, process.platform),
       }),
     runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: await resolvedDeps.runWebFlowDeps(envDir, ctx.signals),
+    runWebFlowDeps: await resolvedDeps.runWebFlowDeps(resolvedDir, ctx.signals),
     runAndroidFlow: defaultRunAndroidFlow,
     runAndroidFlowDeps: android.deps,
     bootAndroid: android.boot,
     shutdownAndroid: android.shutdown,
-    createPooledDispatch: makePooledDispatch(envDir),
+    createPooledDispatch: makePooledDispatch(resolvedDir),
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
     logger: ctx.log("runner"),

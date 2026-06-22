@@ -20,6 +20,8 @@ export function makeRunnerDeps(): RunnerDeps {
     },
     spawn: () => ({ exitCode: Promise.resolve(0), kill: () => {} }),
     signals: makeNoopSignals(),
+    // Point to the CLI project root where @qawolf/flows is installed in tests.
+    depsRoot: join(import.meta.dirname, "../../.."),
     createStorage: <T>() => ({
       run: async (_store: T, callback: () => Promise<void>) => callback(),
       getStore: () => undefined,

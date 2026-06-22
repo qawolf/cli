@@ -39,6 +39,8 @@ export type FlowsRunFlags = {
   /** `--junit` writes a JUnit XML report. Bare flag (true) uses a default path
    * under outputDir; a string is an explicit output path. */
   readonly junit?: string | boolean;
+  // --deps <dir>: use this prepared dependency directory instead of auto-resolving.
+  readonly deps?: string;
 };
 
 export type FlowsRunDeps = {
@@ -141,8 +143,7 @@ export async function dispatchFlow({
   const durationMs = deps.now() - flowStart;
   const outcome = run.passed ? "pass" : "fail";
   const attempts = run.attempts;
-  deps.logger?.info(
-    `${outcome}: ${flow.name} (${durationMs}ms, ${attempts} attempt${attempts === 1 ? "" : "s"})`,
-  );
+  const attempt = `${attempts} attempt${attempts === 1 ? "" : "s"}`;
+  deps.logger?.info(`${outcome}: ${flow.name} (${durationMs}ms, ${attempt})`);
   return { run, durationMs };
 }

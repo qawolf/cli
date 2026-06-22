@@ -15,7 +15,8 @@ afterEach(() => {
 
 const expandPatternsMock = mock<HandleHybridFlowsRunDeps["expandPatterns"]>();
 const pullEnvMock = mock<HandleHybridFlowsRunDeps["pullEnv"]>();
-const ensureFlowDepsMock = mock<(envDir: string) => Promise<void>>();
+const ensureRuntimeEnvMock =
+  mock<HandleHybridFlowsRunDeps["ensureRuntimeEnv"]>();
 const configureTestkitMock = mock<(dir: string) => Promise<void>>();
 const flowsRunMock = mock<HandleHybridFlowsRunDeps["flowsRun"]>();
 const runWebFlowDepsMock = mock<() => Promise<unknown>>();
@@ -23,7 +24,7 @@ const runWebFlowDepsMock = mock<() => Promise<unknown>>();
 const trackedMocks = [
   expandPatternsMock,
   pullEnvMock,
-  ensureFlowDepsMock,
+  ensureRuntimeEnvMock,
   configureTestkitMock,
   flowsRunMock,
   runWebFlowDepsMock,
@@ -33,7 +34,11 @@ beforeEach(() => {
   for (const m of trackedMocks) m.mockClear();
   expandPatternsMock.mockResolvedValue([]);
   pullEnvMock.mockResolvedValue(undefined);
-  ensureFlowDepsMock.mockResolvedValue(undefined);
+  ensureRuntimeEnvMock.mockResolvedValue({
+    depsRoot: "/env",
+    source: "project",
+    installed: false,
+  });
   configureTestkitMock.mockResolvedValue(undefined);
   flowsRunMock.mockResolvedValue(undefined);
   runWebFlowDepsMock.mockResolvedValue({} as unknown);
@@ -72,7 +77,7 @@ function makeDeps(): HandleHybridFlowsRunDeps {
   return {
     expandPatterns: expandPatternsMock,
     pullEnv: pullEnvMock,
-    ensureFlowDeps: ensureFlowDepsMock,
+    ensureRuntimeEnv: ensureRuntimeEnvMock,
     configureTestkit: configureTestkitMock,
     flowsRun: flowsRunMock,
     runWebFlowDeps:

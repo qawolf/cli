@@ -41,9 +41,15 @@ export async function runWebFlow({
   options: RunWebFlowOptions;
   flowPath: string;
 }): Promise<FlowRunResult> {
-  await initFlowRuntime(flowPath, { timeout: options.timeout });
+  await initFlowRuntime(flowPath, {
+    timeout: options.timeout,
+    depsRoot: deps.depsRoot,
+  });
 
-  const exported = await loadFlowDefault<WebFlowApiReturnValue>(flowPath);
+  const exported = await loadFlowDefault<WebFlowApiReturnValue>({
+    flowPath,
+    depsRoot: deps.depsRoot,
+  });
 
   const isLegacy = typeof exported === "function";
   const flowName = isLegacy

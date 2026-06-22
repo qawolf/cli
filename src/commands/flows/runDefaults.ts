@@ -15,10 +15,12 @@ import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js"
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 
 import { pluralize } from "~/core/pluralize.js";
+import { resolveUniqueEnvDir as defaultResolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
 import {
-  ensureFlowDeps as defaultEnsureFlowDeps,
-  resolveUniqueEnvDir as defaultResolveUniqueEnvDir,
-} from "~/domains/flows/ensureDeps.js";
+  ensureRuntimeEnv,
+  type EnsureRuntimeEnvArgs,
+  type EnsureRuntimeEnvResult,
+} from "~/domains/runtimeEnv/index.js";
 import type { Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
@@ -36,7 +38,9 @@ export type HandleFlowsRunDeps = {
     logger?: Logger,
   ) => Promise<string[]>;
   resolveUniqueEnvDir: (files: string[]) => string | undefined;
-  ensureFlowDeps: (envDir: string) => Promise<void>;
+  ensureRuntimeEnv: (
+    args: EnsureRuntimeEnvArgs,
+  ) => Promise<EnsureRuntimeEnvResult>;
   configureTestkit: (dir: string) => Promise<void>;
   runWebFlowDeps: typeof defaultRunWebFlowDeps;
   flowsRun: typeof defaultFlowsRun;
@@ -47,7 +51,7 @@ function makeDefaultDeps(fs: Fs): HandleFlowsRunDeps {
     expandPatterns: (patterns, cwd, logger) =>
       defaultExpandPatterns(patterns, cwd, logger, fs),
     resolveUniqueEnvDir: (files) => defaultResolveUniqueEnvDir(files, fs),
-    ensureFlowDeps: (envDir) => defaultEnsureFlowDeps(envDir, fs),
+    ensureRuntimeEnv: (args) => ensureRuntimeEnv(args, { fs }),
     configureTestkit: defaultConfigureTestkit,
     runWebFlowDeps: defaultRunWebFlowDeps,
     flowsRun: defaultFlowsRun,
@@ -77,33 +81,42 @@ export async function handleFlowsRun(
     return;
   }
 
-  let envDir: string | undefined;
+  let projectDir: string | undefined;
   try {
-    envDir = resolvedDeps.resolveUniqueEnvDir(expandedFiles);
-  } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    return { error, exitCode: 2 };
+    projectDir = resolvedDeps.resolveUniqueEnvDir(expandedFiles);
+  } catch {
+    // Flows span multiple packages — fall back to the managed runtime dir.
+    projectDir = undefined;
   }
 
   ctx.ui.gap();
   ctx.ui.intro("flows run");
 
-  if (envDir) {
-    const dir = envDir;
-    await ctx.ui.withProgress(
-      [
-        {
-          message: runnerMessages.preparingEnvironment,
-          task: () => resolvedDeps.ensureFlowDeps(dir),
-        },
-      ],
-      () => runnerMessages.environmentReady,
+  const [runtimeEnv] = await ctx.ui.withProgress(
+    [
+      {
+        message: runnerMessages.preparingEnvironment,
+        task: () =>
+          resolvedDeps.ensureRuntimeEnv({
+            ...(projectDir !== undefined ? { projectDir } : {}),
+            ...(flags.deps !== undefined ? { overrideDir: flags.deps } : {}),
+          }),
+      },
+    ],
+    () => runnerMessages.environmentReady,
+  );
+
+  if (runtimeEnv.source === "managed") {
+    ctx.ui.note(
+      runnerMessages.managedRuntimeNote(runtimeEnv.depsRoot),
+      "Runtime",
     );
-    await loadEnvFile(dir);
   }
 
-  // Resolve playwright from the env dir; falls back to CWD for local flows.
-  const resolvedDir = envDir ?? cwd;
+  // Load the user's project .env from the project dir (NOT the deps dir).
+  await loadEnvFile(projectDir ?? cwd);
+
+  const resolvedDir = runtimeEnv.depsRoot;
 
   await resolvedDeps.configureTestkit(resolvedDir);
   const android = createAndroidDeps(resolvedDir, ctx.signals);

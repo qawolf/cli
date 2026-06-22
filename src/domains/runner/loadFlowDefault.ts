@@ -50,10 +50,18 @@ export function rewriteFlowImports(
     );
 }
 
+type LoadFlowDefaultArgs = {
+  flowPath: string;
+  // When set, resolve @qawolf/flows from this dir instead of walking up from the flow file.
+  depsRoot?: string;
+  fs?: Fs;
+};
+
 export async function loadFlowDefault<T>(
-  flowPath: string,
-  fs: Fs = makeDefaultFs(),
+  args: LoadFlowDefaultArgs,
 ): Promise<T> {
+  const { flowPath, depsRoot, fs = makeDefaultFs() } = args;
+
   // process.env.QAWOLF_COMPILED is injected via --define at binary build time
   // (see build:binary in package.json). Undefined in bun run / bun test dev mode.
   const isCompiledBinary = process.env.QAWOLF_COMPILED === "true";
@@ -75,7 +83,7 @@ export async function loadFlowDefault<T>(
   // package traversal bug. Transform @qawolf/flows/* imports to absolute file://
   // paths so Bun loads them directly without any resolution step.
   const content = await fs.readFile(flowPath);
-  const envDir = findFlowsEnvDir(flowPath, fs);
+  const envDir = depsRoot ?? findFlowsEnvDir(flowPath, fs);
 
   const transformed = envDir
     ? rewriteFlowImports(
@@ -96,7 +104,9 @@ export async function loadFlowDefault<T>(
     return exported;
   }
 
-  const annotated = `${transformed}\n//# sourceURL=${pathToFileURL(flowPath).href}`;
+  const annotated = `${transformed}\n//# sourceURL=${
+    pathToFileURL(flowPath).href
+  }`;
   const dataUri = `data:text/javascript,${encodeURIComponent(annotated)}`;
   const mod = (await import(dataUri)) as Record<string, unknown>;
   const exported = mod["default"] as T | undefined;

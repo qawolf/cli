@@ -16,6 +16,7 @@ function makeDeps(): RunnerDeps {
       kill: () => {},
     }),
     signals: makeNoopSignals(),
+    depsRoot: "/tmp",
     createStorage: <T>() => ({
       run: async (_store: T, callback: () => Promise<void>) => callback(),
       getStore: () => undefined,

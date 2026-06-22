@@ -155,6 +155,8 @@ Options:
                         false)
   --env <env>           Pull and run a flow from this environment (UUID or slug)
                         if not cached locally
+  --deps <dir>          Use this prepared dependency directory instead of
+                        auto-installing the runtime
   -h, --help            display help for command
 
 Examples:

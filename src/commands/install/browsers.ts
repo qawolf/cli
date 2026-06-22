@@ -3,8 +3,8 @@ import {
   makePeekFlowMeta,
 } from "~/domains/flows/expand.js";
 import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
+import { ensureRuntimeEnv } from "~/domains/runtimeEnv/index.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
-import { errorMessage } from "~/core/errors.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { resolvePlaywrightCli } from "~/shell/playwright.js";
@@ -17,20 +17,29 @@ export async function handleInstallBrowsers(
 ): Promise<CommandResult> {
   const cwd = process.cwd();
   const { fs } = ctx;
-  let resolvedDir = envDir;
-  if (!resolvedDir) {
+
+  let depsRoot: string;
+  if (envDir !== undefined) {
+    depsRoot = envDir;
+  } else {
     const files = await defaultExpandPatterns(
       buildPatternArgs(pattern),
       cwd,
       undefined,
       fs,
     );
+    let projectDir: string | undefined;
     try {
-      resolvedDir = resolveUniqueEnvDir(files, fs) ?? cwd;
-    } catch (err: unknown) {
-      return { error: errorMessage(err), exitCode: 2 };
+      projectDir = resolveUniqueEnvDir(files, fs);
+    } catch {
+      projectDir = undefined;
     }
+    ({ depsRoot } = await ensureRuntimeEnv(
+      projectDir !== undefined ? { projectDir } : {},
+      { fs },
+    ));
   }
+
   return installBrowsers(ctx, pattern, {
     cwd,
     spawn: defaultSpawn,
@@ -38,6 +47,6 @@ export async function handleInstallBrowsers(
     expandPatterns: (patterns, dir) =>
       defaultExpandPatterns(patterns, dir ?? cwd, undefined, fs),
     peekFlowMeta: makePeekFlowMeta(fs),
-    playwrightCliPath: resolvePlaywrightCli(resolvedDir, process.platform),
+    playwrightCliPath: resolvePlaywrightCli(depsRoot, process.platform),
   });
 }

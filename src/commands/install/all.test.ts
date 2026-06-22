@@ -1,37 +1,32 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+
+import { type EnsureRuntimeEnvResult } from "~/domains/runtimeEnv/index.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
+
 import { installAll, type InstallAllDeps } from "./all.js";
+
+type FlowMeta = { name: string | undefined; target: string | undefined };
+
+type SubInstallerFn = (
+  ctx: CommandContext,
+  pattern: string | undefined,
+  envDir: string,
+) => Promise<CommandResult>;
 
 const expandPatternsMock =
   mock<(patterns: string[], cwd?: string) => Promise<string[]>>();
-const peekFlowMetaMock =
-  mock<
-    (
-      filePath: string,
-    ) => Promise<{ name: string | undefined; target: string | undefined }>
-  >();
+const peekFlowMetaMock = mock<(filePath: string) => Promise<FlowMeta>>();
 const resolveUniqueEnvDirMock = mock<(files: string[]) => string | undefined>();
-const installBrowsersMock =
-  mock<
-    (
-      ctx: CommandContext,
-      pattern: string | undefined,
-      envDir: string,
-    ) => Promise<CommandResult>
-  >();
-const installAndroidMock =
-  mock<
-    (
-      ctx: CommandContext,
-      pattern: string | undefined,
-      envDir: string,
-    ) => Promise<CommandResult>
-  >();
+const ensureRuntimeEnvMock =
+  mock<(args: { projectDir?: string }) => Promise<EnsureRuntimeEnvResult>>();
+const installBrowsersMock = mock<SubInstallerFn>();
+const installAndroidMock = mock<SubInstallerFn>();
 
 const trackedMocks = [
   expandPatternsMock,
   peekFlowMetaMock,
   resolveUniqueEnvDirMock,
+  ensureRuntimeEnvMock,
   installBrowsersMock,
   installAndroidMock,
 ];
@@ -64,15 +59,21 @@ function makeDeps(): InstallAllDeps {
     expandPatterns: expandPatternsMock,
     peekFlowMeta: peekFlowMetaMock,
     resolveUniqueEnvDir: resolveUniqueEnvDirMock,
+    ensureRuntimeEnv: ensureRuntimeEnvMock,
     installBrowsers: installBrowsersMock,
     installAndroid: installAndroidMock,
   };
+}
+
+function mockEnvResult(depsRoot = "/env"): EnsureRuntimeEnvResult {
+  return { depsRoot, source: "project", installed: false };
 }
 
 beforeEach(() => {
   expandPatternsMock.mockResolvedValue([]);
   peekFlowMetaMock.mockResolvedValue({ name: undefined, target: undefined });
   resolveUniqueEnvDirMock.mockReturnValue(undefined);
+  ensureRuntimeEnvMock.mockResolvedValue(mockEnvResult());
   installBrowsersMock.mockResolvedValue(undefined);
   installAndroidMock.mockResolvedValue(undefined);
 });
@@ -187,29 +188,23 @@ describe("installAll", () => {
     expect(result).toEqual({ error: "Could not find Playwright" });
   });
 
-  it("should forward pattern and resolved envDir to both sub-handlers", async () => {
+  it("should forward pattern and depsRoot from ensureRuntimeEnv to both sub-handlers", async () => {
     expandPatternsMock.mockResolvedValue(["web.flow.ts", "android.flow.ts"]);
     peekFlowMetaMock
       .mockResolvedValueOnce({ name: undefined, target: "Web - Chrome" })
       .mockResolvedValueOnce({ name: undefined, target: "Android - Pixel 9" });
-    resolveUniqueEnvDirMock.mockReturnValue("/project/.qawolf/staging");
+    resolveUniqueEnvDirMock.mockReturnValue("/prj");
+    ensureRuntimeEnvMock.mockResolvedValue(mockEnvResult("/renv"));
     const { ctx } = makeCtx();
 
     await installAll(ctx, "src/**", makeDeps());
 
-    expect(installBrowsersMock).toHaveBeenCalledWith(
-      ctx,
-      "src/**",
-      "/project/.qawolf/staging",
-    );
-    expect(installAndroidMock).toHaveBeenCalledWith(
-      ctx,
-      "src/**",
-      "/project/.qawolf/staging",
-    );
+    expect(ensureRuntimeEnvMock).toHaveBeenCalledWith({ projectDir: "/prj" });
+    expect(installBrowsersMock).toHaveBeenCalledWith(ctx, "src/**", "/renv");
+    expect(installAndroidMock).toHaveBeenCalledWith(ctx, "src/**", "/renv");
   });
 
-  it("should fall back to cwd when no envDir can be resolved from flow files", async () => {
+  it("should use managed env when no projectDir can be resolved from flow files", async () => {
     expandPatternsMock.mockResolvedValue(["web.flow.ts"]);
     peekFlowMetaMock.mockResolvedValue({
       name: undefined,
@@ -220,14 +215,11 @@ describe("installAll", () => {
 
     await installAll(ctx, undefined, makeDeps());
 
-    expect(installBrowsersMock).toHaveBeenCalledWith(
-      ctx,
-      undefined,
-      "/project",
-    );
+    expect(ensureRuntimeEnvMock).toHaveBeenCalledWith({});
+    expect(installBrowsersMock).toHaveBeenCalledWith(ctx, undefined, "/env");
   });
 
-  it("should return exitCode 2 when flow files span multiple packages", async () => {
+  it("should fall back to managed env when flow files span multiple packages", async () => {
     expandPatternsMock.mockResolvedValue([
       ".qawolf/staging/a.flow.ts",
       ".qawolf/prod/b.flow.ts",
@@ -239,11 +231,9 @@ describe("installAll", () => {
 
     const result = await installAll(ctx, undefined, makeDeps());
 
-    expect(result).toEqual({
-      error: "Pattern matches flows from 2 packages",
-      exitCode: 2,
-    });
+    expect(ensureRuntimeEnvMock).toHaveBeenCalledWith({});
     expect(installBrowsersMock).not.toHaveBeenCalled();
     expect(installAndroidMock).not.toHaveBeenCalled();
+    expect(result).toBeUndefined();
   });
 });

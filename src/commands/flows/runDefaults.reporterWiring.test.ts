@@ -61,7 +61,11 @@ function makeDeps(
   return {
     expandPatterns: async () => ["/fake/flow.flow.ts"],
     resolveUniqueEnvDir: () => undefined,
-    ensureFlowDeps: async () => {},
+    ensureRuntimeEnv: async () => ({
+      depsRoot: "/env",
+      source: "project" as const,
+      installed: false,
+    }),
     configureTestkit: async () => {},
     flowsRun: flowsRun as HandleFlowsRunDeps["flowsRun"],
     runWebFlowDeps: (async () =>

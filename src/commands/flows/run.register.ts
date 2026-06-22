@@ -99,6 +99,10 @@ export function registerFlowsRunCommand(
       "--env <env>",
       "Pull and run a flow from this environment (UUID or slug) if not cached locally",
     )
+    .option(
+      "--deps <dir>",
+      "Use this prepared dependency directory instead of auto-installing the runtime",
+    )
     .addHelpText("after", runExamples)
     .action(
       (

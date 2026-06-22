@@ -59,7 +59,7 @@ export function createAndroidDeps(
   let serverStarted = false;
 
   const deps: RunAndroidFlowDeps = {
-    ...createRunnerDeps(signals),
+    ...createRunnerDeps(signals, envDir),
     appiumServer: serverHandle,
     emulatorPool: pool,
     createSession,

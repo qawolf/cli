@@ -29,4 +29,6 @@ export const runnerMessages = {
   retrying: (attempt: number, maxAttempts: number) =>
     `Retrying (${attempt} of ${maxAttempts})...`,
   screenshot: (path: string) => `Screenshot: ${path}`,
+  managedRuntimeNote: (dir: string) =>
+    `QA Wolf installed its runtime in a managed location (your project is untouched):\n  ${dir}\nOverride with --deps <dir>.`,
 } as const;
