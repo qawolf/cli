@@ -7,6 +7,7 @@ import type {
 } from "~/domains/runner/runInternals.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import { handleFlowsRun, type HandleFlowsRunDeps } from "./runDefaults.js";
 
 // Integration test: proves handleFlowsRun wires the reporter all the way from
@@ -41,6 +42,7 @@ function makeCtx(): CommandContext {
     outputMode: "human",
     isInteractive: false,
     signals: noopSignals,
+    fs: makeMemoryFs(),
     log: () => makeNoopLogger(),
     ui: {
       ...makeFakeUI("human"),
@@ -60,8 +62,7 @@ function makeDeps(
 ): HandleFlowsRunDeps {
   return {
     expandPatterns: async () => ["/fake/flow.flow.ts"],
-    resolveUniqueEnvDir: () => undefined,
-    ensureRuntimeEnv: async () => ({
+    resolveDepsRoot: async () => ({
       depsRoot: "/env",
       source: "project" as const,
       installed: false,

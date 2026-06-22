@@ -45,7 +45,7 @@ export function makeDeps(overrides: DepsOverrides): InstallBrowsersDeps {
         target: metaByFile[file]?.target,
       }),
     ),
-    playwrightCliPath: fakeCli,
+    resolvePlaywrightCliPath: async () => fakeCli,
   };
 }
 

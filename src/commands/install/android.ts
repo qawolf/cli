@@ -4,9 +4,7 @@ import {
   expandPatterns as defaultExpandPatterns,
   makePeekFlowMeta,
 } from "~/domains/flows/expand.js";
-import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
-import { ensureRuntimeEnv } from "~/domains/runtimeEnv/index.js";
-import { buildPatternArgs } from "~/core/patternArgs.js";
+import { resolveDepsRoot as resolveDepsRootHelper } from "~/commands/resolveDepsRoot.js";
 import { installMessages } from "~/core/messages/index.js";
 import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
@@ -25,29 +23,6 @@ export async function handleInstallAndroid(
   }
 
   const { fs } = ctx;
-
-  let depsRoot: string;
-  if (envDir !== undefined) {
-    depsRoot = envDir;
-  } else {
-    const cwd = process.cwd();
-    const files = await defaultExpandPatterns(
-      buildPatternArgs(pattern),
-      cwd,
-      undefined,
-      fs,
-    );
-    let projectDir: string | undefined;
-    try {
-      projectDir = resolveUniqueEnvDir(files, fs);
-    } catch {
-      projectDir = undefined;
-    }
-    ({ depsRoot } = await ensureRuntimeEnv(
-      projectDir !== undefined ? { projectDir } : {},
-      { fs },
-    ));
-  }
 
   return installAndroid(ctx, pattern, {
     cwd: process.cwd(),
@@ -72,7 +47,8 @@ export async function handleInstallAndroid(
     expandPatterns: (patterns, cwd) =>
       defaultExpandPatterns(patterns, cwd ?? process.cwd(), undefined, fs),
     peekFlowMeta: makePeekFlowMeta(fs),
-    resolveEnvDir: () => depsRoot,
+    resolveDepsRoot: async (files) =>
+      envDir ?? (await resolveDepsRootHelper({ files, fs })).depsRoot,
     resolveAppiumBin,
   });
 }

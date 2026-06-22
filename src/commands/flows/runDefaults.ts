@@ -15,12 +15,12 @@ import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js"
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 
 import { pluralize } from "~/core/pluralize.js";
-import { resolveUniqueEnvDir as defaultResolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
+import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
+import { type EnsureRuntimeEnvResult } from "~/domains/runtimeEnv/index.js";
 import {
-  ensureRuntimeEnv,
-  type EnsureRuntimeEnvArgs,
-  type EnsureRuntimeEnvResult,
-} from "~/domains/runtimeEnv/index.js";
+  resolveDepsRoot,
+  type ResolveDepsRootArgs,
+} from "~/commands/resolveDepsRoot.js";
 import type { Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
@@ -37,9 +37,8 @@ export type HandleFlowsRunDeps = {
     cwd: string,
     logger?: Logger,
   ) => Promise<string[]>;
-  resolveUniqueEnvDir: (files: string[]) => string | undefined;
-  ensureRuntimeEnv: (
-    args: EnsureRuntimeEnvArgs,
+  resolveDepsRoot: (
+    args: Omit<ResolveDepsRootArgs, "fs">,
   ) => Promise<EnsureRuntimeEnvResult>;
   configureTestkit: (dir: string) => Promise<void>;
   runWebFlowDeps: typeof defaultRunWebFlowDeps;
@@ -50,8 +49,7 @@ function makeDefaultDeps(fs: Fs): HandleFlowsRunDeps {
   return {
     expandPatterns: (patterns, cwd, logger) =>
       defaultExpandPatterns(patterns, cwd, logger, fs),
-    resolveUniqueEnvDir: (files) => defaultResolveUniqueEnvDir(files, fs),
-    ensureRuntimeEnv: (args) => ensureRuntimeEnv(args, { fs }),
+    resolveDepsRoot: (args) => resolveDepsRoot({ ...args, fs }),
     configureTestkit: defaultConfigureTestkit,
     runWebFlowDeps: defaultRunWebFlowDeps,
     flowsRun: defaultFlowsRun,
@@ -81,14 +79,6 @@ export async function handleFlowsRun(
     return;
   }
 
-  let projectDir: string | undefined;
-  try {
-    projectDir = resolvedDeps.resolveUniqueEnvDir(expandedFiles);
-  } catch {
-    // Flows span multiple packages — fall back to the managed runtime dir.
-    projectDir = undefined;
-  }
-
   ctx.ui.gap();
   ctx.ui.intro("flows run");
 
@@ -97,8 +87,8 @@ export async function handleFlowsRun(
       {
         message: runnerMessages.preparingEnvironment,
         task: () =>
-          resolvedDeps.ensureRuntimeEnv({
-            ...(projectDir !== undefined ? { projectDir } : {}),
+          resolvedDeps.resolveDepsRoot({
+            files: expandedFiles,
             ...(flags.deps !== undefined ? { overrideDir: flags.deps } : {}),
           }),
       },
@@ -114,6 +104,12 @@ export async function handleFlowsRun(
   }
 
   // Load the user's project .env from the project dir (NOT the deps dir).
+  let projectDir: string | undefined;
+  try {
+    projectDir = resolveUniqueEnvDir(expandedFiles, ctx.fs);
+  } catch {
+    projectDir = undefined;
+  }
   await loadEnvFile(projectDir ?? cwd);
 
   const resolvedDir = runtimeEnv.depsRoot;

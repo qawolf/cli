@@ -15,13 +15,19 @@ export type InstallBrowsersDeps = {
     cwd?: string,
   ) => Promise<string[]>;
   readonly peekFlowMeta: PeekFlowMetaFn;
+  readonly resolvePlaywrightCliPath: (files: string[]) => Promise<string>;
+};
+
+export type InstallBrowserListDeps = {
+  readonly spawn: SpawnFn;
+  readonly platform: NodeJS.Platform;
   readonly playwrightCliPath: string;
 };
 
 export async function installBrowserList(
   ctx: CommandContext,
   browsers: BrowserName[],
-  deps: Pick<InstallBrowsersDeps, "spawn" | "platform" | "playwrightCliPath">,
+  deps: InstallBrowserListDeps,
 ): Promise<void> {
   await ctx.ui.withProgress(
     browsers.map((browser) => ({
@@ -52,7 +58,12 @@ export async function installBrowsers(
     return;
   }
 
-  await installBrowserList(ctx, browsers, deps);
+  const playwrightCliPath = await deps.resolvePlaywrightCliPath(files);
+  await installBrowserList(ctx, browsers, {
+    spawn: deps.spawn,
+    platform: deps.platform,
+    playwrightCliPath,
+  });
 }
 
 async function collectBrowsers(

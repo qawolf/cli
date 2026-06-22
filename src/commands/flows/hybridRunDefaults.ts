@@ -18,7 +18,11 @@ import { buildRunReporter } from "./buildRunReporter.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
-import { ensureRuntimeEnv } from "~/domains/runtimeEnv/index.js";
+import { type EnsureRuntimeEnvResult } from "~/domains/runtimeEnv/index.js";
+import {
+  resolveDepsRoot,
+  type ResolveDepsRootArgs,
+} from "~/commands/resolveDepsRoot.js";
 import type { Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
@@ -37,7 +41,9 @@ export type HandleHybridFlowsRunDeps = {
     logger?: Logger,
   ) => Promise<string[]>;
   pullEnv: (ctx: AuthCommandContext, envId: string) => Promise<CommandResult>;
-  ensureRuntimeEnv: typeof ensureRuntimeEnv;
+  resolveDepsRoot: (
+    args: Omit<ResolveDepsRootArgs, "fs">,
+  ) => Promise<EnsureRuntimeEnvResult>;
   configureTestkit: (dir: string) => Promise<void>;
   flowsRun: typeof defaultFlowsRun;
   runWebFlowDeps: typeof defaultRunWebFlowDeps;
@@ -48,7 +54,7 @@ function makeDefaultHybridDeps(fs: Fs): HandleHybridFlowsRunDeps {
     expandPatterns: (patterns, cwd, logger) =>
       defaultExpandPatterns(patterns, cwd, logger, fs),
     pullEnv: (ctx, envId) => handleFlowsPull(ctx, { env: envId, yes: true }),
-    ensureRuntimeEnv: (args) => ensureRuntimeEnv(args, { fs }),
+    resolveDepsRoot: (args) => resolveDepsRoot({ ...args, fs }),
     configureTestkit: defaultConfigureTestkit,
     flowsRun: defaultFlowsRun,
     runWebFlowDeps: defaultRunWebFlowDeps,
@@ -69,22 +75,16 @@ export async function handleHybridFlowsRun(
 
   const envDir = resolve(join(".qawolf", flags.env));
   const patternArgs = buildPatternArgs(pattern);
+  const globFlows = () =>
+    resolvedDeps.expandPatterns(patternArgs, envDir, ctx.log("flows"));
 
-  let files = await resolvedDeps.expandPatterns(
-    patternArgs,
-    envDir,
-    ctx.log("flows"),
-  );
+  let files = await globFlows();
 
   if (files.length === 0) {
     const pullResult = await resolvedDeps.pullEnv(ctx, flags.env);
     if (pullResult !== undefined) return pullResult;
 
-    files = await resolvedDeps.expandPatterns(
-      patternArgs,
-      envDir,
-      ctx.log("flows"),
-    );
+    files = await globFlows();
     if (files.length === 0) {
       return {
         error:
@@ -104,8 +104,8 @@ export async function handleHybridFlowsRun(
       {
         message: runnerMessages.preparingEnvironment,
         task: () =>
-          resolvedDeps.ensureRuntimeEnv({
-            projectDir: envDir,
+          resolvedDeps.resolveDepsRoot({
+            files,
             ...(flags.deps !== undefined ? { overrideDir: flags.deps } : {}),
           }),
       },

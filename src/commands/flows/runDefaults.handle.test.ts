@@ -5,6 +5,7 @@ import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { runnerMessages } from "~/core/messages/index.js";
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import { handleFlowsRun, type HandleFlowsRunDeps } from "./runDefaults.js";
 
 const noopSignals = makeNoopSignals();
@@ -12,8 +13,7 @@ const noopSignals = makeNoopSignals();
 // handleFlowsRun accepts injectable deps, so no mock.module() is needed.
 
 const expandPatternsMock = mock<HandleFlowsRunDeps["expandPatterns"]>();
-const resolveUniqueEnvDirMock = mock<(files: string[]) => string | undefined>();
-const ensureRuntimeEnvMock = mock<HandleFlowsRunDeps["ensureRuntimeEnv"]>();
+const resolveDepsRootMock = mock<HandleFlowsRunDeps["resolveDepsRoot"]>();
 const configureTestkitMock = mock<(dir: string) => Promise<void>>();
 const flowsRunMock = mock<HandleFlowsRunDeps["flowsRun"]>();
 const runWebFlowDepsMock = mock<(...args: unknown[]) => Promise<unknown>>();
@@ -23,8 +23,7 @@ const uiNoteMock = mock<(message: string, title?: string) => void>();
 
 const trackedMocks = [
   expandPatternsMock,
-  resolveUniqueEnvDirMock,
-  ensureRuntimeEnvMock,
+  resolveDepsRootMock,
   configureTestkitMock,
   flowsRunMock,
   runWebFlowDepsMock,
@@ -36,8 +35,7 @@ const trackedMocks = [
 function makeDeps(): HandleFlowsRunDeps {
   return {
     expandPatterns: expandPatternsMock,
-    resolveUniqueEnvDir: resolveUniqueEnvDirMock,
-    ensureRuntimeEnv: ensureRuntimeEnvMock,
+    resolveDepsRoot: resolveDepsRootMock,
     configureTestkit: configureTestkitMock,
     flowsRun: flowsRunMock,
     runWebFlowDeps:
@@ -67,6 +65,7 @@ function makeCtx(): CommandContext {
     outputMode: "human",
     isInteractive: false,
     signals: noopSignals,
+    fs: makeMemoryFs(),
     log: () => makeNoopLogger(),
     ui: {
       ...makeFakeUI("human"),
@@ -80,8 +79,7 @@ function makeCtx(): CommandContext {
 beforeEach(() => {
   for (const m of trackedMocks) m.mockClear();
   expandPatternsMock.mockResolvedValue([]);
-  resolveUniqueEnvDirMock.mockReturnValue(undefined);
-  ensureRuntimeEnvMock.mockResolvedValue({
+  resolveDepsRootMock.mockResolvedValue({
     depsRoot: "/env",
     source: "project",
     installed: false,
@@ -92,12 +90,9 @@ beforeEach(() => {
 });
 
 describe("handleFlowsRun", () => {
-  it("proceeds with managed dir when resolveUniqueEnvDir throws", async () => {
+  it("uses the managed dir resolved by resolveDepsRoot for multi-package patterns", async () => {
     expandPatternsMock.mockResolvedValue(["/some/file.flow.ts"]);
-    resolveUniqueEnvDirMock.mockImplementation(() => {
-      throw new Error("files span multiple env dirs");
-    });
-    ensureRuntimeEnvMock.mockResolvedValue({
+    resolveDepsRootMock.mockResolvedValue({
       depsRoot: "/managed",
       source: "managed",
       installed: true,
@@ -111,7 +106,9 @@ describe("handleFlowsRun", () => {
     );
 
     expect(result).toBeUndefined();
-    expect(ensureRuntimeEnvMock).toHaveBeenCalledWith({});
+    expect(resolveDepsRootMock).toHaveBeenCalledWith({
+      files: ["/some/file.flow.ts"],
+    });
     expect(flowsRunMock).toHaveBeenCalledTimes(1);
   });
 
@@ -125,28 +122,28 @@ describe("handleFlowsRun", () => {
 
     expect(result).toBeUndefined();
     expect(uiInfoMock).toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
-    expect(ensureRuntimeEnvMock).not.toHaveBeenCalled();
+    expect(resolveDepsRootMock).not.toHaveBeenCalled();
     expect(configureTestkitMock).not.toHaveBeenCalled();
     expect(flowsRunMock).not.toHaveBeenCalled();
   });
 
-  it("calls ensureRuntimeEnv with undefined projectDir when resolveUniqueEnvDir returns undefined", async () => {
+  it("calls resolveDepsRoot with the expanded files and no overrideDir by default", async () => {
     expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
-    resolveUniqueEnvDirMock.mockReturnValue(undefined);
 
     await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
 
-    expect(ensureRuntimeEnvMock).toHaveBeenCalledWith({});
+    expect(resolveDepsRootMock).toHaveBeenCalledWith({
+      files: ["/some/flow.ts"],
+    });
     expect(configureTestkitMock).toHaveBeenCalledTimes(1);
     expect(flowsRunMock).toHaveBeenCalledTimes(1);
     expect(runWebFlowDepsMock).toHaveBeenCalledTimes(1);
   });
 
-  it("calls ensureRuntimeEnv with resolved projectDir and configureTestkit with depsRoot", async () => {
+  it("configures testkit with the depsRoot returned by resolveDepsRoot", async () => {
     const envDir = "/mock/.qawolf/env1";
     expandPatternsMock.mockResolvedValue([`${envDir}/login.flow.ts`]);
-    resolveUniqueEnvDirMock.mockReturnValue(envDir);
-    ensureRuntimeEnvMock.mockResolvedValue({
+    resolveDepsRootMock.mockResolvedValue({
       depsRoot: envDir,
       source: "project",
       installed: false,
@@ -154,14 +151,16 @@ describe("handleFlowsRun", () => {
 
     await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
 
-    expect(ensureRuntimeEnvMock).toHaveBeenCalledWith({ projectDir: envDir });
+    expect(resolveDepsRootMock).toHaveBeenCalledWith({
+      files: [`${envDir}/login.flow.ts`],
+    });
     expect(configureTestkitMock).toHaveBeenCalledWith(envDir);
     expect(flowsRunMock).toHaveBeenCalledTimes(1);
   });
 
-  it("emits managed runtime note when ensureRuntimeEnv source is managed", async () => {
+  it("emits managed runtime note when resolveDepsRoot source is managed", async () => {
     expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
-    ensureRuntimeEnvMock.mockResolvedValue({
+    resolveDepsRootMock.mockResolvedValue({
       depsRoot: "/home/.qawolf/runtime",
       source: "managed",
       installed: false,
@@ -177,7 +176,7 @@ describe("handleFlowsRun", () => {
 
   it("does not emit managed runtime note when source is project", async () => {
     expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
-    ensureRuntimeEnvMock.mockResolvedValue({
+    resolveDepsRootMock.mockResolvedValue({
       depsRoot: "/env",
       source: "project",
       installed: false,
@@ -188,9 +187,9 @@ describe("handleFlowsRun", () => {
     expect(uiNoteMock).not.toHaveBeenCalled();
   });
 
-  it("threads --deps flag to ensureRuntimeEnv as overrideDir", async () => {
+  it("threads --deps flag to resolveDepsRoot as overrideDir", async () => {
     expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
-    ensureRuntimeEnvMock.mockResolvedValue({
+    resolveDepsRootMock.mockResolvedValue({
       depsRoot: "/custom/deps",
       source: "override",
       installed: false,
@@ -203,14 +202,14 @@ describe("handleFlowsRun", () => {
       makeDeps(),
     );
 
-    expect(ensureRuntimeEnvMock).toHaveBeenCalledWith({
+    expect(resolveDepsRootMock).toHaveBeenCalledWith({
+      files: ["/some/flow.ts"],
       overrideDir: "/custom/deps",
     });
   });
 
   it("opens the run with an intro once flows are resolved", async () => {
     expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
-    resolveUniqueEnvDirMock.mockReturnValue(undefined);
 
     await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
 
