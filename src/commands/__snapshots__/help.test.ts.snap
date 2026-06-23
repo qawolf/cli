@@ -156,7 +156,8 @@ Options:
   --env <env>           Pull and run a flow from this environment (UUID or slug)
                         if not cached locally
   --deps <dir>          Use this prepared dependency directory instead of
-                        auto-installing the runtime
+                        auto-installing the runtime; or set QAWOLF_RUNTIME_DIR
+                        to relocate the managed runtime
   -h, --help            display help for command
 
 Examples:

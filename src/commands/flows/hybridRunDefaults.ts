@@ -103,8 +103,7 @@ export async function handleHybridFlowsRun(
     () => runnerMessages.environmentReady,
   );
   if (runtimeEnv.source === "managed") {
-    const note = runnerMessages.managedRuntimeNote(runtimeEnv.depsRoot);
-    ctx.ui.note(note, "Runtime");
+    ctx.ui.info(runnerMessages.managedRuntimeNote(runtimeEnv.depsRoot));
   }
   await loadEnvFile(envDir);
   const resolvedDir = runtimeEnv.depsRoot;

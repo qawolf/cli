@@ -158,7 +158,7 @@ describe("handleFlowsRun", () => {
     expect(flowsRunMock).toHaveBeenCalledTimes(1);
   });
 
-  it("emits managed runtime note when resolveDepsRoot source is managed", async () => {
+  it("emits managed runtime info when resolveDepsRoot source is managed", async () => {
     expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
     resolveDepsRootMock.mockResolvedValue({
       depsRoot: "/home/.qawolf/runtime",
@@ -168,13 +168,12 @@ describe("handleFlowsRun", () => {
 
     await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
 
-    expect(uiNoteMock).toHaveBeenCalledWith(
+    expect(uiInfoMock).toHaveBeenCalledWith(
       runnerMessages.managedRuntimeNote("/home/.qawolf/runtime"),
-      "Runtime",
     );
   });
 
-  it("does not emit managed runtime note when source is project", async () => {
+  it("does not emit managed runtime info when source is project", async () => {
     expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
     resolveDepsRootMock.mockResolvedValue({
       depsRoot: "/env",
@@ -184,7 +183,7 @@ describe("handleFlowsRun", () => {
 
     await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
 
-    expect(uiNoteMock).not.toHaveBeenCalled();
+    expect(uiInfoMock).not.toHaveBeenCalled();
   });
 
   it("threads --deps flag to resolveDepsRoot as overrideDir", async () => {

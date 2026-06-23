@@ -87,10 +87,7 @@ export async function handleFlowsRun(
   );
 
   if (runtimeEnv.source === "managed") {
-    ctx.ui.note(
-      runnerMessages.managedRuntimeNote(runtimeEnv.depsRoot),
-      "Runtime",
-    );
+    ctx.ui.info(runnerMessages.managedRuntimeNote(runtimeEnv.depsRoot));
   }
 
   // Load the user's project .env from the project dir (NOT the deps dir).

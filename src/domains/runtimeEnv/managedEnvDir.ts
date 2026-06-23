@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import type { Fs } from "~/shell/fs.js";
 import { getDataDir } from "~/core/paths.js";
@@ -18,9 +18,22 @@ export function managedEnvHash(): string {
   return createHash("sha256").update(content).digest("hex").slice(0, 16);
 }
 
+/**
+ * Base directory the versioned managed runtime installs under. `QAWOLF_RUNTIME_DIR`
+ * relocates it (resolved to an absolute path; empty/whitespace falls back) so CI,
+ * airgapped, and non-writable-$HOME setups can move the cache — the same affordance
+ * as PLAYWRIGHT_BROWSERS_PATH / CYPRESS_CACHE_FOLDER. The `--deps` flag is a separate,
+ * higher-priority validate-only override handled in ensureRuntimeEnv.
+ */
+function managedEnvBaseDir(): string {
+  const override = process.env["QAWOLF_RUNTIME_DIR"]?.trim();
+  if (override) return resolve(override);
+  return join(getDataDir(), "runtime");
+}
+
 /** Absolute path to the versioned managed runtime directory. */
 export function managedEnvDir(): string {
-  return join(getDataDir(), "runtime", managedEnvHash());
+  return join(managedEnvBaseDir(), managedEnvHash());
 }
 
 /**

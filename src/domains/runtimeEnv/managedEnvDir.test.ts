@@ -1,5 +1,5 @@
-import { describe, expect, it } from "bun:test";
-import { join } from "node:path";
+import { afterEach, describe, expect, it } from "bun:test";
+import { join, resolve } from "node:path";
 
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
@@ -23,10 +23,39 @@ describe("managedEnvHash", () => {
 });
 
 describe("managedEnvDir", () => {
-  it("ends with runtime/<hash>", () => {
+  const priorOverride = process.env["QAWOLF_RUNTIME_DIR"];
+
+  afterEach(() => {
+    if (priorOverride === undefined) {
+      delete process.env["QAWOLF_RUNTIME_DIR"];
+    } else {
+      process.env["QAWOLF_RUNTIME_DIR"] = priorOverride;
+    }
+  });
+
+  it("ends with runtime/<hash> when QAWOLF_RUNTIME_DIR is unset", () => {
+    delete process.env["QAWOLF_RUNTIME_DIR"];
     const hash = managedEnvHash();
-    const result = managedEnvDir();
-    expect(result).toContain(join("runtime", hash));
+    expect(managedEnvDir()).toContain(join("runtime", hash));
+  });
+
+  it("uses QAWOLF_RUNTIME_DIR as the base, dropping the runtime/ segment", () => {
+    process.env["QAWOLF_RUNTIME_DIR"] = "/custom/cache";
+    const hash = managedEnvHash();
+    expect(managedEnvDir()).toBe(join("/custom/cache", hash));
+    expect(managedEnvDir()).not.toContain(join("runtime", hash));
+  });
+
+  it("resolves a relative QAWOLF_RUNTIME_DIR to an absolute path", () => {
+    process.env["QAWOLF_RUNTIME_DIR"] = "./rt-cache";
+    const hash = managedEnvHash();
+    expect(managedEnvDir()).toBe(join(resolve("./rt-cache"), hash));
+  });
+
+  it("falls back to the default base when QAWOLF_RUNTIME_DIR is whitespace", () => {
+    process.env["QAWOLF_RUNTIME_DIR"] = "   ";
+    const hash = managedEnvHash();
+    expect(managedEnvDir()).toContain(join("runtime", hash));
   });
 });
 

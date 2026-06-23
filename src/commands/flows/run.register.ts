@@ -101,7 +101,7 @@ export function registerFlowsRunCommand(
     )
     .option(
       "--deps <dir>",
-      "Use this prepared dependency directory instead of auto-installing the runtime",
+      "Use this prepared dependency directory instead of auto-installing the runtime; or set QAWOLF_RUNTIME_DIR to relocate the managed runtime",
     )
     .addHelpText("after", runExamples)
     .action(
