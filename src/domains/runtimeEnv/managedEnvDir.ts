@@ -25,7 +25,7 @@ export function managedEnvHash(): string {
  * as PLAYWRIGHT_BROWSERS_PATH / CYPRESS_CACHE_FOLDER. The `--deps` flag is a separate,
  * higher-priority validate-only override handled in ensureRuntimeEnv.
  */
-function managedEnvBaseDir(): string {
+export function managedEnvBaseDir(): string {
   const override = process.env["QAWOLF_RUNTIME_DIR"]?.trim();
   if (override) return resolve(override);
   return join(getDataDir(), "runtime");

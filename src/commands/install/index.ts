@@ -7,6 +7,7 @@ import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { handleInstallAndroid } from "./android.js";
 import { handleInstall } from "./all.js";
 import { handleInstallBrowsers } from "./browsers.js";
+import { handleInstallClear } from "./clear.js";
 
 export function registerInstallCommand(
   program: Command,
@@ -64,5 +65,23 @@ Examples:
         opts,
         command,
       );
+    });
+
+  declareCommandKind(install.command("clear"), "local")
+    .description(
+      "Remove the managed runtime cache (all installed runtime versions)",
+    )
+    .option("--yes", "Skip the confirmation prompt", false)
+    .addHelpText(
+      "after",
+      `
+Examples:
+  $ qawolf install clear
+  $ qawolf install clear --yes`,
+    )
+    .action((opts: { yes?: boolean }, command: Command) => {
+      return withContext(signals, (ctx) =>
+        handleInstallClear(ctx, { yes: opts.yes ?? false }),
+      )(opts, command);
     });
 }

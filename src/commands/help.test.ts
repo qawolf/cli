@@ -54,6 +54,10 @@ describe("--help output", () => {
     expect(helpFor("install", "android")).toMatchSnapshot();
   });
 
+  it("qawolf install clear", () => {
+    expect(helpFor("install", "clear")).toMatchSnapshot();
+  });
+
   it("qawolf doctor", () => {
     expect(helpFor("doctor")).toMatchSnapshot();
   });
@@ -81,6 +85,7 @@ describe("--help output", () => {
       ["install"],
       ["install", "browsers"],
       ["install", "android"],
+      ["install", "clear"],
       ["doctor"],
       ["flows"],
       ["flows", "run"],
