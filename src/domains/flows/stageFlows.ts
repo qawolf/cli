@@ -14,6 +14,9 @@ type StageFlowsArgs = {
 type StageFlowsResult = {
   files: string[];
   bundleRoot: string | undefined;
+  // Removes the staged copy. Present only when this call created one; callers
+  // run it after the flows finish (and register it for interrupt cleanup).
+  cleanup?: () => Promise<void>;
 };
 
 const excludedDirs = new Set(["node_modules", ".git", ".qawolf"]);
@@ -39,13 +42,25 @@ export async function stageFlows(
     return { files, bundleRoot: projectDir };
   }
 
-  const stagedDir = join(cwd, ".qawolf", ".local", hashProjectDir(projectDir));
+  // The dir is per-run (pid-suffixed) so concurrent `flows run` on the same
+  // project never delete each other's active staging tree; the caller removes
+  // it when the run ends.
+  const stagedDir = join(
+    cwd,
+    ".qawolf",
+    ".local",
+    `${hashProjectDir(projectDir)}-${process.pid}`,
+  );
   await fs.rm(stagedDir, { recursive: true, force: true });
   await fs.mkdir(stagedDir, { recursive: true });
   await copyDirExcluding(projectDir, stagedDir, excludedDirs);
 
   const stagedFiles = files.map((f) => remapPath(f, projectDir, stagedDir));
-  return { files: stagedFiles, bundleRoot: stagedDir };
+  return {
+    files: stagedFiles,
+    bundleRoot: stagedDir,
+    cleanup: () => fs.rm(stagedDir, { recursive: true, force: true }),
+  };
 }
 
 function isInsideQawolfDir(dir: string): boolean {

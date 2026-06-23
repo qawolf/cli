@@ -40,6 +40,18 @@ describe("clearRuntimeEnv", () => {
     expect(result.dir).toBe(managedEnvBaseDir());
   });
 
+  it("refuses to delete a dir holding non-managed content (fail closed)", async () => {
+    const override = "/tmp/qawolf-rt-foreign";
+    process.env["QAWOLF_RUNTIME_DIR"] = override;
+    const fs = makeMemoryFs();
+    // Looks nothing like a managed runtime — e.g. a misconfigured repo root.
+    await fs.mkdir(`${override}/src`, { recursive: true });
+    await fs.writeFile(`${override}/package.json`, '{"name":"my-app"}');
+
+    expect(clearRuntimeEnv(fs)).rejects.toThrow("Refusing to delete");
+    expect(await fs.pathExists(override)).toBe(true);
+  });
+
   it("honors QAWOLF_RUNTIME_DIR and returns its resolved path", async () => {
     const override = "/tmp/qawolf-rt-test";
     process.env["QAWOLF_RUNTIME_DIR"] = override;

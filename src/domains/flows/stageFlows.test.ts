@@ -135,4 +135,25 @@ describe("stageFlows", () => {
       await readFile(join(second.bundleRoot as string, "a.flow.ts"), "utf8"),
     ).toBe("v2");
   });
+
+  it("returns a cleanup that removes the staged dir; passthrough has none", async () => {
+    const projectDir = await makeTmpDir();
+    const cwd = await makeTmpDir();
+    await writeFile(join(projectDir, "package.json"), "{}");
+    const files = [join(projectDir, "a.flow.ts")];
+
+    const result = await stageFlows({ files, projectDir, cwd });
+    expect(await pathExists(result.bundleRoot as string)).toBe(true);
+    await result.cleanup?.();
+    expect(await pathExists(result.bundleRoot as string)).toBe(false);
+
+    // No staged copy was created for the in-place .qawolf case → no cleanup.
+    const qawolfProject = join(cwd, ".qawolf", "env");
+    const passthrough = await stageFlows({
+      files: [join(qawolfProject, "x.flow.ts")],
+      projectDir: qawolfProject,
+      cwd,
+    });
+    expect(passthrough.cleanup).toBeUndefined();
+  });
 });

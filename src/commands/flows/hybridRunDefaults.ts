@@ -131,10 +131,18 @@ export async function handleHybridFlowsRun(
     ctx.signals,
   );
 
-  return resolvedDeps.flowsRun(
-    ctx,
-    staged.files,
-    flags,
-    buildFlowsRunDeps({ ctx, resolvedDir, android, runWebFlowDeps, flags }),
-  );
+  const unregisterCleanup = staged.cleanup
+    ? ctx.signals.register(staged.cleanup)
+    : undefined;
+  try {
+    return await resolvedDeps.flowsRun(
+      ctx,
+      staged.files,
+      flags,
+      buildFlowsRunDeps({ ctx, resolvedDir, android, runWebFlowDeps, flags }),
+    );
+  } finally {
+    unregisterCleanup?.();
+    await staged.cleanup?.();
+  }
 }
