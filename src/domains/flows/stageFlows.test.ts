@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { realpathSync } from "node:fs";
-import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -124,5 +131,8 @@ describe("stageFlows", () => {
     expect(second.bundleRoot).toBe(first.bundleRoot as string);
     const staged = await stat(join(second.bundleRoot as string, "a.flow.ts"));
     expect(staged.isFile()).toBe(true);
+    expect(
+      await readFile(join(second.bundleRoot as string, "a.flow.ts"), "utf8"),
+    ).toBe("v2");
   });
 });

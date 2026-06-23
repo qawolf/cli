@@ -30,7 +30,11 @@ export async function linkManagedDeps(
     return;
   }
 
-  await symlink(source, target, "dir");
+  // On Windows a "dir" symlink needs the "Create symbolic links" privilege
+  // (admin / Developer Mode); a junction links directories without elevation.
+  // The qawolf binary ships for Windows, so prefer junction there.
+  const linkType = process.platform === "win32" ? "junction" : "dir";
+  await symlink(source, target, linkType);
 }
 
 async function lstatOrUndefined(path: string): Promise<Stats | undefined> {
