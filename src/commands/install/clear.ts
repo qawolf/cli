@@ -19,11 +19,11 @@ export async function handleInstallClear(
   if (ctx.ui.mode === "human" && !opts.yes) {
     ctx.ui.gap();
     ctx.ui.intro(installMessages.clear.title);
+    ctx.ui.note(dir, installMessages.clear.locationLabel);
 
-    const result = await ctx.ui.confirm(
-      installMessages.clear.confirmPrompt(dir),
-      { destructive: true },
-    );
+    const result = await ctx.ui.confirm(installMessages.clear.confirmPrompt, {
+      destructive: true,
+    });
     if (!result.ok || !result.value) {
       ctx.ui.cancel(installMessages.clear.cancelled);
       return;

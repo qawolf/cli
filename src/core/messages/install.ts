@@ -17,8 +17,8 @@ export const installMessages = {
     `playwright install ${browser} failed: process failed to launch`,
   clear: {
     title: "Clear runtime cache",
-    confirmPrompt: (dir: string) =>
-      `Remove the managed runtime cache at\n${dir}?`,
+    locationLabel: "Location",
+    confirmPrompt: "Remove the managed runtime cache?",
     cancelled: "Clear cancelled.",
     cleared: (dir: string) => `Removed managed runtime cache at ${dir}.`,
     nothingToClear: (dir: string) =>
