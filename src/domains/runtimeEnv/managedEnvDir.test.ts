@@ -42,7 +42,7 @@ describe("managedEnvDir", () => {
   it("uses QAWOLF_RUNTIME_DIR as the base, dropping the runtime/ segment", () => {
     process.env["QAWOLF_RUNTIME_DIR"] = "/custom/cache";
     const hash = managedEnvHash();
-    expect(managedEnvDir()).toBe(join("/custom/cache", hash));
+    expect(managedEnvDir()).toBe(join(resolve("/custom/cache"), hash));
     expect(managedEnvDir()).not.toContain(join("runtime", hash));
   });
 
