@@ -30,15 +30,25 @@ export async function handleInstallClear(
     }
   }
 
-  const { dir: removed, existed } = await clearRuntimeEnv(ctx.fs);
+  const [{ existed }] = await ctx.ui.withProgress(
+    [
+      {
+        message: installMessages.clear.removing,
+        task: () => clearRuntimeEnv(ctx.fs),
+      },
+    ],
+    ([result]) =>
+      result.existed
+        ? installMessages.clear.cleared
+        : installMessages.clear.nothingToClear,
+  );
 
-  const message = existed
-    ? installMessages.clear.cleared(removed)
-    : installMessages.clear.nothingToClear(removed);
-
-  if (ctx.ui.mode === "human") {
-    ctx.ui.success(message);
-  } else {
-    ctx.ui.output({ cleared: existed, dir: removed }, message);
+  if (ctx.ui.mode !== "human") {
+    ctx.ui.output(
+      { cleared: existed, dir },
+      existed
+        ? installMessages.clear.cleared
+        : installMessages.clear.nothingToClear,
+    );
   }
 }

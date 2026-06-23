@@ -20,9 +20,9 @@ export const installMessages = {
     locationLabel: "Location",
     confirmPrompt: "Remove the managed runtime cache?",
     cancelled: "Clear cancelled.",
-    cleared: (dir: string) => `Removed managed runtime cache at ${dir}.`,
-    nothingToClear: (dir: string) =>
-      `No managed runtime cache found at ${dir}.`,
+    removing: "Removing managed runtime cache",
+    cleared: "Removed managed runtime cache.",
+    nothingToClear: "No managed runtime cache found.",
   },
   android: {
     noFlowsFound: "No Android flows found. Nothing to install.",
