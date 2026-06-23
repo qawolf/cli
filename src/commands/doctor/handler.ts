@@ -6,7 +6,7 @@ import { resolveApiKey } from "~/domains/auth/resolve.js";
 import { runChecks } from "~/domains/doctor/checks/index.js";
 import { renderResults } from "~/domains/doctor/render.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
-import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
+import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
 import { expandPatterns, makePeekFlowMeta } from "~/domains/flows/expand.js";
 import { resolveDepsRootIfPresent } from "~/domains/runtimeEnv/index.js";
 import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
@@ -41,12 +41,7 @@ export async function handleDoctor(
   const flowFiles = await expandPatterns([], cwd, undefined, fs);
 
   // Playwright/Appium live in the resolved runtime dir (managed env or project), not cwd.
-  let projectDir: string | undefined;
-  try {
-    projectDir = resolveUniqueEnvDir([...flowFiles], fs);
-  } catch {
-    projectDir = undefined;
-  }
+  const projectDir = resolveProjectDirSafe([...flowFiles], fs);
   const envDir = resolveDepsRootIfPresent(
     projectDir !== undefined ? { projectDir } : {},
     fs,

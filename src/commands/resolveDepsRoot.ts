@@ -1,4 +1,4 @@
-import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
+import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
 import {
   ensureRuntimeEnv,
   type EnsureRuntimeEnvResult,
@@ -21,12 +21,7 @@ export function resolveDepsRoot(
   args: ResolveDepsRootArgs,
 ): Promise<EnsureRuntimeEnvResult> {
   const fs = args.fs ?? makeDefaultFs();
-  let projectDir: string | undefined;
-  try {
-    projectDir = resolveUniqueEnvDir(args.files, fs);
-  } catch {
-    projectDir = undefined;
-  }
+  const projectDir = resolveProjectDirSafe(args.files, fs);
   return ensureRuntimeEnv(
     {
       ...(projectDir !== undefined ? { projectDir } : {}),

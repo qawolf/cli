@@ -57,6 +57,19 @@ type LoadFlowDefaultArgs = {
   fs?: Fs;
 };
 
+// Imports a module specifier (file:// path or data: URI) and returns its
+// default export, throwing the canonical no-default-export error when absent.
+async function importDefaultExport<T>(
+  moduleUrl: string,
+  flowPath: string,
+): Promise<T> {
+  const mod = (await import(moduleUrl)) as Record<string, unknown>;
+  const exported = mod["default"] as T | undefined;
+  if (exported === undefined)
+    throw new Error(runnerMessages.noDefaultExport(flowPath));
+  return exported;
+}
+
 export async function loadFlowDefault<T>(
   args: LoadFlowDefaultArgs,
 ): Promise<T> {
@@ -68,14 +81,7 @@ export async function loadFlowDefault<T>(
 
   // Non-compiled path: direct import, no file read needed.
   if (!isCompiledBinary) {
-    const mod = (await import(pathToFileURL(flowPath).href)) as Record<
-      string,
-      unknown
-    >;
-    const exported = mod["default"] as T | undefined;
-    if (exported === undefined)
-      throw new Error(runnerMessages.noDefaultExport(flowPath));
-    return exported;
+    return importDefaultExport<T>(pathToFileURL(flowPath).href, flowPath);
   }
 
   // In compiled Bun binaries, dynamically imported external files cannot resolve
@@ -94,23 +100,12 @@ export async function loadFlowDefault<T>(
     : content;
 
   if (transformed === content) {
-    const mod = (await import(pathToFileURL(flowPath).href)) as Record<
-      string,
-      unknown
-    >;
-    const exported = mod["default"] as T | undefined;
-    if (exported === undefined)
-      throw new Error(runnerMessages.noDefaultExport(flowPath));
-    return exported;
+    return importDefaultExport<T>(pathToFileURL(flowPath).href, flowPath);
   }
 
   const annotated = `${transformed}\n//# sourceURL=${
     pathToFileURL(flowPath).href
   }`;
   const dataUri = `data:text/javascript,${encodeURIComponent(annotated)}`;
-  const mod = (await import(dataUri)) as Record<string, unknown>;
-  const exported = mod["default"] as T | undefined;
-  if (exported === undefined)
-    throw new Error(runnerMessages.noDefaultExport(flowPath));
-  return exported;
+  return importDefaultExport<T>(dataUri, flowPath);
 }

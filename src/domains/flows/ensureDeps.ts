@@ -33,3 +33,16 @@ export function resolveUniqueEnvDir(
   }
   return dirs.size === 1 ? [...dirs][0] : undefined;
 }
+
+// resolveUniqueEnvDir, but swallows the multi-package error and returns
+// undefined so callers fall back to the managed runtime dir instead of failing.
+export function resolveProjectDirSafe(
+  files: string[],
+  fs: Fs,
+): string | undefined {
+  try {
+    return resolveUniqueEnvDir(files, fs);
+  } catch {
+    return undefined;
+  }
+}

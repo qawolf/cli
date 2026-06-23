@@ -65,6 +65,20 @@ function readShimMarker(shimDir: string, fs: Fs): ShimMarker | undefined {
   return undefined;
 }
 
+/**
+ * Resolves the Bun.build function from the injected override or the runtime:
+ * an explicit BuildFn (tests), false for Node.js mode (no Bun), or
+ * auto-detection from globalThis.Bun. Reading Bun via globalThis works in both
+ * the compiled binary (Bun available) and the Node.js CLI build (Bun absent).
+ */
+function resolveBunBuild(
+  bunBuild: BuildFn | false | undefined,
+): { build: BuildFn } | undefined {
+  if (bunBuild === undefined)
+    return (globalThis as { Bun?: { build: BuildFn } }).Bun;
+  return bunBuild === false ? undefined : { build: bunBuild };
+}
+
 export async function shimFlowsDeps(
   envDir: string,
   fs: Fs = makeDefaultFs(),
@@ -84,16 +98,7 @@ export async function shimFlowsDeps(
     return;
   }
 
-  // Access Bun.build via globalThis — works in both the compiled binary (Bun
-  // available) and the Node.js CLI build (Bun absent). Uses a structural type
-  // instead of `typeof Bun.build` to avoid the no-restricted-globals lint rule.
-  // bunBuild is injected in tests (globalThis.Bun is read-only in the runtime).
-  const bun =
-    bunBuild !== undefined
-      ? bunBuild !== false
-        ? { build: bunBuild }
-        : undefined
-      : (globalThis as { Bun?: { build: BuildFn } }).Bun;
+  const bun = resolveBunBuild(bunBuild);
   // Node.js resolves bare specifiers correctly; shimming is unnecessary and
   // a CJS require() fallback for ESM-only packages would break named imports.
   // But stale Bun-built CJS shims from a prior binary run must be removed —

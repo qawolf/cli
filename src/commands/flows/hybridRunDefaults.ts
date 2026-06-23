@@ -6,17 +6,7 @@ import type {
   AuthCommandContext,
   CommandResult,
 } from "~/shell/commandContext.js";
-import {
-  expandPatterns as defaultExpandPatterns,
-  makePeekFlowMeta,
-} from "~/domains/flows/expand.js";
-import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
-import { installBrowserList } from "~/domains/install/browsers.js";
-import { defaultSpawn } from "~/shell/spawn.js";
-import { resolvePlaywrightCli } from "~/shell/playwright.js";
-import { buildRunReporter } from "./buildRunReporter.js";
-import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
-import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
+import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 import { type EnsureRuntimeEnvResult } from "~/domains/runtimeEnv/index.js";
 import {
@@ -26,12 +16,12 @@ import {
 import type { Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
-import { makePooledDispatch } from "~/domains/runner/makePooledDispatch.js";
 import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { runnerMessages } from "~/core/messages/index.js";
+import { buildFlowsRunDeps } from "./buildFlowsRunDeps.js";
 import { loadEnvFile } from "./loadEnvFile.js";
 
 export type HandleHybridFlowsRunDeps = {
@@ -120,31 +110,15 @@ export async function handleHybridFlowsRun(
   const resolvedDir = runtimeEnv.depsRoot;
   await resolvedDeps.configureTestkit(resolvedDir);
   const android = createAndroidDeps(resolvedDir, ctx.signals);
+  const runWebFlowDeps = await resolvedDeps.runWebFlowDeps(
+    resolvedDir,
+    ctx.signals,
+  );
 
-  return resolvedDeps.flowsRun(ctx, files, flags, {
-    peekFlowMeta: makePeekFlowMeta(ctx.fs),
-    installBrowsers: (innerCtx, browsers) =>
-      installBrowserList(innerCtx, browsers, {
-        spawn: defaultSpawn,
-        platform: process.platform,
-        playwrightCliPath: resolvePlaywrightCli(resolvedDir, process.platform),
-      }),
-    runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: await resolvedDeps.runWebFlowDeps(resolvedDir, ctx.signals),
-    runAndroidFlow: defaultRunAndroidFlow,
-    runAndroidFlowDeps: android.deps,
-    bootAndroid: android.boot,
-    shutdownAndroid: android.shutdown,
-    createPooledDispatch: makePooledDispatch(resolvedDir),
-    findFlowStamp: defaultFindFlowStamp,
-    warn: (message) => ctx.ui.warn(message),
-    logger: ctx.log("runner"),
-    // Route reporter output through ctx.ui so streamed test logs stay inside the run's timeline.
-    reporter: buildRunReporter(flags, {
-      fs: ctx.fs,
-      stdout: { write: (text: string) => ctx.ui.write(text) },
-      stderr: { write: (text: string) => ctx.ui.write(text) },
-    }),
-    now: () => Date.now(),
-  });
+  return resolvedDeps.flowsRun(
+    ctx,
+    files,
+    flags,
+    buildFlowsRunDeps({ ctx, resolvedDir, android, runWebFlowDeps, flags }),
+  );
 }

@@ -1,21 +1,11 @@
-import {
-  expandPatterns as defaultExpandPatterns,
-  makePeekFlowMeta,
-} from "~/domains/flows/expand.js";
-import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
-import { installBrowserList } from "~/domains/install/browsers.js";
-import { defaultSpawn } from "~/shell/spawn.js";
+import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { runnerMessages } from "~/core/messages/index.js";
-import { resolvePlaywrightCli } from "~/shell/playwright.js";
-import { buildRunReporter } from "./buildRunReporter.js";
-import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
-import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 
 import { pluralize } from "~/core/pluralize.js";
-import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
+import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
 import { type EnsureRuntimeEnvResult } from "~/domains/runtimeEnv/index.js";
 import {
   resolveDepsRoot,
@@ -24,11 +14,11 @@ import {
 import type { Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
-import { makePooledDispatch } from "~/domains/runner/makePooledDispatch.js";
 import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
+import { buildFlowsRunDeps } from "./buildFlowsRunDeps.js";
 import { loadEnvFile } from "./loadEnvFile.js";
 
 export type HandleFlowsRunDeps = {
@@ -104,42 +94,21 @@ export async function handleFlowsRun(
   }
 
   // Load the user's project .env from the project dir (NOT the deps dir).
-  let projectDir: string | undefined;
-  try {
-    projectDir = resolveUniqueEnvDir(expandedFiles, ctx.fs);
-  } catch {
-    projectDir = undefined;
-  }
+  const projectDir = resolveProjectDirSafe(expandedFiles, ctx.fs);
   await loadEnvFile(projectDir ?? cwd);
 
   const resolvedDir = runtimeEnv.depsRoot;
 
   await resolvedDeps.configureTestkit(resolvedDir);
   const android = createAndroidDeps(resolvedDir, ctx.signals);
-  return resolvedDeps.flowsRun(ctx, expandedFiles, flags, {
-    peekFlowMeta: makePeekFlowMeta(ctx.fs),
-    installBrowsers: (innerCtx, browsers) =>
-      installBrowserList(innerCtx, browsers, {
-        spawn: defaultSpawn,
-        platform: process.platform,
-        playwrightCliPath: resolvePlaywrightCli(resolvedDir, process.platform),
-      }),
-    runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: await resolvedDeps.runWebFlowDeps(resolvedDir, ctx.signals),
-    runAndroidFlow: defaultRunAndroidFlow,
-    runAndroidFlowDeps: android.deps,
-    bootAndroid: android.boot,
-    shutdownAndroid: android.shutdown,
-    createPooledDispatch: makePooledDispatch(resolvedDir),
-    findFlowStamp: defaultFindFlowStamp,
-    warn: (message) => ctx.ui.warn(message),
-    logger: ctx.log("runner"),
-    // Route reporter output through ctx.ui so streamed test logs stay inside the run's timeline.
-    reporter: buildRunReporter(flags, {
-      fs: ctx.fs,
-      stdout: { write: (text: string) => ctx.ui.write(text) },
-      stderr: { write: (text: string) => ctx.ui.write(text) },
-    }),
-    now: () => Date.now(),
-  });
+  const runWebFlowDeps = await resolvedDeps.runWebFlowDeps(
+    resolvedDir,
+    ctx.signals,
+  );
+  return resolvedDeps.flowsRun(
+    ctx,
+    expandedFiles,
+    flags,
+    buildFlowsRunDeps({ ctx, resolvedDir, android, runWebFlowDeps, flags }),
+  );
 }

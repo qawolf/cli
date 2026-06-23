@@ -3,6 +3,7 @@ import type { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/loo
 import type { Logger } from "~/shell/logger.js";
 import type { Reporter } from "~/shell/reporter/types.js";
 import { runnerMessages } from "~/core/messages/index.js";
+import { pluralize } from "~/core/pluralize.js";
 import { FlowRunError } from "./errors.js";
 import type {
   RunAndroidFlowDeps,
@@ -143,7 +144,7 @@ export async function dispatchFlow({
   const durationMs = deps.now() - flowStart;
   const outcome = run.passed ? "pass" : "fail";
   const attempts = run.attempts;
-  const attempt = `${attempts} attempt${attempts === 1 ? "" : "s"}`;
+  const attempt = pluralize(attempts, "attempt");
   deps.logger?.info(`${outcome}: ${flow.name} (${durationMs}ms, ${attempt})`);
   return { run, durationMs };
 }
