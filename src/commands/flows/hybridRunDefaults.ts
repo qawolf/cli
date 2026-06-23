@@ -7,8 +7,13 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
+import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
+import { stageFlows } from "~/domains/flows/stageFlows.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
-import { type EnsureRuntimeEnvResult } from "~/domains/runtimeEnv/index.js";
+import {
+  type EnsureRuntimeEnvResult,
+  linkManagedDeps,
+} from "~/domains/runtimeEnv/index.js";
 import {
   resolveDepsRoot,
   type ResolveDepsRootArgs,
@@ -106,6 +111,18 @@ export async function handleHybridFlowsRun(
     ctx.ui.info(runnerMessages.managedRuntimeNote(runtimeEnv.depsRoot));
   }
   await loadEnvFile(envDir);
+
+  const projectDir = resolveProjectDirSafe(files, ctx.fs);
+  const staged = await stageFlows({
+    files,
+    projectDir,
+    cwd: process.cwd(),
+    fs: ctx.fs,
+  });
+  if (runtimeEnv.source !== "project" && staged.bundleRoot !== undefined) {
+    await linkManagedDeps(staged.bundleRoot, runtimeEnv.depsRoot, ctx.fs);
+  }
+
   const resolvedDir = runtimeEnv.depsRoot;
   await resolvedDeps.configureTestkit(resolvedDir);
   const android = createAndroidDeps(resolvedDir, ctx.signals);
@@ -116,7 +133,7 @@ export async function handleHybridFlowsRun(
 
   return resolvedDeps.flowsRun(
     ctx,
-    files,
+    staged.files,
     flags,
     buildFlowsRunDeps({ ctx, resolvedDir, android, runWebFlowDeps, flags }),
   );

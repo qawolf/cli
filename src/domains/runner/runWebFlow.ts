@@ -46,10 +46,7 @@ export async function runWebFlow({
     depsRoot: deps.depsRoot,
   });
 
-  const exported = await loadFlowDefault<WebFlowApiReturnValue>({
-    flowPath,
-    depsRoot: deps.depsRoot,
-  });
+  const exported = await loadFlowDefault<WebFlowApiReturnValue>({ flowPath });
 
   const isLegacy = typeof exported === "function";
   const flowName = isLegacy

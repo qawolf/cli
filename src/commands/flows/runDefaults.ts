@@ -6,7 +6,11 @@ import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js"
 
 import { pluralize } from "~/core/pluralize.js";
 import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
-import { type EnsureRuntimeEnvResult } from "~/domains/runtimeEnv/index.js";
+import { stageFlows } from "~/domains/flows/stageFlows.js";
+import {
+  type EnsureRuntimeEnvResult,
+  linkManagedDeps,
+} from "~/domains/runtimeEnv/index.js";
 import {
   resolveDepsRoot,
   type ResolveDepsRootArgs,
@@ -94,6 +98,16 @@ export async function handleFlowsRun(
   const projectDir = resolveProjectDirSafe(expandedFiles, ctx.fs);
   await loadEnvFile(projectDir ?? cwd);
 
+  const staged = await stageFlows({
+    files: expandedFiles,
+    projectDir,
+    cwd,
+    fs: ctx.fs,
+  });
+  if (runtimeEnv.source !== "project" && staged.bundleRoot !== undefined) {
+    await linkManagedDeps(staged.bundleRoot, runtimeEnv.depsRoot, ctx.fs);
+  }
+
   const resolvedDir = runtimeEnv.depsRoot;
 
   await resolvedDeps.configureTestkit(resolvedDir);
@@ -104,7 +118,7 @@ export async function handleFlowsRun(
   );
   return resolvedDeps.flowsRun(
     ctx,
-    expandedFiles,
+    staged.files,
     flags,
     buildFlowsRunDeps({ ctx, resolvedDir, android, runWebFlowDeps, flags }),
   );

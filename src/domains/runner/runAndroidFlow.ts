@@ -43,7 +43,6 @@ export async function runAndroidFlow({
 }): Promise<FlowRunResult> {
   const exported = await loadFlowDefault<AndroidFlowApiReturnValue>({
     flowPath,
-    depsRoot: deps.depsRoot,
   });
   if (typeof exported === "function") {
     // (D2) Android legacy flows have no target; AVD derivation is impossible.

@@ -4,6 +4,7 @@ import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
+import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import {
   handleHybridFlowsRun,
   type HandleHybridFlowsRunDeps,
@@ -51,6 +52,7 @@ function makeCtx(): AuthCommandContext {
     isInteractive: false,
     apiKeySource: "env",
     platform: {} as unknown,
+    fs: makeMemoryFs(),
     signals: makeNoopSignals(),
     ui: makeFakeUI("human"),
     log: () => makeNoopLogger(),
