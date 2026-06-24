@@ -21,17 +21,27 @@ async function loadSdkDeps(cwd: string): Promise<EmailsModule> {
   }
 }
 
+// Configure the emails client in platform-proxied mode: the client reaches the
+// authenticated API at `${apiBaseUrl}/api/trpc/<proc>` using the CLI's API key
+// and team id. createEmailsClient does no network I/O — it builds closures that
+// fetch lazily when a flow reads mail.
 export async function configureEmails(
-  apiBaseUrl: string,
-  cwd: string,
+  params: {
+    apiBaseUrl: string;
+    apiKey: string;
+    teamId: string;
+    cwd: string;
+  },
   deps?: EmailsModule,
 ): Promise<void> {
   const { createEmailsClient, configureEmailsClient } =
-    deps ?? (await loadSdkDeps(cwd));
+    deps ?? (await loadSdkDeps(params.cwd));
   const client = await createEmailsClient({
-    emailerUrl: apiBaseUrl,
-    pollForEmailsDefaultTimeoutMs: 60_000,
-    waitForMessagesDefaultDelayMs: 1_000,
+    url: `${params.apiBaseUrl}/api`,
+    apiKey: params.apiKey,
+    teamId: params.teamId,
+    pollForEmailsDefaultTimeoutMs: 300_000,
+    waitForMessagesDefaultDelayMs: 15_000,
   });
   configureEmailsClient(client);
 }

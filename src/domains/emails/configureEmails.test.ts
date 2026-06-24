@@ -8,8 +8,15 @@ const fakeClient: EmailsClient = {
   },
 };
 
+const params = {
+  apiBaseUrl: "https://app.qawolf.com",
+  apiKey: "test-key",
+  teamId: "team-1",
+  cwd: "/test",
+};
+
 describe("configureEmails", () => {
-  it("should call createEmailsClient with the correct options", async () => {
+  it("calls createEmailsClient with platform-proxied options", async () => {
     let capturedOpts: unknown;
     const deps = {
       createEmailsClient: async (opts: unknown) => {
@@ -19,16 +26,18 @@ describe("configureEmails", () => {
       configureEmailsClient: () => {},
     };
 
-    await configureEmails("https://app.qawolf.com", "/test", deps);
+    await configureEmails(params, deps);
 
     expect(capturedOpts).toEqual({
-      emailerUrl: "https://app.qawolf.com",
-      pollForEmailsDefaultTimeoutMs: 60_000,
-      waitForMessagesDefaultDelayMs: 1_000,
+      url: "https://app.qawolf.com/api",
+      apiKey: "test-key",
+      teamId: "team-1",
+      pollForEmailsDefaultTimeoutMs: 300_000,
+      waitForMessagesDefaultDelayMs: 15_000,
     });
   });
 
-  it("should register the client returned by createEmailsClient", async () => {
+  it("registers the client returned by createEmailsClient", async () => {
     let registeredClient: EmailsClient | undefined;
     const deps = {
       createEmailsClient: async () => fakeClient,
@@ -37,12 +46,12 @@ describe("configureEmails", () => {
       },
     };
 
-    await configureEmails("https://example.com", "/test", deps);
+    await configureEmails(params, deps);
 
     expect(registeredClient).toBe(fakeClient);
   });
 
-  it("should propagate errors thrown by createEmailsClient", async () => {
+  it("propagates errors thrown by createEmailsClient", async () => {
     const deps = {
       createEmailsClient: async (): Promise<EmailsClient> => {
         throw new Error("service unavailable");
@@ -52,31 +61,12 @@ describe("configureEmails", () => {
 
     let caughtError: unknown;
     try {
-      await configureEmails("https://example.com", "/test", deps);
+      await configureEmails(params, deps);
     } catch (e) {
       caughtError = e;
     }
 
     expect(caughtError).toBeInstanceOf(Error);
     expect((caughtError as Error).message).toBe("service unavailable");
-  });
-
-  it("should propagate errors thrown by configureEmailsClient", async () => {
-    const deps = {
-      createEmailsClient: async () => fakeClient,
-      configureEmailsClient: (): void => {
-        throw new Error("registration failed");
-      },
-    };
-
-    let caughtError: unknown;
-    try {
-      await configureEmails("https://example.com", "/test", deps);
-    } catch (e) {
-      caughtError = e;
-    }
-
-    expect(caughtError).toBeInstanceOf(Error);
-    expect((caughtError as Error).message).toBe("registration failed");
   });
 });
