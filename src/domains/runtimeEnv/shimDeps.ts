@@ -114,8 +114,10 @@ type BuildDepShimArgs = {
 /**
  * Builds and writes a Bun.build() CJS shim for a single @qawolf/flows
  * dependency. Skips if the dep is absent, already up-to-date, is a real
- * (unmanaged) package directory, or cannot be resolved. See the WIZ-10612
- * rationale comment above for why fully-inlined CJS bundles are required.
+ * (unmanaged) package directory, or cannot be resolved. Throws when
+ * bun.build fails so that a degraded runtime (missing shims) is never
+ * published. See the WIZ-10612 rationale comment above for why fully-inlined
+ * CJS bundles are required.
  */
 async function buildDepShim(args: BuildDepShimArgs): Promise<void> {
   const { envDir, flowsDir, dep, fs, build } = args;
@@ -163,11 +165,7 @@ async function buildDepShim(args: BuildDepShimArgs): Promise<void> {
   const [output] = result.outputs;
   if (!result.success || !output) {
     const logs = result.logs.map((l) => l.message).join("; ");
-    // No logger is threaded into this shimming routine; write the build
-    // diagnostic to stderr directly (same channel as the worker error path).
-    // oxlint-disable-next-line no-restricted-properties
-    process.stderr.write(`[qawolf] bun.build failed for ${dep}: ${logs}\n`);
-    return;
+    throw new Error(`bun.build failed to shim ${dep}: ${logs}`);
   }
   const shimCode = await output.text();
 
