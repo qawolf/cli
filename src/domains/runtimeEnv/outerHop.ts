@@ -1,10 +1,10 @@
 import { type Stats } from "node:fs";
 import { lstat } from "node:fs/promises";
-import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
 
 import { type Fs } from "~/shell/fs.js";
 
+import { spawnNpmInstall } from "./npmInstall.js";
 import { pinnedPackages } from "./pinnedPackages.js";
 import { createDirSymlink } from "./symlinkDir.js";
 
@@ -114,22 +114,4 @@ async function installOuterDeps(
       `Failed to install project dependencies into ${runDir}: ${result.stderr.trim()}`,
     );
   }
-}
-
-type SpawnInstallResult = { exitCode: number; stderr: string };
-
-function spawnNpmInstall(cwd: string): Promise<SpawnInstallResult> {
-  return new Promise((resolvePromise) => {
-    const child = spawn("npm", ["install", "--legacy-peer-deps"], { cwd });
-    let stderr = "";
-    child.stderr?.on("data", (chunk: Buffer) => {
-      stderr += String(chunk);
-    });
-    child.on("error", (err: Error) =>
-      resolvePromise({ exitCode: -1, stderr: stderr || err.message }),
-    );
-    child.on("close", (code) =>
-      resolvePromise({ exitCode: code ?? -1, stderr }),
-    );
-  });
 }

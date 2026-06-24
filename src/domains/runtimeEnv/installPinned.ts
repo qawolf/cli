@@ -1,28 +1,15 @@
 import { type Fs, makeDefaultFs } from "~/shell/fs.js";
-import { spawn as nodeSpawn } from "~/shell/spawn.js";
 
+import { spawnNpmInstall, type SpawnInstallResult } from "./npmInstall.js";
 import { scaffoldManagedEnv } from "./managedEnvDir.js";
 import { allPinnedResolved } from "./resolvePinned.js";
 import { shimFlowsDeps } from "./shimDeps.js";
-
-type SpawnInstallResult = { exitCode: number; stderr: string };
 
 type SpawnInstallFn = (cwd: string) => Promise<SpawnInstallResult>;
 
 export type InstallPinnedDeps = { fs: Fs; spawnInstall: SpawnInstallFn };
 
-export function defaultSpawnInstall(cwd: string): Promise<SpawnInstallResult> {
-  return new Promise((resolve) => {
-    // npm 7+ strict peer-dep resolution rejects peerOptional conflicts — revert to npm 6 behaviour.
-    const child = nodeSpawn("npm", ["install", "--legacy-peer-deps"], { cwd });
-    let stderr = "";
-    child.stderr?.on("data", (chunk: Buffer) => {
-      stderr += String(chunk);
-    });
-    child.on("error", () => resolve({ exitCode: -1, stderr }));
-    child.on("close", (code) => resolve({ exitCode: code ?? -1, stderr }));
-  });
-}
+export const defaultSpawnInstall = spawnNpmInstall;
 
 export async function installPinned(
   targetDir: string,
