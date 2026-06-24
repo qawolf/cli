@@ -81,13 +81,15 @@ export async function runStagedFlows(
     runRoot: runStagingRoot(),
   });
 
-  const resolvedDir = runtimeEnv.depsRoot;
-  await deps.configureTestkit(resolvedDir);
-  const android = createAndroidDeps(resolvedDir, ctx.signals);
-  const runWebFlowDeps = await deps.runWebFlowDeps(resolvedDir, ctx.signals);
-
+  // Register cleanup before the setup calls below so a throw in configureTestkit
+  // / runWebFlowDeps never leaks the per-run staging directory.
   const unregisterCleanup = ctx.signals.register(staged.cleanup);
   try {
+    const resolvedDir = runtimeEnv.depsRoot;
+    await deps.configureTestkit(resolvedDir);
+    const android = createAndroidDeps(resolvedDir, ctx.signals);
+    const runWebFlowDeps = await deps.runWebFlowDeps(resolvedDir, ctx.signals);
+
     return await deps.flowsRun(
       ctx,
       staged.files,

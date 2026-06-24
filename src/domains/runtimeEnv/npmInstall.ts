@@ -12,6 +12,9 @@ export function spawnNpmInstall(cwd: string): Promise<SpawnInstallResult> {
     // npm 7+ strict peer-dep resolution rejects peerOptional conflicts — revert to npm 6 behaviour.
     const child = nodeSpawn("npm", ["install", "--legacy-peer-deps"], { cwd });
     let stderr = "";
+    // Drain stdout so a large install (playwright + appium) can't fill the pipe
+    // buffer and stall npm; we only need the exit code and stderr.
+    child.stdout?.resume();
     child.stderr?.on("data", (chunk: Buffer) => {
       stderr += String(chunk);
     });
