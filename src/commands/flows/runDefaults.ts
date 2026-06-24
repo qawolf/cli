@@ -28,6 +28,7 @@ import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
 import { loadEnvFile } from "./loadEnvFile.js";
+import { configureEmailsForInProcessRun } from "./configureEmailsForRun.js";
 
 export type HandleFlowsRunDeps = {
   expandPatterns: (
@@ -106,6 +107,7 @@ export async function handleFlowsRun(
   const resolvedDir = envDir ?? cwd;
 
   await resolvedDeps.configureTestkit(resolvedDir);
+  await configureEmailsForInProcessRun(ctx, resolvedDir, flags.workers);
   const android = createAndroidDeps(resolvedDir, ctx.signals);
   return resolvedDeps.flowsRun(ctx, expandedFiles, flags, {
     peekFlowMeta: makePeekFlowMeta(ctx.fs),

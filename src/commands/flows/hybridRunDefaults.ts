@@ -29,6 +29,7 @@ import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { runnerMessages } from "~/core/messages/index.js";
 import { loadEnvFile } from "./loadEnvFile.js";
+import { configureEmailsForInProcessRun } from "./configureEmailsForRun.js";
 
 export type HandleHybridFlowsRunDeps = {
   expandPatterns: (
@@ -110,6 +111,7 @@ export async function handleHybridFlowsRun(
   );
   await loadEnvFile(envDir);
   await resolvedDeps.configureTestkit(envDir);
+  await configureEmailsForInProcessRun(ctx, envDir, flags.workers);
   const android = createAndroidDeps(envDir, ctx.signals);
 
   return resolvedDeps.flowsRun(ctx, files, flags, {

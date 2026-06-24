@@ -11,6 +11,10 @@ import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js"
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
 import type { FlowsRunDeps } from "~/domains/runner/runInternals.js";
 import { parseWorkerInput } from "~/domains/runner/workerProtocol.js";
+import { getConfigDir } from "~/core/paths.js";
+import { makeDefaultFs } from "~/shell/fs.js";
+import { resolveApiBaseUrl } from "~/shell/resolveApiBaseUrl.js";
+import { configureEmailsForRun } from "./configureEmailsForRun.js";
 
 async function readStdin(): Promise<string> {
   const chunks: Uint8Array[] = [];
@@ -30,6 +34,13 @@ async function runWorker(signals: SignalRegistry): Promise<void> {
       throw new Error("worker subprocess currently supports web flows only");
 
     await configureTestkit(input.resolvedDir);
+    await configureEmailsForRun({
+      apiBaseUrl: resolveApiBaseUrl(process.env),
+      configDir: getConfigDir(),
+      cwd: input.resolvedDir,
+      fs: makeDefaultFs(),
+      log: (message) => process.stderr.write(`${message}\n`),
+    });
     const runWebFlowDeps = await defaultRunWebFlowDeps(
       input.resolvedDir,
       signals,
