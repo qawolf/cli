@@ -1,5 +1,6 @@
 import { join } from "node:path";
 
+import { formatErrorWithCause } from "./formatErrorWithCause.js";
 import { generateJUnit, type JUnitFlowRecord } from "./junitXml.js";
 import type { Reporter } from "./types.js";
 
@@ -40,7 +41,7 @@ export function createJUnitReporter(deps: JUnitReporterDeps): Reporter {
         path,
         status: "fail",
         durationMs,
-        error: err.message,
+        error: formatErrorWithCause(err),
       });
     },
 

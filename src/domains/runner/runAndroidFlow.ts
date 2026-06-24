@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import type {
   AndroidFlowApiReturnValue,
   AndroidFlowDefinition,
@@ -17,7 +19,7 @@ import type {
   RunnerDeps,
   RunnerOptions,
 } from "./types.js";
-import { FailWithoutRetryError } from "./errors.js";
+import { FailWithoutRetryError, FlowRunError } from "./errors.js";
 import { notSupported } from "./runWebFlowUtils.js";
 import {
   resolveAvdName,
@@ -41,14 +43,26 @@ export async function runAndroidFlow({
   options: RunAndroidFlowOptions;
   flowPath: string;
 }): Promise<FlowRunResult> {
-  const exported = await loadFlowDefault<AndroidFlowApiReturnValue>({
-    flowPath,
-  });
-  if (typeof exported === "function") {
-    // (D2) Android legacy flows have no target; AVD derivation is impossible.
-    throw new Error(
-      "runAndroidFlow: legacy flow functions are not supported; use flow() from @qawolf/flows/android",
-    );
+  let exported: AndroidFlowApiReturnValue;
+  try {
+    exported = await loadFlowDefault<AndroidFlowApiReturnValue>({
+      flowPath,
+      depsRoot: deps.depsRoot,
+    });
+    if (typeof exported === "function") {
+      // (D2) Android legacy flows have no target; AVD derivation is impossible.
+      throw new Error(
+        "runAndroidFlow: legacy flow functions are not supported; use flow() from @qawolf/flows/android",
+      );
+    }
+  } catch (err) {
+    const flowName = path.basename(flowPath, path.extname(flowPath));
+    return {
+      passed: false,
+      testCounts: { passed: 0, total: 0 },
+      attempts: 1,
+      error: new FlowRunError(flowName, 1, err),
+    };
   }
 
   const {

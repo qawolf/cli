@@ -13,7 +13,7 @@ import type {
   RunnerOptions,
 } from "./types.js";
 import type { WebLaunchDeps, WebLaunchOptions } from "./web/types.js";
-import { FailWithoutRetryError } from "./errors.js";
+import { FailWithoutRetryError, FlowRunError } from "./errors.js";
 import { initFlowRuntime } from "./initFlowRuntime.js";
 import {
   createLaunch,
@@ -41,12 +41,25 @@ export async function runWebFlow({
   options: RunWebFlowOptions;
   flowPath: string;
 }): Promise<FlowRunResult> {
-  await initFlowRuntime(flowPath, {
-    timeout: options.timeout,
-    depsRoot: deps.depsRoot,
-  });
-
-  const exported = await loadFlowDefault<WebFlowApiReturnValue>({ flowPath });
+  let exported: WebFlowApiReturnValue;
+  try {
+    await initFlowRuntime(flowPath, {
+      timeout: options.timeout,
+      depsRoot: deps.depsRoot,
+    });
+    exported = await loadFlowDefault<WebFlowApiReturnValue>({
+      flowPath,
+      depsRoot: deps.depsRoot,
+    });
+  } catch (err) {
+    const flowName = path.basename(flowPath, path.extname(flowPath));
+    return {
+      passed: false,
+      testCounts: { passed: 0, total: 0 },
+      attempts: 1,
+      error: new FlowRunError(flowName, 1, err),
+    };
+  }
 
   const isLegacy = typeof exported === "function";
   const flowName = isLegacy

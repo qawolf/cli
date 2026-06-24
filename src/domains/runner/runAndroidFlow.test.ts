@@ -125,4 +125,18 @@ describe("runAndroidFlow", () => {
     expect(result.passed).toBe(false);
     expect(result.attempts).toBe(1);
   });
+
+  it("should return a failed result with the load error as cause when the flow file has no default export", async () => {
+    const result = await runAndroidFlow({
+      deps: makeAndroidDeps(),
+      options: baseOptions,
+      flowPath: fixturePath("noDefault"),
+    });
+
+    expect(result.passed).toBe(false);
+    expect(result.attempts).toBe(1);
+    const cause = (result.error as Error & { cause?: unknown })?.cause;
+    expect(cause).toBeInstanceOf(Error);
+    expect((cause as Error).message).toContain("No default export found");
+  });
 });
