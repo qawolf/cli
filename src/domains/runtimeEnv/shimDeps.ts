@@ -1,4 +1,4 @@
-// oxlint-disable eslint/max-lines -- readShimMarker helper is colocated with shimFlowsDeps; extracting it would split tightly coupled logic
+// oxlint-disable eslint/max-lines -- shim helpers are colocated due to shared shim-format coupling
 import { join } from "node:path";
 
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
@@ -79,6 +79,110 @@ function resolveBunBuild(
   return bunBuild === false ? undefined : { build: bunBuild };
 }
 
+/**
+ * Removes Bun-built CJS shims left over from a prior binary run. Node.js
+ * resolves bare specifiers correctly so shimming is unnecessary, but stale CJS
+ * bundles shadow real packages — Node.js finds them first and cannot extract
+ * named exports from CJS bundles of ESM-only packages (e.g. @qawolf/flow-targets
+ * → getWebBrowserInfo fails). A CJS require() shim for an ESM-only package
+ * would also break named imports, so shimming is skipped entirely in Node mode
+ * and only cleanup runs.
+ */
+async function removeStaleShims(
+  flowsDir: string,
+  flowsDeps: string[],
+  fs: Fs,
+): Promise<void> {
+  const shimsDir = join(flowsDir, "node_modules");
+  if (!fs.existsSync(shimsDir)) return;
+  for (const dep of flowsDeps) {
+    const shimDepDir = join(shimsDir, ...dep.split("/"));
+    if (readShimMarker(shimDepDir, fs)) {
+      await fs.rm(shimDepDir, { recursive: true, force: true });
+    }
+  }
+}
+
+type BuildDepShimArgs = {
+  envDir: string;
+  flowsDir: string;
+  dep: string;
+  fs: Fs;
+  build: BuildFn;
+};
+
+/**
+ * Builds and writes a Bun.build() CJS shim for a single @qawolf/flows
+ * dependency. Skips if the dep is absent, already up-to-date, is a real
+ * (unmanaged) package directory, or cannot be resolved. See the WIZ-10612
+ * rationale comment above for why fully-inlined CJS bundles are required.
+ */
+async function buildDepShim(args: BuildDepShimArgs): Promise<void> {
+  const { envDir, flowsDir, dep, fs, build } = args;
+  const depParts = dep.split("/"); // ["pkg"] or ["@scope", "pkg"]
+  const depDir = join(envDir, "node_modules", ...depParts);
+  if (!fs.existsSync(depDir)) return;
+
+  let depVersion: string;
+  try {
+    const pkg = JSON.parse(fs.readFileSync(join(depDir, "package.json"))) as {
+      version?: string;
+    };
+    depVersion = pkg.version ?? "unknown";
+  } catch {
+    depVersion = "unknown";
+  }
+
+  const shimDir = join(flowsDir, "node_modules", ...depParts);
+
+  if (fs.existsSync(shimDir)) {
+    const marker = readShimMarker(shimDir, fs);
+    // No marker = real package directory (e.g. pnpm nested install) — never overwrite or remove it.
+    if (!marker) return;
+    if (
+      marker._qawolf_version === depVersion &&
+      marker._qawolf_format === "bun-build-v1"
+    )
+      return;
+    // Stale managed shim — remove and rebuild below.
+    await fs.rm(shimDir, { recursive: true, force: true });
+  }
+
+  let entry: string;
+  try {
+    entry = resolveFromEnvDir(envDir, dep, "cjs", fs);
+  } catch {
+    return;
+  }
+
+  const result = await build({
+    entrypoints: [entry],
+    target: "bun",
+    format: "cjs",
+  });
+  const [output] = result.outputs;
+  if (!result.success || !output) {
+    const logs = result.logs.map((l) => l.message).join("; ");
+    // No logger is threaded into this shimming routine; write the build
+    // diagnostic to stderr directly (same channel as the worker error path).
+    // oxlint-disable-next-line no-restricted-properties
+    process.stderr.write(`[qawolf] bun.build failed for ${dep}: ${logs}\n`);
+    return;
+  }
+  const shimCode = await output.text();
+
+  await fs.mkdir(shimDir, { recursive: true });
+  await fs.writeFile(
+    join(shimDir, "package.json"),
+    JSON.stringify({
+      name: dep,
+      _qawolf_version: depVersion,
+      _qawolf_format: "bun-build-v1",
+    }),
+  );
+  await fs.writeFile(join(shimDir, "index.js"), shimCode);
+}
+
 export async function shimFlowsDeps(
   envDir: string,
   fs: Fs = makeDefaultFs(),
@@ -99,87 +203,12 @@ export async function shimFlowsDeps(
   }
 
   const bun = resolveBunBuild(bunBuild);
-  // Node.js resolves bare specifiers correctly; shimming is unnecessary and
-  // a CJS require() fallback for ESM-only packages would break named imports.
-  // But stale Bun-built CJS shims from a prior binary run must be removed —
-  // Node.js finds them first and cannot extract named exports from CJS bundles
-  // of ESM-only packages (e.g. @qawolf/flow-targets → getWebBrowserInfo fails).
   if (!bun) {
-    const shimsDir = join(flowsDir, "node_modules");
-    if (fs.existsSync(shimsDir)) {
-      for (const dep of flowsDeps) {
-        const shimDepDir = join(shimsDir, ...dep.split("/"));
-        if (readShimMarker(shimDepDir, fs)) {
-          await fs.rm(shimDepDir, { recursive: true, force: true });
-        }
-      }
-    }
+    await removeStaleShims(flowsDir, flowsDeps, fs);
     return;
   }
 
   for (const dep of flowsDeps) {
-    const depParts = dep.split("/"); // ["pkg"] or ["@scope", "pkg"]
-    const depDir = join(envDir, "node_modules", ...depParts);
-    if (!fs.existsSync(depDir)) continue;
-
-    let depVersion: string;
-    try {
-      const pkg = JSON.parse(fs.readFileSync(join(depDir, "package.json"))) as {
-        version?: string;
-      };
-      depVersion = pkg.version ?? "unknown";
-    } catch {
-      depVersion = "unknown";
-    }
-
-    const shimDir = join(flowsDir, "node_modules", ...depParts);
-
-    if (fs.existsSync(shimDir)) {
-      const marker = readShimMarker(shimDir, fs);
-      // No marker means this is a real package directory (e.g. pnpm nested
-      // install) — never overwrite or remove it.
-      if (!marker) continue;
-      if (
-        marker._qawolf_version === depVersion &&
-        marker._qawolf_format === "bun-build-v1"
-      )
-        continue;
-      // Stale managed shim — remove and rebuild below.
-      await fs.rm(shimDir, { recursive: true, force: true });
-    }
-
-    let entry: string;
-    try {
-      entry = resolveFromEnvDir(envDir, dep, "cjs", fs);
-    } catch {
-      continue;
-    }
-
-    const result = await bun.build({
-      entrypoints: [entry],
-      target: "bun",
-      format: "cjs",
-    });
-    const [output] = result.outputs;
-    if (!result.success || !output) {
-      const logs = result.logs.map((l) => l.message).join("; ");
-      // No logger is threaded into this shimming routine; write the build
-      // diagnostic to stderr directly (same channel as the worker error path).
-      // oxlint-disable-next-line no-restricted-properties
-      process.stderr.write(`[qawolf] bun.build failed for ${dep}: ${logs}\n`);
-      continue;
-    }
-    const shimCode = await output.text();
-
-    await fs.mkdir(shimDir, { recursive: true });
-    await fs.writeFile(
-      join(shimDir, "package.json"),
-      JSON.stringify({
-        name: dep,
-        _qawolf_version: depVersion,
-        _qawolf_format: "bun-build-v1",
-      }),
-    );
-    await fs.writeFile(join(shimDir, "index.js"), shimCode);
+    await buildDepShim({ envDir, flowsDir, dep, fs, build: bun.build });
   }
 }
