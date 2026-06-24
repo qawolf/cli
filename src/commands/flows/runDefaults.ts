@@ -1,26 +1,29 @@
-import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
-import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
+import { join } from "node:path";
+
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { runnerMessages } from "~/core/messages/index.js";
-import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
-
 import { pluralize } from "~/core/pluralize.js";
 import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
-import { stageFlows } from "~/domains/flows/stageFlows.js";
+import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
+import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
+import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
+import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
+import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
+import type { EnsureRuntimeEnvResult } from "~/domains/runtimeEnv/index.js";
+import { managedEnvBaseDir } from "~/domains/runtimeEnv/managedEnvDir.js";
 import {
-  type EnsureRuntimeEnvResult,
-  linkManagedDeps,
-} from "~/domains/runtimeEnv/index.js";
+  prepareRunDir as defaultPrepareRunDir,
+  type PrepareRunDirArgs,
+  type PrepareRunDirResult,
+} from "~/domains/runtimeEnv/prepareRunDir.js";
+import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
+import type { Fs } from "~/shell/fs.js";
+import type { Logger } from "~/shell/logger.js";
+import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 import {
   resolveDepsRoot,
   type ResolveDepsRootArgs,
 } from "~/commands/resolveDepsRoot.js";
-import type { Fs } from "~/shell/fs.js";
-import type { Logger } from "~/shell/logger.js";
-import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
-import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
-import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
-import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
 import { buildFlowsRunDeps } from "./buildFlowsRunDeps.js";
 import { loadEnvFile } from "./loadEnvFile.js";
@@ -34,6 +37,9 @@ export type HandleFlowsRunDeps = {
   resolveDepsRoot: (
     args: Omit<ResolveDepsRootArgs, "fs">,
   ) => Promise<EnsureRuntimeEnvResult>;
+  prepareRunDir: (
+    args: Omit<PrepareRunDirArgs, "fs">,
+  ) => Promise<PrepareRunDirResult>;
   configureTestkit: (dir: string) => Promise<void>;
   runWebFlowDeps: typeof defaultRunWebFlowDeps;
   flowsRun: typeof defaultFlowsRun;
@@ -44,6 +50,7 @@ function makeDefaultDeps(fs: Fs): HandleFlowsRunDeps {
     expandPatterns: (patterns, cwd, logger) =>
       defaultExpandPatterns(patterns, cwd, logger, fs),
     resolveDepsRoot: (args) => resolveDepsRoot({ ...args, fs }),
+    prepareRunDir: (args) => defaultPrepareRunDir({ ...args, fs }),
     configureTestkit: defaultConfigureTestkit,
     runWebFlowDeps: defaultRunWebFlowDeps,
     flowsRun: defaultFlowsRun,
@@ -98,15 +105,12 @@ export async function handleFlowsRun(
   const projectDir = resolveProjectDirSafe(expandedFiles, ctx.fs);
   await loadEnvFile(projectDir ?? cwd);
 
-  const staged = await stageFlows({
+  const staged = await resolvedDeps.prepareRunDir({
     files: expandedFiles,
     projectDir,
-    cwd,
-    fs: ctx.fs,
+    depsRoot: runtimeEnv.depsRoot,
+    runRoot: join(managedEnvBaseDir(), ".runs"),
   });
-  if (runtimeEnv.source !== "project" && staged.bundleRoot !== undefined) {
-    await linkManagedDeps(staged.bundleRoot, runtimeEnv.depsRoot, ctx.fs);
-  }
 
   const resolvedDir = runtimeEnv.depsRoot;
 
@@ -116,9 +120,7 @@ export async function handleFlowsRun(
     resolvedDir,
     ctx.signals,
   );
-  const unregisterCleanup = staged.cleanup
-    ? ctx.signals.register(staged.cleanup)
-    : undefined;
+  const unregisterCleanup = ctx.signals.register(staged.cleanup);
   try {
     return await resolvedDeps.flowsRun(
       ctx,
@@ -127,7 +129,7 @@ export async function handleFlowsRun(
       buildFlowsRunDeps({ ctx, resolvedDir, android, runWebFlowDeps, flags }),
     );
   } finally {
-    unregisterCleanup?.();
-    await staged.cleanup?.();
+    unregisterCleanup();
+    await staged.cleanup();
   }
 }

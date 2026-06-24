@@ -7,14 +7,28 @@ import { getDataDir } from "~/core/paths.js";
 import { pinnedPackages } from "./pinnedPackages.js";
 
 /**
- * Deterministic 16-hex-char SHA-256 digest of the pinned package specs. A
- * new hash is produced whenever any pinned version changes, so each release
- * gets its own isolated install directory.
+ * Identifies the runtime channel: "binary" when running inside the compiled
+ * Bun binary (QAWOLF_COMPILED injected via --define), "node" otherwise.
+ * The compiled binary writes CJS shims that break Node.js named imports, so
+ * each channel must have its own isolated managed runtime directory.
+ */
+export function runtimeChannel(): "node" | "binary" {
+  return process.env.QAWOLF_COMPILED === "true" ? "binary" : "node";
+}
+
+/**
+ * Deterministic 16-hex-char SHA-256 digest of the pinned package specs plus
+ * the runtime channel. A new hash is produced whenever any pinned version
+ * changes or when switching between the Node and compiled-binary channels,
+ * so each combination gets its own isolated install directory. Channel
+ * isolation prevents CJS shims written by the binary from corrupting the
+ * Node.js runtime and vice versa.
  */
 export function managedEnvHash(): string {
-  const content = pinnedPackages
-    .map(({ name, version }) => `${name}@${version}`)
-    .join("\n");
+  const content = [
+    ...pinnedPackages.map(({ name, version }) => `${name}@${version}`),
+    `channel:${runtimeChannel()}`,
+  ].join("\n");
   return createHash("sha256").update(content).digest("hex").slice(0, 16);
 }
 

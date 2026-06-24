@@ -7,18 +7,91 @@ import { pinnedPackages } from "./pinnedPackages.js";
 import {
   managedEnvDir,
   managedEnvHash,
+  runtimeChannel,
   scaffoldManagedEnv,
 } from "./managedEnvDir.js";
 
+describe("runtimeChannel", () => {
+  const priorCompiled = process.env["QAWOLF_COMPILED"];
+
+  afterEach(() => {
+    if (priorCompiled === undefined) {
+      delete process.env["QAWOLF_COMPILED"];
+    } else {
+      process.env["QAWOLF_COMPILED"] = priorCompiled;
+    }
+  });
+
+  it('returns "binary" when QAWOLF_COMPILED is "true"', () => {
+    process.env["QAWOLF_COMPILED"] = "true";
+    expect(runtimeChannel()).toBe("binary");
+  });
+
+  it('returns "node" when QAWOLF_COMPILED is unset', () => {
+    delete process.env["QAWOLF_COMPILED"];
+    expect(runtimeChannel()).toBe("node");
+  });
+
+  it('returns "node" when QAWOLF_COMPILED is any other value', () => {
+    process.env["QAWOLF_COMPILED"] = "false";
+    expect(runtimeChannel()).toBe("node");
+  });
+});
+
 describe("managedEnvHash", () => {
+  const priorCompiled = process.env["QAWOLF_COMPILED"];
+
+  afterEach(() => {
+    if (priorCompiled === undefined) {
+      delete process.env["QAWOLF_COMPILED"];
+    } else {
+      process.env["QAWOLF_COMPILED"] = priorCompiled;
+    }
+  });
+
   it("returns exactly 16 hex characters", () => {
     const hash = managedEnvHash();
     expect(hash).toHaveLength(16);
     expect(hash).toMatch(/^[0-9a-f]{16}$/);
   });
 
-  it("is stable across multiple calls", () => {
+  it("is stable within the node channel", () => {
+    delete process.env["QAWOLF_COMPILED"];
     expect(managedEnvHash()).toBe(managedEnvHash());
+  });
+
+  it("is stable within the binary channel", () => {
+    process.env["QAWOLF_COMPILED"] = "true";
+    expect(managedEnvHash()).toBe(managedEnvHash());
+  });
+
+  it("differs between node and binary channels", () => {
+    delete process.env["QAWOLF_COMPILED"];
+    const nodeHash = managedEnvHash();
+
+    process.env["QAWOLF_COMPILED"] = "true";
+    const binaryHash = managedEnvHash();
+
+    expect(nodeHash).not.toBe(binaryHash);
+  });
+
+  it("changes when a pinned package version changes", () => {
+    delete process.env["QAWOLF_COMPILED"];
+    const baseline = managedEnvHash();
+
+    // Temporarily mutate the first pinned package version to simulate a version bump.
+    const first = pinnedPackages[0];
+    if (!first)
+      throw new Error(
+        "pinnedPackages is empty — cannot test version sensitivity",
+      );
+    const originalVersion = first.version;
+    try {
+      (first as { version: string }).version = originalVersion + "-modified";
+      expect(managedEnvHash()).not.toBe(baseline);
+    } finally {
+      (first as { version: string }).version = originalVersion;
+    }
   });
 });
 

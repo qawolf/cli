@@ -48,7 +48,14 @@ describe("clearRuntimeEnv", () => {
     await fs.mkdir(`${override}/src`, { recursive: true });
     await fs.writeFile(`${override}/package.json`, '{"name":"my-app"}');
 
-    expect(clearRuntimeEnv(fs)).rejects.toThrow("Refusing to delete");
+    let caughtError: unknown;
+    try {
+      await clearRuntimeEnv(fs);
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(caughtError).toBeInstanceOf(Error);
+    expect((caughtError as Error).message).toContain("Refusing to delete");
     expect(await fs.pathExists(override)).toBe(true);
   });
 

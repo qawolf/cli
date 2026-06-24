@@ -1,3 +1,4 @@
+// oxlint-disable eslint/max-lines -- adding the project-staging coverage pushed this past 250; splitting the handleHybridFlowsRun suite would fragment its coverage story
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
@@ -17,6 +18,7 @@ afterEach(() => {
 const expandPatternsMock = mock<HandleHybridFlowsRunDeps["expandPatterns"]>();
 const pullEnvMock = mock<HandleHybridFlowsRunDeps["pullEnv"]>();
 const resolveDepsRootMock = mock<HandleHybridFlowsRunDeps["resolveDepsRoot"]>();
+const prepareRunDirMock = mock<HandleHybridFlowsRunDeps["prepareRunDir"]>();
 const configureTestkitMock = mock<(dir: string) => Promise<void>>();
 const flowsRunMock = mock<HandleHybridFlowsRunDeps["flowsRun"]>();
 const runWebFlowDepsMock = mock<() => Promise<unknown>>();
@@ -25,6 +27,7 @@ const trackedMocks = [
   expandPatternsMock,
   pullEnvMock,
   resolveDepsRootMock,
+  prepareRunDirMock,
   configureTestkitMock,
   flowsRunMock,
   runWebFlowDepsMock,
@@ -38,6 +41,11 @@ beforeEach(() => {
     depsRoot: "/env",
     source: "project",
     installed: false,
+  });
+  prepareRunDirMock.mockResolvedValue({
+    files: [],
+    runDir: "/mock/run",
+    cleanup: async () => {},
   });
   configureTestkitMock.mockResolvedValue(undefined);
   flowsRunMock.mockResolvedValue(undefined);
@@ -79,6 +87,7 @@ function makeDeps(): HandleHybridFlowsRunDeps {
     expandPatterns: expandPatternsMock,
     pullEnv: pullEnvMock,
     resolveDepsRoot: resolveDepsRootMock,
+    prepareRunDir: prepareRunDirMock,
     configureTestkit: configureTestkitMock,
     flowsRun: flowsRunMock,
     runWebFlowDeps:
@@ -108,6 +117,11 @@ describe("handleHybridFlowsRun", () => {
     expandPatternsMock.mockResolvedValue([
       "/mock/.qawolf/my-env/login.flow.ts",
     ]);
+    prepareRunDirMock.mockResolvedValue({
+      files: ["/mock/.qawolf/my-env/login.flow.ts"],
+      runDir: "/mock/run",
+      cleanup: async () => {},
+    });
 
     await handleHybridFlowsRun(
       ctx,
@@ -132,6 +146,83 @@ describe("handleHybridFlowsRun", () => {
     expect(flowsRunDeps?.logger).toBeDefined();
   });
 
+  it("calls prepareRunDir with expanded files, depsRoot, and a .runs runRoot", async () => {
+    const ctx = makeCtx();
+    const deps = makeDeps();
+    const envDir = "/mock/.qawolf/my-env";
+    expandPatternsMock.mockResolvedValue([`${envDir}/login.flow.ts`]);
+    resolveDepsRootMock.mockResolvedValue({
+      depsRoot: "/managed",
+      source: "managed",
+      installed: true,
+    });
+
+    await handleHybridFlowsRun(
+      ctx,
+      "**/login.flow.ts",
+      { ...defaultFlags(), env: "my-env" },
+      deps,
+    );
+
+    expect(prepareRunDirMock).toHaveBeenCalledWith({
+      files: [`${envDir}/login.flow.ts`],
+      projectDir: undefined,
+      depsRoot: "/managed",
+      runRoot: expect.stringContaining(".runs") as unknown,
+    });
+  });
+
+  it("passes staged files from prepareRunDir to flowsRun", async () => {
+    const ctx = makeCtx();
+    const deps = makeDeps();
+    expandPatternsMock.mockResolvedValue([
+      "/mock/.qawolf/my-env/login.flow.ts",
+    ]);
+    prepareRunDirMock.mockResolvedValue({
+      files: ["/mock/run/exec/login.flow.ts"],
+      runDir: "/mock/run",
+      cleanup: async () => {},
+    });
+
+    await handleHybridFlowsRun(
+      ctx,
+      "**/login.flow.ts",
+      { ...defaultFlags(), env: "my-env" },
+      deps,
+    );
+
+    expect(flowsRunMock).toHaveBeenCalledWith(
+      expect.anything(),
+      ["/mock/run/exec/login.flow.ts"],
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it("calls staged cleanup after flowsRun completes", async () => {
+    const ctx = makeCtx();
+    const deps = makeDeps();
+    expandPatternsMock.mockResolvedValue([
+      "/mock/.qawolf/my-env/login.flow.ts",
+    ]);
+    const cleanup = mock<() => Promise<void>>();
+    cleanup.mockResolvedValue(undefined);
+    prepareRunDirMock.mockResolvedValue({
+      files: ["/mock/.qawolf/my-env/login.flow.ts"],
+      runDir: "/mock/run",
+      cleanup,
+    });
+
+    await handleHybridFlowsRun(
+      ctx,
+      "**/login.flow.ts",
+      { ...defaultFlags(), env: "my-env" },
+      deps,
+    );
+
+    expect(cleanup).toHaveBeenCalledTimes(1);
+  });
+
   it("pulls env on cache miss and runs matched files", async () => {
     const ctx = makeCtx();
     const deps = makeDeps();
@@ -139,6 +230,11 @@ describe("handleHybridFlowsRun", () => {
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce(["/mock/.qawolf/my-env/login.flow.ts"]);
     pullEnvMock.mockResolvedValue(undefined);
+    prepareRunDirMock.mockResolvedValue({
+      files: ["/mock/.qawolf/my-env/login.flow.ts"],
+      runDir: "/mock/run",
+      cleanup: async () => {},
+    });
 
     await handleHybridFlowsRun(
       ctx,
@@ -202,6 +298,14 @@ describe("handleHybridFlowsRun", () => {
       "/mock/.qawolf/my-env/a.flow.ts",
       "/mock/.qawolf/my-env/b.flow.ts",
     ]);
+    prepareRunDirMock.mockResolvedValue({
+      files: [
+        "/mock/.qawolf/my-env/a.flow.ts",
+        "/mock/.qawolf/my-env/b.flow.ts",
+      ],
+      runDir: "/mock/run",
+      cleanup: async () => {},
+    });
 
     await handleHybridFlowsRun(
       ctx,

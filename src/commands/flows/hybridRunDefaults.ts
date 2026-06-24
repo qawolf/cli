@@ -1,31 +1,34 @@
 import { join, resolve } from "node:path";
 
-import { validateEnvId } from "~/domains/flows/pull/pull.js";
+import { buildPatternArgs } from "~/core/patternArgs.js";
+import { runnerMessages } from "~/core/messages/index.js";
+import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
+import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
 import { handleFlowsPull } from "~/domains/flows/pull/handler.js";
+import { validateEnvId } from "~/domains/flows/pull/pull.js";
+import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
+import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
+import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
+import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
+import type { EnsureRuntimeEnvResult } from "~/domains/runtimeEnv/index.js";
+import { managedEnvBaseDir } from "~/domains/runtimeEnv/managedEnvDir.js";
+import {
+  prepareRunDir as defaultPrepareRunDir,
+  type PrepareRunDirArgs,
+  type PrepareRunDirResult,
+} from "~/domains/runtimeEnv/prepareRunDir.js";
 import type {
   AuthCommandContext,
   CommandResult,
 } from "~/shell/commandContext.js";
-import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
-import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
-import { stageFlows } from "~/domains/flows/stageFlows.js";
+import type { Fs } from "~/shell/fs.js";
+import type { Logger } from "~/shell/logger.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
-import {
-  type EnsureRuntimeEnvResult,
-  linkManagedDeps,
-} from "~/domains/runtimeEnv/index.js";
 import {
   resolveDepsRoot,
   type ResolveDepsRootArgs,
 } from "~/commands/resolveDepsRoot.js";
-import type { Fs } from "~/shell/fs.js";
-import type { Logger } from "~/shell/logger.js";
-import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
-import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
-import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
-import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
-import { buildPatternArgs } from "~/core/patternArgs.js";
-import { runnerMessages } from "~/core/messages/index.js";
+
 import { buildFlowsRunDeps } from "./buildFlowsRunDeps.js";
 import { loadEnvFile } from "./loadEnvFile.js";
 
@@ -39,6 +42,9 @@ export type HandleHybridFlowsRunDeps = {
   resolveDepsRoot: (
     args: Omit<ResolveDepsRootArgs, "fs">,
   ) => Promise<EnsureRuntimeEnvResult>;
+  prepareRunDir: (
+    args: Omit<PrepareRunDirArgs, "fs">,
+  ) => Promise<PrepareRunDirResult>;
   configureTestkit: (dir: string) => Promise<void>;
   flowsRun: typeof defaultFlowsRun;
   runWebFlowDeps: typeof defaultRunWebFlowDeps;
@@ -50,6 +56,7 @@ function makeDefaultHybridDeps(fs: Fs): HandleHybridFlowsRunDeps {
       defaultExpandPatterns(patterns, cwd, logger, fs),
     pullEnv: (ctx, envId) => handleFlowsPull(ctx, { env: envId, yes: true }),
     resolveDepsRoot: (args) => resolveDepsRoot({ ...args, fs }),
+    prepareRunDir: (args) => defaultPrepareRunDir({ ...args, fs }),
     configureTestkit: defaultConfigureTestkit,
     flowsRun: defaultFlowsRun,
     runWebFlowDeps: defaultRunWebFlowDeps,
@@ -70,7 +77,7 @@ export async function handleHybridFlowsRun(
 
   const envDir = resolve(join(".qawolf", flags.env));
   const patternArgs = buildPatternArgs(pattern);
-  const globFlows = () =>
+  const globFlows = (): Promise<string[]> =>
     resolvedDeps.expandPatterns(patternArgs, envDir, ctx.log("flows"));
 
   let files = await globFlows();
@@ -113,15 +120,12 @@ export async function handleHybridFlowsRun(
   await loadEnvFile(envDir);
 
   const projectDir = resolveProjectDirSafe(files, ctx.fs);
-  const staged = await stageFlows({
+  const staged = await resolvedDeps.prepareRunDir({
     files,
     projectDir,
-    cwd: process.cwd(),
-    fs: ctx.fs,
+    depsRoot: runtimeEnv.depsRoot,
+    runRoot: join(managedEnvBaseDir(), ".runs"),
   });
-  if (runtimeEnv.source !== "project" && staged.bundleRoot !== undefined) {
-    await linkManagedDeps(staged.bundleRoot, runtimeEnv.depsRoot, ctx.fs);
-  }
 
   const resolvedDir = runtimeEnv.depsRoot;
   await resolvedDeps.configureTestkit(resolvedDir);
@@ -131,9 +135,7 @@ export async function handleHybridFlowsRun(
     ctx.signals,
   );
 
-  const unregisterCleanup = staged.cleanup
-    ? ctx.signals.register(staged.cleanup)
-    : undefined;
+  const unregisterCleanup = ctx.signals.register(staged.cleanup);
   try {
     return await resolvedDeps.flowsRun(
       ctx,
@@ -142,7 +144,7 @@ export async function handleHybridFlowsRun(
       buildFlowsRunDeps({ ctx, resolvedDir, android, runWebFlowDeps, flags }),
     );
   } finally {
-    unregisterCleanup?.();
-    await staged.cleanup?.();
+    unregisterCleanup();
+    await staged.cleanup();
   }
 }

@@ -1,3 +1,4 @@
+// oxlint-disable eslint/max-lines -- prepareRunDir wiring tests added past 250; splitting the handleFlowsRun suite would fragment coverage
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { CommandContext } from "~/shell/commandContext.js";
 import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
@@ -14,6 +15,7 @@ const noopSignals = makeNoopSignals();
 
 const expandPatternsMock = mock<HandleFlowsRunDeps["expandPatterns"]>();
 const resolveDepsRootMock = mock<HandleFlowsRunDeps["resolveDepsRoot"]>();
+const prepareRunDirMock = mock<HandleFlowsRunDeps["prepareRunDir"]>();
 const configureTestkitMock = mock<(dir: string) => Promise<void>>();
 const flowsRunMock = mock<HandleFlowsRunDeps["flowsRun"]>();
 const runWebFlowDepsMock = mock<(...args: unknown[]) => Promise<unknown>>();
@@ -24,6 +26,7 @@ const uiNoteMock = mock<(message: string, title?: string) => void>();
 const trackedMocks = [
   expandPatternsMock,
   resolveDepsRootMock,
+  prepareRunDirMock,
   configureTestkitMock,
   flowsRunMock,
   runWebFlowDepsMock,
@@ -36,6 +39,7 @@ function makeDeps(): HandleFlowsRunDeps {
   return {
     expandPatterns: expandPatternsMock,
     resolveDepsRoot: resolveDepsRootMock,
+    prepareRunDir: prepareRunDirMock,
     configureTestkit: configureTestkitMock,
     flowsRun: flowsRunMock,
     runWebFlowDeps:
@@ -83,6 +87,11 @@ beforeEach(() => {
     depsRoot: "/env",
     source: "project",
     installed: false,
+  });
+  prepareRunDirMock.mockResolvedValue({
+    files: [],
+    runDir: "/mock/run",
+    cleanup: async () => {},
   });
   configureTestkitMock.mockResolvedValue(undefined);
   flowsRunMock.mockResolvedValue(undefined);
@@ -221,5 +230,56 @@ describe("handleFlowsRun", () => {
     await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
 
     expect(uiIntroMock).not.toHaveBeenCalled();
+  });
+
+  it("calls prepareRunDir with expanded files, depsRoot, and a .runs runRoot", async () => {
+    expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
+    resolveDepsRootMock.mockResolvedValue({
+      depsRoot: "/managed",
+      source: "managed",
+      installed: true,
+    });
+
+    await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
+
+    expect(prepareRunDirMock).toHaveBeenCalledWith({
+      files: ["/some/flow.ts"],
+      projectDir: undefined,
+      depsRoot: "/managed",
+      runRoot: expect.stringContaining(".runs") as unknown,
+    });
+  });
+
+  it("passes staged files from prepareRunDir to flowsRun", async () => {
+    expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
+    prepareRunDirMock.mockResolvedValue({
+      files: ["/mock/run/exec/flow.ts"],
+      runDir: "/mock/run",
+      cleanup: async () => {},
+    });
+
+    await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
+
+    expect(flowsRunMock).toHaveBeenCalledWith(
+      expect.anything(),
+      ["/mock/run/exec/flow.ts"],
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it("calls staged cleanup after flowsRun completes", async () => {
+    expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
+    const cleanup = mock<() => Promise<void>>();
+    cleanup.mockResolvedValue(undefined);
+    prepareRunDirMock.mockResolvedValue({
+      files: ["/some/flow.ts"],
+      runDir: "/mock/run",
+      cleanup,
+    });
+
+    await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
+
+    expect(cleanup).toHaveBeenCalledTimes(1);
   });
 });

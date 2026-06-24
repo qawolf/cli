@@ -67,6 +67,11 @@ function makeDeps(
       source: "project" as const,
       installed: false,
     }),
+    prepareRunDir: async (args) => ({
+      files: args.files,
+      runDir: "/mock/run",
+      cleanup: async () => {},
+    }),
     configureTestkit: async () => {},
     flowsRun: flowsRun as HandleFlowsRunDeps["flowsRun"],
     runWebFlowDeps: (async () =>
