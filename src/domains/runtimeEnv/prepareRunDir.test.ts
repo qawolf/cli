@@ -11,8 +11,8 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { pinnedPackages } from "./pinnedPackages.js";
 import { prepareRunDir } from "./prepareRunDir.js";
+import { scaffoldManagedRuntime } from "./scaffoldManagedRuntime.testUtils.js";
 
 const tmpDirs: string[] = [];
 
@@ -31,16 +31,7 @@ async function makeTmpDir(): Promise<string> {
 
 async function makeDepsRoot(): Promise<string> {
   const depsRoot = await makeTmpDir();
-  const nm = join(depsRoot, "node_modules");
-  await mkdir(nm, { recursive: true });
-  for (const { name } of pinnedPackages) {
-    const pkgDir = join(nm, ...name.split("/"));
-    await mkdir(pkgDir, { recursive: true });
-    await writeFile(
-      join(pkgDir, "package.json"),
-      JSON.stringify({ name, version: "0.0.0" }),
-    );
-  }
+  await scaffoldManagedRuntime(depsRoot);
   return depsRoot;
 }
 

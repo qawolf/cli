@@ -16,6 +16,7 @@ import { makeDefaultFs } from "~/shell/fs.js";
 
 import { populateInnerHop } from "./innerHop.js";
 import { pinnedPackages } from "./pinnedPackages.js";
+import { scaffoldManagedRuntime } from "./scaffoldManagedRuntime.testUtils.js";
 import { createDirSymlink } from "./symlinkDir.js";
 
 const tmpDirs: string[] = [];
@@ -33,18 +34,6 @@ async function makeTmpDir(): Promise<string> {
   );
   tmpDirs.push(d);
   return d;
-}
-
-async function scaffoldManagedRuntime(depsRoot: string): Promise<void> {
-  const nm = join(depsRoot, "node_modules");
-  for (const { name } of pinnedPackages) {
-    const pkgDir = join(nm, ...name.split("/"));
-    await mkdir(pkgDir, { recursive: true });
-    await writeFile(
-      join(pkgDir, "package.json"),
-      JSON.stringify({ name, version: "0.0.0" }),
-    );
-  }
 }
 
 describe("populateInnerHop", () => {
