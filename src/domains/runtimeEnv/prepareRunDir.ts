@@ -4,8 +4,8 @@ import { basename, dirname, join, resolve, sep } from "node:path";
 import { copyDirExcluding } from "~/shell/copyDir.js";
 import { type Fs, makeDefaultFs } from "~/shell/fs.js";
 
+import { populateInnerHop } from "./innerHop.js";
 import { populateOuterHop } from "./outerHop.js";
-import { createDirSymlink } from "./symlinkDir.js";
 
 const excludedDirs = new Set(["node_modules", ".git", ".qawolf"]);
 
@@ -45,11 +45,8 @@ export async function prepareRunDir(
   const execDir = join(runDir, "exec");
   await fs.mkdir(execDir, { recursive: true });
 
-  // Inner hop: executor deps (playwright, @qawolf/flows, etc.) resolve from here.
-  await createDirSymlink(
-    join(depsRoot, "node_modules"),
-    join(execDir, "node_modules"),
-  );
+  // Inner hop: only pinned executor packages resolve here — see populateInnerHop.
+  await populateInnerHop({ depsRoot, execDir, fs });
 
   const stagedFiles = await stageFlowFiles({ files, projectDir, execDir, fs });
 

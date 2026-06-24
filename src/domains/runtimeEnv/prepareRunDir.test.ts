@@ -4,7 +4,6 @@ import {
   lstat,
   mkdir,
   mkdtemp,
-  readFile,
   readlink,
   rm,
   writeFile,
@@ -12,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { pinnedPackages } from "./pinnedPackages.js";
 import { prepareRunDir } from "./prepareRunDir.js";
 
 const tmpDirs: string[] = [];
@@ -31,18 +31,25 @@ async function makeTmpDir(): Promise<string> {
 
 async function makeDepsRoot(): Promise<string> {
   const depsRoot = await makeTmpDir();
-  await mkdir(join(depsRoot, "node_modules"), { recursive: true });
-  await writeFile(join(depsRoot, "node_modules", "executor.txt"), "executor");
+  const nm = join(depsRoot, "node_modules");
+  await mkdir(nm, { recursive: true });
+  for (const { name } of pinnedPackages) {
+    const pkgDir = join(nm, ...name.split("/"));
+    await mkdir(pkgDir, { recursive: true });
+    await writeFile(
+      join(pkgDir, "package.json"),
+      JSON.stringify({ name, version: "0.0.0" }),
+    );
+  }
   return depsRoot;
 }
 
 describe("prepareRunDir", () => {
   describe("inner-hop symlink", () => {
-    it("symlinks exec/node_modules to depsRoot/node_modules", async () => {
+    it("builds exec/node_modules as a real dir with per-pinned-package symlinks", async () => {
       const runRoot = await makeTmpDir();
       const depsRoot = await makeDepsRoot();
-      const srcDir = await makeTmpDir();
-      const flowFile = join(srcDir, "flow.ts");
+      const flowFile = join(runRoot, "flow.ts");
       await writeFile(flowFile, "// flow");
 
       const result = await prepareRunDir({
@@ -54,8 +61,10 @@ describe("prepareRunDir", () => {
       tmpDirs.push(result.runDir);
 
       const innerHop = join(result.runDir, "exec", "node_modules");
-      expect((await lstat(innerHop)).isSymbolicLink()).toBe(true);
-      expect(await readlink(innerHop)).toBe(join(depsRoot, "node_modules"));
+      expect((await lstat(innerHop)).isDirectory()).toBe(true);
+      expect(await readlink(join(innerHop, "@qawolf", "flows"))).toBe(
+        join(depsRoot, "node_modules", "@qawolf", "flows"),
+      );
     });
   });
 
@@ -63,12 +72,9 @@ describe("prepareRunDir", () => {
     it("symlinks runDir/node_modules to the nearest ancestor node_modules when projectDir is given", async () => {
       const runRoot = await makeTmpDir();
       const depsRoot = await makeDepsRoot();
-
       const projectDir = await makeTmpDir();
       const projectNm = join(projectDir, "node_modules");
       await mkdir(projectNm, { recursive: true });
-      await writeFile(join(projectNm, "project-dep.txt"), "project dep");
-
       const flowFile = join(projectDir, "flow.ts");
       await writeFile(flowFile, "// flow");
 
@@ -90,12 +96,9 @@ describe("prepareRunDir", () => {
       const depsRoot = await makeDepsRoot();
 
       // Case 1: no projectDir
-      const srcDir = await makeTmpDir();
-      const flowFile1 = join(srcDir, "flow.ts");
-      await writeFile(flowFile1, "// flow");
-
+      await writeFile(join(runRoot, "flow.ts"), "// flow");
       const result1 = await prepareRunDir({
-        files: [flowFile1],
+        files: [join(runRoot, "flow.ts")],
         projectDir: undefined,
         depsRoot,
         runRoot,
@@ -105,11 +108,9 @@ describe("prepareRunDir", () => {
 
       // Case 2: projectDir with no node_modules and no package.json deps
       const projectDir = await makeTmpDir();
-      const flowFile2 = join(projectDir, "flow.ts");
-      await writeFile(flowFile2, "// flow");
-
+      await writeFile(join(projectDir, "flow.ts"), "// flow");
       const result2 = await prepareRunDir({
-        files: [flowFile2],
+        files: [join(projectDir, "flow.ts")],
         projectDir,
         depsRoot,
         runRoot,
@@ -123,8 +124,7 @@ describe("prepareRunDir", () => {
     it("copies individual flow files into exec/ when no projectDir", async () => {
       const runRoot = await makeTmpDir();
       const depsRoot = await makeDepsRoot();
-      const srcDir = await makeTmpDir();
-      const flowFile = join(srcDir, "myFlow.ts");
+      const flowFile = join(runRoot, "myFlow.ts");
       await writeFile(flowFile, "// my flow");
 
       const result = await prepareRunDir({
@@ -168,7 +168,6 @@ describe("prepareRunDir", () => {
       const projectDir = await makeTmpDir();
       const projectNm = join(projectDir, "node_modules");
       await mkdir(projectNm, { recursive: true });
-      await writeFile(join(projectNm, "pkg.txt"), "pkg");
       const flowFile = join(projectDir, "flow.ts");
       await writeFile(flowFile, "// flow");
 
@@ -180,10 +179,12 @@ describe("prepareRunDir", () => {
       });
       tmpDirs.push(result.runDir);
 
-      // exec/node_modules should be the inner-hop symlink, not a copy of project nm
+      // exec/node_modules is the inner hop — a real dir, not a copy of project nm
       const execNm = join(result.runDir, "exec", "node_modules");
-      expect((await lstat(execNm)).isSymbolicLink()).toBe(true);
-      expect(await readlink(execNm)).toBe(join(depsRoot, "node_modules"));
+      expect((await lstat(execNm)).isDirectory()).toBe(true);
+      expect(await readlink(join(execNm, "@qawolf", "flows"))).toBe(
+        join(depsRoot, "node_modules", "@qawolf", "flows"),
+      );
     });
   });
 
@@ -191,8 +192,7 @@ describe("prepareRunDir", () => {
     it("removes the runDir on cleanup()", async () => {
       const runRoot = await makeTmpDir();
       const depsRoot = await makeDepsRoot();
-      const srcDir = await makeTmpDir();
-      const flowFile = join(srcDir, "flow.ts");
+      const flowFile = join(runRoot, "flow.ts");
       await writeFile(flowFile, "// flow");
 
       const result = await prepareRunDir({
@@ -211,14 +211,9 @@ describe("prepareRunDir", () => {
   describe("prefer-pinned invariant", () => {
     it("executor (inner hop) wins over project copy (outer hop) by path walk-up order", async () => {
       const runRoot = await makeTmpDir();
-      const depsRoot = await makeTmpDir();
+      const depsRoot = await makeDepsRoot();
 
-      // Inner hop: depsRoot/node_modules has the executor copy
-      const innerNm = join(depsRoot, "node_modules");
-      await mkdir(join(innerNm, "@qawolf"), { recursive: true });
-      await writeFile(join(innerNm, "@qawolf", "flows.txt"), "executor-copy");
-
-      // Outer hop: projectDir/node_modules has a project copy
+      // Outer hop: projectDir/node_modules has a project copy of @qawolf/flows
       const projectDir = await makeTmpDir();
       const projectNm = join(projectDir, "node_modules");
       await mkdir(join(projectNm, "@qawolf"), { recursive: true });
@@ -235,16 +230,17 @@ describe("prepareRunDir", () => {
       });
       tmpDirs.push(result.runDir);
 
+      // Inner hop is a real directory; @qawolf/flows symlinks into the managed tree
       const innerHop = join(result.runDir, "exec", "node_modules");
-      expect(await readlink(innerHop)).toBe(innerNm);
+      expect((await lstat(innerHop)).isDirectory()).toBe(true);
+      expect(await readlink(join(innerHop, "@qawolf", "flows"))).toBe(
+        join(depsRoot, "node_modules", "@qawolf", "flows"),
+      );
 
+      // Outer hop remains a symlink to the project node_modules
       const outerHop = join(result.runDir, "node_modules");
+      expect((await lstat(outerHop)).isSymbolicLink()).toBe(true);
       expect(await readlink(outerHop)).toBe(projectNm);
-
-      // A flow file under exec/ resolves @qawolf/flows from the inner hop,
-      // which is closer in the walk-up than the outer hop.
-      const execFlowsFile = join(innerHop, "@qawolf", "flows.txt");
-      expect(await readFile(execFlowsFile, "utf-8")).toBe("executor-copy");
     });
   });
 });
