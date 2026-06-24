@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { basename, join, resolve, sep } from "node:path";
+import { basename, dirname, join, resolve, sep } from "node:path";
 
 import { copyDirExcluding } from "~/shell/copyDir.js";
 import { type Fs, makeDefaultFs } from "~/shell/fs.js";
@@ -73,6 +73,8 @@ function buildRunId(projectDir: string | undefined, files: string[]): string {
     .update(resolve(seedPath))
     .digest("hex")
     .slice(0, 16);
+  // The pid suffix scopes the runDir to this process invocation; each command
+  // calls prepareRunDir once, so same-seedPath reuse within a process is intentional.
   return `${hash}-${process.pid}`;
 }
 
@@ -91,6 +93,26 @@ async function stageFlowFiles(args: StageFlowFilesArgs): Promise<string[]> {
     return files.map((f) => remapPath(f, projectDir, execDir));
   }
 
+  if (files.length > 1) {
+    // Multiple files: place each under a subdir keyed by a hash of its source
+    // dirname so files with identical basenames from different directories do
+    // not overwrite each other.
+    return Promise.all(
+      files.map(async (f) => {
+        const dirHash = createHash("sha256")
+          .update(dirname(f))
+          .digest("hex")
+          .slice(0, 8);
+        const subDir = join(execDir, dirHash);
+        await fs.mkdir(subDir, { recursive: true });
+        const dest = join(subDir, basename(f));
+        await fs.copyFile(f, dest);
+        return dest;
+      }),
+    );
+  }
+
+  // Single file (or empty — validated upstream by buildRunId): flat staging.
   await Promise.all(
     files.map((f) => fs.copyFile(f, join(execDir, basename(f)))),
   );

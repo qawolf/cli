@@ -125,7 +125,9 @@ function spawnNpmInstall(cwd: string): Promise<SpawnInstallResult> {
     child.stderr?.on("data", (chunk: Buffer) => {
       stderr += String(chunk);
     });
-    child.on("error", () => resolvePromise({ exitCode: -1, stderr }));
+    child.on("error", (err: Error) =>
+      resolvePromise({ exitCode: -1, stderr: stderr || err.message }),
+    );
     child.on("close", (code) =>
       resolvePromise({ exitCode: code ?? -1, stderr }),
     );

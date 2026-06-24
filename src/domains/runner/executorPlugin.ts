@@ -73,10 +73,14 @@ export function createExternalizeExecutorPlugin(
       });
 
       // Mark absolute executor paths external after onLoad has resolved them.
-      build.onResolve({ filter: /^\/.*\.(js|mjs|cjs|ts|tsx)$/ }, (args) => {
-        if (!resolvedAbsPaths.has(args.path)) return undefined;
-        return { path: args.path, external: true };
-      });
+      // The filter matches both Unix (/abs/path) and Windows (C:\abs\path) absolute paths.
+      build.onResolve(
+        { filter: /^([A-Za-z]:[\\/]|\/).*\.(js|mjs|cjs|ts|tsx)$/ },
+        (args) => {
+          if (!resolvedAbsPaths.has(args.path)) return undefined;
+          return { path: args.path, external: true };
+        },
+      );
     },
   };
 }
