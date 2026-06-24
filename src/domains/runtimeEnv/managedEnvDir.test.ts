@@ -1,13 +1,15 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { join, resolve } from "node:path";
+import { join, resolve, sep } from "node:path";
 
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { pinnedPackages } from "./pinnedPackages.js";
 import {
+  managedEnvBaseDir,
   managedEnvDir,
   managedEnvHash,
   runtimeChannel,
+  runStagingRoot,
   scaffoldManagedEnv,
 } from "./managedEnvDir.js";
 
@@ -129,6 +131,32 @@ describe("managedEnvDir", () => {
     process.env["QAWOLF_RUNTIME_DIR"] = "   ";
     const hash = managedEnvHash();
     expect(managedEnvDir()).toContain(join("runtime", hash));
+  });
+});
+
+describe("runStagingRoot", () => {
+  const priorOverride = process.env["QAWOLF_RUNTIME_DIR"];
+
+  afterEach(() => {
+    if (priorOverride === undefined) {
+      delete process.env["QAWOLF_RUNTIME_DIR"];
+    } else {
+      process.env["QAWOLF_RUNTIME_DIR"] = priorOverride;
+    }
+  });
+
+  it("returns <managedEnvBaseDir>-runs and is not inside the managed base", () => {
+    delete process.env["QAWOLF_RUNTIME_DIR"];
+    const base = managedEnvBaseDir();
+    const staging = runStagingRoot();
+    expect(staging).toBe(`${base}-runs`);
+    expect(staging.startsWith(base + sep)).toBe(false);
+  });
+
+  it("honors QAWOLF_RUNTIME_DIR and returns <resolved override>-runs", () => {
+    process.env["QAWOLF_RUNTIME_DIR"] = "/custom/cache";
+    const expected = `${resolve("/custom/cache")}-runs`;
+    expect(runStagingRoot()).toBe(expected);
   });
 });
 

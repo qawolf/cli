@@ -6,6 +6,7 @@ import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
+import { runStagingRoot } from "~/domains/runtimeEnv/index.js";
 import {
   handleHybridFlowsRun,
   type HandleHybridFlowsRunDeps,
@@ -146,7 +147,7 @@ describe("handleHybridFlowsRun", () => {
     expect(flowsRunDeps?.logger).toBeDefined();
   });
 
-  it("calls prepareRunDir with expanded files, depsRoot, and a .runs runRoot", async () => {
+  it("calls prepareRunDir with expanded files, depsRoot, and the sibling run-staging root", async () => {
     const ctx = makeCtx();
     const deps = makeDeps();
     const envDir = "/mock/.qawolf/my-env";
@@ -168,7 +169,7 @@ describe("handleHybridFlowsRun", () => {
       files: [`${envDir}/login.flow.ts`],
       projectDir: undefined,
       depsRoot: "/managed",
-      runRoot: expect.stringContaining(".runs") as unknown,
+      runRoot: runStagingRoot(),
     });
   });
 

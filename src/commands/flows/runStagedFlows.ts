@@ -1,5 +1,3 @@
-import { join } from "node:path";
-
 import { runnerMessages } from "~/core/messages/index.js";
 import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
@@ -8,7 +6,7 @@ import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import type { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
 import {
   type EnsureRuntimeEnvResult,
-  managedEnvBaseDir,
+  runStagingRoot,
 } from "~/domains/runtimeEnv/index.js";
 import type {
   PrepareRunDirArgs,
@@ -80,7 +78,7 @@ export async function runStagedFlows(
     files,
     projectDir,
     depsRoot: runtimeEnv.depsRoot,
-    runRoot: join(managedEnvBaseDir(), ".runs"),
+    runRoot: runStagingRoot(),
   });
 
   const resolvedDir = runtimeEnv.depsRoot;

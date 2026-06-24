@@ -45,6 +45,17 @@ export function managedEnvBaseDir(): string {
   return join(getDataDir(), "runtime");
 }
 
+/**
+ * Root for ephemeral per-run staging directories. A SIBLING of the managed
+ * runtime base (never nested inside it) so clearRuntimeEnv's "the managed base
+ * contains only versioned hash dirs" invariant holds and `install clear` keeps
+ * working after a run. Follows QAWOLF_RUNTIME_DIR so run staging lands on the
+ * same writable volume as the runtime cache.
+ */
+export function runStagingRoot(): string {
+  return `${managedEnvBaseDir()}-runs`;
+}
+
 /** Absolute path to the versioned managed runtime directory. */
 export function managedEnvDir(): string {
   return join(managedEnvBaseDir(), managedEnvHash());

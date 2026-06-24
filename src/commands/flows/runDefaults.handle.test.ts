@@ -7,6 +7,7 @@ import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.j
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { runnerMessages } from "~/core/messages/index.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
+import { runStagingRoot } from "~/domains/runtimeEnv/index.js";
 import { handleFlowsRun, type HandleFlowsRunDeps } from "./runDefaults.js";
 
 const noopSignals = makeNoopSignals();
@@ -232,7 +233,7 @@ describe("handleFlowsRun", () => {
     expect(uiIntroMock).not.toHaveBeenCalled();
   });
 
-  it("calls prepareRunDir with expanded files, depsRoot, and a .runs runRoot", async () => {
+  it("calls prepareRunDir with expanded files, depsRoot, and the sibling run-staging root", async () => {
     expandPatternsMock.mockResolvedValue(["/some/flow.ts"]);
     resolveDepsRootMock.mockResolvedValue({
       depsRoot: "/managed",
@@ -246,7 +247,7 @@ describe("handleFlowsRun", () => {
       files: ["/some/flow.ts"],
       projectDir: undefined,
       depsRoot: "/managed",
-      runRoot: expect.stringContaining(".runs") as unknown,
+      runRoot: runStagingRoot(),
     });
   });
 
