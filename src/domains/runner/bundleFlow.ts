@@ -4,8 +4,10 @@ import {
   createExternalizeExecutorPlugin,
 } from "./executorPlugin.js";
 
-// Native browser drivers stay bare so they resolve via the node_modules symlink
-// at the flow's bundle root instead of being inlined into the bundle.
+/**
+ * Native browser drivers stay bare so they resolve via the node_modules symlink
+ * at the flow's bundle root instead of being inlined into the bundle.
+ */
 const browserDrivers = [
   "playwright",
   "playwright-core",
@@ -13,8 +15,10 @@ const browserDrivers = [
   "patchright-core",
 ];
 
-// Pre-bundles a flow's full import tree into a single ESM source string.
-// depsRoot is the executor root whose node_modules holds @qawolf/flows etc.
+/**
+ * Pre-bundles a flow's full import tree into a single ESM source string.
+ * depsRoot is the executor root whose node_modules holds @qawolf/flows etc.
+ */
 export type FlowBundler = (
   flowPath: string,
   depsRoot: string,
@@ -26,8 +30,10 @@ type BunBuildResult = {
   logs: { message: string }[];
 };
 
-// Structural type read from globalThis to avoid the no-restricted-globals lint
-// rule; Bun.build exists in the compiled binary but not the Node.js build.
+/**
+ * Structural type read from globalThis to avoid the no-restricted-globals lint
+ * rule; Bun.build exists in the compiled binary but not the Node.js build.
+ */
 type BunBuild = (config: {
   entrypoints: string[];
   target?: string;

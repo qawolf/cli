@@ -3,10 +3,12 @@ import { basename, join } from "node:path";
 
 import { getDataDir } from "~/core/paths.js";
 
-// The compiled binary entry (generated at build time, see scripts/buildBinary.ts)
-// embeds cli.js as a file asset and exports its on-disk path through this env
-// var before delegating to main. Unset in node/bun runs, where the worker
-// executes the entry script directly.
+/**
+ * The compiled binary entry (generated at build time, see scripts/buildBinary.ts)
+ * embeds cli.js as a file asset and exports its on-disk path through this env
+ * var before delegating to main. Unset in node/bun runs, where the worker
+ * executes the entry script directly.
+ */
 const embeddedCliPathEnv = "QAWOLF_EMBEDDED_CLI_PATH";
 
 /**

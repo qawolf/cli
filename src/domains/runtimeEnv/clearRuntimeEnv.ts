@@ -32,9 +32,11 @@ export async function clearRuntimeEnv(fs: Fs): Promise<ClearRuntimeEnvResult> {
   return { dir, existed };
 }
 
-// A managed base contains only versioned hash dirs, each scaffolded with a
-// package.json named "qawolf-runtime". Empty is fine (nothing of value to lose);
-// any other entry means the path is not ours, so refuse to delete it.
+/**
+ * A managed base contains only versioned hash dirs, each scaffolded with a
+ * package.json named "qawolf-runtime". Empty is fine (nothing of value to lose);
+ * any other entry means the path is not ours, so refuse to delete it.
+ */
 async function isManagedRuntimeBase(dir: string, fs: Fs): Promise<boolean> {
   const entries = await fs.readdirWithTypes(dir);
   for (const entry of entries) {

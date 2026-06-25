@@ -5,27 +5,29 @@ import { runnerMessages } from "~/core/messages/index.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import { type FlowBundler, defaultFlowBundler } from "./bundleFlow.js";
 
-// Only the compiled binary needs bundling — it alone cannot resolve exports-map
-// bare specifiers from external node_modules. Node and `bun run`/`bun test`
-// resolve them directly, so they take the direct-import path. QAWOLF_COMPILED is
-// injected via --define at binary build time (see build:binary in package.json).
-// Tests inject bundleFlow explicitly to exercise either path deterministically.
+/**
+ * Only the compiled binary needs bundling — it alone cannot resolve exports-map
+ * bare specifiers from external node_modules. Node and `bun run`/`bun test`
+ * resolve them directly, so they take the direct-import path. QAWOLF_COMPILED is
+ * injected via --define at binary build time (see build:binary in package.json).
+ * Tests inject bundleFlow explicitly to exercise either path deterministically.
+ */
 const defaultBundleFlow: FlowBundler | undefined =
   process.env.QAWOLF_COMPILED === "true" ? defaultFlowBundler : undefined;
 
 type LoadFlowDefaultArgs = {
   flowPath: string;
   fs?: Fs;
-  // Injectable for tests. When defined, the flow is pre-bundled (compiled-binary
-  // path); when undefined, the flow is imported directly (Node path).
+  // Injectable for tests; when defined the flow is pre-bundled (compiled-binary path), else imported directly (Node path).
   bundleFlow?: FlowBundler | undefined;
-  // Executor root whose node_modules holds @qawolf/flows etc. Required when
-  // bundleFlow is defined; unused on the direct-import path.
+  // Executor root whose node_modules holds @qawolf/flows etc.; required only when bundleFlow is defined.
   depsRoot?: string;
 };
 
-// Imports a module by URL and returns its default export, throwing the canonical
-// no-default-export error when absent.
+/**
+ * Imports a module by URL and returns its default export, throwing the canonical
+ * no-default-export error when absent.
+ */
 async function importDefaultExport<T>(
   moduleUrl: string,
   flowPath: string,
@@ -37,9 +39,11 @@ async function importDefaultExport<T>(
   return exported;
 }
 
-// Imports the bundled flow from a temp sibling of flowPath so the externalized
-// browser-driver bare imports resolve via the node_modules symlink at the flow's
-// bundle root. The temp file is always removed afterward.
+/**
+ * Imports the bundled flow from a temp sibling of flowPath so the externalized
+ * browser-driver bare imports resolve via the node_modules symlink at the flow's
+ * bundle root. The temp file is always removed afterward.
+ */
 async function importBundledFlow<T>(
   flowPath: string,
   code: string,

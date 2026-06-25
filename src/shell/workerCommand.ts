@@ -3,8 +3,7 @@ import { extractEmbeddedWorkerCli } from "./embeddedWorkerCli.js";
 export type WorkerCommand = {
   command: string;
   prefixArgs: string[];
-  // Extra env for the worker spawn (merged over process.env). Used to run the
-  // compiled binary's worker as a normal Bun runtime via BUN_BE_BUN.
+  // Extra env merged over process.env for the worker spawn; runs the compiled binary's worker as a normal Bun runtime via BUN_BE_BUN.
   env?: Record<string, string | undefined>;
 };
 
