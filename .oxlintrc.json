@@ -102,8 +102,19 @@
   "options": {
     "typeAware": true
   },
-  "ignorePatterns": ["dist/", "node_modules/", "knip.config.ts"],
+  "ignorePatterns": [
+    "dist/",
+    "node_modules/",
+    "knip.config.ts",
+    "e2e/fixtures/flows/"
+  ],
   "overrides": [
+    {
+      "files": ["e2e/**/*.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": "off"
+      }
+    },
     {
       "files": ["src/core/**/*.ts"],
       "rules": {
