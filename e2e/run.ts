@@ -57,9 +57,13 @@ function selectChannelNames(
 async function runSuite(suite: Suite, args: CliArgs): Promise<CaseResult[]> {
   // Skip the build for an empty suite — keeps the placeholder fast and build-free.
   if (suite.cases.length === 0) return [];
-  const channels = await resolveChannels(
-    selectChannelNames(suite, args.channel),
-  );
+  const channelNames = selectChannelNames(suite, args.channel);
+  if (channelNames.length === 0) {
+    throw new Error(
+      `Suite "${suite.name}" does not support channel "${args.channel}"`,
+    );
+  }
+  const channels = await resolveChannels(channelNames);
   // One shared managed-runtime root warms once per channel (see createRuntimeRoot).
   const runtime = createRuntimeRoot();
   const results: CaseResult[] = [];

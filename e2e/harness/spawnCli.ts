@@ -9,12 +9,16 @@ export type SpawnCliResult = {
 export type SpawnCliOptions = {
   readonly cwd: string;
   readonly env: Record<string, string | undefined>;
+  // SIGKILL the child after this many ms — guards against a hung CLI or stalled
+  // browser download wedging the whole matrix with no diagnostic.
+  readonly timeoutMs?: number;
 };
 
 /**
  * Minimal promise wrapper over node:child_process spawn. Captures exit code and
- * decoded stdout/stderr; never rejects — a spawn error resolves with exitCode
- * -1 so callers branch on the result instead of try/catch.
+ * decoded stdout/stderr; never rejects — a spawn error (including a timeout
+ * kill) resolves with exitCode -1 so callers branch on the result instead of
+ * try/catch.
  */
 export function spawnCli(
   command: string,
@@ -25,6 +29,8 @@ export function spawnCli(
     const child = spawn(command, [...args], {
       cwd: options.cwd,
       env: options.env,
+      timeout: options.timeoutMs,
+      killSignal: "SIGKILL",
     });
     let stdout = "";
     let stderr = "";

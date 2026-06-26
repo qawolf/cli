@@ -139,7 +139,7 @@ export const smokeOnlySuite: Suite = {
 };
 ```
 
-2. Register it in `suites/index.ts`:
+1. Register it in `suites/index.ts`:
 
 ```ts
 import { smokeOnlySuite } from "./smokeOnly.js";
@@ -155,7 +155,7 @@ registered suite by name, builds only the channels the suite declares, and repor
 
 ## Layout
 
-```
+```text
 e2e/
 ├── README.md
 ├── run.ts                       # entry: parse args, resolve suite(s), run case × channel, report, exit

@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join, resolve, sep } from "node:path";
 
 import type { FlowTemplate, RepoShape, ShapeFile } from "./types.js";
 
@@ -24,7 +24,14 @@ export function materialize(shape: RepoShape, projectDir: string): void {
 }
 
 function writeProjectFile(projectDir: string, file: ShapeFile): void {
-  const absPath = join(projectDir, file.path);
+  if (isAbsolute(file.path)) {
+    throw new Error(`Shape file path must be relative: ${file.path}`);
+  }
+  const root = resolve(projectDir);
+  const absPath = resolve(root, file.path);
+  if (absPath !== root && !absPath.startsWith(`${root}${sep}`)) {
+    throw new Error(`Shape file path escapes project dir: ${file.path}`);
+  }
   mkdirSync(dirname(absPath), { recursive: true });
   writeFileSync(absPath, file.content);
 }

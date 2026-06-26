@@ -112,7 +112,21 @@
     {
       "files": ["e2e/**/*.ts"],
       "rules": {
-        "eslint/no-restricted-imports": "off"
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["~/*", "~/**"],
+                "message": "e2e/ must not import from src/ — it treats the CLI as a subprocess black box."
+              },
+              {
+                "group": ["bun", "bun:*"],
+                "message": "e2e/ harness uses node: builtins for portability — avoid Bun module imports."
+              }
+            ]
+          }
+        ]
       }
     },
     {

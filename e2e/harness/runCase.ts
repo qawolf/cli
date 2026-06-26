@@ -16,6 +16,11 @@ export type RunCaseOptions = {
   readonly noCleanup?: boolean;
 };
 
+// Generous per-case ceiling — the first case warms the runtime + browser
+// download, so this is long enough to never bite a healthy run but bounded so a
+// hung CLI can't wedge the matrix forever.
+const caseTimeoutMs = 600_000;
+
 /**
  * Runs one shape on one channel in a throwaway project dir that shares the run's
  * managed-runtime dir (`runtimeDir`), and collects all assertions into a
@@ -44,7 +49,7 @@ export async function runCase(
         "--junit",
         junitPath,
       ],
-      { cwd: runCwd, env: workspace.env },
+      { cwd: runCwd, env: workspace.env, timeoutMs: caseTimeoutMs },
     );
     const durationMs = Date.now() - startedAt;
     const junit = existsSync(junitPath)
