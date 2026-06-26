@@ -36,7 +36,7 @@
   },
   "scripts": {
     "build": "bun run generate && bun scripts/build.ts",
-    "build:binary": "bun run generate && bun scripts/buildBinary.ts",
+    "build:binary": "bun run build && bun scripts/buildBinary.ts",
     "dev": "bun run src/main.ts",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",

@@ -145,19 +145,18 @@ describe("runWebFlow", () => {
     expect(result.attempts).toBe(1);
   });
 
-  it("should throw when the flow file has no default export", async () => {
-    let caughtError: unknown;
-    try {
-      await runWebFlow({
-        deps: makeWebDeps(),
-        options: baseOptions,
-        flowPath: fixturePath("noDefault"),
-      });
-    } catch (e) {
-      caughtError = e;
-    }
-    expect(caughtError).toBeInstanceOf(Error);
-    expect((caughtError as Error).message).toContain("No default export found");
+  it("should return a failed result with the load error as cause when the flow file has no default export", async () => {
+    const result = await runWebFlow({
+      deps: makeWebDeps(),
+      options: baseOptions,
+      flowPath: fixturePath("noDefault"),
+    });
+
+    expect(result.passed).toBe(false);
+    expect(result.attempts).toBe(1);
+    const cause = (result.error as Error & { cause?: unknown })?.cause;
+    expect(cause).toBeInstanceOf(Error);
+    expect((cause as Error).message).toContain("No default export found");
   });
 
   it("should close all open contexts and browsers when the flow throws", async () => {

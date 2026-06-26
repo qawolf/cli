@@ -1,71 +1,15 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { loadFlowDefault, rewriteFlowImports } from "./loadFlowDefault.js";
+import { pathExists } from "~/shell/fs.js";
+import { defaultFlowBundler } from "./bundleFlow.js";
+import { loadFlowDefault } from "./loadFlowDefault.js";
 
-// ── rewriteFlowImports ────────────────────────────────────────────────────────
+// ── Node path (direct import) ───────────────────────────────────────────────
 
-describe("rewriteFlowImports", () => {
-  const resolve = (s: string) =>
-    `file:///resolved/${s.replace("@qawolf/", "")}`;
-
-  it("rewrites static from import of root specifier", () => {
-    const out = rewriteFlowImports(
-      `import { foo } from '@qawolf/flows';`,
-      resolve,
-    );
-    expect(out).toBe(`import { foo } from 'file:///resolved/flows';`);
-  });
-
-  it("rewrites static from import of subpath specifier", () => {
-    const out = rewriteFlowImports(
-      `import { bar } from '@qawolf/flows/helpers';`,
-      resolve,
-    );
-    expect(out).toBe(`import { bar } from 'file:///resolved/flows/helpers';`);
-  });
-
-  it("rewrites re-export (export ... from) of subpath", () => {
-    const out = rewriteFlowImports(
-      `export { baz } from '@qawolf/flows/utils';`,
-      resolve,
-    );
-    expect(out).toBe(`export { baz } from 'file:///resolved/flows/utils';`);
-  });
-
-  it("rewrites dynamic import() of root specifier", () => {
-    const out = rewriteFlowImports(`import('@qawolf/flows')`, resolve);
-    expect(out).toBe(`import('file:///resolved/flows')`);
-  });
-
-  it("rewrites dynamic import() of subpath specifier", () => {
-    const out = rewriteFlowImports(`import('@qawolf/flows/client')`, resolve);
-    expect(out).toBe(`import('file:///resolved/flows/client')`);
-  });
-
-  it("leaves specifier unchanged when resolve throws", () => {
-    const out = rewriteFlowImports(`import {} from '@qawolf/flows';`, () => {
-      throw new Error("not found");
-    });
-    expect(out).toBe(`import {} from '@qawolf/flows';`);
-  });
-
-  it("does not rewrite unrelated imports", () => {
-    const src = `import { x } from 'playwright';\nimport { y } from '@qawolf/testkit';`;
-    expect(rewriteFlowImports(src, resolve)).toBe(src);
-  });
-
-  it("rewrites double-quoted specifiers", () => {
-    const out = rewriteFlowImports(`import foo from "@qawolf/flows";`, resolve);
-    expect(out).toBe(`import foo from "file:///resolved/flows";`);
-  });
-});
-
-// ── loadFlowDefault ───────────────────────────────────────────────────────────
-
-describe("loadFlowDefault", () => {
+describe("loadFlowDefault (Node path)", () => {
   it("returns the default export when present", async () => {
     const tmp = await mkdtemp(path.join(tmpdir(), "load-flow-test-"));
     try {
@@ -73,9 +17,10 @@ describe("loadFlowDefault", () => {
         path.join(tmp, "flow.mjs"),
         "export default { name: 'test-flow' };\n",
       );
-      const result = await loadFlowDefault<{ name: string }>(
-        path.join(tmp, "flow.mjs"),
-      );
+      const result = await loadFlowDefault<{ name: string }>({
+        flowPath: path.join(tmp, "flow.mjs"),
+        bundleFlow: undefined,
+      });
       expect(result).toEqual({ name: "test-flow" });
     } finally {
       await rm(tmp, { recursive: true });
@@ -88,7 +33,10 @@ describe("loadFlowDefault", () => {
       await writeFile(path.join(tmp, "flow.mjs"), "export const foo = 1;\n");
       let caught: unknown;
       try {
-        await loadFlowDefault<unknown>(path.join(tmp, "flow.mjs"));
+        await loadFlowDefault<unknown>({
+          flowPath: path.join(tmp, "flow.mjs"),
+          bundleFlow: undefined,
+        });
       } catch (e) {
         caught = e;
       }
@@ -100,92 +48,122 @@ describe("loadFlowDefault", () => {
   });
 });
 
-describe("loadFlowDefault (compiled binary mode)", () => {
-  afterEach(() => {
-    delete process.env.QAWOLF_COMPILED;
-  });
+// ── Bundle path (pre-bundled, compiled-binary) ──────────────────────────────
 
-  async function makeEnv() {
-    const tmp = await mkdtemp(path.join(tmpdir(), "load-flow-compiled-"));
-    const flowsDir = path.join(tmp, "node_modules", "@qawolf", "flows");
-    await mkdir(flowsDir, { recursive: true });
-    await writeFile(
-      path.join(flowsDir, "package.json"),
-      JSON.stringify({
-        exports: { ".": "./index.js", "./helpers": "./helpers.js" },
-      }),
+describe("loadFlowDefault (bundle path)", () => {
+  function tempBundlePath(flowPath: string): string {
+    return path.join(
+      path.dirname(flowPath),
+      `.${path.basename(flowPath)}.qawolf-bundle.mjs`,
     );
-    await writeFile(
-      path.join(flowsDir, "index.js"),
-      "export const flows = {};\n",
-    );
-    await writeFile(
-      path.join(flowsDir, "helpers.js"),
-      "export const help = true;\n",
-    );
-    const flowsDir2 = path.join(tmp, "flows");
-    await mkdir(flowsDir2, { recursive: true });
-    return { tmp, flowsDir2 };
   }
 
-  it("rewrites and imports a flow that uses root @qawolf/flows", async () => {
-    process.env.QAWOLF_COMPILED = "true";
-    const { tmp, flowsDir2 } = await makeEnv();
+  it("returns the default export from the bundled source", async () => {
+    const tmp = await mkdtemp(path.join(tmpdir(), "load-flow-bundle-"));
     try {
-      const flowPath = path.join(flowsDir2, "flow.mjs");
-      await writeFile(
+      const flowPath = path.join(tmp, "flow.ts");
+      const bundleFlow = async () => `export default { name: "x" };\n`;
+      const result = await loadFlowDefault<{ name: string }>({
         flowPath,
-        `import {} from '@qawolf/flows';\nexport default { ok: true };\n`,
-      );
-      const result = await loadFlowDefault<{ ok: boolean }>(flowPath);
-      expect(result).toEqual({ ok: true });
+        bundleFlow,
+      });
+      expect(result).toEqual({ name: "x" });
+      expect(await pathExists(tempBundlePath(flowPath))).toBe(false);
     } finally {
       await rm(tmp, { recursive: true });
     }
   });
 
-  it("rewrites and imports a flow that uses a @qawolf/flows subpath", async () => {
-    process.env.QAWOLF_COMPILED = "true";
-    const { tmp, flowsDir2 } = await makeEnv();
+  it("removes the temp file when the default export is absent", async () => {
+    const tmp = await mkdtemp(path.join(tmpdir(), "load-flow-bundle-"));
     try {
-      const flowPath = path.join(flowsDir2, "flow.mjs");
-      await writeFile(
-        flowPath,
-        `import {} from '@qawolf/flows/helpers';\nexport default { sub: true };\n`,
-      );
-      const result = await loadFlowDefault<{ sub: boolean }>(flowPath);
-      expect(result).toEqual({ sub: true });
+      const flowPath = path.join(tmp, "flow.ts");
+      const bundleFlow = async () => `export const foo = 1;\n`;
+      let caught: unknown;
+      try {
+        await loadFlowDefault<unknown>({ flowPath, bundleFlow });
+      } catch (e) {
+        caught = e;
+      }
+      expect(caught).toBeInstanceOf(Error);
+      expect((caught as Error).message).toMatch(/No default export found in "/);
+      expect(await pathExists(tempBundlePath(flowPath))).toBe(false);
     } finally {
       await rm(tmp, { recursive: true });
     }
   });
+});
 
-  it("sources the data: URI back to the original flow path", async () => {
-    process.env.QAWOLF_COMPILED = "true";
-    const { tmp, flowsDir2 } = await makeEnv();
+// ── defaultFlowBundler (executor-package externalization) ───────────────────
+
+describe("defaultFlowBundler", () => {
+  it("externalizes @qawolf/flows to an absolute path and inlines non-executor deps", async () => {
+    const depsRoot = await mkdtemp(path.join(tmpdir(), "flow-bundler-test-"));
     try {
-      const flowPath = path.join(flowsDir2, "flow.mjs");
+      // Fake @qawolf/flows package with a ./web export
+      await mkdir(
+        path.join(depsRoot, "node_modules", "@qawolf", "flows", "dist"),
+        { recursive: true },
+      );
+      await writeFile(
+        path.join(depsRoot, "node_modules", "@qawolf", "flows", "package.json"),
+        JSON.stringify({
+          name: "@qawolf/flows",
+          exports: { "./web": "./dist/web.js" },
+        }),
+      );
+      await writeFile(
+        path.join(
+          depsRoot,
+          "node_modules",
+          "@qawolf",
+          "flows",
+          "dist",
+          "web.js",
+        ),
+        `export const page = "FLOWS_WEB_MARKER";\n`,
+      );
+
+      // Non-executor dep that should remain inlined
+      await mkdir(path.join(depsRoot, "node_modules", "inline-dep"), {
+        recursive: true,
+      });
+      await writeFile(
+        path.join(depsRoot, "node_modules", "inline-dep", "package.json"),
+        JSON.stringify({ name: "inline-dep", main: "./index.js" }),
+      );
+      await writeFile(
+        path.join(depsRoot, "node_modules", "inline-dep", "index.js"),
+        `export const helper = "INLINE_DEP_MARKER";\n`,
+      );
+
+      // Flow that imports from both
+      const flowPath = path.join(depsRoot, "flow.ts");
       await writeFile(
         flowPath,
-        `import {} from '@qawolf/flows';\nexport default 42;\n`,
+        `import { page } from "@qawolf/flows/web";
+import { helper } from "inline-dep";
+export default { page, helper };
+`,
       );
-      const result = await loadFlowDefault<number>(flowPath);
-      expect(result).toBe(42);
-    } finally {
-      await rm(tmp, { recursive: true });
-    }
-  });
 
-  it("falls back to direct file import when no @qawolf/flows imports present", async () => {
-    process.env.QAWOLF_COMPILED = "true";
-    const { tmp, flowsDir2 } = await makeEnv();
-    try {
-      const flowPath = path.join(flowsDir2, "flow.mjs");
-      await writeFile(flowPath, `export default { plain: true };\n`);
-      const result = await loadFlowDefault<{ plain: boolean }>(flowPath);
-      expect(result).toEqual({ plain: true });
+      const bundle = await defaultFlowBundler(flowPath, depsRoot);
+
+      const expectedFlowsPath = path.join(
+        depsRoot,
+        "node_modules",
+        "@qawolf",
+        "flows",
+        "dist",
+        "web.js",
+      );
+      // @qawolf/flows content is kept external at the absolute on-disk path
+      expect(bundle).toContain(`from "${expectedFlowsPath}"`);
+      expect(bundle).not.toContain("FLOWS_WEB_MARKER");
+      // Non-executor dep is inlined into the bundle
+      expect(bundle).toContain("INLINE_DEP_MARKER");
     } finally {
-      await rm(tmp, { recursive: true });
+      await rm(depsRoot, { recursive: true });
     }
   });
 });

@@ -51,6 +51,8 @@ export type RunnerDeps = {
   spawn: RunnerSpawnFn;
   signals: SignalRegistry;
   createStorage: <T>() => AsyncStorage<T>;
+  // Directory the flow runtime resolves @qawolf/flows + playwright from.
+  depsRoot: string;
   logger?: Logger;
 };
 

@@ -29,4 +29,6 @@ export const runnerMessages = {
   retrying: (attempt: number, maxAttempts: number) =>
     `Retrying (${attempt} of ${maxAttempts})...`,
   screenshot: (path: string) => `Screenshot: ${path}`,
+  managedRuntimeNote: (dir: string) =>
+    `Using managed runtime — override with --deps <dir> or QAWOLF_RUNTIME_DIR:\n${dir}`,
 } as const;

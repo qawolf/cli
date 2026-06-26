@@ -1,53 +1,33 @@
-import {
-  expandPatterns as defaultExpandPatterns,
-  makePeekFlowMeta,
-} from "~/domains/flows/expand.js";
-import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
-import { installBrowserList } from "~/domains/install/browsers.js";
-import { defaultSpawn } from "~/shell/spawn.js";
-import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { runnerMessages } from "~/core/messages/index.js";
-import { resolvePlaywrightCli } from "~/shell/playwright.js";
-import { buildRunReporter } from "./buildRunReporter.js";
-import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
-import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
-import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
-
 import { pluralize } from "~/core/pluralize.js";
-import {
-  ensureFlowDeps as defaultEnsureFlowDeps,
-  resolveUniqueEnvDir as defaultResolveUniqueEnvDir,
-} from "~/domains/flows/ensureDeps.js";
+import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
+import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
+import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
+import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
+import { prepareRunDir as defaultPrepareRunDir } from "~/domains/runtimeEnv/prepareRunDir.js";
+import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
-import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
-import { makePooledDispatch } from "~/domains/runner/makePooledDispatch.js";
-import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
-import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
-import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
+import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
+import { resolveDepsRoot } from "~/commands/resolveDepsRoot.js";
 
-import { loadEnvFile } from "./loadEnvFile.js";
+import { type StagedRunDeps, runStagedFlows } from "./runStagedFlows.js";
 
-export type HandleFlowsRunDeps = {
+export type HandleFlowsRunDeps = StagedRunDeps & {
   expandPatterns: (
     patterns: string[],
     cwd: string,
     logger?: Logger,
   ) => Promise<string[]>;
-  resolveUniqueEnvDir: (files: string[]) => string | undefined;
-  ensureFlowDeps: (envDir: string) => Promise<void>;
-  configureTestkit: (dir: string) => Promise<void>;
-  runWebFlowDeps: typeof defaultRunWebFlowDeps;
-  flowsRun: typeof defaultFlowsRun;
 };
 
 function makeDefaultDeps(fs: Fs): HandleFlowsRunDeps {
   return {
     expandPatterns: (patterns, cwd, logger) =>
       defaultExpandPatterns(patterns, cwd, logger, fs),
-    resolveUniqueEnvDir: (files) => defaultResolveUniqueEnvDir(files, fs),
-    ensureFlowDeps: (envDir) => defaultEnsureFlowDeps(envDir, fs),
+    resolveDepsRoot: (args) => resolveDepsRoot({ ...args, fs }),
+    prepareRunDir: (args) => defaultPrepareRunDir({ ...args, fs }),
     configureTestkit: defaultConfigureTestkit,
     runWebFlowDeps: defaultRunWebFlowDeps,
     flowsRun: defaultFlowsRun,
@@ -77,60 +57,10 @@ export async function handleFlowsRun(
     return;
   }
 
-  let envDir: string | undefined;
-  try {
-    envDir = resolvedDeps.resolveUniqueEnvDir(expandedFiles);
-  } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    return { error, exitCode: 2 };
-  }
-
-  ctx.ui.gap();
-  ctx.ui.intro("flows run");
-
-  if (envDir) {
-    const dir = envDir;
-    await ctx.ui.withProgress(
-      [
-        {
-          message: runnerMessages.preparingEnvironment,
-          task: () => resolvedDeps.ensureFlowDeps(dir),
-        },
-      ],
-      () => runnerMessages.environmentReady,
-    );
-    await loadEnvFile(dir);
-  }
-
-  // Resolve playwright from the env dir; falls back to CWD for local flows.
-  const resolvedDir = envDir ?? cwd;
-
-  await resolvedDeps.configureTestkit(resolvedDir);
-  const android = createAndroidDeps(resolvedDir, ctx.signals);
-  return resolvedDeps.flowsRun(ctx, expandedFiles, flags, {
-    peekFlowMeta: makePeekFlowMeta(ctx.fs),
-    installBrowsers: (innerCtx, browsers) =>
-      installBrowserList(innerCtx, browsers, {
-        spawn: defaultSpawn,
-        platform: process.platform,
-        playwrightCliPath: resolvePlaywrightCli(resolvedDir, process.platform),
-      }),
-    runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: await resolvedDeps.runWebFlowDeps(resolvedDir, ctx.signals),
-    runAndroidFlow: defaultRunAndroidFlow,
-    runAndroidFlowDeps: android.deps,
-    bootAndroid: android.boot,
-    shutdownAndroid: android.shutdown,
-    createPooledDispatch: makePooledDispatch(resolvedDir),
-    findFlowStamp: defaultFindFlowStamp,
-    warn: (message) => ctx.ui.warn(message),
-    logger: ctx.log("runner"),
-    // Route reporter output through ctx.ui so streamed test logs stay inside the run's timeline.
-    reporter: buildRunReporter(flags, {
-      fs: ctx.fs,
-      stdout: { write: (text: string) => ctx.ui.write(text) },
-      stderr: { write: (text: string) => ctx.ui.write(text) },
-    }),
-    now: () => Date.now(),
+  return runStagedFlows({
+    ctx,
+    files: expandedFiles,
+    flags,
+    deps: resolvedDeps,
   });
 }

@@ -7,11 +7,7 @@ import { join } from "node:path";
 import { makeDefaultFs } from "~/shell/fs.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
-import {
-  detectPackageManager,
-  findEnvDir,
-  resolveUniqueEnvDir,
-} from "./ensureDeps.js";
+import { findEnvDir, resolveUniqueEnvDir } from "./ensureDeps.js";
 
 const defaultFs = makeDefaultFs();
 
@@ -56,44 +52,6 @@ describe("findEnvDir", () => {
     const flowPath = join(nested, "my.flow.ts");
     // root has no package.json; walk reaches filesystem root and returns undefined
     expect(findEnvDir(flowPath, defaultFs)).toBeUndefined();
-  });
-});
-
-describe("detectPackageManager", () => {
-  it("should detect bun from bun.lockb", async () => {
-    const dir = await makeTmpDir();
-    await writeFile(join(dir, "bun.lockb"), "");
-    expect(detectPackageManager(dir, defaultFs)).toBe("bun");
-  });
-
-  it("should detect pnpm from pnpm-lock.yaml", async () => {
-    const dir = await makeTmpDir();
-    await writeFile(join(dir, "pnpm-lock.yaml"), "");
-    expect(detectPackageManager(dir, defaultFs)).toBe("pnpm");
-  });
-
-  it("should detect yarn from yarn.lock", async () => {
-    const dir = await makeTmpDir();
-    await writeFile(join(dir, "yarn.lock"), "");
-    expect(detectPackageManager(dir, defaultFs)).toBe("yarn");
-  });
-
-  it("should fall back to npm when no lockfile is present", async () => {
-    const dir = await makeTmpDir();
-    expect(detectPackageManager(dir, defaultFs)).toBe("npm");
-  });
-
-  it("should prefer bun over pnpm and yarn when multiple lockfiles present", async () => {
-    const dir = await makeTmpDir();
-    await writeFile(join(dir, "bun.lockb"), "");
-    await writeFile(join(dir, "pnpm-lock.yaml"), "");
-    expect(detectPackageManager(dir, defaultFs)).toBe("bun");
-  });
-
-  it("should detect bun from bun.lock (text format, bun ≥ 1.1)", async () => {
-    const dir = await makeTmpDir();
-    await writeFile(join(dir, "bun.lock"), "");
-    expect(detectPackageManager(dir, defaultFs)).toBe("bun");
   });
 });
 

@@ -17,7 +17,7 @@ export type UI = {
     opts?: {
       /** When true, skip prompting and resolve to `{ ok: true, value: true }`. */
       yes?: boolean;
-      /** When true, prompt with a typed `y`/`n` keystroke instead of arrow-key. */
+      /** When true, start the Yes/No cursor on No so a stray Enter is safe. */
       destructive?: boolean;
     },
   ): Promise<PromptResult<boolean>>;

@@ -54,6 +54,8 @@ Commands:
                       flows
   android [pattern]   Install Android system images, AVDs, and the Appium driver
                       used by the project's Android flows
+  clear [options]     Remove the managed runtime cache (all installed runtime
+                      versions)
 
 Examples:
   $ qawolf install
@@ -87,6 +89,21 @@ Options:
 Examples:
   $ qawolf install android
   $ qawolf install android "flows/mobile/**"
+"
+`;
+
+exports[`--help output qawolf install clear 1`] = `
+"Usage: qawolf install clear [options]
+
+Remove the managed runtime cache (all installed runtime versions)
+
+Options:
+  --yes       Skip the confirmation prompt (default: false)
+  -h, --help  display help for command
+
+Examples:
+  $ qawolf install clear
+  $ qawolf install clear --yes
 "
 `;
 
@@ -155,6 +172,9 @@ Options:
                         false)
   --env <env>           Pull and run a flow from this environment (UUID or slug)
                         if not cached locally
+  --deps <dir>          Use this prepared dependency directory instead of
+                        auto-installing the runtime; or set QAWOLF_RUNTIME_DIR
+                        to relocate the managed runtime
   -h, --help            display help for command
 
 Examples:

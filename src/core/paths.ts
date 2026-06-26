@@ -19,3 +19,12 @@ export function getConfigDir(): string {
   _paths ??= envPaths("qawolf");
   return _paths.config;
 }
+
+/**
+ * Persistent platform data directory where the CLI installs its managed
+ * runtime dependencies. Distinct from config (settings) and cache (ephemeral).
+ */
+export function getDataDir(): string {
+  _paths ??= envPaths("qawolf");
+  return _paths.data;
+}

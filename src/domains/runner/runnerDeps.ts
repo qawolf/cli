@@ -4,7 +4,10 @@ import { spawn as nodeSpawn } from "~/shell/spawn.js";
 import type { RunnerDeps } from "./types.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
-export function createRunnerDeps(signals: SignalRegistry): RunnerDeps {
+export function createRunnerDeps(
+  signals: SignalRegistry,
+  depsRoot: string,
+): RunnerDeps {
   return {
     fs: makeDefaultFs(),
     spawn: (cmd, args) => {
@@ -23,6 +26,7 @@ export function createRunnerDeps(signals: SignalRegistry): RunnerDeps {
       };
     },
     signals,
+    depsRoot,
     createStorage: <T>() => {
       // Stored as `unknown` internally; the getStore cast keeps the outer T
       // contract while sidestepping TS's inability to unify the outer T with

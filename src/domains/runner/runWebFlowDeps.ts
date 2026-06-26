@@ -34,6 +34,6 @@ export async function defaultRunWebFlowDeps(
     chromium,
     firefox,
     webkit,
-    ...createRunnerDeps(signals),
+    ...createRunnerDeps(signals, cwd),
   };
 }
