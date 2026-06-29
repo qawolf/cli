@@ -91,7 +91,7 @@ export async function runStagedFlows(
     await deps.configureTestkit(resolvedDir);
     const android = createAndroidDeps(resolvedDir, ctx.signals);
     const runWebFlowDeps = await deps.runWebFlowDeps(resolvedDir, ctx.signals);
-    const flowRuntimeDeps = deps.createFlowRuntimeDeps({
+    const flowRuntimeDeps = await deps.createFlowRuntimeDeps({
       envDir: resolvedDir,
       ctx,
     });

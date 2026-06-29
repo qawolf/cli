@@ -1,5 +1,8 @@
 import { resolveApiKey } from "~/domains/auth/resolve.js";
-import { configureEmails } from "~/domains/emails/configureEmails.js";
+import {
+  configureEmails,
+  registerLazyEmailsClient,
+} from "~/domains/emails/configureEmails.js";
 import type { FlowRuntimeDeps } from "~/domains/runner/flowRuntimeDeps.js";
 import type { CommandContext } from "~/shell/commandContext.js";
 import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
@@ -94,7 +97,7 @@ function lazyGetInbox({
   };
 }
 
-export function createFlowRuntimeDeps({
+export async function createFlowRuntimeDeps({
   envDir,
   ctx,
   platform,
@@ -102,17 +105,26 @@ export function createFlowRuntimeDeps({
   resolveApiKeyFn = resolveApiKey,
   configureEmailsFn = configureEmails,
   createPlatform = createPlatformClient,
-}: CreateFlowRuntimeDepsArgs): FlowRuntimeDeps {
+}: CreateFlowRuntimeDepsArgs): Promise<FlowRuntimeDeps> {
+  const getInbox = lazyGetInbox({
+    envDir,
+    ctx,
+    platform,
+    env,
+    resolveApiKeyFn,
+    configureEmailsFn,
+    createPlatform,
+  });
+  // Eagerly register a lazy client as the module-global so mail.inbox()-only
+  // flows route through the same lazy getInbox. Graceful: if @qawolf/emails
+  // can't be loaded, mail.inbox() flows surface their own clear error at use.
+  try {
+    await registerLazyEmailsClient(getInbox, envDir);
+  } catch {
+    // @qawolf/emails not resolvable in the env dir; leave the global unset.
+  }
   return {
     ...makeEnvVarDeps(envDir, ctx.fs),
-    getInbox: lazyGetInbox({
-      envDir,
-      ctx,
-      platform,
-      env,
-      resolveApiKeyFn,
-      configureEmailsFn,
-      createPlatform,
-    }),
+    getInbox,
   };
 }

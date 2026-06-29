@@ -1,4 +1,8 @@
-import type { configureEmailsClient, createEmailsClient } from "@qawolf/emails";
+import type {
+  EmailsClient,
+  configureEmailsClient,
+  createEmailsClient,
+} from "@qawolf/emails";
 
 import { resolveFromEnvDir } from "~/shell/resolveExport.js";
 
@@ -45,4 +49,17 @@ export async function configureEmails(
   // and return it so the runner can also inject `getInbox` as a flow dep.
   configureEmailsClient(client);
   return client;
+}
+
+// Eagerly register a lazy client as the module-global so flows that call
+// `mail.inbox()` (which reads the global client) resolve through `getInbox`
+// even when they never call the getInbox run-global dep. No network here — the
+// lazy `getInbox` defers credential resolution to its first invocation.
+export async function registerLazyEmailsClient(
+  getInbox: EmailsClient["getInbox"],
+  cwd: string,
+  deps?: EmailsModule,
+): Promise<void> {
+  const { configureEmailsClient } = deps ?? (await loadSdkDeps(cwd));
+  configureEmailsClient({ getInbox });
 }

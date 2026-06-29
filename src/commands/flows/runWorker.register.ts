@@ -37,7 +37,7 @@ async function runWorker(signals: SignalRegistry): Promise<void> {
     const apiBaseUrl =
       process.env["QAWOLF_API_URL"]?.replace(/\/+$/, "") ||
       "https://app.qawolf.com";
-    const flowRuntimeDeps = createFlowRuntimeDeps({
+    const flowRuntimeDeps = await createFlowRuntimeDeps({
       envDir: input.resolvedDir,
       ctx: { apiBaseUrl, configDir: getConfigDir(), fs },
     });
