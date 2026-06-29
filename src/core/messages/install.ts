@@ -15,6 +15,15 @@ export const installMessages = {
     `playwright install ${browser} failed: ${detail}`,
   playwrightInstallLaunchFailed: (browser: string) =>
     `playwright install ${browser} failed: process failed to launch`,
+  clear: {
+    title: "Clear runtime cache",
+    locationLabel: "Location",
+    confirmPrompt: "Remove the managed runtime cache?",
+    cancelled: "Clear cancelled.",
+    removing: "Removing managed runtime cache",
+    cleared: "Removed managed runtime cache.",
+    nothingToClear: "No managed runtime cache found.",
+  },
   android: {
     noFlowsFound: "No Android flows found. Nothing to install.",
     licensesAlreadyAccepted: "Android SDK licenses already accepted.",

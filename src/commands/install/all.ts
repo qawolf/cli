@@ -2,7 +2,7 @@ import {
   expandPatterns as defaultExpandPatterns,
   makePeekFlowMeta,
 } from "~/domains/flows/expand.js";
-import { resolveUniqueEnvDir as defaultResolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
+import { type EnsureRuntimeEnvResult } from "~/domains/runtimeEnv/index.js";
 import { classifyTarget, type PeekFlowMetaFn } from "~/core/flowMeta.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { errorMessage } from "~/core/errors.js";
@@ -10,6 +10,7 @@ import { installMessages } from "~/core/messages/index.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 
+import { resolveDepsRoot } from "~/commands/resolveDepsRoot.js";
 import { handleInstallAndroid } from "./android.js";
 import { handleInstallBrowsers } from "./browsers.js";
 
@@ -20,7 +21,9 @@ export type InstallAllDeps = {
     cwd?: string,
   ) => Promise<string[]>;
   readonly peekFlowMeta: PeekFlowMetaFn;
-  readonly resolveUniqueEnvDir: (files: string[]) => string | undefined;
+  readonly resolveDepsRoot: (
+    files: string[],
+  ) => Promise<EnsureRuntimeEnvResult>;
   readonly installBrowsers: (
     ctx: CommandContext,
     pattern: string | undefined,
@@ -40,13 +43,6 @@ export async function installAll(
 ): Promise<CommandResult> {
   const patterns = buildPatternArgs(pattern);
   const files = await deps.expandPatterns(patterns, deps.cwd);
-
-  let envDir: string;
-  try {
-    envDir = deps.resolveUniqueEnvDir(files) ?? deps.cwd;
-  } catch (err: unknown) {
-    return { error: errorMessage(err), exitCode: 2 };
-  }
 
   let hasWeb = false;
   let hasAndroid = false;
@@ -73,11 +69,13 @@ export async function installAll(
     return;
   }
 
+  const { depsRoot } = await deps.resolveDepsRoot(files);
+
   let firstError: { error: string; exitCode?: number } | undefined;
 
   if (hasWeb) {
     try {
-      const result = await deps.installBrowsers(ctx, pattern, envDir);
+      const result = await deps.installBrowsers(ctx, pattern, depsRoot);
       if (result) firstError = result;
     } catch (err: unknown) {
       if (!firstError) firstError = { error: errorMessage(err) };
@@ -86,7 +84,7 @@ export async function installAll(
 
   if (hasAndroid) {
     try {
-      const result = await deps.installAndroid(ctx, pattern, envDir);
+      const result = await deps.installAndroid(ctx, pattern, depsRoot);
       if (result && !firstError) firstError = result;
     } catch (err: unknown) {
       if (!firstError) firstError = { error: errorMessage(err) };
@@ -110,7 +108,7 @@ export async function handleInstall(
     expandPatterns: (patterns, cwd) =>
       defaultExpandPatterns(patterns, cwd ?? process.cwd(), undefined, fs),
     peekFlowMeta: makePeekFlowMeta(fs),
-    resolveUniqueEnvDir: (files) => defaultResolveUniqueEnvDir(files, fs),
+    resolveDepsRoot: (files) => resolveDepsRoot({ files, fs }),
     installBrowsers: handleInstallBrowsers,
     installAndroid: handleInstallAndroid,
   });

@@ -16,6 +16,10 @@ export const runnerMessages = {
     `retries must be a non-negative integer, got ${String(retries)}`,
   manifestStampReadFailed: (file: string, message: string) =>
     `failed to read manifest stamp for ${file}: ${message}`,
+  harCleanupFailed: (file: string, message: string) =>
+    `failed to delete HAR file ${file} (retain-on-failure); remove it manually: ${message}`,
+  traceCleanupFailed: (file: string, message: string) =>
+    `failed to delete trace file ${file} (retain-on-failure); remove it manually: ${message}`,
   notSupportedInCli: (name: string) =>
     `${name} is not supported in the CLI runner`,
   notAvailableLocally: (name: string) =>
@@ -25,4 +29,6 @@ export const runnerMessages = {
   retrying: (attempt: number, maxAttempts: number) =>
     `Retrying (${attempt} of ${maxAttempts})...`,
   screenshot: (path: string) => `Screenshot: ${path}`,
+  managedRuntimeNote: (dir: string) =>
+    `Using managed runtime — override with --deps <dir> or QAWOLF_RUNTIME_DIR:\n${dir}`,
 } as const;

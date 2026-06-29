@@ -62,6 +62,7 @@ describe("dispatchFlow manifest stamping", () => {
         headed: false,
         slowMo: 0,
         video: "off",
+        trace: "off",
         timeout: defaultFlags().timeout,
       },
       androidOptions: {
@@ -104,6 +105,7 @@ describe("dispatchFlow manifest stamping", () => {
         headed: false,
         slowMo: 0,
         video: "off",
+        trace: "off",
         timeout: defaultFlags().timeout,
       },
       androidOptions: {
@@ -142,6 +144,7 @@ describe("dispatchFlow manifest stamping", () => {
         headed: false,
         slowMo: 0,
         video: "off",
+        trace: "off",
         timeout: defaultFlags().timeout,
       },
       androidOptions: {

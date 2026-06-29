@@ -1,47 +1,27 @@
 import { join, resolve } from "node:path";
-import { validateEnvId } from "~/domains/flows/pull/pull.js";
+
+import { buildPatternArgs } from "~/core/patternArgs.js";
+import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
 import { handleFlowsPull } from "~/domains/flows/pull/handler.js";
+import { validateEnvId } from "~/domains/flows/pull/pull.js";
+import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
+import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
+import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
+import { prepareRunDir as defaultPrepareRunDir } from "~/domains/runtimeEnv/prepareRunDir.js";
 import type {
   AuthCommandContext,
   CommandResult,
 } from "~/shell/commandContext.js";
-import {
-  expandPatterns as defaultExpandPatterns,
-  makePeekFlowMeta,
-} from "~/domains/flows/expand.js";
-import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
-import { installBrowserList } from "~/domains/install/browsers.js";
-import { defaultSpawn } from "~/shell/spawn.js";
-import { resolvePlaywrightCli } from "~/shell/playwright.js";
-import { buildRunReporter } from "./buildRunReporter.js";
-import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
-import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
-import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
-import { ensureFlowDeps as defaultEnsureFlowDeps } from "~/domains/flows/ensureDeps.js";
 import type { Fs } from "~/shell/fs.js";
-import type { Logger } from "~/shell/logger.js";
-import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
-import { makePooledDispatch } from "~/domains/runner/makePooledDispatch.js";
-import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
-import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
-import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
-import { buildPatternArgs } from "~/core/patternArgs.js";
-import { runnerMessages } from "~/core/messages/index.js";
-import { loadEnvFile } from "./loadEnvFile.js";
+import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
+import { resolveDepsRoot } from "~/commands/resolveDepsRoot.js";
 import { createFlowRuntimeDeps as defaultCreateFlowRuntimeDeps } from "./flowRuntimeDeps.js";
 
-export type HandleHybridFlowsRunDeps = {
-  expandPatterns: (
-    patterns: string[],
-    cwd: string,
-    logger?: Logger,
-  ) => Promise<string[]>;
+import { type HandleFlowsRunDeps } from "./runDefaults.js";
+import { runStagedFlows } from "./runStagedFlows.js";
+
+export type HandleHybridFlowsRunDeps = HandleFlowsRunDeps & {
   pullEnv: (ctx: AuthCommandContext, envId: string) => Promise<CommandResult>;
-  ensureFlowDeps: (envDir: string) => Promise<void>;
-  configureTestkit: (dir: string) => Promise<void>;
-  flowsRun: typeof defaultFlowsRun;
-  runWebFlowDeps: typeof defaultRunWebFlowDeps;
-  createFlowRuntimeDeps: typeof defaultCreateFlowRuntimeDeps;
 };
 
 function makeDefaultHybridDeps(fs: Fs): HandleHybridFlowsRunDeps {
@@ -49,7 +29,8 @@ function makeDefaultHybridDeps(fs: Fs): HandleHybridFlowsRunDeps {
     expandPatterns: (patterns, cwd, logger) =>
       defaultExpandPatterns(patterns, cwd, logger, fs),
     pullEnv: (ctx, envId) => handleFlowsPull(ctx, { env: envId, yes: true }),
-    ensureFlowDeps: (envDir) => defaultEnsureFlowDeps(envDir, fs),
+    resolveDepsRoot: (args) => resolveDepsRoot({ ...args, fs }),
+    prepareRunDir: (args) => defaultPrepareRunDir({ ...args, fs }),
     configureTestkit: defaultConfigureTestkit,
     flowsRun: defaultFlowsRun,
     runWebFlowDeps: defaultRunWebFlowDeps,
@@ -71,22 +52,16 @@ export async function handleHybridFlowsRun(
 
   const envDir = resolve(join(".qawolf", flags.env));
   const patternArgs = buildPatternArgs(pattern);
+  const globFlows = (): Promise<string[]> =>
+    resolvedDeps.expandPatterns(patternArgs, envDir, ctx.log("flows"));
 
-  let files = await resolvedDeps.expandPatterns(
-    patternArgs,
-    envDir,
-    ctx.log("flows"),
-  );
+  let files = await globFlows();
 
   if (files.length === 0) {
     const pullResult = await resolvedDeps.pullEnv(ctx, flags.env);
     if (pullResult !== undefined) return pullResult;
 
-    files = await resolvedDeps.expandPatterns(
-      patternArgs,
-      envDir,
-      ctx.log("flows"),
-    );
+    files = await globFlows();
     if (files.length === 0) {
       return {
         error:
@@ -98,53 +73,5 @@ export async function handleHybridFlowsRun(
     }
   }
 
-  ctx.ui.gap();
-  ctx.ui.intro("flows run");
-
-  await ctx.ui.withProgress(
-    [
-      {
-        message: runnerMessages.preparingEnvironment,
-        task: () => resolvedDeps.ensureFlowDeps(envDir),
-      },
-    ],
-    () => runnerMessages.environmentReady,
-  );
-  await loadEnvFile(envDir);
-  await resolvedDeps.configureTestkit(envDir);
-  const flowRuntimeDeps = resolvedDeps.createFlowRuntimeDeps({
-    envDir,
-    ctx,
-    platform: ctx.platform,
-  });
-  const android = createAndroidDeps(envDir, ctx.signals);
-
-  return resolvedDeps.flowsRun(ctx, files, flags, {
-    peekFlowMeta: makePeekFlowMeta(ctx.fs),
-    installBrowsers: (innerCtx, browsers) =>
-      installBrowserList(innerCtx, browsers, {
-        spawn: defaultSpawn,
-        platform: process.platform,
-        playwrightCliPath: resolvePlaywrightCli(envDir, process.platform),
-      }),
-    runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps: {
-      ...(await resolvedDeps.runWebFlowDeps(envDir, ctx.signals)),
-      flowRuntimeDeps,
-    },
-    runAndroidFlow: defaultRunAndroidFlow,
-    runAndroidFlowDeps: { ...android.deps, flowRuntimeDeps },
-    bootAndroid: android.boot,
-    shutdownAndroid: android.shutdown,
-    createPooledDispatch: makePooledDispatch(envDir),
-    findFlowStamp: defaultFindFlowStamp,
-    warn: (message) => ctx.ui.warn(message),
-    logger: ctx.log("runner"),
-    reporter: buildRunReporter(flags, {
-      fs: ctx.fs,
-      stdout: { write: (text: string) => ctx.ui.write(text) },
-      stderr: { write: (text: string) => ctx.ui.write(text) },
-    }),
-    now: () => Date.now(),
-  });
+  return runStagedFlows({ ctx, files, flags, envDir, deps: resolvedDeps });
 }

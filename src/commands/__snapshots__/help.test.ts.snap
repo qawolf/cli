@@ -54,6 +54,8 @@ Commands:
                       flows
   android [pattern]   Install Android system images, AVDs, and the Appium driver
                       used by the project's Android flows
+  clear [options]     Remove the managed runtime cache (all installed runtime
+                      versions)
 
 Examples:
   $ qawolf install
@@ -87,6 +89,21 @@ Options:
 Examples:
   $ qawolf install android
   $ qawolf install android "flows/mobile/**"
+"
+`;
+
+exports[`--help output qawolf install clear 1`] = `
+"Usage: qawolf install clear [options]
+
+Remove the managed runtime cache (all installed runtime versions)
+
+Options:
+  --yes       Skip the confirmation prompt (default: false)
+  -h, --help  display help for command
+
+Examples:
+  $ qawolf install clear
+  $ qawolf install clear --yes
 "
 `;
 
@@ -137,7 +154,8 @@ Options:
                         0)
   --bail                Stop the run after the first failure (default: false)
   --workers <n>         Parallel worker count for web flows (default: 1)
-  --timeout <ms>        Per-flow timeout in milliseconds (default: 30000)
+  --timeout <ms>        Default timeout for actions and assertions, in
+                        milliseconds (default: 30000)
   --video <mode>        Record video: on | off | retain-on-failure (default:
                         "off")
   --trace <mode>        Record Playwright trace: on | off | retain-on-failure
@@ -147,13 +165,16 @@ Options:
   --har-content <mode>  HAR response bodies: omit | full (full uses more memory)
                         (default: "omit")
   --output-dir <path>   Directory for run artifacts (videos, traces, HAR)
-                        (default: "qawolf-output")
+                        (default: ".qawolf/output")
   --junit [path]        Write a JUnit XML report (default:
                         <output-dir>/junit-report.xml)
   --headed              Show the browser window instead of headless (default:
                         false)
   --env <env>           Pull and run a flow from this environment (UUID or slug)
                         if not cached locally
+  --deps <dir>          Use this prepared dependency directory instead of
+                        auto-installing the runtime; or set QAWOLF_RUNTIME_DIR
+                        to relocate the managed runtime
   -h, --help            display help for command
 
 Examples:

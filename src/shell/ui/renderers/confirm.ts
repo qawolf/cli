@@ -20,20 +20,10 @@ export function createConfirm({ mode, clack }: ConfirmDeps): ConfirmFn {
     if (opts?.yes) return { ok: true, value: true };
     assertHumanMode(mode, "confirm");
 
-    if (opts?.destructive) {
-      const key = await clack.selectKey({
-        message,
-        caseSensitive: false,
-        options: [
-          { value: "y", label: "Yes" },
-          { value: "n", label: "No" },
-        ],
-      });
-      if (clack.isCancel(key)) return { ok: false };
-      return { ok: true, value: key === "y" };
-    }
-
-    const value = await clack.confirm({ message });
+    // Destructive prompts start the cursor on No so a stray Enter is safe.
+    const value = await clack.confirm(
+      opts?.destructive ? { message, initialValue: false } : { message },
+    );
     if (clack.isCancel(value)) return { ok: false };
     return { ok: true, value };
   };

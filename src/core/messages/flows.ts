@@ -76,12 +76,8 @@ export const flowsMessages = {
   ensureDeps: {
     multiPackagePattern: (count: number, listed: string) =>
       `Pattern matches flows from ${count} packages — narrow it to a single package:\n${listed}\n\nHint: pass a pattern scoped to one package, e.g \`qawolf flows run '.qawolf/<env>/**'\`.`,
-    installFailed: (pm: string, envDir: string, stderr: string) =>
-      `${pm} install failed in ${envDir}:\n${stderr}`,
   },
   dotenv: {
-    invalidKey: (key: string) =>
-      `Cannot serialize env var with invalid key: ${JSON.stringify(key)}`,
     unparseableLine: (line: string) =>
       `Cannot parse .env line: ${JSON.stringify(line)}`,
   },

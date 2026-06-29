@@ -18,7 +18,6 @@ describe("createConfirm", () => {
       const result = await confirm("Are you sure?");
 
       expect(clack.confirm).toHaveBeenCalledWith({ message: "Are you sure?" });
-      expect(clack.selectKey).not.toHaveBeenCalled();
       expect(result).toEqual({ ok: true, value: true });
     });
 
@@ -45,30 +44,25 @@ describe("createConfirm", () => {
     });
   });
 
-  describe("destructive (typed y/n) in human mode", () => {
-    it("uses selectKey, not the arrow-key confirm", async () => {
+  describe("destructive (arrow-key, default No) in human mode", () => {
+    it("uses the arrow-key confirm with the cursor defaulted to No", async () => {
       const clack = makeClack();
-      clack.selectKey.mockResolvedValue("y");
+      clack.confirm.mockResolvedValue(true);
       clack.isCancel.mockReturnValue(false);
       const confirm = createConfirm({ mode: "human", clack });
 
       const result = await confirm("Overwrite?", { destructive: true });
 
-      expect(clack.selectKey).toHaveBeenCalledWith({
+      expect(clack.confirm).toHaveBeenCalledWith({
         message: "Overwrite?",
-        caseSensitive: false,
-        options: [
-          { value: "y", label: "Yes" },
-          { value: "n", label: "No" },
-        ],
+        initialValue: false,
       });
-      expect(clack.confirm).not.toHaveBeenCalled();
       expect(result).toEqual({ ok: true, value: true });
     });
 
-    it("returns ok with false when the user picks 'n'", async () => {
+    it("returns ok with false when the user declines", async () => {
       const clack = makeClack();
-      clack.selectKey.mockResolvedValue("n");
+      clack.confirm.mockResolvedValue(false);
       clack.isCancel.mockReturnValue(false);
       const confirm = createConfirm({ mode: "human", clack });
 
@@ -79,7 +73,7 @@ describe("createConfirm", () => {
 
     it("returns not ok when the user cancels", async () => {
       const clack = makeClack();
-      clack.selectKey.mockResolvedValue(Symbol("cancel"));
+      clack.confirm.mockResolvedValue(Symbol("cancel"));
       clack.isCancel.mockReturnValue(true);
       const confirm = createConfirm({ mode: "human", clack });
 
@@ -102,7 +96,6 @@ describe("createConfirm", () => {
 
         expect(result).toEqual({ ok: true, value: true });
         expect(clack.confirm).not.toHaveBeenCalled();
-        expect(clack.selectKey).not.toHaveBeenCalled();
       }
     });
   });

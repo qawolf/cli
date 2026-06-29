@@ -17,6 +17,9 @@ jobs:
       contents: write
       pull-requests: write
       id-token: write
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -30,12 +33,42 @@ jobs:
 
       - run: bun run build
 
+      # GITHUB_TOKEN can't create PRs under org policy, and PRs it opens don't
+      # trigger CI; the App token does both.
+      - name: Generate qa-wolf-ops token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.QA_WOLF_OPS_CLIENT_ID }}
+          private-key: ${{ secrets.QA_WOLF_OPS_PRIVATE_KEY }}
+
       - name: Create Release PR or Publish
+        id: changesets
         uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1.8.0
         with:
           version: bun run version-packages
           publish: bunx changeset publish
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+
+      # Only set when a publish actually happened; safe on version-mode runs.
+      - name: Resolve release tag
+        id: tag
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
+        run: |
+          VERSION=$(echo "$PUBLISHED_PACKAGES" | bun -e "const d = await Bun.stdin.text(); console.log(JSON.parse(d)[0].version)")
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+
+  binaries:
+    name: Binaries
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release-binaries.yml
+    with:
+      tag: ${{ needs.release.outputs.tag }}

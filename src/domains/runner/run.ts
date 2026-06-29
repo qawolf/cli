@@ -4,10 +4,9 @@ import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
 import { runnerMessages } from "~/core/messages/index.js";
-import { pluralize } from "~/core/pluralize.js";
 
-import { bootAndroidFlows, buildRunOptions, runFlows } from "./runHelpers.js";
-import { runFlowsPooled } from "./runFlowsPooled.js";
+import { buildRunOptions } from "./runHelpers.js";
+import { executeFlows } from "./dispatchFlows.js";
 import {
   type AndroidResolvedFlow,
   type FlowsRunDeps,
@@ -91,43 +90,22 @@ export async function flowsRun(
   }
 
   const { webOptions, androidOptions } = buildRunOptions(flags);
-  let counts: Awaited<ReturnType<typeof runFlows>>["counts"];
-  let durationMs: number;
-  try {
-    if (flags.workers > 1) {
-      if (!deps.createPooledDispatch)
-        throw new Error("createPooledDispatch is not wired for pooled runs");
-      ctx.ui.outro(`Running ${pluralize(flows.length, "flow")}`);
-      ctx.ui.write("\n");
-      ({ counts, durationMs } = await runFlowsPooled({
-        flows: webFlows,
-        workers: flags.workers,
-        bail: flags.bail,
-        maxAttempts: flags.retries + 1,
-        reporter: deps.reporter,
-        now: deps.now,
-        dispatch: deps.createPooledDispatch({ webOptions, androidOptions }),
-      }));
-    } else {
-      const bootError = await bootAndroidFlows(deps, androidFlows);
-      if (bootError !== undefined) {
-        ctx.ui.error(bootError);
-        return { error: bootError };
-      }
-      // Close the intro block and add a blank line before streamed test output.
-      ctx.ui.outro(`Running ${pluralize(flows.length, "flow")}`);
-      ctx.ui.write("\n");
-      ({ counts, durationMs } = await runFlows(
-        flows,
-        flags,
-        deps,
-        webOptions,
-        androidOptions,
-      ));
-    }
-  } finally {
-    deps.shutdownAndroid?.();
+
+  const result = await executeFlows({
+    ctx,
+    deps,
+    flags,
+    flows,
+    webFlows,
+    androidFlows,
+    webOptions,
+    androidOptions,
+  });
+  if ("error" in result) {
+    ctx.ui.error(result.error);
+    return { error: result.error };
   }
+  const { counts, durationMs } = result;
 
   const summary: RunSummary = {
     ...counts,

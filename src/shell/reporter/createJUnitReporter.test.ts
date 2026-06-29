@@ -90,6 +90,33 @@ describe("createJUnitReporter", () => {
     expect(xml).toContain("Timed out waiting for #submit");
   });
 
+  it("includes the full cause chain in the failure text", () => {
+    const { writes, deps } = makeDeps();
+    const reporter = createJUnitReporter(deps);
+
+    const cause = new Error("module not found: @qawolf/flows");
+    const flowRunErr = new Error('Flow "checkout" failed on attempt 1', {
+      cause,
+    });
+
+    reporter.onFlowFail?.({
+      name: "Checkout",
+      path: "flows/checkout.ts",
+      err: flowRunErr,
+      tests: { passed: 0, total: 0 },
+      durationMs: 100,
+      attempt: 1,
+      maxAttempts: 1,
+    });
+    reporter.onRunComplete?.({
+      summary: makeSummary({ flowsFailed: 1, durationMs: 100 }),
+    });
+
+    const xml = writes[0]?.content ?? "";
+    expect(xml).toContain("Flow &quot;checkout&quot; failed on attempt 1");
+    expect(xml).toContain("module not found: @qawolf/flows");
+  });
+
   it("does not write before the run completes", () => {
     const { writes, deps } = makeDeps();
     const reporter = createJUnitReporter(deps);

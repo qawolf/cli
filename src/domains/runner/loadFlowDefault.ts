@@ -3,104 +3,78 @@ import { pathToFileURL } from "node:url";
 
 import { runnerMessages } from "~/core/messages/index.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
-import { resolveFromEnvDir } from "~/shell/resolveExport.js";
+import { type FlowBundler, defaultFlowBundler } from "./bundleFlow.js";
 
-// Walk up from flowPath to find the directory that holds node_modules/@qawolf/flows.
-function findFlowsEnvDir(
+/**
+ * Only the compiled binary needs bundling — it alone cannot resolve exports-map
+ * bare specifiers from external node_modules. Node and `bun run`/`bun test`
+ * resolve them directly, so they take the direct-import path. QAWOLF_COMPILED is
+ * injected via --define at binary build time (see build:binary in package.json).
+ * Tests inject bundleFlow explicitly to exercise either path deterministically.
+ */
+const defaultBundleFlow: FlowBundler | undefined =
+  process.env.QAWOLF_COMPILED === "true" ? defaultFlowBundler : undefined;
+
+type LoadFlowDefaultArgs = {
+  flowPath: string;
+  fs?: Fs;
+  // Injectable for tests; when defined the flow is pre-bundled (compiled-binary path), else imported directly (Node path).
+  bundleFlow?: FlowBundler | undefined;
+  // Executor root whose node_modules holds @qawolf/flows etc.; required only when bundleFlow is defined.
+  depsRoot?: string;
+};
+
+/**
+ * Imports a module by URL and returns its default export, throwing the canonical
+ * no-default-export error when absent.
+ */
+async function importDefaultExport<T>(
+  moduleUrl: string,
   flowPath: string,
-  fs: Fs = makeDefaultFs(),
-): string | undefined {
-  let dir = path.dirname(flowPath);
-  while (true) {
-    if (fs.existsSync(path.join(dir, "node_modules", "@qawolf", "flows")))
-      return dir;
-    const parent = path.dirname(dir);
-    if (parent === dir) return undefined;
-    dir = parent;
-  }
-}
-
-// Exported for testing. Replaces @qawolf/flows and @qawolf/flows/* specifiers
-// with the URL returned by resolve(specifier). Leaves unresolvable specifiers
-// unchanged (resolve is expected to throw on failure).
-export function rewriteFlowImports(
-  content: string,
-  resolve: (specifier: string) => string,
-): string {
-  return content
-    .replace(
-      /(from|import)\s+(['"])(@qawolf\/flows(?:\/[^'"]+)?)\2/g,
-      (match, keyword: string, quote: string, specifier: string) => {
-        try {
-          return `${keyword} ${quote}${resolve(specifier)}${quote}`;
-        } catch {
-          return match;
-        }
-      },
-    )
-    .replace(
-      /\bimport\s*\(\s*(['"])(@qawolf\/flows(?:\/[^'"]+)?)\1\s*\)/g,
-      (match, quote: string, specifier: string) => {
-        try {
-          return `import(${quote}${resolve(specifier)}${quote})`;
-        } catch {
-          return match;
-        }
-      },
-    );
-}
-
-export async function loadFlowDefault<T>(
-  flowPath: string,
-  fs: Fs = makeDefaultFs(),
 ): Promise<T> {
-  // process.env.QAWOLF_COMPILED is injected via --define at binary build time
-  // (see build:binary in package.json). Undefined in bun run / bun test dev mode.
-  const isCompiledBinary = process.env.QAWOLF_COMPILED === "true";
-
-  // Non-compiled path: direct import, no file read needed.
-  if (!isCompiledBinary) {
-    const mod = (await import(pathToFileURL(flowPath).href)) as Record<
-      string,
-      unknown
-    >;
-    const exported = mod["default"] as T | undefined;
-    if (exported === undefined)
-      throw new Error(runnerMessages.noDefaultExport(flowPath));
-    return exported;
-  }
-
-  // In compiled Bun binaries, dynamically imported external files cannot resolve
-  // bare specifiers — this is a Bun binary limitation separate from the scoped-
-  // package traversal bug. Transform @qawolf/flows/* imports to absolute file://
-  // paths so Bun loads them directly without any resolution step.
-  const content = await fs.readFile(flowPath);
-  const envDir = findFlowsEnvDir(flowPath, fs);
-
-  const transformed = envDir
-    ? rewriteFlowImports(
-        content,
-        (specifier) =>
-          pathToFileURL(resolveFromEnvDir(envDir, specifier, "esm", fs)).href,
-      )
-    : content;
-
-  if (transformed === content) {
-    const mod = (await import(pathToFileURL(flowPath).href)) as Record<
-      string,
-      unknown
-    >;
-    const exported = mod["default"] as T | undefined;
-    if (exported === undefined)
-      throw new Error(runnerMessages.noDefaultExport(flowPath));
-    return exported;
-  }
-
-  const annotated = `${transformed}\n//# sourceURL=${pathToFileURL(flowPath).href}`;
-  const dataUri = `data:text/javascript,${encodeURIComponent(annotated)}`;
-  const mod = (await import(dataUri)) as Record<string, unknown>;
+  const mod = (await import(moduleUrl)) as Record<string, unknown>;
   const exported = mod["default"] as T | undefined;
   if (exported === undefined)
     throw new Error(runnerMessages.noDefaultExport(flowPath));
   return exported;
+}
+
+/**
+ * Imports the bundled flow from a temp sibling of flowPath so the externalized
+ * browser-driver bare imports resolve via the node_modules symlink at the flow's
+ * bundle root. The temp file is always removed afterward.
+ */
+async function importBundledFlow<T>(
+  flowPath: string,
+  code: string,
+  fs: Fs,
+): Promise<T> {
+  const tempPath = path.join(
+    path.dirname(flowPath),
+    `.${path.basename(flowPath)}.qawolf-bundle.mjs`,
+  );
+  await fs.writeFile(tempPath, code);
+  try {
+    return await importDefaultExport<T>(pathToFileURL(tempPath).href, flowPath);
+  } finally {
+    await fs.rm(tempPath, { force: true });
+  }
+}
+
+export async function loadFlowDefault<T>(
+  args: LoadFlowDefaultArgs,
+): Promise<T> {
+  const {
+    flowPath,
+    fs = makeDefaultFs(),
+    bundleFlow = defaultBundleFlow,
+    depsRoot = "",
+  } = args;
+
+  if (bundleFlow === undefined) {
+    return importDefaultExport<T>(pathToFileURL(flowPath).href, flowPath);
+  }
+
+  const code = await bundleFlow(flowPath, depsRoot);
+  return importBundledFlow<T>(flowPath, code, fs);
 }

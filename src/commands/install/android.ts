@@ -1,11 +1,12 @@
 import { join } from "node:path";
+
 import {
   expandPatterns as defaultExpandPatterns,
   makePeekFlowMeta,
 } from "~/domains/flows/expand.js";
-import { resolveUniqueEnvDir } from "~/domains/flows/ensureDeps.js";
-import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
+import { resolveDepsRoot as resolveDepsRootHelper } from "~/commands/resolveDepsRoot.js";
 import { installMessages } from "~/core/messages/index.js";
+import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import { installAndroid } from "~/domains/install/android/index.js";
@@ -22,18 +23,6 @@ export async function handleInstallAndroid(
   }
 
   const { fs } = ctx;
-
-  // When envDir is pre-resolved (composite `qawolf install` path), use it
-  // directly. Otherwise let installAndroid resolve from matched files.
-  const resolveEnvDir = envDir
-    ? () => envDir
-    : (files: string[]) => {
-        try {
-          return resolveUniqueEnvDir(files, fs);
-        } catch {
-          return undefined;
-        }
-      };
 
   return installAndroid(ctx, pattern, {
     cwd: process.cwd(),
@@ -58,7 +47,8 @@ export async function handleInstallAndroid(
     expandPatterns: (patterns, cwd) =>
       defaultExpandPatterns(patterns, cwd ?? process.cwd(), undefined, fs),
     peekFlowMeta: makePeekFlowMeta(fs),
-    resolveEnvDir,
+    resolveDepsRoot: async (files) =>
+      envDir ?? (await resolveDepsRootHelper({ files, fs })).depsRoot,
     resolveAppiumBin,
   });
 }

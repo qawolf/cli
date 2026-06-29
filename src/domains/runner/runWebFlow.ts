@@ -14,7 +14,7 @@ import type {
 } from "./types.js";
 import type { WebLaunchDeps, WebLaunchOptions } from "./web/types.js";
 import type { FlowRuntimeDeps } from "./flowRuntimeDeps.js";
-import { FailWithoutRetryError } from "./errors.js";
+import { FailWithoutRetryError, FlowRunError } from "./errors.js";
 import { initFlowRuntime } from "./initFlowRuntime.js";
 import {
   createLaunch,
@@ -24,16 +24,17 @@ import {
 import {
   buildContextSetup,
   initHar,
+  initTrace,
   maybeCleanupHar,
+  maybeCleanupTrace,
 } from "./web/contextSetup.js";
 
 export type RunWebFlowDeps = RunnerDeps &
   WebLaunchDeps & {
     readonly flowRuntimeDeps?: FlowRuntimeDeps;
   };
-// trace is not yet implemented
 export type RunWebFlowOptions = RunnerOptions &
-  Omit<WebLaunchOptions, "browser" | "trace">;
+  Omit<WebLaunchOptions, "browser">;
 
 export async function runWebFlow({
   deps,
@@ -44,9 +45,25 @@ export async function runWebFlow({
   options: RunWebFlowOptions;
   flowPath: string;
 }): Promise<FlowRunResult> {
-  await initFlowRuntime(flowPath);
-
-  const exported = await loadFlowDefault<WebFlowApiReturnValue>(flowPath);
+  let exported: WebFlowApiReturnValue;
+  try {
+    await initFlowRuntime(flowPath, {
+      timeout: options.timeout,
+      depsRoot: deps.depsRoot,
+    });
+    exported = await loadFlowDefault<WebFlowApiReturnValue>({
+      flowPath,
+      depsRoot: deps.depsRoot,
+    });
+  } catch (err) {
+    const flowName = path.basename(flowPath, path.extname(flowPath));
+    return {
+      passed: false,
+      testCounts: { passed: 0, total: 0 },
+      attempts: 1,
+      error: new FlowRunError(flowName, 1, err),
+    };
+  }
 
   const isLegacy = typeof exported === "function";
   const flowName = isLegacy
@@ -57,6 +74,7 @@ export async function runWebFlow({
     : (exported as WebFlowDefinition).run;
 
   const { harMode, harPath } = await initHar(deps.fs, options, flowName);
+  const { traceMode, tracePath } = await initTrace(deps.fs, options, flowName);
   const videoSize = { width: 1280, height: 720 };
   const contextSetup = buildContextSetup(videoSize, options, harPath);
 
@@ -78,6 +96,8 @@ export async function runWebFlow({
     launchBrowserOpts,
     signals: deps.signals,
     timeout: options.timeout,
+    traceMode,
+    tracePath,
   });
 
   const flowDef: FlowDefinition = {
@@ -111,8 +131,12 @@ export async function runWebFlow({
     return result;
   } finally {
     await cleanup();
+    const warn = (message: string) => deps.logger?.warn(message);
     if (harPath !== undefined) {
-      await maybeCleanupHar(deps.fs, harPath, passed, harMode);
+      await maybeCleanupHar(deps.fs, harPath, passed, harMode, warn);
+    }
+    if (tracePath !== undefined) {
+      await maybeCleanupTrace(deps.fs, tracePath, passed, traceMode, warn);
     }
   }
 }

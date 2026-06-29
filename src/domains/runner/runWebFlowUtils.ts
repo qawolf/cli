@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
+import type { TraceMode } from "~/core/types.js";
 import type { SignalRegistry } from "./types.js";
 import { runnerMessages } from "~/core/messages/index.js";
 import { unsupportedSharedDepNames } from "./unsupportedDepNames.js";
@@ -32,20 +33,51 @@ export function createLaunch({
   launchBrowserOpts,
   signals,
   timeout,
+  traceMode = "off",
+  tracePath,
 }: {
   browsers: { chromium: BrowserDep; firefox: BrowserDep; webkit: BrowserDep };
   contextSetup: ContextSetupOptions;
   launchBrowserOpts: BrowserLaunchOptions;
   signals: SignalRegistry;
   timeout: number;
+  traceMode?: TraceMode;
+  tracePath?: string | undefined;
 }): { launch: LaunchFn; cleanup: () => Promise<void> } {
   const openBrowsers: MinimalBrowser[] = [];
   const openContexts: MinimalBrowserContext[] = [];
-  const unregisters: (() => void)[] = [];
+  const tracingEnabled = traceMode !== "off";
+  let closed = false;
 
-  const trackContext = (ctx: MinimalBrowserContext) => {
+  // Ordered teardown shared by normal cleanup and signal-driven shutdown:
+  // stop tracing, then close contexts, then close browsers. The order matters
+  // because Playwright flushes HAR/video during context.close() and writes the
+  // trace on tracing.stop(); a browser.close() racing either can terminate the
+  // connection mid-flush and silently drop the artifact.
+  // TODO WIZ-10839: a flow with multiple launch() calls stops every context to
+  // the same tracePath, so only one trace zip survives (mirrors HAR).
+  const closeAll = async () => {
+    if (closed) return;
+    closed = true;
+    if (tracingEnabled && tracePath !== undefined) {
+      await Promise.allSettled(
+        openContexts.map((c) => c.tracing.stop({ path: tracePath })),
+      );
+    }
+    await Promise.allSettled(openContexts.map((c) => c.close()));
+    await Promise.allSettled(openBrowsers.map((b) => b.close()));
+  };
+
+  // Register the ordered teardown once. SignalRegistry runs cleanups
+  // concurrently, so registering context and browser closes separately would
+  // let browser.close() race the context flush on a SIGINT-interrupted run.
+  const unregister = signals.register(closeAll);
+
+  const trackContext = async (ctx: MinimalBrowserContext) => {
     openContexts.push(ctx);
-    unregisters.push(signals.register(() => ctx.close()));
+    if (tracingEnabled) {
+      await ctx.tracing.start({ screenshots: true, snapshots: true });
+    }
   };
 
   const launch: LaunchFn = async (launchOpts) => {
@@ -61,26 +93,22 @@ export function createLaunch({
         ...contextSetup,
       });
       context.setDefaultTimeout(timeout);
-      trackContext(context);
+      await trackContext(context);
       const page = await context.newPage();
       return { browserType: browserName, context, page };
     }
 
     const browser = await bt.launch(launchBrowserOpts);
     openBrowsers.push(browser);
-    unregisters.push(signals.register(() => browser.close()));
     const context = await browser.newContext(contextSetup);
     context.setDefaultTimeout(timeout);
-    trackContext(context);
+    await trackContext(context);
     return { browser, browserType: browserName, context };
   };
 
   const cleanup = async () => {
-    for (const unreg of unregisters) unreg();
-    await Promise.allSettled([
-      ...openContexts.map((c) => c.close()),
-      ...openBrowsers.map((b) => b.close()),
-    ]);
+    unregister();
+    await closeAll();
   };
 
   return { launch, cleanup };

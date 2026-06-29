@@ -32,7 +32,6 @@ export function makeClack() {
     outro: mock(),
     cancel: mock(),
     confirm: mock(),
-    selectKey: mock(),
     password: mock(),
     isCancel: isCancel as typeof isCancel & StyledClack["isCancel"],
     spinner: mock((): MockSpinner => {

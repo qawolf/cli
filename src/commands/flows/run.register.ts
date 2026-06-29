@@ -9,6 +9,7 @@ import type {
   TraceMode,
   VideoMode,
 } from "~/core/types.js";
+import { defaultOutputDir } from "~/core/paths.js";
 import { parseEnum, parseInteger } from "~/domains/runner/runFlagParsers.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
@@ -56,7 +57,7 @@ export function registerFlowsRunCommand(
     )
     .option(
       "--timeout <ms>",
-      "Per-flow timeout in milliseconds",
+      "Default timeout for actions and assertions, in milliseconds",
       parseInteger("--timeout", { min: 0 }),
       30_000,
     )
@@ -87,7 +88,7 @@ export function registerFlowsRunCommand(
     .option(
       "--output-dir <path>",
       "Directory for run artifacts (videos, traces, HAR)",
-      "qawolf-output",
+      defaultOutputDir,
     )
     .option(
       "--junit [path]",
@@ -97,6 +98,10 @@ export function registerFlowsRunCommand(
     .option(
       "--env <env>",
       "Pull and run a flow from this environment (UUID or slug) if not cached locally",
+    )
+    .option(
+      "--deps <dir>",
+      "Use this prepared dependency directory instead of auto-installing the runtime; or set QAWOLF_RUNTIME_DIR to relocate the managed runtime",
     )
     .addHelpText("after", runExamples)
     .action(

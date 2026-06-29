@@ -12,12 +12,16 @@ import type { FlowsRunDeps } from "./runInternals.js";
 export function makePooledDispatch(
   resolvedDir: string,
 ): NonNullable<FlowsRunDeps["createPooledDispatch"]> {
-  return ({ webOptions, androidOptions }) =>
-    createSubprocessDispatch({
+  return ({ webOptions, androidOptions }) => {
+    const { command, prefixArgs, env: workerEnv } = defaultWorkerCommand();
+    return createSubprocessDispatch({
       spawn: defaultSpawn,
-      ...defaultWorkerCommand(),
+      command,
+      prefixArgs,
+      workerEnv,
       resolvedDir,
       webOptions,
       androidOptions,
     });
+  };
 }

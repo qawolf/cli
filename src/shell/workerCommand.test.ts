@@ -3,11 +3,26 @@ import { describe, expect, it } from "bun:test";
 import { resolveWorkerCommand } from "./workerCommand.js";
 
 describe("resolveWorkerCommand", () => {
-  it("invokes the binary directly when compiled", () => {
+  it("runs the embedded cli.js as a Bun runtime when compiled with a worker bundle", () => {
     const out = resolveWorkerCommand({
       execPath: "/usr/local/bin/qawolf",
       scriptPath: undefined,
       compiled: true,
+      workerCliPath: "/data/qawolf/worker/cli-abc123.js",
+    });
+    expect(out).toEqual({
+      command: "/usr/local/bin/qawolf",
+      prefixArgs: ["/data/qawolf/worker/cli-abc123.js"],
+      env: { BUN_BE_BUN: "1" },
+    });
+  });
+
+  it("invokes the binary directly when compiled without an embedded bundle", () => {
+    const out = resolveWorkerCommand({
+      execPath: "/usr/local/bin/qawolf",
+      scriptPath: undefined,
+      compiled: true,
+      workerCliPath: undefined,
     });
     expect(out).toEqual({ command: "/usr/local/bin/qawolf", prefixArgs: [] });
   });
@@ -17,6 +32,7 @@ describe("resolveWorkerCommand", () => {
       execPath: "/usr/bin/node",
       scriptPath: "/app/dist/cli.js",
       compiled: false,
+      workerCliPath: undefined,
     });
     expect(out).toEqual({
       command: "/usr/bin/node",
@@ -30,6 +46,7 @@ describe("resolveWorkerCommand", () => {
         execPath: "/usr/bin/node",
         scriptPath: undefined,
         compiled: false,
+        workerCliPath: undefined,
       }),
     ).toThrow("worker entrypoint");
   });

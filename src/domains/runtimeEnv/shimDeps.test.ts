@@ -130,6 +130,21 @@ describe("shimFlowsDeps (Bun mode)", () => {
 
     expect(mockBuild).not.toHaveBeenCalled();
   });
+
+  it("throws when bun.build fails so the install aborts", async () => {
+    const fs = makeFlowsFs();
+    mockBuild.mockResolvedValue({
+      success: false,
+      outputs: [],
+      logs: [{ message: "boom" }],
+    });
+
+    expect(shimFlowsDeps(envDir, fs, mockBuild)).rejects.toThrow(
+      "bun.build failed to shim",
+    );
+
+    expect(mockBuild).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("shimFlowsDeps (Node.js mode — no Bun)", () => {

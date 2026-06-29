@@ -1,46 +1,26 @@
 // Shared serializer / parser for the dotenv format `qawolf flows pull` writes
-// and `qawolf flows run` reads. Always double-quotes values; escapes `\\`,
-// `\"`, `\n`, `\r`, `\t`. Round-trips exactly (escape/unescape are inverses).
+// and `qawolf flows run` reads. Always double-quotes values; keys that are not
+// bare POSIX identifiers are also double-quoted. `quote`/`unquote` apply to
+// both keys and values. Escapes `\\`, `\"`, `\n`, `\r`, `\t`. Round-trips
+// exactly (escape/unescape are inverses).
 
 import { flowsMessages } from "~/core/messages/index.js";
 
-const envKeyPattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
-const lineRe = /^([A-Za-z_][A-Za-z0-9_]*)="((?:[^"\\]|\\.)*)"$/;
-
-export type SerializeDotenvSkippingInvalidResult = {
-  readonly content: string;
-  // Keys that are not valid POSIX shell identifiers (e.g. they contain a `.`
-  // or a space). A `.env` file cannot represent them, so pull callers can
-  // choose to skip them while surfacing the names to the user.
-  readonly skippedKeys: readonly string[];
-};
-
-function isDotenvKey(key: string): boolean {
-  return envKeyPattern.test(key);
-}
+const bareKeyPattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const lineRe =
+  /^(?:([A-Za-z_][A-Za-z0-9_]*)|"((?:[^"\\]|\\.)*)")="((?:[^"\\]|\\.)*)"$/;
 
 export function serializeDotenv(vars: Record<string, string>): string {
   const keys = Object.keys(vars).sort();
-  for (const key of keys) {
-    if (!isDotenvKey(key)) {
-      throw new Error(flowsMessages.dotenv.invalidKey(key));
-    }
-  }
   if (keys.length === 0) return "";
-  return `${keys.map((key) => `${key}=${quote(vars[key] ?? "")}`).join("\n")}\n`;
-}
-
-export function serializeDotenvSkippingInvalid(
-  vars: Record<string, string>,
-): SerializeDotenvSkippingInvalidResult {
-  const keys = Object.keys(vars).sort();
-  const validVars: Record<string, string> = {};
-  const skippedKeys: string[] = [];
-  for (const key of keys) {
-    if (isDotenvKey(key)) validVars[key] = vars[key] ?? "";
-    else skippedKeys.push(key);
-  }
-  return { content: serializeDotenv(validVars), skippedKeys };
+  return `${keys
+    .map(
+      (key) =>
+        `${bareKeyPattern.test(key) ? key : quote(key)}=${quote(
+          vars[key] ?? "",
+        )}`,
+    )
+    .join("\n")}\n`;
 }
 
 function quote(value: string): string {
@@ -62,7 +42,7 @@ export function parseDotenv(content: string): Record<string, string> {
     if (!match) {
       throw new Error(flowsMessages.dotenv.unparseableLine(line));
     }
-    out[match[1]!] = unquote(match[2]!);
+    out[match[1] ?? unquote(match[2]!)] = unquote(match[3]!);
   }
   return out;
 }

@@ -48,6 +48,7 @@ write on timeout: it may have reached the server the first time.
 | `qawolf install`          | local                      | Install every runtime dependency the project's flows need                                                              |
 | `qawolf install android`  | local                      | Install Android system images, AVDs, and the Appium driver used by the project's Android flows                         |
 | `qawolf install browsers` | local                      | Install Playwright browsers used by the project's web flows                                                            |
+| `qawolf install clear`    | local                      | Remove the managed runtime cache (all installed runtime versions)                                                      |
 | `qawolf run create`       | write                      | Create a run for selected flows in an environment.                                                                     |
 
 <!-- commands-table:end -->

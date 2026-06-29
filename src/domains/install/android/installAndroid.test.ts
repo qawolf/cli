@@ -69,7 +69,7 @@ function makeDeps(
         name: "Flow",
         target: "Android - Pixel 9 (Android 15)",
       })),
-    resolveEnvDir: () => "/cwd" as string | undefined,
+    resolveDepsRoot: async () => "/cwd",
     resolveAppiumBin: () => appiumBinPath,
   };
 }

@@ -25,8 +25,8 @@ export type InstallAndroidDeps = {
     cwd?: string,
   ) => Promise<string[]>;
   readonly peekFlowMeta: PeekFlowMetaFn;
-  /** Resolves the env dir (package.json ancestor) from expanded flow files. */
-  readonly resolveEnvDir: (files: string[]) => string | undefined;
+  /** Resolves the dependency root (override / project / managed) from expanded flow files. */
+  readonly resolveDepsRoot: (files: string[]) => Promise<string>;
   /** Resolves the appium binary path from an env dir. */
   readonly resolveAppiumBin: (envDir: string) => string;
 };
@@ -55,10 +55,10 @@ export async function installAndroid(
     checkExists: deps.checkExists,
   });
 
-  const envDir = deps.resolveEnvDir(files) ?? deps.cwd;
+  const depsRoot = await deps.resolveDepsRoot(files);
   await installUiautomator2Driver(ctx, {
     spawn: deps.spawn,
-    appiumBinPath: deps.resolveAppiumBin(envDir),
+    appiumBinPath: deps.resolveAppiumBin(depsRoot),
   });
 
   ctx.ui.success(
