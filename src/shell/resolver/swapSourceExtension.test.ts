@@ -39,6 +39,26 @@ describe("swapSourceExtension", () => {
     expect(swapSourceExtension("@qawolf/flows/web")).toBeUndefined();
   });
 
+  it("returns undefined for a package subpath with a known extension", () => {
+    expect(swapSourceExtension("pkg/file.js")).toBeUndefined();
+  });
+
+  it("returns undefined for a scoped package subpath with a known extension", () => {
+    expect(swapSourceExtension("@scope/pkg/file.ts")).toBeUndefined();
+  });
+
+  it("swaps an absolute path", () => {
+    expect(swapSourceExtension("/abs/utilities/code-snippets.ts")).toBe(
+      "/abs/utilities/code-snippets.js",
+    );
+  });
+
+  it("swaps a file: URL", () => {
+    expect(swapSourceExtension("file:///abs/utilities/code-snippets.ts")).toBe(
+      "file:///abs/utilities/code-snippets.js",
+    );
+  });
+
   it("returns undefined for extensionless relative path", () => {
     expect(swapSourceExtension("./foo")).toBeUndefined();
   });
