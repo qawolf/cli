@@ -65,14 +65,6 @@ export function flowResolveHook(
 }
 
 /**
- * Registers a synchronous ESM resolve hook that aliases sibling source
- * extensions (`.ts`↔`.js`, `.mts`↔`.mjs`, `.cts`↔`.cjs`) — the native-Node
- * equivalent of a bundler's extension-alias resolution (e.g. webpack
- * `resolve.extensionAlias`). On ERR_MODULE_NOT_FOUND it retries the sibling
- * extension; literal matches win and nothing is rewritten on disk. No-ops where
- * `module.registerHooks` is unavailable (Bun, Node < 22.15).
- */
-/**
  * Resolves the `registerHooks` static from a `node:module` value, or undefined
  * when absent (Bun, Node < 22.15). The default export of `node:module` is the
  * Module *function*, so this probes for the method directly rather than gating
@@ -86,6 +78,14 @@ export function resolveRegisterHooks(
   return typeof candidate === "function" ? candidate : undefined;
 }
 
+/**
+ * Registers a synchronous ESM resolve hook that aliases sibling source
+ * extensions (`.ts`↔`.js`, `.mts`↔`.mjs`, `.cts`↔`.cjs`) — the native-Node
+ * equivalent of a bundler's extension-alias resolution (e.g. webpack
+ * `resolve.extensionAlias`). On ERR_MODULE_NOT_FOUND it retries the sibling
+ * extension; literal matches win and nothing is rewritten on disk. No-ops where
+ * `module.registerHooks` is unavailable (Bun, Node < 22.15).
+ */
 export function registerFlowModuleResolver(): void {
   if (registered) return;
   registered = true;
