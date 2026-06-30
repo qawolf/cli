@@ -1,5 +1,6 @@
 import nodeModule from "node:module";
 
+import { errorCode } from "~/core/errors.js";
 import { swapSourceExtension } from "./swapSourceExtension.js";
 
 // Minimal local types for the Node.js synchronous resolve hook API (v22.15+); context is passed through opaquely.
@@ -34,11 +35,7 @@ type NodeModuleWithHooks = {
 let registered = false;
 
 function isModuleNotFound(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    (err as Record<string, unknown>)["code"] === "ERR_MODULE_NOT_FOUND"
-  );
+  return errorCode(err) === "ERR_MODULE_NOT_FOUND";
 }
 
 /**
@@ -65,26 +62,34 @@ export function flowResolveHook(
 }
 
 /**
+ * Type guard for a `node:module` value that carries `registerHooks`. The default
+ * export of `node:module` is the Module *function*, so this admits functions as
+ * well as objects rather than gating on `typeof === "object"` — which would
+ * reject the function carrier and never register.
+ */
+function hasRegisterHooks(mod: unknown): mod is NodeModuleWithHooks {
+  if (mod === null || (typeof mod !== "object" && typeof mod !== "function")) {
+    return false;
+  }
+  return "registerHooks" in mod && typeof mod.registerHooks === "function";
+}
+
+/**
  * Resolves the `registerHooks` static from a `node:module` value, or undefined
- * when absent (Bun, Node < 22.15). The default export of `node:module` is the
- * Module *function*, so this probes for the method directly rather than gating
- * on `typeof === "object"` — which would reject the function and never register.
+ * when absent (Bun, Node < 22.15).
  */
 export function resolveRegisterHooks(
   mod: unknown,
 ): NodeModuleWithHooks["registerHooks"] | undefined {
-  const candidate = (mod as Partial<NodeModuleWithHooks> | null | undefined)
-    ?.registerHooks;
-  return typeof candidate === "function" ? candidate : undefined;
+  return hasRegisterHooks(mod) ? mod.registerHooks : undefined;
 }
 
 /**
  * Registers a synchronous ESM resolve hook that aliases sibling source
- * extensions (`.ts`↔`.js`, `.mts`↔`.mjs`, `.cts`↔`.cjs`) — the native-Node
- * equivalent of a bundler's extension-alias resolution (e.g. webpack
- * `resolve.extensionAlias`). On ERR_MODULE_NOT_FOUND it retries the sibling
- * extension; literal matches win and nothing is rewritten on disk. No-ops where
- * `module.registerHooks` is unavailable (Bun, Node < 22.15).
+ * extensions (`.ts`↔`.js`, `.mts`↔`.mjs`, `.cts`↔`.cjs`), retrying the sibling
+ * on ERR_MODULE_NOT_FOUND — the native-Node equivalent of a bundler's
+ * extension-alias resolution. No-ops where `module.registerHooks` is
+ * unavailable (Bun, Node < 22.15).
  */
 export function registerFlowModuleResolver(): void {
   if (registered) return;

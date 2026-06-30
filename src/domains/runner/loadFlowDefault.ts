@@ -8,10 +8,9 @@ import { type FlowBundler, defaultFlowBundler } from "./bundleFlow.js";
 
 /**
  * Only the compiled binary needs bundling — it alone cannot resolve exports-map
- * bare specifiers from external node_modules. Node and `bun run`/`bun test`
- * resolve them directly, so they take the direct-import path. QAWOLF_COMPILED is
- * injected via --define at binary build time (see build:binary in package.json).
- * Tests inject bundleFlow explicitly to exercise either path deterministically.
+ * bare specifiers from external node_modules; Node and `bun run` resolve them
+ * directly. QAWOLF_COMPILED is injected via --define at binary build time (see
+ * build:binary). Tests inject bundleFlow explicitly to exercise either path.
  */
 const defaultBundleFlow: FlowBundler | undefined =
   process.env.QAWOLF_COMPILED === "true" ? defaultFlowBundler : undefined;
