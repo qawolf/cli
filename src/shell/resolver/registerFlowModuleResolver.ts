@@ -65,25 +65,33 @@ export function flowResolveHook(
 }
 
 /**
- * Registers a synchronous ESM resolve hook that, on ERR_MODULE_NOT_FOUND,
- * retries the sibling source extension — so a flow importing a `.ts` file that
- * ships as `.js` (common in pulled QA Wolf bundles) still loads under native
- * Node's literal resolution. Literal matches win and nothing is rewritten on
- * disk. No-ops where `module.registerHooks` is unavailable (Bun, Node < 22.15).
+ * Registers a synchronous ESM resolve hook that aliases sibling source
+ * extensions (`.ts`↔`.js`, `.mts`↔`.mjs`, `.cts`↔`.cjs`) — the native-Node
+ * equivalent of a bundler's extension-alias resolution (e.g. webpack
+ * `resolve.extensionAlias`). On ERR_MODULE_NOT_FOUND it retries the sibling
+ * extension; literal matches win and nothing is rewritten on disk. No-ops where
+ * `module.registerHooks` is unavailable (Bun, Node < 22.15).
  */
+/**
+ * Resolves the `registerHooks` static from a `node:module` value, or undefined
+ * when absent (Bun, Node < 22.15). The default export of `node:module` is the
+ * Module *function*, so this probes for the method directly rather than gating
+ * on `typeof === "object"` — which would reject the function and never register.
+ */
+export function resolveRegisterHooks(
+  mod: unknown,
+): NodeModuleWithHooks["registerHooks"] | undefined {
+  const candidate = (mod as Partial<NodeModuleWithHooks> | null | undefined)
+    ?.registerHooks;
+  return typeof candidate === "function" ? candidate : undefined;
+}
+
 export function registerFlowModuleResolver(): void {
   if (registered) return;
-  const mod: unknown = nodeModule;
-  const isHooksAvailable =
-    typeof mod === "object" &&
-    mod !== null &&
-    typeof (mod as Record<string, unknown>)["registerHooks"] === "function";
-
-  if (!isHooksAvailable) {
-    registered = true;
-    return;
-  }
-
-  (mod as NodeModuleWithHooks).registerHooks({ resolve: flowResolveHook });
   registered = true;
+
+  const registerHooks = resolveRegisterHooks(nodeModule);
+  if (registerHooks === undefined) return;
+
+  registerHooks({ resolve: flowResolveHook });
 }

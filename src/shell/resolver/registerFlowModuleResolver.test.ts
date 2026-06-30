@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, mock } from "bun:test";
 import {
   type FlowResolveHook,
   flowResolveHook,
+  resolveRegisterHooks,
 } from "./registerFlowModuleResolver.js";
 
 type NextResolve = Parameters<FlowResolveHook>[2];
@@ -103,5 +104,31 @@ describe("flowResolveHook", () => {
 
     expect(caught).toBe(err);
     expect(nextResolve).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("resolveRegisterHooks", () => {
+  it("finds registerHooks on a function carrier (node:module's default export)", () => {
+    // node:module's default export is the Module function, not a plain object.
+    const moduleFn = (() => undefined) as unknown as Record<string, unknown>;
+    const registerHooks = (): void => undefined;
+    moduleFn["registerHooks"] = registerHooks;
+
+    expect(resolveRegisterHooks(moduleFn)).toBe(registerHooks);
+  });
+
+  it("finds registerHooks on an object carrier", () => {
+    const registerHooks = (): void => undefined;
+    expect(resolveRegisterHooks({ registerHooks })).toBe(registerHooks);
+  });
+
+  it("returns undefined when registerHooks is absent (Bun / Node < 22.15)", () => {
+    expect(resolveRegisterHooks({})).toBeUndefined();
+    expect(resolveRegisterHooks(() => undefined)).toBeUndefined();
+  });
+
+  it("returns undefined for nullish or primitive module values", () => {
+    expect(resolveRegisterHooks(undefined)).toBeUndefined();
+    expect(resolveRegisterHooks(42)).toBeUndefined();
   });
 });
