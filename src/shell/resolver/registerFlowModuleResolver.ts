@@ -42,9 +42,8 @@ function isModuleNotFound(err: unknown): boolean {
 }
 
 /**
- * Synchronous ESM resolve hook that retries the sibling source extension when
- * a specifier fails with ERR_MODULE_NOT_FOUND. Literal matches always win;
- * nothing is converted on disk. See registerFlowModuleResolver for why.
+ * Synchronous ESM resolve hook that retries the sibling source extension when a
+ * specifier fails with ERR_MODULE_NOT_FOUND. See registerFlowModuleResolver for why.
  */
 export function flowResolveHook(
   specifier: string,
@@ -66,13 +65,11 @@ export function flowResolveHook(
 }
 
 /**
- * Registers a synchronous Node.js ESM resolve hook that retries the sibling
- * source extension when a specifier fails with ERR_MODULE_NOT_FOUND. Native
- * Node ESM resolves extensions literally, so a flow importing a sibling `.ts`
- * file that ships as `.js` (common in pulled QA Wolf bundles) would otherwise
- * throw; this transparently retries the swapped extension. Literal matches
- * always win; nothing is converted on disk. No-ops on runtimes where
- * `module.registerHooks` is unavailable (e.g. Bun, Node < 22.15).
+ * Registers a synchronous ESM resolve hook that, on ERR_MODULE_NOT_FOUND,
+ * retries the sibling source extension — so a flow importing a `.ts` file that
+ * ships as `.js` (common in pulled QA Wolf bundles) still loads under native
+ * Node's literal resolution. Literal matches win and nothing is rewritten on
+ * disk. No-ops where `module.registerHooks` is unavailable (Bun, Node < 22.15).
  */
 export function registerFlowModuleResolver(): void {
   if (registered) return;
