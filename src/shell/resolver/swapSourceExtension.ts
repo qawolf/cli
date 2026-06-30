@@ -1,4 +1,4 @@
-const EXTENSION_SWAPS: Record<string, string> = {
+const extensionSwaps: Record<string, string> = {
   ".ts": ".js",
   ".js": ".ts",
   ".mts": ".mjs",
@@ -17,7 +17,7 @@ export function swapSourceExtension(specifier: string): string | undefined {
   const dotIndex = specifier.lastIndexOf(".");
   if (dotIndex === -1) return undefined;
   const ext = specifier.slice(dotIndex);
-  const swapped = EXTENSION_SWAPS[ext];
+  const swapped = extensionSwaps[ext];
   if (swapped === undefined) return undefined;
   return specifier.slice(0, dotIndex) + swapped;
 }
