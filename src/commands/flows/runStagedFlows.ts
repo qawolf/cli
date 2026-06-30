@@ -16,7 +16,7 @@ import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { ResolveDepsRootArgs } from "~/commands/resolveDepsRoot.js";
 
 import { buildFlowsRunDeps } from "./buildFlowsRunDeps.js";
-import { createFlowRuntimeDeps as defaultCreateFlowRuntimeDeps } from "./flowRuntimeDeps.js";
+import type { createFlowRuntimeDeps as defaultCreateFlowRuntimeDeps } from "./flowRuntimeDeps.js";
 import { loadEnvFile } from "./loadEnvFile.js";
 
 /** Dependency bundle for the shared post-discovery run-setup phase. */

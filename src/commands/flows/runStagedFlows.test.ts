@@ -17,6 +17,8 @@ const prepareRunDirMock = mock<StagedRunDeps["prepareRunDir"]>();
 const configureTestkitMock = mock<StagedRunDeps["configureTestkit"]>();
 const flowsRunMock = mock<StagedRunDeps["flowsRun"]>();
 const runWebFlowDepsMock = mock<(...args: unknown[]) => Promise<unknown>>();
+const createFlowRuntimeDepsMock =
+  mock<StagedRunDeps["createFlowRuntimeDeps"]>();
 const cleanupMock = mock<() => Promise<void>>();
 const uiInfoMock = mock<(message: string) => void>();
 
@@ -26,6 +28,7 @@ const trackedMocks = [
   configureTestkitMock,
   flowsRunMock,
   runWebFlowDepsMock,
+  createFlowRuntimeDepsMock,
   cleanupMock,
   uiInfoMock,
 ];
@@ -38,6 +41,7 @@ function makeDeps(): StagedRunDeps {
     flowsRun: flowsRunMock,
     runWebFlowDeps:
       runWebFlowDepsMock as unknown as StagedRunDeps["runWebFlowDeps"],
+    createFlowRuntimeDeps: createFlowRuntimeDepsMock,
   };
 }
 
@@ -85,6 +89,7 @@ beforeEach(() => {
   configureTestkitMock.mockResolvedValue(undefined);
   flowsRunMock.mockResolvedValue(undefined);
   runWebFlowDepsMock.mockResolvedValue({});
+  createFlowRuntimeDepsMock.mockResolvedValue({});
 });
 
 describe("runStagedFlows", () => {

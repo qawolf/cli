@@ -25,7 +25,7 @@ describe("createFlowRuntimeDeps", () => {
     });
     const configureEmailsFn = mock(async () => client);
 
-    const deps = createFlowRuntimeDeps({
+    const deps = await createFlowRuntimeDeps({
       envDir: "/env",
       ctx: makeCtx(),
       env: {
@@ -56,7 +56,7 @@ describe("createFlowRuntimeDeps", () => {
         ({ getInbox: async () => undefined }) as unknown as EmailsClient,
     );
 
-    const deps = createFlowRuntimeDeps({
+    const deps = await createFlowRuntimeDeps({
       envDir: "/env",
       ctx: makeCtx(),
       env: {},

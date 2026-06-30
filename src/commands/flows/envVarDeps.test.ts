@@ -30,21 +30,18 @@ describe("makeEnvVarDeps", () => {
     delete process.env["TOKEN"];
   });
 
-  it("rejects invalid keys instead of silently dropping them", async () => {
+  it("persists keys that need quoting instead of silently dropping them", async () => {
     const envDir = "/env";
     const { fs, deps } = makeDeps(envDir);
     await fs.mkdir(envDir, { recursive: true });
 
-    let caught: unknown;
-    try {
-      await deps.setEnvironmentVariable("DOTTED.KEY", "abc");
-    } catch (err) {
-      caught = err;
-    }
+    await deps.setEnvironmentVariable("DOTTED.KEY", "abc");
 
-    expect(caught).toBeInstanceOf(Error);
-    expect((caught as Error).message).toMatch(/invalid key/i);
-    expect(await fs.pathExists(join(envDir, ".env"))).toBe(false);
+    expect(await fs.readFile(join(envDir, ".env"))).toBe(
+      '"DOTTED.KEY"="abc"\n',
+    );
+    expect(process.env["DOTTED.KEY"]).toBe("abc");
+    delete process.env["DOTTED.KEY"];
   });
 
   it("does not swallow malformed .env content", async () => {
