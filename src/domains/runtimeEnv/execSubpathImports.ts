@@ -1,51 +1,43 @@
 import { join } from "node:path";
 
+import { z } from "zod";
+
 import { isNoEntError } from "~/core/errors.js";
 import { type Fs } from "~/shell/fs.js";
 
 /**
- * Subpath-import aliases flow bundles use to reach pinned executor packages.
- * The platform drops these from the generated bundle package.json; each target
- * is a bare specifier that resolves through the inner-hop node_modules symlink
- * (see populateInnerHop) against exec/package.json. "#playwright" points at the
- * single browser driver the CLI pins (see pinnedPackages) and is the only alias
- * flows use today.
+ * qawolf's `#playwright` driver alias, which the platform omits from bundle
+ * package.json — pointed at the pinned playwright the inner hop symlinks in.
  */
-const flowSubpathImports: Record<string, string> = {
-  "#playwright": "playwright",
-};
+const flowSubpathImports = { "#playwright": "playwright" } as const;
+
+// looseObject keeps all fields; imports is coerced to a record ({} if missing or malformed).
+const packageJsonSchema = z
+  .looseObject({ imports: z.record(z.string(), z.unknown()).catch({}) })
+  .catch({ imports: {} });
 
 export type WriteExecSubpathImportsArgs = {
   execDir: string;
   fs: Fs;
 };
 
-/**
- * Merges the flow subpath-import aliases into exec/package.json so Node and the
- * flow bundler resolve "#playwright" against the inner-hop symlink. Preserves
- * all existing package.json fields and any pre-existing imports, with the flow
- * aliases winning on conflict. Tolerates a missing (ENOENT) or invalid-JSON
- * package.json; other read errors propagate so a transient failure never
- * silently clobbers the staged bundle package.json.
- */
+/** Adds the flow subpath-import aliases to exec/package.json's imports map. */
 export async function writeExecSubpathImports(
   args: WriteExecSubpathImportsArgs,
 ): Promise<void> {
   const { execDir, fs } = args;
   const pkgPath = join(execDir, "package.json");
+  const pkg = packageJsonSchema.parse(await readPackageJson(pkgPath, fs));
 
-  const base = await readPackageJson(pkgPath, fs);
-  const merged = {
-    ...base,
-    imports: { ...readExistingImports(base), ...flowSubpathImports },
-  };
+  const merged = { ...pkg, imports: { ...pkg.imports, ...flowSubpathImports } };
   await fs.writeFile(pkgPath, JSON.stringify(merged, undefined, 2));
 }
 
-async function readPackageJson(
-  pkgPath: string,
-  fs: Fs,
-): Promise<Record<string, unknown>> {
+/**
+ * Reads and parses pkgPath. A missing file or malformed JSON yields {}; other
+ * read errors propagate so a transient failure never clobbers a staged file.
+ */
+async function readPackageJson(pkgPath: string, fs: Fs): Promise<unknown> {
   let content: string;
   try {
     content = await fs.readFile(pkgPath);
@@ -54,18 +46,8 @@ async function readPackageJson(
     throw err;
   }
   try {
-    const parsed: unknown = JSON.parse(content);
-    if (typeof parsed !== "object" || parsed === null) return {};
-    return parsed as Record<string, unknown>;
+    return JSON.parse(content);
   } catch {
     return {};
   }
-}
-
-function readExistingImports(
-  base: Record<string, unknown>,
-): Record<string, unknown> {
-  const raw = base["imports"];
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
-  return raw as Record<string, unknown>;
 }
