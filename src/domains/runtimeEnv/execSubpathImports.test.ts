@@ -105,8 +105,13 @@ describe("writeExecSubpathImports", () => {
       readFile: () => Promise.reject(ioError),
     };
 
-    expect(writeExecSubpathImports({ execDir, fs })).rejects.toThrow(
-      "permission denied",
-    );
+    let caught: unknown;
+    try {
+      await writeExecSubpathImports({ execDir, fs });
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toContain("permission denied");
   });
 });
