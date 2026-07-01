@@ -4,6 +4,7 @@ import { basename, dirname, join, resolve, sep } from "node:path";
 import { copyDirExcluding } from "~/shell/copyDir.js";
 import { type Fs, makeDefaultFs } from "~/shell/fs.js";
 
+import { writeExecSubpathImports } from "./execSubpathImports.js";
 import { populateInnerHop } from "./innerHop.js";
 import { populateOuterHop } from "./outerHop.js";
 
@@ -49,6 +50,12 @@ export async function prepareRunDir(
   await populateInnerHop({ depsRoot, execDir, fs });
 
   const stagedFiles = await stageFlowFiles({ files, projectDir, execDir, fs });
+
+  // Only the projectDir path copies a package.json into exec; standalone runs
+  // stage bare files that never use the "#playwright" alias.
+  if (projectDir !== undefined) {
+    await writeExecSubpathImports({ execDir, fs });
+  }
 
   await populateOuterHop({ projectDir, runDir, fs });
 
