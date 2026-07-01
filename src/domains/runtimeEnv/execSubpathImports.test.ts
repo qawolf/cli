@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { makeDefaultFs } from "~/shell/fs.js";
+import { type Fs, makeDefaultFs } from "~/shell/fs.js";
 
 import { writeExecSubpathImports } from "./execSubpathImports.js";
 
@@ -93,5 +93,20 @@ describe("writeExecSubpathImports", () => {
 
     const pkg = await readPackageJson(execDir);
     expect(pkg.imports).toEqual({ "#playwright": "playwright" });
+  });
+
+  it("propagates a non-ENOENT read error instead of clobbering package.json", async () => {
+    const execDir = await makeExecDir();
+    const ioError = Object.assign(Error("EACCES: permission denied"), {
+      code: "EACCES",
+    });
+    const fs: Fs = {
+      ...makeDefaultFs(),
+      readFile: () => Promise.reject(ioError),
+    };
+
+    expect(writeExecSubpathImports({ execDir, fs })).rejects.toThrow(
+      "permission denied",
+    );
   });
 });

@@ -1,5 +1,6 @@
 import { join } from "node:path";
 
+import { isNoEntError } from "~/core/errors.js";
 import { type Fs } from "~/shell/fs.js";
 
 /**
@@ -23,7 +24,9 @@ export type WriteExecSubpathImportsArgs = {
  * Merges the flow subpath-import aliases into exec/package.json so Node and the
  * flow bundler resolve "#playwright" against the inner-hop symlink. Preserves
  * all existing package.json fields and any pre-existing imports, with the flow
- * aliases winning on conflict, and tolerates a missing or invalid package.json.
+ * aliases winning on conflict. Tolerates a missing (ENOENT) or invalid-JSON
+ * package.json; other read errors propagate so a transient failure never
+ * silently clobbers the staged bundle package.json.
  */
 export async function writeExecSubpathImports(
   args: WriteExecSubpathImportsArgs,
@@ -46,8 +49,9 @@ async function readPackageJson(
   let content: string;
   try {
     content = await fs.readFile(pkgPath);
-  } catch {
-    return {};
+  } catch (err) {
+    if (isNoEntError(err)) return {};
+    throw err;
   }
   try {
     const parsed: unknown = JSON.parse(content);
@@ -62,6 +66,6 @@ function readExistingImports(
   base: Record<string, unknown>,
 ): Record<string, unknown> {
   const raw = base["imports"];
-  if (typeof raw !== "object" || raw === null) return {};
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
   return raw as Record<string, unknown>;
 }
