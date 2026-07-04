@@ -8,7 +8,7 @@ const config: KnipConfig = {
     "src/**/*.fixtures.ts",
     "src/**/*.testUtils.ts",
   ],
-  project: ["src/**/*.ts"],
+  project: ["src/**/*.ts", "e2e/**/*.ts"],
   ignoreDependencies: [
     // TODO WIZ-10341 follow-up: consumed once the web-flow runner imports it.
     "@playwright/test",
@@ -18,6 +18,8 @@ const config: KnipConfig = {
     "appium-uiautomator2-driver",
   ],
   ignore: [
+    // Flow templates aren't imported — they're read as text / executed by a subprocess.
+    "e2e/fixtures/flows/**",
     // TODO WIZ-10325: remove once flowsRun consumes more of the runner surface
     "src/domains/runner/*.ts",
     // TODO WIZ-10326: remove once Reporter is consumed by more than the console reporter

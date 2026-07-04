@@ -102,8 +102,33 @@
   "options": {
     "typeAware": true
   },
-  "ignorePatterns": ["dist/", "node_modules/", "knip.config.ts"],
+  "ignorePatterns": [
+    "dist/",
+    "node_modules/",
+    "knip.config.ts",
+    "e2e/fixtures/flows/"
+  ],
   "overrides": [
+    {
+      "files": ["e2e/**/*.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["~/*", "~/**"],
+                "message": "e2e/ must not import from src/ — it treats the CLI as a subprocess black box."
+              },
+              {
+                "group": ["bun", "bun:*"],
+                "message": "e2e/ harness uses node: builtins for portability — avoid Bun module imports."
+              }
+            ]
+          }
+        ]
+      }
+    },
     {
       "files": ["src/core/**/*.ts"],
       "rules": {

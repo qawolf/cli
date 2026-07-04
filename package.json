@@ -38,6 +38,7 @@
     "build": "bun run generate && bun scripts/build.ts",
     "build:binary": "bun run build && bun scripts/buildBinary.ts",
     "dev": "bun run src/main.ts",
+    "e2e": "bun e2e/run.ts",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "generate": "bun scripts/genDependencyVersions.ts && bun scripts/genSkillMd.ts",
