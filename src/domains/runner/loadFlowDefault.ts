@@ -3,7 +3,7 @@ import { pathToFileURL } from "node:url";
 
 import { runnerMessages } from "~/core/messages/index.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
-import { registerFlowModuleResolver } from "~/shell/resolver/registerFlowModuleResolver.js";
+import { registerFlowLoader } from "~/shell/resolver/registerFlowLoader.js";
 import { type FlowBundler, defaultFlowBundler } from "./bundleFlow.js";
 
 /**
@@ -72,7 +72,7 @@ export async function loadFlowDefault<T>(
   } = args;
 
   if (bundleFlow === undefined) {
-    registerFlowModuleResolver();
+    await registerFlowLoader();
     return importDefaultExport<T>(pathToFileURL(flowPath).href, flowPath);
   }
 

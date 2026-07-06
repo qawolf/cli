@@ -6,6 +6,9 @@ import { spawnSync } from "node:child_process";
 const externals = [
   // native addon — cannot be inlined into a JS bundle
   "@napi-rs/keyring",
+  // native-addon TS loader, imported only on the Node path (Node <22.18) to
+  // transpile/resolve flows; the Bun binary never loads it
+  "@oxc-node/core",
   // version-coupled: playwright must match @qawolf/flows' peer range at runtime
   "@qawolf/flow-targets",
   "@qawolf/flows",
