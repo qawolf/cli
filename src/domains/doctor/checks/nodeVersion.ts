@@ -9,8 +9,11 @@ type NodeVersionDeps = {
 export async function checkNodeVersion(
   deps: NodeVersionDeps,
 ): Promise<CheckResult> {
-  const minMajor = extractMajor(deps.enginesNode, /^>=\s*(\d+)/);
-  if (minMajor === undefined) {
+  const min = parseVersion(
+    deps.enginesNode,
+    /^>=\s*(\d+)(?:\.(\d+))?(?:\.(\d+))?/,
+  );
+  if (min === undefined) {
     return {
       name: "node-version",
       status: "fail",
@@ -18,7 +21,10 @@ export async function checkNodeVersion(
     };
   }
 
-  const actual = extractMajor(deps.processVersion, /^v?(\d+)/);
+  const actual = parseVersion(
+    deps.processVersion,
+    /^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?/,
+  );
   if (actual === undefined) {
     return {
       name: "node-version",
@@ -29,7 +35,7 @@ export async function checkNodeVersion(
     };
   }
 
-  if (actual < minMajor) {
+  if (compareVersions(actual, min) < 0) {
     return {
       name: "node-version",
       status: "fail",
@@ -48,7 +54,24 @@ export async function checkNodeVersion(
   };
 }
 
-function extractMajor(input: string, pattern: RegExp): number | undefined {
-  const captured = input.trim().match(pattern)?.[1];
-  return captured === undefined ? undefined : Number.parseInt(captured, 10);
+type Version = readonly [major: number, minor: number, patch: number];
+
+/**
+ * Parses `major[.minor[.patch]]` from the head of a version or range string,
+ * defaulting missing minor/patch to 0 (so `>=20` means `20.0.0`). Returns
+ * undefined when no leading major number is present.
+ */
+function parseVersion(input: string, pattern: RegExp): Version | undefined {
+  const match = input.trim().match(pattern);
+  if (match?.[1] === undefined) return undefined;
+  return [
+    Number.parseInt(match[1], 10),
+    match[2] === undefined ? 0 : Number.parseInt(match[2], 10),
+    match[3] === undefined ? 0 : Number.parseInt(match[3], 10),
+  ];
+}
+
+/** Standard tuple comparison: negative when `a` precedes `b`. */
+function compareVersions(a: Version, b: Version): number {
+  return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
 }

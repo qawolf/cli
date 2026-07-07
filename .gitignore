@@ -7,6 +7,9 @@ dist/
 # Generated source files
 src/generated/
 
+# Generated smoke-test loader bundle (built in the runtime-smoke CI job)
+test/node20/loader.generated.mjs
+
 # Environment
 .env
 .env.*

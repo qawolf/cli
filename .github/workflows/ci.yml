@@ -43,3 +43,61 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: bash scripts/check-co-authored.sh "$BASE_REF"
+
+  # Proves the published npm bundle runs on every supported runtime: the bundle
+  # boots and a TypeScript flow transpiles + loads. Node 20 has no native TS, so
+  # this is the guard that the oxc-node loader keeps working there.
+  #
+  # Node 20 reached end-of-life on 2026-04-30 but is deliberately kept: an
+  # internal AI Task Docker image still runs Node 20 (see WIZ-10992). Do not
+  # remove the node-20 lane while that requirement stands. It pins the exact
+  # engines.node floor (20.19.0) so a regression at the minimum is caught.
+  runtime-smoke:
+    name: Runtime smoke (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: node-20
+            node-version: "20.19.0"
+          - name: node-22
+            node-version: "22"
+          - name: node-24
+            node-version: "24"
+          - name: bun
+            node-version: ""
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+      - if: matrix.node-version != ''
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      # Bundle the real registerFlowLoader (oxc-node external) so the smoke drives
+      # the shipped strategy selection, not a copy. Bundling resolves the ~/ alias
+      # that Node/oxc cannot.
+      - name: Bundle flow loader for smoke
+        run: >
+          bun build src/shell/resolver/registerFlowLoader.ts
+          --target=node --format=esm --external @oxc-node/core
+          --outfile test/node20/loader.generated.mjs
+      - name: Smoke — bundle boots + TypeScript flow loads
+        env:
+          RUNTIME: ${{ matrix.name }}
+        run: |
+          if [ "$RUNTIME" = "bun" ]; then
+            bun dist/cli.js --version
+            bun test/node20/smoke.mjs
+          else
+            node dist/cli.js --version
+            node test/node20/smoke.mjs
+          fi

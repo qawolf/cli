@@ -45,6 +45,11 @@ const buildArgs = [
   "@qawolf/emails",
   "--external",
   "@qawolf/testkit",
+  // never loaded in the compiled binary (QAWOLF_COMPILED takes the bundleFlow
+  // path, not registerFlowLoader); external so --compile does not try to resolve
+  // its platform-specific native addon during cross-target release builds
+  "--external",
+  "@oxc-node/core",
   "--define",
   'process.env.QAWOLF_COMPILED="true"',
 ];
