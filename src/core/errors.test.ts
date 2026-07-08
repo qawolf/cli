@@ -53,4 +53,26 @@ describe("extractMissingPackage", () => {
   it("returns undefined for non-resolution errors", () => {
     expect(extractMissingPackage("locator timeout")).toBeUndefined();
   });
+
+  it("returns undefined for a relative file path specifier", () => {
+    expect(
+      extractMissingPackage(
+        "Cannot find module './helper.js' imported from /x/y.js",
+      ),
+    ).toBeUndefined();
+  });
+
+  it("returns undefined for an absolute file path specifier", () => {
+    expect(
+      extractMissingPackage(
+        "Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/run/exec/helper.js' imported from /x/y.js",
+      ),
+    ).toBeUndefined();
+  });
+
+  it("returns undefined for a Windows drive-letter path specifier", () => {
+    expect(
+      extractMissingPackage("Cannot find module 'C:\\flows\\helper.js'"),
+    ).toBeUndefined();
+  });
 });

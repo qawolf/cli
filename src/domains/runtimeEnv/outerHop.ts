@@ -123,7 +123,12 @@ async function readInstallableDeps(
     return {};
   }
 
-  const parsed: unknown = JSON.parse(content);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    return {};
+  }
   if (typeof parsed !== "object" || parsed === null) return {};
 
   const rawDeps = (parsed as Record<string, unknown>)["dependencies"];

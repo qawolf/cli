@@ -251,4 +251,25 @@ describe("populateOuterHop", () => {
 
     expect(result).toEqual({ mode: "none" });
   });
+
+  it("symlinks the nearest node_modules when package.json contains invalid JSON", async () => {
+    const root = await makeTmpDir();
+    const projectDir = join(root, "project");
+    await mkdir(projectDir, { recursive: true });
+    await writeFile(join(projectDir, "package.json"), "{not json");
+    await seedNodeModules(root, ["lodash"]);
+    const runDir = join(root, "run");
+    await mkdir(runDir, { recursive: true });
+
+    const result = await populateOuterHop({
+      projectDir,
+      runDir,
+      fs: makeDefaultFs(),
+    });
+
+    expect(result).toEqual({
+      mode: "symlink",
+      nodeModulesDir: join(root, "node_modules"),
+    });
+  });
 });
