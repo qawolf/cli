@@ -1,5 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
+import { runnerMessages } from "~/core/messages/index.js";
+import { createConsoleReporter } from "./createConsoleReporter.js";
 import {
   makeConsoleHarness as make,
   makeFlowFail,
@@ -176,5 +178,51 @@ describe("createConsoleReporter", () => {
     const { out, r } = make(10);
     r.onRunComplete?.({ summary: makeSummary({ flowsPassed: 2 }) });
     expect(out.calls.join("")).toContain("──────────");
+  });
+});
+
+describe("module-not-found hint", () => {
+  function makeSink() {
+    const chunks: string[] = [];
+    return {
+      write: (s: string) => {
+        chunks.push(s);
+      },
+      text: () => chunks.join(""),
+    };
+  }
+
+  it("appends an actionable hint when the failure is a module-resolution error", () => {
+    const stdout = makeSink();
+    const stderr = makeSink();
+    const reporter = createConsoleReporter({
+      stdout,
+      stderr,
+      projectDir: "/proj",
+    });
+
+    const err = new Error("flow failed");
+    err.cause = new Error(
+      "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'date-fns' imported from /x/y.js",
+    );
+    reporter.onFlowFail?.(makeFlowFail({ err }));
+
+    expect(stderr.text()).toContain(
+      runnerMessages.moduleNotFoundHint("date-fns", "/proj"),
+    );
+  });
+
+  it("writes no hint for ordinary failures", () => {
+    const stdout = makeSink();
+    const stderr = makeSink();
+    const reporter = createConsoleReporter({
+      stdout,
+      stderr,
+      projectDir: "/proj",
+    });
+
+    reporter.onFlowFail?.(makeFlowFail({ err: new Error("locator timeout") }));
+
+    expect(stderr.text()).not.toContain("Hint:");
   });
 });

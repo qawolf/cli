@@ -108,7 +108,14 @@ export async function runStagedFlows(
       ctx,
       staged.files,
       flags,
-      buildFlowsRunDeps({ ctx, resolvedDir, android, runWebFlowDeps, flags }),
+      buildFlowsRunDeps({
+        ctx,
+        resolvedDir,
+        android,
+        runWebFlowDeps,
+        flags,
+        projectDir,
+      }),
     );
   } finally {
     unregisterCleanup();
