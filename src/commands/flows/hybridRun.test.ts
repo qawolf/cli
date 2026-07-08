@@ -46,6 +46,7 @@ beforeEach(() => {
   prepareRunDirMock.mockResolvedValue({
     files: [],
     runDir: "/mock/run",
+    outerHop: { mode: "none" },
     cleanup: async () => {},
   });
   configureTestkitMock.mockResolvedValue(undefined);
@@ -121,6 +122,7 @@ describe("handleHybridFlowsRun", () => {
     prepareRunDirMock.mockResolvedValue({
       files: ["/mock/.qawolf/my-env/login.flow.ts"],
       runDir: "/mock/run",
+      outerHop: { mode: "none" },
       cleanup: async () => {},
     });
 
@@ -182,6 +184,7 @@ describe("handleHybridFlowsRun", () => {
     prepareRunDirMock.mockResolvedValue({
       files: ["/mock/run/exec/login.flow.ts"],
       runDir: "/mock/run",
+      outerHop: { mode: "none" },
       cleanup: async () => {},
     });
 
@@ -211,6 +214,7 @@ describe("handleHybridFlowsRun", () => {
     prepareRunDirMock.mockResolvedValue({
       files: ["/mock/.qawolf/my-env/login.flow.ts"],
       runDir: "/mock/run",
+      outerHop: { mode: "none" },
       cleanup,
     });
 
@@ -234,6 +238,7 @@ describe("handleHybridFlowsRun", () => {
     prepareRunDirMock.mockResolvedValue({
       files: ["/mock/.qawolf/my-env/login.flow.ts"],
       runDir: "/mock/run",
+      outerHop: { mode: "none" },
       cleanup: async () => {},
     });
 
@@ -305,6 +310,7 @@ describe("handleHybridFlowsRun", () => {
         "/mock/.qawolf/my-env/b.flow.ts",
       ],
       runDir: "/mock/run",
+      outerHop: { mode: "none" },
       cleanup: async () => {},
     });
 

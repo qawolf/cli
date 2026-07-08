@@ -1,3 +1,4 @@
+/* eslint-disable eslint/max-lines -- test file for all prepareRunDir scenarios including nested-bundle discovery in Task 3 */
 import { afterEach, describe, expect, it } from "bun:test";
 import { realpathSync } from "node:fs";
 import {
@@ -232,6 +233,56 @@ describe("prepareRunDir", () => {
       const outerHop = join(result.runDir, "node_modules");
       expect((await lstat(outerHop)).isSymbolicLink()).toBe(true);
       expect(await readlink(outerHop)).toBe(projectNm);
+    });
+  });
+
+  describe("outer-hop discovery (nested-bundle topology)", () => {
+    it("walks past an unsatisfying host node_modules to a satisfying ancestor", async () => {
+      const runRoot = await makeTmpDir();
+      const depsRoot = await makeDepsRoot();
+
+      // world/ has the satisfying node_modules; host/ (simulating the CLI repo)
+      // has an unrelated one; bundle/ (projectDir) has none of its own.
+      const world = await makeTmpDir();
+      await mkdir(join(world, "node_modules", "date-fns"), { recursive: true });
+      await writeFile(
+        join(world, "node_modules", "date-fns", "package.json"),
+        `{"name":"date-fns"}`,
+      );
+      const host = join(world, "host");
+      await mkdir(join(host, "node_modules", "lodash"), { recursive: true });
+      await writeFile(
+        join(host, "node_modules", "lodash", "package.json"),
+        `{"name":"lodash"}`,
+      );
+      const bundle = join(host, "bundle");
+      await mkdir(bundle, { recursive: true });
+      await writeFile(
+        join(bundle, "package.json"),
+        JSON.stringify({
+          name: "pulled-bundle",
+          dependencies: { "date-fns": "2.29.3" },
+        }),
+      );
+      const flowFile = join(bundle, "flow.ts");
+      await writeFile(flowFile, "// flow");
+
+      const result = await prepareRunDir({
+        files: [flowFile],
+        projectDir: bundle,
+        depsRoot,
+        runRoot,
+      });
+      tmpDirs.push(result.runDir);
+
+      // The host's node_modules (missing date-fns) must be skipped.
+      expect(result.outerHop).toEqual({
+        mode: "symlink",
+        nodeModulesDir: join(world, "node_modules"),
+      });
+      expect(await readlink(join(result.runDir, "node_modules"))).toBe(
+        join(world, "node_modules"),
+      );
     });
   });
 });

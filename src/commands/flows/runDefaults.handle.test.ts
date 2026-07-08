@@ -92,6 +92,7 @@ beforeEach(() => {
   prepareRunDirMock.mockResolvedValue({
     files: [],
     runDir: "/mock/run",
+    outerHop: { mode: "none" },
     cleanup: async () => {},
   });
   configureTestkitMock.mockResolvedValue(undefined);
@@ -256,6 +257,7 @@ describe("handleFlowsRun", () => {
     prepareRunDirMock.mockResolvedValue({
       files: ["/mock/run/exec/flow.ts"],
       runDir: "/mock/run",
+      outerHop: { mode: "none" },
       cleanup: async () => {},
     });
 
@@ -276,6 +278,7 @@ describe("handleFlowsRun", () => {
     prepareRunDirMock.mockResolvedValue({
       files: ["/some/flow.ts"],
       runDir: "/mock/run",
+      outerHop: { mode: "none" },
       cleanup,
     });
 

@@ -80,6 +80,7 @@ beforeEach(() => {
   prepareRunDirMock.mockResolvedValue({
     files: ["/mock/run/exec/flow.ts"],
     runDir: "/mock/run",
+    outerHop: { mode: "none" },
     cleanup: cleanupMock,
   });
   configureTestkitMock.mockResolvedValue(undefined);
