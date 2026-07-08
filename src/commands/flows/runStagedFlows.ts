@@ -79,7 +79,21 @@ export async function runStagedFlows(
     projectDir,
     depsRoot: runtimeEnv.depsRoot,
     runRoot: runStagingRoot(),
+    onInstallStart: (depCount) =>
+      ctx.ui.info(runnerMessages.installingProjectDeps(depCount)),
   });
+
+  if (staged.outerHop.mode === "install") {
+    const log = ctx.log("runner");
+    for (const candidate of staged.outerHop.rejected) {
+      log.debug(
+        runnerMessages.outerHopCandidateRejected(
+          candidate.dir,
+          candidate.missing,
+        ),
+      );
+    }
+  }
 
   // Register cleanup before the setup calls below so a throw in configureTestkit
   // / runWebFlowDeps never leaks the per-run staging directory.

@@ -167,12 +167,14 @@ describe("handleHybridFlowsRun", () => {
       deps,
     );
 
-    expect(prepareRunDirMock).toHaveBeenCalledWith({
-      files: [`${envDir}/login.flow.ts`],
-      projectDir: undefined,
-      depsRoot: "/managed",
-      runRoot: runStagingRoot(),
-    });
+    expect(prepareRunDirMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        files: [`${envDir}/login.flow.ts`],
+        projectDir: undefined,
+        depsRoot: "/managed",
+        runRoot: runStagingRoot(),
+      }),
+    );
   });
 
   it("passes staged files from prepareRunDir to flowsRun", async () => {
