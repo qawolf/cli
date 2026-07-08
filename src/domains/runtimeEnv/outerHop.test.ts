@@ -12,6 +12,7 @@ import { populateOuterHop } from "./outerHop.js";
 const tmpDirs: string[] = [];
 
 afterEach(async () => {
+  mock.restore();
   await Promise.all(
     tmpDirs.map((d) => rm(d, { recursive: true, force: true })),
   );
@@ -110,7 +111,6 @@ describe("populateOuterHop", () => {
     const runDir = join(root, "run");
     await mkdir(runDir, { recursive: true });
 
-    installMock.mockClear();
     const installStartCounts: number[] = [];
     installMock.mockImplementation(async () => {
       // onInstallStart must fire BEFORE the install runs.
