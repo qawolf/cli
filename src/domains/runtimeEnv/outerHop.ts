@@ -11,7 +11,7 @@ import { createDirSymlink } from "./symlinkDir.js";
 
 const executorPackageNames = new Set(pinnedPackages.map((p) => p.name));
 
-export type RejectedCandidate = { dir: string; missing: string[] };
+type RejectedCandidate = { dir: string; missing: string[] };
 
 export type OuterHopResult =
   | { mode: "symlink"; nodeModulesDir: string }

@@ -31,8 +31,6 @@ const config: KnipConfig = {
     "src/shell/platform/types.ts",
     // TODO WIZ-10339 follow-up: consumed once wireErrors is called from the pull handler
     "src/domains/flows/pull/wireErrors.ts",
-    // TODO Task 3: consumed once prepareRunDir threads populateOuterHop result
-    "src/domains/runtimeEnv/outerHop.ts",
   ],
 };
 
