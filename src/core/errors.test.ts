@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { errorCode, isNoEntError } from "./errors.js";
+import { errorCode, extractMissingPackage, isNoEntError } from "./errors.js";
 
 describe("errorCode", () => {
   it("returns the string code of an error-like value", () => {
@@ -34,5 +34,23 @@ describe("isNoEntError", () => {
     expect(isNoEntError({ code: "ENOENT" })).toBe(true);
     expect(isNoEntError({ code: "EACCES" })).toBe(false);
     expect(isNoEntError(Error("boom"))).toBe(false);
+  });
+});
+
+describe("extractMissingPackage", () => {
+  it("extracts the package name from an ESM resolution error", () => {
+    const text =
+      "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'date-fns' imported from /x/y.js";
+    expect(extractMissingPackage(text)).toBe("date-fns");
+  });
+
+  it("extracts a scoped package name from a CJS resolution error", () => {
+    expect(extractMissingPackage("Cannot find module '@faker-js/faker'")).toBe(
+      "@faker-js/faker",
+    );
+  });
+
+  it("returns undefined for non-resolution errors", () => {
+    expect(extractMissingPackage("locator timeout")).toBeUndefined();
   });
 });

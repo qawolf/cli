@@ -17,3 +17,14 @@ export function errorCode(err: unknown): string | undefined {
 export function isNoEntError(err: unknown): boolean {
   return errorCode(err) === "ENOENT";
 }
+
+const missingPackagePattern = /Cannot find (?:package|module) '([^']+)'/;
+
+/**
+ * The package name from a Node "Cannot find package 'x'" / "Cannot find
+ * module 'x'" resolution error text, or undefined when the text is not a
+ * module-resolution failure.
+ */
+export function extractMissingPackage(text: string): string | undefined {
+  return missingPackagePattern.exec(text)?.[1];
+}
