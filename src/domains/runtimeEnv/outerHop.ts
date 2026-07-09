@@ -127,6 +127,8 @@ async function readInstallableDeps(
   try {
     parsed = JSON.parse(content);
   } catch {
+    // Malformed package.json yields no declared deps (matching execSubpathImports'
+    // tolerance) so a usable ancestor node_modules can still symlink.
     return {};
   }
   if (typeof parsed !== "object" || parsed === null) return {};
