@@ -252,6 +252,37 @@ describe("populateOuterHop", () => {
     expect(result).toEqual({ mode: "none" });
   });
 
+  it("never consults a sibling directory's node_modules (multi-repo layout)", async () => {
+    const root = await makeTmpDir();
+    // The sibling repo's node_modules WOULD satisfy the project's deps — but
+    // it is not an ancestor of the project, so discovery must never see it.
+    const sibling = join(root, "sibling-repo");
+    await seedNodeModules(sibling, ["date-fns"]);
+    const projectDir = join(root, "flows-repo");
+    await writePackageJson(projectDir, { "date-fns": "2.29.3" });
+    const runDir = join(root, "run");
+    await mkdir(runDir, { recursive: true });
+
+    installMock.mockImplementation(async () => ({ exitCode: 0, stderr: "" }));
+
+    const result = await populateOuterHop({
+      projectDir,
+      runDir,
+      fs: makeDefaultFs(),
+      install: installMock,
+    });
+
+    // No ancestor satisfies, so the project's own deps are installed — the
+    // satisfying sibling tree is invisible to the upward walk.
+    expect(result.mode).toBe("install");
+    if (result.mode === "install") {
+      expect(result.rejected.map((r) => r.dir)).not.toContain(
+        join(sibling, "node_modules"),
+      );
+    }
+    expect(installMock).toHaveBeenCalledWith(runDir);
+  });
+
   it("symlinks the nearest node_modules when package.json contains invalid JSON", async () => {
     const root = await makeTmpDir();
     const projectDir = join(root, "project");
