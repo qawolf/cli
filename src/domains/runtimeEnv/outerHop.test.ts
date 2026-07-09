@@ -12,7 +12,6 @@ import { populateOuterHop } from "./outerHop.js";
 const tmpDirs: string[] = [];
 
 afterEach(async () => {
-  mock.restore();
   await Promise.all(
     tmpDirs.map((d) => rm(d, { recursive: true, force: true })),
   );
@@ -47,8 +46,9 @@ async function writePackageJson(
   );
 }
 
-const installMock =
-  mock<(cwd: string) => Promise<{ exitCode: number; stderr: string }>>();
+function makeInstallMock() {
+  return mock<(cwd: string) => Promise<{ exitCode: number; stderr: string }>>();
+}
 
 describe("populateOuterHop", () => {
   it("symlinks the nearest node_modules when it satisfies declared deps", async () => {
@@ -112,7 +112,7 @@ describe("populateOuterHop", () => {
     await mkdir(runDir, { recursive: true });
 
     const installStartCounts: number[] = [];
-    installMock.mockImplementation(async () => {
+    const installMock = makeInstallMock().mockImplementation(async () => {
       // onInstallStart must fire BEFORE the install runs.
       expect(installStartCounts).toEqual([1]);
       return { exitCode: 0, stderr: "" };
@@ -263,7 +263,10 @@ describe("populateOuterHop", () => {
     const runDir = join(root, "run");
     await mkdir(runDir, { recursive: true });
 
-    installMock.mockImplementation(async () => ({ exitCode: 0, stderr: "" }));
+    const installMock = makeInstallMock().mockImplementation(async () => ({
+      exitCode: 0,
+      stderr: "",
+    }));
 
     const result = await populateOuterHop({
       projectDir,
