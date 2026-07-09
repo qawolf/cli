@@ -1,63 +1,27 @@
-// oxlint-disable eslint/max-lines -- test file covers all candidate-validation scenarios; splitting would fragment coverage
-import { afterEach, describe, expect, it, mock } from "bun:test";
-import { realpathSync } from "node:fs";
-import { mkdir, mkdtemp, readlink, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { afterEach, describe, expect, it } from "bun:test";
+import { readlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { makeDefaultFs } from "~/shell/fs.js";
 
 import { populateOuterHop } from "./outerHop.js";
+import {
+  makeInstallMock,
+  makeProjectTree,
+  makeTmpDirTracker,
+} from "./runDirFixtures.testUtils.js";
 
-const tmpDirs: string[] = [];
+const tracker = makeTmpDirTracker("qawolf-outerhop-test-");
 
-afterEach(async () => {
-  await Promise.all(
-    tmpDirs.map((d) => rm(d, { recursive: true, force: true })),
-  );
-  tmpDirs.length = 0;
-});
-
-async function makeTmpDir(): Promise<string> {
-  const d = realpathSync(
-    await mkdtemp(join(tmpdir(), "qawolf-outerhop-test-")),
-  );
-  tmpDirs.push(d);
-  return d;
-}
-
-// Writes <base>/node_modules/<name>/package.json for each package name.
-async function seedNodeModules(base: string, names: string[]): Promise<void> {
-  for (const name of names) {
-    const pkgDir = join(base, "node_modules", name);
-    await mkdir(pkgDir, { recursive: true });
-    await writeFile(join(pkgDir, "package.json"), `{"name":"${name}"}`);
-  }
-}
-
-async function writePackageJson(
-  dir: string,
-  dependencies: Record<string, string>,
-): Promise<void> {
-  await mkdir(dir, { recursive: true });
-  await writeFile(
-    join(dir, "package.json"),
-    JSON.stringify({ name: "flows-project", dependencies }),
-  );
-}
-
-function makeInstallMock() {
-  return mock<(cwd: string) => Promise<{ exitCode: number; stderr: string }>>();
-}
+afterEach(() => tracker.cleanup());
 
 describe("populateOuterHop", () => {
   it("symlinks the nearest node_modules when it satisfies declared deps", async () => {
-    const root = await makeTmpDir();
-    const projectDir = join(root, "project");
-    await writePackageJson(projectDir, { "date-fns": "2.29.3" });
-    await seedNodeModules(projectDir, ["date-fns"]);
-    const runDir = join(root, "run");
-    await mkdir(runDir, { recursive: true });
+    const { projectDir, runDir } = await makeProjectTree({
+      tracker,
+      deps: { "date-fns": "2.29.3" },
+      seed: { project: ["date-fns"] },
+    });
 
     const result = await populateOuterHop({
       projectDir,
@@ -75,15 +39,13 @@ describe("populateOuterHop", () => {
   });
 
   it("skips an unsatisfying nearer node_modules and symlinks a satisfying ancestor", async () => {
-    const root = await makeTmpDir();
     // ancestor (satisfies) > mid (does not) > project (no node_modules)
-    await seedNodeModules(root, ["date-fns"]);
-    const mid = join(root, "mid");
-    await seedNodeModules(mid, ["lodash"]);
-    const projectDir = join(mid, "project");
-    await writePackageJson(projectDir, { "date-fns": "2.29.3" });
-    const runDir = join(root, "run");
-    await mkdir(runDir, { recursive: true });
+    const { root, projectDir, runDir } = await makeProjectTree({
+      tracker,
+      deps: { "date-fns": "2.29.3" },
+      projectPath: "mid/project",
+      seed: { "": ["date-fns"], mid: ["lodash"] },
+    });
 
     const result = await populateOuterHop({
       projectDir,
@@ -101,15 +63,11 @@ describe("populateOuterHop", () => {
   });
 
   it("falls back to install when no candidate satisfies, recording rejections", async () => {
-    const root = await makeTmpDir();
-    await seedNodeModules(root, ["lodash"]);
-    const projectDir = join(root, "project");
-    await writePackageJson(projectDir, {
-      "date-fns": "2.29.3",
-      "@qawolf/flows": "workspace:*",
+    const { root, projectDir, runDir } = await makeProjectTree({
+      tracker,
+      deps: { "date-fns": "2.29.3", "@qawolf/flows": "workspace:*" },
+      seed: { "": ["lodash"] },
     });
-    const runDir = join(root, "run");
-    await mkdir(runDir, { recursive: true });
 
     const installStartCounts: number[] = [];
     const installMock = makeInstallMock().mockImplementation(async () => {
@@ -141,12 +99,11 @@ describe("populateOuterHop", () => {
   });
 
   it("symlinks the nearest node_modules when the project declares no installable deps", async () => {
-    const root = await makeTmpDir();
-    await seedNodeModules(root, ["lodash"]);
-    const projectDir = join(root, "project");
-    await writePackageJson(projectDir, { "@qawolf/flows": "workspace:*" });
-    const runDir = join(root, "run");
-    await mkdir(runDir, { recursive: true });
+    const { root, projectDir, runDir } = await makeProjectTree({
+      tracker,
+      deps: { "@qawolf/flows": "workspace:*" },
+      seed: { "": ["lodash"] },
+    });
 
     const result = await populateOuterHop({
       projectDir,
@@ -161,16 +118,12 @@ describe("populateOuterHop", () => {
   });
 
   it("does not disqualify a candidate for lacking pinned executor packages", async () => {
-    const root = await makeTmpDir();
-    const projectDir = join(root, "project");
-    await writePackageJson(projectDir, {
-      "date-fns": "2.29.3",
-      "@qawolf/flows": "workspace:*",
-    });
     // Candidate has date-fns but NOT @qawolf/flows — must still pass.
-    await seedNodeModules(projectDir, ["date-fns"]);
-    const runDir = join(root, "run");
-    await mkdir(runDir, { recursive: true });
+    const { projectDir, runDir } = await makeProjectTree({
+      tracker,
+      deps: { "date-fns": "2.29.3", "@qawolf/flows": "workspace:*" },
+      seed: { project: ["date-fns"] },
+    });
 
     const result = await populateOuterHop({
       projectDir,
@@ -185,15 +138,14 @@ describe("populateOuterHop", () => {
   });
 
   it("symlinks the hoisted workspace-root node_modules for a monorepo package", async () => {
-    const root = await makeTmpDir();
     // Monorepo shape: deps hoisted to repo root; the workspace package has no
     // node_modules of its own.
-    const repo = join(root, "repo");
-    await seedNodeModules(repo, ["date-fns"]);
-    const projectDir = join(repo, "packages", "flows");
-    await writePackageJson(projectDir, { "date-fns": "2.29.3" });
-    const runDir = join(root, "run");
-    await mkdir(runDir, { recursive: true });
+    const { root, projectDir, runDir } = await makeProjectTree({
+      tracker,
+      deps: { "date-fns": "2.29.3" },
+      projectPath: "repo/packages/flows",
+      seed: { repo: ["date-fns"] },
+    });
 
     const result = await populateOuterHop({
       projectDir,
@@ -203,27 +155,22 @@ describe("populateOuterHop", () => {
 
     expect(result).toEqual({
       mode: "symlink",
-      nodeModulesDir: join(repo, "node_modules"),
+      nodeModulesDir: join(root, "repo", "node_modules"),
     });
     expect(await readlink(join(runDir, "node_modules"))).toBe(
-      join(repo, "node_modules"),
+      join(root, "repo", "node_modules"),
     );
   });
 
   it("split hoisting: skips a partial package-level node_modules for the satisfying root", async () => {
-    const root = await makeTmpDir();
     // npm nests a package-level node_modules on version conflict; the rest of
     // the deps stay hoisted at the repo root.
-    const repo = join(root, "repo");
-    await seedNodeModules(repo, ["date-fns", "lodash"]);
-    const projectDir = join(repo, "packages", "flows");
-    await writePackageJson(projectDir, {
-      "date-fns": "2.29.3",
-      lodash: "3.10.1",
+    const { root, projectDir, runDir } = await makeProjectTree({
+      tracker,
+      deps: { "date-fns": "2.29.3", lodash: "3.10.1" },
+      projectPath: "repo/packages/flows",
+      seed: { repo: ["date-fns", "lodash"], "repo/packages/flows": ["lodash"] },
     });
-    await seedNodeModules(projectDir, ["lodash"]);
-    const runDir = join(root, "run");
-    await mkdir(runDir, { recursive: true });
 
     const result = await populateOuterHop({
       projectDir,
@@ -234,14 +181,12 @@ describe("populateOuterHop", () => {
     // The partial package-level candidate (missing date-fns) must be skipped.
     expect(result).toEqual({
       mode: "symlink",
-      nodeModulesDir: join(repo, "node_modules"),
+      nodeModulesDir: join(root, "repo", "node_modules"),
     });
   });
 
   it("returns none when projectDir is undefined", async () => {
-    const root = await makeTmpDir();
-    const runDir = join(root, "run");
-    await mkdir(runDir, { recursive: true });
+    const { runDir } = await makeProjectTree({ tracker });
 
     const result = await populateOuterHop({
       projectDir: undefined,
@@ -253,15 +198,14 @@ describe("populateOuterHop", () => {
   });
 
   it("never consults a sibling directory's node_modules (multi-repo layout)", async () => {
-    const root = await makeTmpDir();
     // The sibling repo's node_modules WOULD satisfy the project's deps — but
     // it is not an ancestor of the project, so discovery must never see it.
-    const sibling = join(root, "sibling-repo");
-    await seedNodeModules(sibling, ["date-fns"]);
-    const projectDir = join(root, "flows-repo");
-    await writePackageJson(projectDir, { "date-fns": "2.29.3" });
-    const runDir = join(root, "run");
-    await mkdir(runDir, { recursive: true });
+    const { root, projectDir, runDir } = await makeProjectTree({
+      tracker,
+      deps: { "date-fns": "2.29.3" },
+      projectPath: "flows-repo",
+      seed: { "sibling-repo": ["date-fns"] },
+    });
 
     const installMock = makeInstallMock().mockImplementation(async () => ({
       exitCode: 0,
@@ -275,25 +219,22 @@ describe("populateOuterHop", () => {
       install: installMock,
     });
 
-    // No ancestor satisfies, so the project's own deps are installed — the
-    // satisfying sibling tree is invisible to the upward walk.
+    // No ancestor satisfies → install; the sibling is invisible to the walk.
     expect(result.mode).toBe("install");
     if (result.mode === "install") {
       expect(result.rejected.map((r) => r.dir)).not.toContain(
-        join(sibling, "node_modules"),
+        join(root, "sibling-repo", "node_modules"),
       );
     }
     expect(installMock).toHaveBeenCalledWith(runDir);
   });
 
   it("symlinks the nearest node_modules when package.json contains invalid JSON", async () => {
-    const root = await makeTmpDir();
-    const projectDir = join(root, "project");
-    await mkdir(projectDir, { recursive: true });
+    const { root, projectDir, runDir } = await makeProjectTree({
+      tracker,
+      seed: { "": ["lodash"] },
+    });
     await writeFile(join(projectDir, "package.json"), "{not json");
-    await seedNodeModules(root, ["lodash"]);
-    const runDir = join(root, "run");
-    await mkdir(runDir, { recursive: true });
 
     const result = await populateOuterHop({
       projectDir,
