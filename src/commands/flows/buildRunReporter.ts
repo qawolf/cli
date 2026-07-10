@@ -15,6 +15,7 @@ export type BuildRunReporterDeps = {
   fs: Fs;
   stdout?: WriteSink;
   stderr?: WriteSink;
+  projectDir?: string;
 };
 
 /**
@@ -28,7 +29,11 @@ export function buildRunReporter(
 ): Reporter {
   const stdout = deps.stdout ?? process.stdout;
   const stderr = deps.stderr ?? process.stderr;
-  const console = createConsoleReporter({ stdout, stderr });
+  const console = createConsoleReporter({
+    stdout,
+    stderr,
+    ...(deps.projectDir !== undefined ? { projectDir: deps.projectDir } : {}),
+  });
   // `undefined` means the flag was absent; an empty string (`--junit=`) still
   // enables it and resolves to the default path.
   if (flags.junit === undefined) return console;
