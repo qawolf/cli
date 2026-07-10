@@ -26,6 +26,32 @@ describe("buildCommandSpecs", () => {
     ]);
   });
 
+  it("skips contracts named in skipContractNames without building their specs", () => {
+    // Unmappable input proves the skip happens before flag building: a
+    // hand-written contract never has to be expressible as generated flags.
+    const skipped = {
+      description: "Hand-written elsewhere",
+      input: z.object({ config: z.object({ nested: z.string() }) }),
+      kind: "read",
+      name: "flow.list",
+      output: z.object({}),
+    } as const;
+    const kept = {
+      description: "Generated",
+      input: z.object({ runId: z.string() }),
+      kind: "read",
+      name: "run.get",
+      output: z.object({}),
+    } as const;
+
+    const specs = buildCommandSpecs(
+      { flow: { list: skipped }, run: { get: kept } },
+      { skipContractNames: new Set(["flow.list"]) },
+    );
+
+    expect(specs.map((spec) => spec.trpcPath)).toEqual(["public.run.get"]);
+  });
+
   it("throws when a contract name does not match its position in the tree", () => {
     const contract = {
       description: "Mismatched",
