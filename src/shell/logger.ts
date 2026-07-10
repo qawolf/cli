@@ -42,7 +42,10 @@ export function createLoggingSystem(opts: {
 }): LoggingSystem {
   const { stderrLevel, logPath } = opts;
 
-  const dest = pino.destination({ dest: logPath, mkdir: true, sync: false });
+  // sync so the fd opens at creation: with an async destination, a command
+  // that errors before the fd opens (e.g. instant flag validation) crashes
+  // pino's process-exit flush hook with "sonic boom is not ready yet".
+  const dest = pino.destination({ dest: logPath, mkdir: true, sync: true });
   const fileLogger = pino({ level: "debug" }, dest);
 
   const levelNums = {
@@ -96,8 +99,8 @@ export function createLoggingSystem(opts: {
       try {
         dest.flushSync();
       } catch {
-        // SonicBoom throws if the fd hasn't opened yet (async destination).
-        // Nothing is buffered in that case, so this is safe to ignore.
+        // Defensive: SonicBoom throws if the stream is destroyed or its fd
+        // is somehow not open; nothing recoverable is buffered in that case.
       }
     },
   };
