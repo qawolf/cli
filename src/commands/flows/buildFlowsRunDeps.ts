@@ -24,6 +24,7 @@ type BuildFlowsRunDepsArgs = {
   runWebFlowDeps: RunWebFlowDeps;
   flowRuntimeDeps: FlowRuntimeDeps;
   flags: FlowsRunFlags;
+  projectDir: string | undefined;
 };
 
 /**
@@ -33,8 +34,15 @@ type BuildFlowsRunDepsArgs = {
  * the injection point for tests) and passed in already awaited.
  */
 export function buildFlowsRunDeps(args: BuildFlowsRunDepsArgs): FlowsRunDeps {
-  const { ctx, resolvedDir, android, runWebFlowDeps, flowRuntimeDeps, flags } =
-    args;
+  const {
+    ctx,
+    resolvedDir,
+    android,
+    runWebFlowDeps,
+    flowRuntimeDeps,
+    flags,
+    projectDir,
+  } = args;
   return {
     peekFlowMeta: makePeekFlowMeta(ctx.fs),
     installBrowsers: (innerCtx, browsers) =>
@@ -58,6 +66,7 @@ export function buildFlowsRunDeps(args: BuildFlowsRunDepsArgs): FlowsRunDeps {
       fs: ctx.fs,
       stdout: { write: (text: string) => ctx.ui.write(text) },
       stderr: { write: (text: string) => ctx.ui.write(text) },
+      ...(projectDir !== undefined ? { projectDir } : {}),
     }),
     now: () => Date.now(),
   };

@@ -103,6 +103,7 @@ beforeEach(() => {
   prepareRunDirMock.mockResolvedValue({
     files: [],
     runDir: "/mock/run",
+    outerHop: { mode: "none" },
     cleanup: async () => {},
   });
   configureTestkitMock.mockResolvedValue(undefined);
@@ -262,12 +263,14 @@ describe("handleFlowsRun", () => {
 
     await handleFlowsRun(makeCtx(), undefined, defaultFlags(), makeDeps());
 
-    expect(prepareRunDirMock).toHaveBeenCalledWith({
-      files: ["/some/flow.ts"],
-      projectDir: undefined,
-      depsRoot: "/managed",
-      runRoot: runStagingRoot(),
-    });
+    expect(prepareRunDirMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        files: ["/some/flow.ts"],
+        projectDir: undefined,
+        depsRoot: "/managed",
+        runRoot: runStagingRoot(),
+      }),
+    );
   });
 
   it("passes staged files from prepareRunDir to flowsRun", async () => {
@@ -275,6 +278,7 @@ describe("handleFlowsRun", () => {
     prepareRunDirMock.mockResolvedValue({
       files: ["/mock/run/exec/flow.ts"],
       runDir: "/mock/run",
+      outerHop: { mode: "none" },
       cleanup: async () => {},
     });
 
@@ -295,6 +299,7 @@ describe("handleFlowsRun", () => {
     prepareRunDirMock.mockResolvedValue({
       files: ["/some/flow.ts"],
       runDir: "/mock/run",
+      outerHop: { mode: "none" },
       cleanup,
     });
 

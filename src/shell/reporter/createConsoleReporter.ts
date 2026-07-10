@@ -1,4 +1,5 @@
 import { styleText } from "node:util";
+import { extractMissingPackage } from "~/core/errors.js";
 import { runnerMessages } from "~/core/messages/index.js";
 import { formatErrorWithCause } from "./formatErrorWithCause.js";
 import type { Reporter } from "./types.js";
@@ -10,6 +11,8 @@ export type ConsoleDeps = {
   stderr: WriteSink;
   /** Terminal column width for the suite separator. Defaults to process.stdout.columns ?? 72. */
   columns?: number;
+  /** Flow project dir used in dependency-resolution hints. */
+  projectDir?: string;
 };
 
 function fmtDuration(ms: number): string {
@@ -71,6 +74,18 @@ export function createConsoleReporter(deps: ConsoleDeps): Reporter {
         ...restLines.map((line) => styleText("dim", `${indent}${line}`)),
       ].join("\n");
       deps.stderr.write(`${formatted}\n\n`);
+      const missingPackage = extractMissingPackage(errStr);
+      if (missingPackage !== undefined) {
+        deps.stderr.write(
+          `${styleText(
+            "yellow",
+            `${indent}${runnerMessages.moduleNotFoundHint(
+              missingPackage,
+              deps.projectDir,
+            )}`,
+          )}\n\n`,
+        );
+      }
 
       const counts =
         tests.total > 0 ? `${tests.passed}/${tests.total} tests ` : "";

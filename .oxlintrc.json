@@ -102,7 +102,12 @@
   "options": {
     "typeAware": true
   },
-  "ignorePatterns": ["dist/", "node_modules/", "knip.config.ts"],
+  "ignorePatterns": [
+    "dist/",
+    "node_modules/",
+    "knip.config.ts",
+    "test/node20/"
+  ],
   "overrides": [
     {
       "files": ["src/core/**/*.ts"],

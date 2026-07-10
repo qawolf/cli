@@ -1,6 +1,6 @@
 {
   "name": "@qawolf/cli",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Run and manage QA Wolf flows from the terminal, CI, or an AI agent",
   "keywords": [
     "automation",
@@ -58,6 +58,7 @@
   "dependencies": {
     "@clack/prompts": "1.5.1",
     "@napi-rs/keyring": "1.3.0",
+    "@oxc-node/core": "0.1.0",
     "@playwright/test": "1.60.0",
     "@qawolf/api-contracts": "0.1.0",
     "@qawolf/emails": "1.1.1",
@@ -91,7 +92,7 @@
     "typescript": "6.0.3"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=20.19.0"
   },
   "packageManager": "bun@1.3.13"
 }

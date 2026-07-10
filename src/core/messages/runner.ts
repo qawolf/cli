@@ -31,4 +31,12 @@ export const runnerMessages = {
   screenshot: (path: string) => `Screenshot: ${path}`,
   managedRuntimeNote: (dir: string) =>
     `Using managed runtime — override with --deps <dir> or QAWOLF_RUNTIME_DIR:\n${dir}`,
+  installingProjectDeps: (count: number) =>
+    `Installing ${pluralize(count, "project dependency", "project dependencies")}…`,
+  outerHopCandidateRejected: (dir: string, missing: string[]) =>
+    `outer-hop candidate rejected: ${dir} missing ${missing.join(", ")}`,
+  moduleNotFoundHint: (pkg: string, projectDir: string | undefined) =>
+    projectDir === undefined
+      ? `Hint: '${pkg}' could not be resolved. Run from within your flows project so its dependencies can be found.`
+      : `Hint: '${pkg}' could not be resolved. Ensure it is declared in ${projectDir}/package.json "dependencies" and run npm install in that project.`,
 } as const;

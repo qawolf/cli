@@ -4,8 +4,9 @@ import { basename, dirname, join, resolve, sep } from "node:path";
 import { copyDirExcluding } from "~/shell/copyDir.js";
 import { type Fs, makeDefaultFs } from "~/shell/fs.js";
 
+import { writeExecSubpathImports } from "./execSubpathImports.js";
 import { populateInnerHop } from "./innerHop.js";
-import { populateOuterHop } from "./outerHop.js";
+import { type OuterHopResult, populateOuterHop } from "./outerHop.js";
 
 const excludedDirs = new Set(["node_modules", ".git", ".qawolf"]);
 
@@ -16,11 +17,14 @@ export type PrepareRunDirArgs = {
   runRoot: string;
   // Pass a custom Fs for testing file operations; defaults to the real fs.
   fs?: Fs;
+  // Forwarded to populateOuterHop — fires just before a fallback npm install.
+  onInstallStart?: (depCount: number) => void;
 };
 
 export type PrepareRunDirResult = {
   files: string[];
   runDir: string;
+  outerHop: OuterHopResult;
   cleanup: () => Promise<void>;
 };
 
@@ -50,11 +54,25 @@ export async function prepareRunDir(
 
   const stagedFiles = await stageFlowFiles({ files, projectDir, execDir, fs });
 
-  await populateOuterHop({ projectDir, runDir, fs });
+  // Only the projectDir path copies a package.json into exec; standalone runs
+  // stage bare files that never use the "#playwright" alias.
+  if (projectDir !== undefined) {
+    await writeExecSubpathImports({ execDir, fs });
+  }
+
+  const outerHop = await populateOuterHop({
+    projectDir,
+    runDir,
+    fs,
+    ...(args.onInstallStart !== undefined
+      ? { onInstallStart: args.onInstallStart }
+      : {}),
+  });
 
   return {
     files: stagedFiles,
     runDir,
+    outerHop,
     cleanup: () => fs.rm(runDir, { recursive: true, force: true }),
   };
 }

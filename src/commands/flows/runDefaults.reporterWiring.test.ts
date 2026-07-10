@@ -70,6 +70,7 @@ function makeDeps(
     prepareRunDir: async (args) => ({
       files: args.files,
       runDir: "/mock/run",
+      outerHop: { mode: "none" },
       cleanup: async () => {},
     }),
     configureTestkit: async () => {},

@@ -1,5 +1,17 @@
 # @qawolf/cli
 
+## 1.1.0
+
+### Minor Changes
+
+- 38f4903: Resolve flow runtime dependencies through a layered, project-isolated `node_modules` so flows run correctly in monorepos, single-package projects, and empty directories across both the Node and compiled-binary channels. The CLI-owned executor is always pinned and never pollutes or is shadowed by the surrounding project, while the flow's own declared dependencies still resolve. Adds `qawolf install clear` to wipe the managed runtime cache.
+
+### Patch Changes
+
+- 2d98dc9: Exit `flows run` deterministically once the run completes. The flow runtime can launch browser processes (e.g. a channel-launched Google Chrome) whose CDP sockets and timers keep Node's event loop alive after teardown, so the CLI previously printed its results and then hung indefinitely. The process now flushes stdout/stderr and exits with the run's exit code (1 on flow failure, 0 on pass) as soon as the command resolves, with a backstop in case a stream stalls.
+- 5a81d70: Resolve the `#playwright` subpath import when running flows in the isolated managed runtime. QA Wolf flow bundles import Playwright through a Node.js `imports` alias (`#playwright`), but the pulled bundle's `package.json` omits the `imports` field, so the staged `exec/package.json` could not resolve it and flows failed with `ERR_PACKAGE_IMPORT_NOT_DEFINED`. The CLI now merges the `#playwright` alias into the staged `exec/package.json`, pointing it at the pinned Playwright resolved through the inner-hop `node_modules` symlink — fixing both the Node import path and the compiled-binary bundle path.
+- 621f5d4: Resolve flow imports whose specifier uses a `.ts` extension but ships as `.js` (and vice versa). Platform-generated bundles often import sibling utilities as `.ts` while the file on disk is `.js`; native Node ESM resolves extensions literally and throws `ERR_MODULE_NOT_FOUND`. A synchronous `module.registerHooks` resolve hook now transparently retries the sibling source extension (`.ts`↔`.js`, `.mts`↔`.mjs`, `.cts`↔`.cjs`) only on resolution failure — literal matches always win and nothing is rewritten on disk. Raises the Node engine floor to `>=22.15.0`, the release that introduced synchronous hooks.
+
 ## 1.0.1
 
 ### Patch Changes

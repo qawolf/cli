@@ -21,6 +21,7 @@ const createFlowRuntimeDepsMock =
   mock<StagedRunDeps["createFlowRuntimeDeps"]>();
 const cleanupMock = mock<() => Promise<void>>();
 const uiInfoMock = mock<(message: string) => void>();
+const debugMock = mock<(message: string) => void>();
 
 const trackedMocks = [
   resolveDepsRootMock,
@@ -31,6 +32,7 @@ const trackedMocks = [
   createFlowRuntimeDepsMock,
   cleanupMock,
   uiInfoMock,
+  debugMock,
 ];
 
 function makeDeps(): StagedRunDeps {
@@ -68,7 +70,7 @@ function makeCtx(): CommandContext {
     isInteractive: false,
     signals: noopSignals,
     fs: makeMemoryFs(),
-    log: () => makeNoopLogger(),
+    log: () => ({ ...makeNoopLogger(), debug: debugMock }),
     ui: { ...makeFakeUI("human"), info: uiInfoMock },
   } as unknown as CommandContext;
 }
@@ -84,6 +86,7 @@ beforeEach(() => {
   prepareRunDirMock.mockResolvedValue({
     files: ["/mock/run/exec/flow.ts"],
     runDir: "/mock/run",
+    outerHop: { mode: "none" },
     cleanup: cleanupMock,
   });
   configureTestkitMock.mockResolvedValue(undefined);
@@ -192,5 +195,47 @@ describe("runStagedFlows", () => {
       files: ["/some/flow.ts"],
       overrideDir: "/custom/deps",
     });
+  });
+
+  it("renders a status line when the outer-hop fallback install starts", async () => {
+    await runStagedFlows({
+      ctx: makeCtx(),
+      files: ["/some/flow.ts"],
+      flags: defaultFlags(),
+      deps: makeDeps(),
+    });
+
+    const call = prepareRunDirMock.mock.calls[0]?.[0];
+    expect(call?.onInstallStart).toBeDefined();
+    call?.onInstallStart?.(3);
+    expect(uiInfoMock).toHaveBeenCalledWith(
+      runnerMessages.installingProjectDeps(3),
+    );
+  });
+
+  it("debug-logs rejected outer-hop candidates when the fallback install ran", async () => {
+    prepareRunDirMock.mockResolvedValue({
+      files: ["/mock/run/exec/flow.ts"],
+      runDir: "/mock/run",
+      outerHop: {
+        mode: "install",
+        depCount: 1,
+        rejected: [{ dir: "/host/node_modules", missing: ["date-fns"] }],
+      },
+      cleanup: cleanupMock,
+    });
+
+    await runStagedFlows({
+      ctx: makeCtx(),
+      files: ["/some/flow.ts"],
+      flags: defaultFlags(),
+      deps: makeDeps(),
+    });
+
+    expect(debugMock).toHaveBeenCalledWith(
+      runnerMessages.outerHopCandidateRejected("/host/node_modules", [
+        "date-fns",
+      ]),
+    );
   });
 });
