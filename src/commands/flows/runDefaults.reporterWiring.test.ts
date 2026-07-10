@@ -77,6 +77,8 @@ function makeDeps(
     flowsRun: flowsRun as HandleFlowsRunDeps["flowsRun"],
     runWebFlowDeps: (async () =>
       ({}) as never) as HandleFlowsRunDeps["runWebFlowDeps"],
+    createFlowRuntimeDeps: (() =>
+      ({}) as never) as HandleFlowsRunDeps["createFlowRuntimeDeps"],
   };
 }
 

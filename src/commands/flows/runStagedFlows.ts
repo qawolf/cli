@@ -16,6 +16,7 @@ import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { ResolveDepsRootArgs } from "~/commands/resolveDepsRoot.js";
 
 import { buildFlowsRunDeps } from "./buildFlowsRunDeps.js";
+import type { createFlowRuntimeDeps as defaultCreateFlowRuntimeDeps } from "./flowRuntimeDeps.js";
 import { loadEnvFile } from "./loadEnvFile.js";
 
 /** Dependency bundle for the shared post-discovery run-setup phase. */
@@ -28,6 +29,7 @@ export type StagedRunDeps = {
   ) => Promise<PrepareRunDirResult>;
   configureTestkit: (dir: string) => Promise<void>;
   runWebFlowDeps: typeof defaultRunWebFlowDeps;
+  createFlowRuntimeDeps: typeof defaultCreateFlowRuntimeDeps;
   flowsRun: typeof defaultFlowsRun;
 };
 
@@ -103,6 +105,10 @@ export async function runStagedFlows(
     await deps.configureTestkit(resolvedDir);
     const android = createAndroidDeps(resolvedDir, ctx.signals);
     const runWebFlowDeps = await deps.runWebFlowDeps(resolvedDir, ctx.signals);
+    const flowRuntimeDeps = await deps.createFlowRuntimeDeps({
+      envDir: resolvedDir,
+      ctx,
+    });
 
     return await deps.flowsRun(
       ctx,
@@ -113,6 +119,7 @@ export async function runStagedFlows(
         resolvedDir,
         android,
         runWebFlowDeps,
+        flowRuntimeDeps,
         flags,
         projectDir,
       }),

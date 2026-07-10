@@ -8,6 +8,7 @@ import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js"
 import { makePooledDispatch } from "~/domains/runner/makePooledDispatch.js";
 import type { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
 import type { RunWebFlowDeps } from "~/domains/runner/runWebFlow.js";
+import type { FlowRuntimeDeps } from "~/domains/runner/flowRuntimeDeps.js";
 import type {
   FlowsRunDeps,
   FlowsRunFlags,
@@ -21,6 +22,7 @@ type BuildFlowsRunDepsArgs = {
   resolvedDir: string;
   android: ReturnType<typeof createAndroidDeps>;
   runWebFlowDeps: RunWebFlowDeps;
+  flowRuntimeDeps: FlowRuntimeDeps;
   flags: FlowsRunFlags;
   projectDir: string | undefined;
 };
@@ -32,7 +34,15 @@ type BuildFlowsRunDepsArgs = {
  * the injection point for tests) and passed in already awaited.
  */
 export function buildFlowsRunDeps(args: BuildFlowsRunDepsArgs): FlowsRunDeps {
-  const { ctx, resolvedDir, android, runWebFlowDeps, flags, projectDir } = args;
+  const {
+    ctx,
+    resolvedDir,
+    android,
+    runWebFlowDeps,
+    flowRuntimeDeps,
+    flags,
+    projectDir,
+  } = args;
   return {
     peekFlowMeta: makePeekFlowMeta(ctx.fs),
     installBrowsers: (innerCtx, browsers) =>
@@ -42,9 +52,9 @@ export function buildFlowsRunDeps(args: BuildFlowsRunDepsArgs): FlowsRunDeps {
         playwrightCliPath: resolvePlaywrightCli(resolvedDir, process.platform),
       }),
     runWebFlow: defaultRunWebFlow,
-    runWebFlowDeps,
+    runWebFlowDeps: { ...runWebFlowDeps, flowRuntimeDeps },
     runAndroidFlow: defaultRunAndroidFlow,
-    runAndroidFlowDeps: android.deps,
+    runAndroidFlowDeps: { ...android.deps, flowRuntimeDeps },
     bootAndroid: android.boot,
     shutdownAndroid: android.shutdown,
     createPooledDispatch: makePooledDispatch(resolvedDir),

@@ -12,6 +12,7 @@ import type { Logger } from "~/shell/logger.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 import { resolveDepsRoot } from "~/commands/resolveDepsRoot.js";
 
+import { createFlowRuntimeDeps as defaultCreateFlowRuntimeDeps } from "./flowRuntimeDeps.js";
 import { type StagedRunDeps, runStagedFlows } from "./runStagedFlows.js";
 
 export type HandleFlowsRunDeps = StagedRunDeps & {
@@ -30,6 +31,7 @@ function makeDefaultDeps(fs: Fs): HandleFlowsRunDeps {
     prepareRunDir: (args) => defaultPrepareRunDir({ ...args, fs }),
     configureTestkit: defaultConfigureTestkit,
     runWebFlowDeps: defaultRunWebFlowDeps,
+    createFlowRuntimeDeps: defaultCreateFlowRuntimeDeps,
     flowsRun: defaultFlowsRun,
   };
 }

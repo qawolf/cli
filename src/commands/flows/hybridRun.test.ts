@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
+import type { FlowRuntimeDeps } from "~/domains/runner/flowRuntimeDeps.js";
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
@@ -23,6 +24,10 @@ const prepareRunDirMock = mock<HandleHybridFlowsRunDeps["prepareRunDir"]>();
 const configureTestkitMock = mock<(dir: string) => Promise<void>>();
 const flowsRunMock = mock<HandleHybridFlowsRunDeps["flowsRun"]>();
 const runWebFlowDepsMock = mock<() => Promise<unknown>>();
+const createFlowRuntimeDepsMock = mock<(...args: unknown[]) => unknown>();
+const sharedFlowRuntimeDeps: FlowRuntimeDeps = {
+  fetchLatestEnvironmentVariables: async () => {},
+};
 
 const trackedMocks = [
   expandPatternsMock,
@@ -32,6 +37,7 @@ const trackedMocks = [
   configureTestkitMock,
   flowsRunMock,
   runWebFlowDepsMock,
+  createFlowRuntimeDepsMock,
 ];
 
 beforeEach(() => {
@@ -52,6 +58,7 @@ beforeEach(() => {
   configureTestkitMock.mockResolvedValue(undefined);
   flowsRunMock.mockResolvedValue(undefined);
   runWebFlowDepsMock.mockResolvedValue({} as unknown);
+  createFlowRuntimeDepsMock.mockReturnValue(sharedFlowRuntimeDeps);
 });
 
 function makeCtx(): AuthCommandContext {
@@ -94,6 +101,8 @@ function makeDeps(): HandleHybridFlowsRunDeps {
     flowsRun: flowsRunMock,
     runWebFlowDeps:
       runWebFlowDepsMock as unknown as HandleHybridFlowsRunDeps["runWebFlowDeps"],
+    createFlowRuntimeDeps:
+      createFlowRuntimeDepsMock as unknown as HandleHybridFlowsRunDeps["createFlowRuntimeDeps"],
   };
 }
 
@@ -145,8 +154,7 @@ describe("handleHybridFlowsRun", () => {
       expect.anything(),
       expect.anything(),
     );
-    const flowsRunDeps = flowsRunMock.mock.calls[0]?.[3];
-    expect(flowsRunDeps?.logger).toBeDefined();
+    expect(flowsRunMock.mock.calls[0]?.[3].logger).toBeDefined();
   });
 
   it("calls prepareRunDir with expanded files, depsRoot, and the sibling run-staging root", async () => {

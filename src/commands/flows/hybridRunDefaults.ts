@@ -15,6 +15,7 @@ import type {
 import type { Fs } from "~/shell/fs.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
 import { resolveDepsRoot } from "~/commands/resolveDepsRoot.js";
+import { createFlowRuntimeDeps as defaultCreateFlowRuntimeDeps } from "./flowRuntimeDeps.js";
 
 import { type HandleFlowsRunDeps } from "./runDefaults.js";
 import { runStagedFlows } from "./runStagedFlows.js";
@@ -33,6 +34,7 @@ function makeDefaultHybridDeps(fs: Fs): HandleHybridFlowsRunDeps {
     configureTestkit: defaultConfigureTestkit,
     flowsRun: defaultFlowsRun,
     runWebFlowDeps: defaultRunWebFlowDeps,
+    createFlowRuntimeDeps: defaultCreateFlowRuntimeDeps,
   };
 }
 

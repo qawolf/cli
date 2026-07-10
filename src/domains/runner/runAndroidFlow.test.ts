@@ -10,6 +10,7 @@ import type {
   RunAndroidFlowOptions,
 } from "./runAndroidFlow.js";
 import { runAndroidFlow } from "./runAndroidFlow.js";
+import type { FlowRuntimeDeps } from "./flowRuntimeDeps.js";
 
 afterEach(() => {
   mock.restore();
@@ -124,6 +125,33 @@ describe("runAndroidFlow", () => {
     });
     expect(result.passed).toBe(false);
     expect(result.attempts).toBe(1);
+  });
+
+  it("should fail the flow when an unsupported shared dependency is called", async () => {
+    const result = await runAndroidFlow({
+      deps: makeAndroidDeps(),
+      options: baseOptions,
+      flowPath: fixturePath("getInbox"),
+    });
+
+    expect(result.passed).toBe(false);
+    const cause = (result.error as Error & { cause?: unknown })?.cause;
+    expect(cause).toBeInstanceOf(Error);
+    expect((cause as Error).message).toContain("not supported");
+  });
+
+  it("should use injected shared runtime deps", async () => {
+    const getInbox = mock(async () => undefined) as unknown as NonNullable<
+      FlowRuntimeDeps["getInbox"]
+    >;
+    const result = await runAndroidFlow({
+      deps: { ...makeAndroidDeps(), flowRuntimeDeps: { getInbox } },
+      options: baseOptions,
+      flowPath: fixturePath("getInbox"),
+    });
+
+    expect(result.passed).toBe(true);
+    expect(getInbox).toHaveBeenCalledWith({ address: "test@example.com" });
   });
 
   it("should return a failed result with the load error as cause when the flow file has no default export", async () => {
