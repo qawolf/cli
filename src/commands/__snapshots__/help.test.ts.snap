@@ -136,7 +136,7 @@ Commands:
                             omitted; with --env, pull missing flows from that QA
                             Wolf environment
   list [options] [pattern]  List flows matching [pattern] from the local
-                            project, or from QA Wolf with --remote
+                            project, or from a QA Wolf environment with --remote
   pull [options]            Download an environment's flows into the local
                             .qawolf/<env>/ cache
   help [command]            display help for command
@@ -188,19 +188,22 @@ Examples:
 exports[`--help output qawolf flows list 1`] = `
 "Usage: qawolf flows list [options] [pattern]
 
-List flows matching [pattern] from the local project, or from QA Wolf with
---remote
+List flows matching [pattern] from the local project, or from a QA Wolf
+environment with --remote
 
 Options:
-  --remote    List flows from the QA Wolf platform instead of the local project
-              (default: false)
-  -h, --help  display help for command
+  --remote          List flows from the QA Wolf platform instead of the local
+                    project (default: false)
+  --env <env>       Environment to list flows from (required with --remote)
+  --include-drafts  Include draft flows in the listing (requires --remote)
+                    (default: false)
+  -h, --help        display help for command
 
 Examples:
   $ qawolf flows list
   $ qawolf flows list "flows/checkout/**"
-  $ qawolf flows list --remote
-  $ qawolf flows list "**/checkout/**" --remote
+  $ qawolf flows list --remote --env staging
+  $ qawolf flows list "**/checkout/**" --remote --env staging --include-drafts
 "
 `;
 

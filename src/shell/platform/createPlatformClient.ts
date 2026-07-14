@@ -11,7 +11,6 @@ import {
 } from "./describeErrors.js";
 import { downloadBundle } from "./downloadBundle.js";
 import { getIdentity, type IdentityResponse } from "./getIdentity.js";
-import { getRemoteFlows, type RemoteFlowsResponse } from "./getRemoteFlows.js";
 import { type PlatformResult, requestWithRetry } from "./requestWithRetry.js";
 import { listTeamStorageFiles } from "./teamStorage.js";
 import {
@@ -27,7 +26,6 @@ import {
 export type PlatformClient = {
   callPublicApi: CallPublicApiMethod;
   getIdentity: () => Promise<PlatformResult<IdentityResponse>>;
-  getRemoteFlows: () => Promise<PlatformResult<RemoteFlowsResponse>>;
   getFlowsBundleUrl: (
     envId: string,
   ) => Promise<PlatformResult<{ signedUrl: string }>>;
@@ -85,15 +83,6 @@ export function createPlatformClient(
         call: () => getIdentity(apiKey, deps),
         backoffMs: requestBackoffMs,
         describe: describeIdentityError,
-        sleep: deps.sleep,
-      });
-    },
-
-    async getRemoteFlows() {
-      return requestWithRetry({
-        call: () => getRemoteFlows(apiKey, deps),
-        backoffMs: requestBackoffMs,
-        describe: (err) => describeRequestError(err, deps.baseUrl, "flows"),
         sleep: deps.sleep,
       });
     },

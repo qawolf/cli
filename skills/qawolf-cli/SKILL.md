@@ -41,7 +41,7 @@ write on timeout: it may have reached the server the first time.
 | `qawolf auth logout`      | local                      | Remove stored credentials                                                                                              |
 | `qawolf auth whoami`      | read                       | Show authentication status                                                                                             |
 | `qawolf doctor`           | local                      | Diagnose problems running flows locally                                                                                |
-| `qawolf flows list`       | local (read with --remote) | List flows matching [pattern] from the local project, or from QA Wolf with --remote                                    |
+| `qawolf flows list`       | local (read with --remote) | List flows matching [pattern] from the local project, or from a QA Wolf environment with --remote                      |
 | `qawolf flows pull`       | read                       | Download an environment's flows into the local .qawolf/<env>/ cache                                                    |
 | `qawolf flows run`        | local (read with --env)    | Run flows matching [pattern], or every flow when omitted; with --env, pull missing flows from that QA Wolf environment |
 | `qawolf init`             | local                      | Scaffold a QA Wolf project in the current directory                                                                    |
