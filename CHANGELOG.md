@@ -1,5 +1,24 @@
 # @qawolf/cli
 
+## 1.2.0
+
+### Minor Changes
+
+- c2e13b2: Support Node 20. The `engines.node` floor is lowered to `>=20.19.0`, and on Node
+  versions without native TypeScript support (Node 20, and Node 22.15–22.17) flows
+  are now loaded through the `@oxc-node/core` ESM loader, which transpiles and
+  resolves TypeScript at runtime. Bun and Node 22.18+ are unaffected. A CI matrix
+  smoke-tests the published bundle on Node 20, 22, 24, and Bun.
+
+  Note: the `@qawolf/*` platform packages currently declare `engines.node >=22.22.0`,
+  so installing on Node 20 prints `EBADENGINE` warnings. They are verified to run on
+  Node 20.19, and the warnings are non-fatal unless `engine-strict` is enabled.
+
+### Patch Changes
+
+- cae4b3d: Provide shared local flow runtime dependencies for email inboxes and environment variable persistence across web and Android flows.
+- f69f2de: Fix `ERR_MODULE_NOT_FOUND` for correctly declared flow dependencies: dependency discovery now validates an ancestor `node_modules` before reusing it, and falls back to installing the project's declared deps when none satisfies them (reported as `Installing N project dependencies…`).
+
 ## 1.1.0
 
 ### Minor Changes
