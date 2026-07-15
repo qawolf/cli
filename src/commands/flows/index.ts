@@ -2,6 +2,7 @@ import type { Command } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext, withContext } from "~/commands/context.js";
+import { flowsMessages } from "~/core/messages/index.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { handleFlowsList } from "~/domains/flows/list.js";
@@ -17,10 +18,14 @@ const listExamples = `
 Examples:
   $ qawolf flows list
   $ qawolf flows list "flows/checkout/**"
-  $ qawolf flows list --remote
-  $ qawolf flows list "**/checkout/**" --remote`;
+  $ qawolf flows list --remote --env staging
+  $ qawolf flows list "**/checkout/**" --remote --env staging --include-drafts`;
 
-type FlowsListOptions = { readonly remote: boolean };
+type FlowsListOptions = {
+  readonly remote: boolean;
+  readonly env: string | undefined;
+  readonly includeDrafts: boolean;
+};
 
 const pullExamples = `
 Examples:
@@ -43,11 +48,20 @@ export function registerFlowsCommand(
     kindNote: "read with --remote",
   })
     .description(
-      "List flows matching [pattern] from the local project, or from QA Wolf with --remote",
+      "List flows matching [pattern] from the local project, or from a QA Wolf environment with --remote",
     )
     .option(
       "--remote",
       "List flows from the QA Wolf platform instead of the local project",
+      false,
+    )
+    .option(
+      "--env <env>",
+      "Environment to list flows from (required with --remote)",
+    )
+    .option(
+      "--include-drafts",
+      "Include draft flows in the listing (requires --remote)",
       false,
     )
     .addHelpText("after", listExamples)
@@ -58,9 +72,23 @@ export function registerFlowsCommand(
         command: Command,
       ) => {
         if (opts.remote) {
+          const env = opts.env;
+          if (env === undefined) {
+            return withContext(signals, async () => ({
+              error: flowsMessages.list.remoteRequiresEnv,
+            }))(opts, command);
+          }
           return withAuthContext(signals, (ctx) =>
-            flowsListRemote(ctx, pattern),
+            flowsListRemote(ctx, pattern, {
+              env,
+              includeDrafts: opts.includeDrafts,
+            }),
           )(opts, command);
+        }
+        if (opts.env !== undefined || opts.includeDrafts) {
+          return withContext(signals, async () => ({
+            error: flowsMessages.list.flagsRequireRemote,
+          }))(opts, command);
         }
         return withContext(signals, (ctx) => handleFlowsList(ctx, pattern))(
           opts,

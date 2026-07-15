@@ -1,35 +1,31 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
+import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
 import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { makeCtx as makeBaseCtx } from "~/shell/commandContext.testUtils.js";
 import type { OutputMode } from "~/shell/ui/env.js";
 import type { UI } from "~/shell/ui/index.js";
-import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
+import {
+  makeCallPublicApiMock,
+  makeMockPlatformClient,
+} from "~/shell/platform/createPlatformClient.testUtils.js";
 import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
 
 import { callsOf, makeFakeUI } from "~/domains/runner/run.fixtures.js";
-import { flowsListRemote } from "./listRemote.js";
+import { flowsListRemote, type FlowsListRemoteOptions } from "./listRemote.js";
 
 afterEach(() => {
   mock.restore();
 });
 
-function makeCtx(
-  ui: UI,
-  outputMode: OutputMode,
-  platform: PlatformClient,
-): AuthCommandContext {
-  return {
-    ...makeBaseCtx(outputMode),
-    ui: { ...ui, mode: outputMode },
-    apiKeySource: "env",
-    platform,
-  };
-}
+const defaultOptions: FlowsListRemoteOptions = {
+  env: "environment-id",
+  includeDrafts: false,
+};
 
 type SampleFlow = {
   executionTarget: string | Record<string, unknown>;
-  id: string;
+  flowId: string;
   name: string;
   path: string;
   tags: string[];
@@ -38,14 +34,14 @@ type SampleFlow = {
 const sampleFlows: SampleFlow[] = [
   {
     executionTarget: "Web - Chrome",
-    id: "id-1",
+    flowId: "flow-id-1",
     name: "Login",
     path: "src/flows/login.flow.ts",
     tags: [],
   },
   {
     executionTarget: "Web - Firefox",
-    id: "id-2",
+    flowId: "flow-id-2",
     name: "Checkout",
     path: "src/flows/sub/checkout.flow.ts",
     tags: ["smoke"],
@@ -54,23 +50,58 @@ const sampleFlows: SampleFlow[] = [
 
 function platformWithFlows(flows: SampleFlow[]): PlatformClient {
   return makeMockPlatformClient({
-    getRemoteFlows: mock<PlatformClient["getRemoteFlows"]>().mockResolvedValue({
+    callPublicApi: makeCallPublicApiMock().mockResolvedValue({
       ok: true,
       value: { flows },
     }),
   });
 }
 
+async function run(opts: {
+  mode: OutputMode;
+  flows?: SampleFlow[];
+  pattern?: string;
+  options?: FlowsListRemoteOptions;
+  platform?: PlatformClient;
+}): Promise<{ ui: UI; platform: PlatformClient; result: unknown }> {
+  const ui = makeFakeUI();
+  const platform =
+    opts.platform ?? platformWithFlows(opts.flows ?? sampleFlows);
+  const ctx: AuthCommandContext = {
+    ...makeBaseCtx(opts.mode),
+    ui: { ...ui, mode: opts.mode },
+    apiKeySource: "env",
+    platform,
+  };
+  const result = await flowsListRemote(
+    ctx,
+    opts.pattern,
+    opts.options ?? defaultOptions,
+  );
+  return { ui, platform, result };
+}
+
 const stripAnsi = (s: string | undefined): string =>
   // oxlint-disable-next-line no-control-regex
   (s ?? "").replace(/\x1b\[[\d;]*m/g, "");
 
+describe("flowsListRemote wire call", () => {
+  it("calls public.flow.list with the environment and drafts flag", async () => {
+    const { platform } = await run({
+      mode: "json",
+      options: { env: "env-1", includeDrafts: true },
+    });
+
+    expect(platform.callPublicApi).toHaveBeenCalledWith(
+      publicContractsV1.flow.list,
+      { environmentId: "env-1", includeDrafts: true },
+    );
+  });
+});
+
 describe("flowsListRemote success paths", () => {
   it("renders a bolded header + name|target|file rows in human mode", async () => {
-    const ui = makeFakeUI();
-    const ctx = makeCtx(ui, "human", platformWithFlows(sampleFlows));
-
-    await flowsListRemote(ctx, undefined);
+    const { ui } = await run({ mode: "human" });
 
     const output = callsOf(ui.write)
       .map((c) => String(c[0]))
@@ -95,10 +126,7 @@ describe("flowsListRemote success paths", () => {
   });
 
   it("emits an unbolded table in agent mode", async () => {
-    const ui = makeFakeUI();
-    const ctx = makeCtx(ui, "agent", platformWithFlows(sampleFlows));
-
-    await flowsListRemote(ctx, undefined);
+    const { ui } = await run({ mode: "agent" });
 
     const output = callsOf(ui.write)
       .map((c) => String(c[0]))
@@ -110,21 +138,18 @@ describe("flowsListRemote success paths", () => {
   });
 
   it("emits the items as JSON in json mode", async () => {
-    const ui = makeFakeUI();
-    const ctx = makeCtx(ui, "json", platformWithFlows(sampleFlows));
-
-    await flowsListRemote(ctx, undefined);
+    const { ui } = await run({ mode: "json" });
 
     expect(ui.json).toHaveBeenCalledWith([
       {
-        id: "id-1",
+        flowId: "flow-id-1",
         file: "src/flows/login.flow.ts",
         name: "Login",
         tags: [],
         target: "Web - Chrome",
       },
       {
-        id: "id-2",
+        flowId: "flow-id-2",
         file: "src/flows/sub/checkout.flow.ts",
         name: "Checkout",
         tags: ["smoke"],
@@ -137,10 +162,7 @@ describe("flowsListRemote success paths", () => {
 
 describe("flowsListRemote empty list", () => {
   it("prints 'No flows matched.' via info in human mode", async () => {
-    const ui = makeFakeUI();
-    const ctx = makeCtx(ui, "human", platformWithFlows([]));
-
-    const result = await flowsListRemote(ctx, undefined);
+    const { ui, result } = await run({ mode: "human", flows: [] });
 
     expect(result).toBeUndefined();
     expect(ui.info).toHaveBeenCalledWith("No flows matched.");
@@ -148,23 +170,18 @@ describe("flowsListRemote empty list", () => {
   });
 
   it("emits an empty JSON array in json mode", async () => {
-    const ui = makeFakeUI();
-    const ctx = makeCtx(ui, "json", platformWithFlows([]));
-    await flowsListRemote(ctx, undefined);
+    const { ui } = await run({ mode: "json", flows: [] });
     expect(ui.json).toHaveBeenCalledWith([]);
   });
 });
 
 describe("flowsListRemote pattern filtering", () => {
   it("filters flows by glob pattern against the path field", async () => {
-    const ui = makeFakeUI();
-    const ctx = makeCtx(ui, "json", platformWithFlows(sampleFlows));
-
-    await flowsListRemote(ctx, "**/sub/**");
+    const { ui } = await run({ mode: "json", pattern: "**/sub/**" });
 
     expect(ui.json).toHaveBeenCalledWith([
       {
-        id: "id-2",
+        flowId: "flow-id-2",
         file: "src/flows/sub/checkout.flow.ts",
         name: "Checkout",
         tags: ["smoke"],
@@ -174,10 +191,7 @@ describe("flowsListRemote pattern filtering", () => {
   });
 
   it("falls through to the empty-list branch when pattern matches nothing", async () => {
-    const ui = makeFakeUI();
-    const ctx = makeCtx(ui, "human", platformWithFlows(sampleFlows));
-
-    await flowsListRemote(ctx, "no/matches/**");
+    const { ui } = await run({ mode: "human", pattern: "no/matches/**" });
 
     expect(ui.info).toHaveBeenCalledWith("No flows matched.");
     expect(ui.outro).not.toHaveBeenCalled();
@@ -186,26 +200,22 @@ describe("flowsListRemote pattern filtering", () => {
 
 describe("flowsListRemote executionTarget shapes", () => {
   it("stringifies ad-hoc target objects to JSON", async () => {
-    const ui = makeFakeUI();
-    const ctx = makeCtx(
-      ui,
-      "json",
-      platformWithFlows([
+    const { ui } = await run({
+      mode: "json",
+      flows: [
         {
           executionTarget: { runner: "android", device: "Pixel 7" },
-          id: "id-3",
+          flowId: "flow-id-3",
           name: "Custom Android",
           path: "src/flows/mobile/custom-android.flow.ts",
           tags: [],
         },
-      ]),
-    );
-
-    await flowsListRemote(ctx, undefined);
+      ],
+    });
 
     expect(ui.json).toHaveBeenCalledWith([
       {
-        id: "id-3",
+        flowId: "flow-id-3",
         file: "src/flows/mobile/custom-android.flow.ts",
         name: "Custom Android",
         tags: [],
@@ -217,24 +227,18 @@ describe("flowsListRemote executionTarget shapes", () => {
 
 describe("flowsListRemote platform error", () => {
   it("returns a CommandResult with the platform error message", async () => {
-    const ui = makeFakeUI();
-    const ctx = makeCtx(
-      ui,
-      "human",
-      makeMockPlatformClient({
-        getRemoteFlows: mock<
-          PlatformClient["getRemoteFlows"]
-        >().mockResolvedValue({
+    const { ui, result } = await run({
+      mode: "human",
+      platform: makeMockPlatformClient({
+        callPublicApi: makeCallPublicApiMock().mockResolvedValue({
           ok: false,
-          error: "QA Wolf API rejected the flows request (HTTP 401).",
+          error: "QA Wolf API rejected the flow.list request (HTTP 401).",
         }),
       }),
-    );
-
-    const result = await flowsListRemote(ctx, undefined);
+    });
 
     expect(result).toEqual({
-      error: "QA Wolf API rejected the flows request (HTTP 401).",
+      error: "QA Wolf API rejected the flow.list request (HTTP 401).",
     });
     expect(ui.write).not.toHaveBeenCalled();
     expect(ui.json).not.toHaveBeenCalled();

@@ -14,6 +14,11 @@ export const flowsMessages = {
   title: "Flows",
   remoteTitle: "Remote Flows",
   flowCount: (count: number) => pluralize(count, "flow"),
+  list: {
+    remoteRequiresEnv:
+      "--remote requires --env <env> to pick the environment to list",
+    flagsRequireRemote: "--env and --include-drafts require --remote",
+  },
   pull: {
     downloadingBundle: "Downloading flows bundle",
     fetchingEnvVars: "Fetching environment variables",

@@ -1,4 +1,5 @@
 import picomatch from "picomatch";
+import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
 import type {
   AuthCommandContext,
@@ -9,18 +10,27 @@ import { flowsMessages, runnerMessages } from "~/core/messages/index.js";
 import { renderListTable } from "./renderListTable.js";
 
 type RemoteListItem = {
-  id: string;
+  flowId: string;
   file: string;
   name: string;
   tags: readonly string[];
   target: string;
 };
 
+export type FlowsListRemoteOptions = {
+  readonly env: string;
+  readonly includeDrafts: boolean;
+};
+
 export async function flowsListRemote(
   ctx: AuthCommandContext,
   pattern: string | undefined,
+  options: FlowsListRemoteOptions,
 ): Promise<CommandResult> {
-  const result = await ctx.platform.getRemoteFlows();
+  const result = await ctx.platform.callPublicApi(publicContractsV1.flow.list, {
+    environmentId: options.env,
+    includeDrafts: options.includeDrafts,
+  });
   if (!result.ok) {
     return { error: result.error };
   }
@@ -29,7 +39,7 @@ export async function flowsListRemote(
   const items: RemoteListItem[] = result.value.flows
     .filter((f) => !matches || matches(f.path))
     .map((f) => ({
-      id: f.id,
+      flowId: f.flowId,
       file: f.path,
       name: f.name,
       tags: f.tags,

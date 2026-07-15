@@ -23,7 +23,6 @@ export function makeMockPlatformClient(
   const client: PlatformClient = {
     callPublicApi: makeCallPublicApiMock(),
     getIdentity: mock<PlatformClient["getIdentity"]>(),
-    getRemoteFlows: mock<PlatformClient["getRemoteFlows"]>(),
     getFlowsBundleUrl: mock<PlatformClient["getFlowsBundleUrl"]>(),
     getEnvVars: mock<PlatformClient["getEnvVars"]>(),
     listTeamStorageFiles: mock<PlatformClient["listTeamStorageFiles"]>(),

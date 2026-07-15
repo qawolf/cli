@@ -1,4 +1,5 @@
-import { join } from "node:path";
+import { mkdirSync, openSync } from "node:fs";
+import { dirname, join } from "node:path";
 import pino from "pino";
 import envPaths from "env-paths";
 
@@ -42,7 +43,13 @@ export function createLoggingSystem(opts: {
 }): LoggingSystem {
   const { stderrLevel, logPath } = opts;
 
-  const dest = pino.destination({ dest: logPath, mkdir: true, sync: false });
+  // Open the fd ourselves so the destination is ready from construction:
+  // when SonicBoom opens a path asynchronously, a command that errors before
+  // the fd opens (e.g. instant flag validation) crashes pino's process-exit
+  // flush hook with "sonic boom is not ready yet". Passing an open fd keeps
+  // writes asynchronous without that startup race.
+  mkdirSync(dirname(logPath), { recursive: true });
+  const dest = pino.destination({ fd: openSync(logPath, "a"), sync: false });
   const fileLogger = pino({ level: "debug" }, dest);
 
   const levelNums = {
@@ -96,8 +103,8 @@ export function createLoggingSystem(opts: {
       try {
         dest.flushSync();
       } catch {
-        // SonicBoom throws if the fd hasn't opened yet (async destination).
-        // Nothing is buffered in that case, so this is safe to ignore.
+        // Defensive: SonicBoom throws if the stream is destroyed or its fd
+        // is somehow not open; nothing recoverable is buffered in that case.
       }
     },
   };
