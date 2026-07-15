@@ -14,7 +14,7 @@ Import rules are enforced by oxlint:
 
 ## Adding a command
 
-There are two registration patterns. Commands that expose a platform public-API endpoint are generated from contracts by `registerPublicApiCommands` (`src/commands/publicApi/`) — adding the contract to `@qawolf/api-contracts` and updating the dependency is all it takes. Commands with local logic or multi-step UX flows are hand-written under `src/commands/<domain>/` following the steps below. Never register the same endpoint both ways — the generated path throws on command collisions.
+There are two registration patterns. Commands that expose a platform public-API endpoint are generated from contracts by `registerPublicApiCommands` (`src/commands/publicApi/`) — adding the contract to `@qawolf/api-contracts` and updating the dependency is all it takes. Commands with local logic or multi-step UX flows are hand-written under `src/commands/<domain>/` following the steps below. Never register the same endpoint both ways — the generated path throws on command collisions. When a contract's endpoint is served by a hand-written command, add its name to `handWrittenContractNames` in `src/commands/publicApi/index.ts` so the generator skips it.
 
 1. Create the handler directory under `src/commands/<domain>/`
 2. Export a registration function (`registerXCommand`) that takes a Commander `program` instance

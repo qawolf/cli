@@ -26,6 +26,10 @@ const groupDescriptions: Record<string, string> = {
   run: "Trigger and manage QA Wolf runs on the platform",
 };
 
+// Contracts already served by hand-written commands; the generator must not
+// mint duplicates (flow.list is served by `qawolf flows list --remote`).
+const handWrittenContractNames: ReadonlySet<string> = new Set(["flow.list"]);
+
 function resolveGroup(parent: Command, segment: string): Command {
   const existing = parent.commands.find(
     (command) => command.name() === segment,
@@ -90,7 +94,9 @@ export function registerPublicApiCommands(
   signals: SignalRegistry,
   options: Options = {},
 ): void {
-  const specs = buildCommandSpecs(options.contracts ?? publicContractsV1);
+  const specs = buildCommandSpecs(options.contracts ?? publicContractsV1, {
+    skipContractNames: handWrittenContractNames,
+  });
   for (const spec of specs) {
     registerSpec(program, signals, spec, options.authDeps);
   }

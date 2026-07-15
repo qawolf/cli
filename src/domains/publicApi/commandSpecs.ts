@@ -56,12 +56,23 @@ function buildSpec(
   };
 }
 
-export function buildCommandSpecs(tree: ContractTree): CommandSpec[] {
+type BuildOptions = {
+  // Contracts served by hand-written commands. Skipped before spec building,
+  // so a hand-written contract never has to be expressible as generated flags.
+  skipContractNames?: ReadonlySet<string>;
+};
+
+export function buildCommandSpecs(
+  tree: ContractTree,
+  options: BuildOptions = {},
+): CommandSpec[] {
+  const skip = options.skipContractNames;
   const walk = (node: ContractTree, path: string[]): CommandSpec[] =>
-    Object.entries(node).flatMap(([key, value]) =>
-      isContract(value)
-        ? [buildSpec(value, [...path, key])]
-        : walk(value, [...path, key]),
-    );
+    Object.entries(node).flatMap(([key, value]) => {
+      const childPath = [...path, key];
+      if (!isContract(value)) return walk(value, childPath);
+      if (skip?.has(childPath.join("."))) return [];
+      return [buildSpec(value, childPath)];
+    });
   return walk(tree, []);
 }

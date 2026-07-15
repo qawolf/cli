@@ -81,7 +81,7 @@ The codebase is organized into four strict layers. **`core/`** holds pure functi
 
 API clients (tRPC for the QA Wolf platform, GitHub REST) live in `src/shell/platform/` and `src/shell/` respectively — one module per auth boundary.
 
-Commands register in one of two ways: platform public-API endpoints are generated from contracts via `registerPublicApiCommands` (`src/commands/publicApi/`), while commands with local logic or multi-step UX flows are hand-written under `src/commands/<domain>/`. Never both for the same endpoint. See `.claude/rules/domain-structure.md` ("Adding a command") for the full decision rule.
+Commands register in one of two ways: platform public-API endpoints are generated from contracts via `registerPublicApiCommands` (`src/commands/publicApi/`), while commands with local logic or multi-step UX flows are hand-written under `src/commands/<domain>/`. Never both for the same endpoint — contracts served by a hand-written command go in the generator's skip-list (`handWrittenContractNames`). See `.claude/rules/domain-structure.md` ("Adding a command") for the full decision rule.
 
 ## Code Style
 

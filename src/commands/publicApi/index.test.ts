@@ -134,6 +134,37 @@ describe("registerPublicApiCommands", () => {
     ).toThrow('Generated command "run create" collides');
   });
 
+  it("skips contracts served by hand-written commands", () => {
+    const listContract = {
+      description: "List the flows of an environment.",
+      input: z.object({ environmentId: z.string() }),
+      kind: "read",
+      name: "flow.list",
+      output: z.object({ flows: z.array(z.object({ flowId: z.string() })) }),
+    } as const;
+    const getContract = {
+      description: "Look up a run.",
+      input: z.object({ runId: z.string() }),
+      kind: "read",
+      name: "run.get",
+      output: z.object({ status: z.string() }),
+    } as const;
+    const program = makeProgram();
+
+    registerPublicApiCommands(program, createSignalRegistry(), {
+      contracts: { flow: { list: listContract }, run: { get: getContract } },
+    });
+
+    // No `flow` group either: skipped contracts create no empty namespaces.
+    expect(
+      program.commands.find((command) => command.name() === "flow"),
+    ).toBeUndefined();
+    const run = program.commands.find((command) => command.name() === "run");
+    expect(
+      run?.commands.find((command) => command.name() === "get"),
+    ).toBeDefined();
+  });
+
   it("registers nested namespaces from custom contract trees", () => {
     const contract = {
       description: "Look up a run attempt.",
