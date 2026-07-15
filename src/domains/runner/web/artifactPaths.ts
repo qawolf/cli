@@ -12,14 +12,18 @@ function indexedArtifactPath(basePath: string, index: number): string {
 export type ArtifactPaths = { harPaths: string[]; tracePaths: string[] };
 
 /**
- * Assigns each browser context its setup and distinct HAR/trace artifact
- * paths, and reports every path handed out.
+ * Assigns each browser context its setup (merged with caller overrides,
+ * caller wins) and distinct HAR/trace artifact paths, and reports every
+ * effective path handed out.
  */
 export function createContextArtifacts(
   contextSetup: ContextSetupOptions,
   tracePath: string | undefined,
 ): {
-  nextSetup: () => { setup: ContextSetupOptions; index: number };
+  nextSetup: (overrides?: ContextSetupOptions) => {
+    setup: ContextSetupOptions;
+    index: number;
+  };
   nextTracePath: (index: number) => string | undefined;
   artifactPaths: () => ArtifactPaths;
 } {
@@ -27,15 +31,22 @@ export function createContextArtifacts(
   const harPaths: string[] = [];
   const tracePaths: string[] = [];
 
-  const nextSetup = () => {
+  const nextSetup = (overrides: ContextSetupOptions = {}) => {
     const index = contextIndex;
     contextIndex += 1;
-    const setup = { ...contextSetup };
-    if (contextSetup.recordHar !== undefined) {
-      const harPath = indexedArtifactPath(contextSetup.recordHar.path, index);
-      harPaths.push(harPath);
-      setup.recordHar = { ...contextSetup.recordHar, path: harPath };
+    const setup = { ...contextSetup, ...overrides };
+    if (
+      contextSetup.recordHar !== undefined &&
+      overrides.recordHar === undefined
+    ) {
+      setup.recordHar = {
+        ...contextSetup.recordHar,
+        path: indexedArtifactPath(contextSetup.recordHar.path, index),
+      };
     }
+    // Record the path Playwright will actually write to — a caller-provided
+    // recordHar replaces the generated one, and cleanup must target it.
+    if (setup.recordHar !== undefined) harPaths.push(setup.recordHar.path);
     return { setup, index };
   };
 

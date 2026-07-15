@@ -106,8 +106,8 @@ export function createLaunch({
   const instrumentBrowser = (browser: MinimalBrowser) => {
     const originalNewContext = browser.newContext.bind(browser);
     browser.newContext = async (opts: ContextSetupOptions) => {
-      const { setup, index } = nextSetup();
-      const context = await originalNewContext({ ...setup, ...opts });
+      const { setup, index } = nextSetup(opts);
+      const context = await originalNewContext(setup);
       context.setDefaultTimeout(timeout);
       await trackContext(context, index);
       return context;

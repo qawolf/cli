@@ -165,6 +165,42 @@ describe("createLaunch flow-created contexts", () => {
     expect(stopPaths).toEqual(["/out/trace/flow.zip", "/out/trace/flow-2.zip"]);
   });
 
+  it("should track a caller-provided recordHar path instead of the generated one", async () => {
+    const ctx = makeContext();
+    const flowCtx = makeContext();
+    const browser = makeBrowser(ctx);
+    const applied: (string | undefined)[] = [];
+    let calls = 0;
+    browser.newContext = mock(async (opts: ContextSetupOptions) => {
+      applied.push(opts.recordHar?.path);
+      calls += 1;
+      return calls === 1 ? ctx : flowCtx;
+    });
+    const dep = makeDep(browser, ctx);
+
+    const { launch, artifactPaths } = createLaunch({
+      browsers: { chromium: dep, firefox: dep, webkit: dep },
+      contextSetup: harContextSetup,
+      launchBrowserOpts,
+      signals: makeNoopSignals(),
+      timeout: 30_000,
+    });
+
+    const result = await launch();
+    if (!("browser" in result)) throw new Error("expected browser in result");
+    await result.browser.newContext({
+      recordHar: { path: "/custom/my.har", mode: "minimal", content: "omit" },
+    });
+
+    // The caller's path is what Playwright actually writes to, so tracking
+    // must report it — not the discarded generated path.
+    expect(applied).toEqual(["/out/har/flow.har", "/custom/my.har"]);
+    expect(artifactPaths().harPaths).toEqual([
+      "/out/har/flow.har",
+      "/custom/my.har",
+    ]);
+  });
+
   it("should expose the har and trace paths assigned to every context", async () => {
     const ctx = makeContext();
     const flowCtx = makeContext();
