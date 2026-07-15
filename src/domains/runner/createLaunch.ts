@@ -59,28 +59,30 @@ export function createLaunch({
     contextSetup,
     tracePath,
   );
-  let closed = false;
+  let closePromise: Promise<void> | undefined;
 
   // Ordered teardown shared by normal cleanup and signal-driven shutdown:
   // stop tracing, then close contexts, then close browsers. The order matters
   // because Playwright flushes HAR/video during context.close() and writes the
   // trace on tracing.stop(); a browser.close() racing either can terminate the
-  // connection mid-flush and silently drop the artifact.
-  const closeAll = async () => {
-    if (closed) return;
-    closed = true;
-    if (tracingEnabled) {
-      await Promise.allSettled(
-        openContexts.map((c) => {
-          const contextTracePath = traceByContext.get(c);
-          return contextTracePath === undefined
-            ? Promise.resolve()
-            : c.tracing.stop({ path: contextTracePath });
-        }),
-      );
-    }
-    await Promise.allSettled(openContexts.map((c) => c.close()));
-    await Promise.allSettled(openBrowsers.map((b) => b.close()));
+  // connection mid-flush and silently drop the artifact. Memoized so a caller
+  // arriving mid-teardown awaits the same flush instead of returning early.
+  const closeAll = (): Promise<void> => {
+    closePromise ??= (async () => {
+      if (tracingEnabled) {
+        await Promise.allSettled(
+          openContexts.map((c) => {
+            const contextTracePath = traceByContext.get(c);
+            return contextTracePath === undefined
+              ? Promise.resolve()
+              : c.tracing.stop({ path: contextTracePath });
+          }),
+        );
+      }
+      await Promise.allSettled(openContexts.map((c) => c.close()));
+      await Promise.allSettled(openBrowsers.map((b) => b.close()));
+    })();
+    return closePromise;
   };
 
   // Register the ordered teardown once. SignalRegistry runs cleanups
