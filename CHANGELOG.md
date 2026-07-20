@@ -1,5 +1,16 @@
 # @qawolf/cli
 
+## 1.3.0
+
+### Minor Changes
+
+- 77ba95c: `flows list --remote` is now environment-scoped via the QA Wolf public API: pass `--env <env>` (now required with `--remote`) and optionally `--include-drafts` to include draft flows. JSON output now emits `flowId` instead of `id` for each flow.
+
+### Patch Changes
+
+- db51021: Fix a crash in the exit path when a command fails before the log file opens (a "sonic boom is not ready yet" stack trace printed after the error message). The log fd now opens eagerly at creation while writes stay asynchronous.
+- 8f603dd: Skip public-API command generation for contracts served by hand-written commands, so a future `flow.list` contract does not mint a duplicate of `qawolf flows list --remote`.
+
 ## 1.2.0
 
 ### Minor Changes
