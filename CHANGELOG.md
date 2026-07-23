@@ -1,5 +1,11 @@
 # @qawolf/cli
 
+## 1.3.1
+
+### Patch Changes
+
+- ac2d20d: Allow `QAWOLF_HOST_URL` to target a custom QA Wolf deployment host.
+
 ## 1.3.0
 
 ### Minor Changes
