@@ -19,6 +19,11 @@ environment variable (or stored credentials from `qawolf auth login`).
 their table entry notes a flag that switches them to `read`.
 Verify with `qawolf auth whoami`. Never print or log the key.
 
+Commands use `https://app.qawolf.com` by default. Set `QAWOLF_HOST_URL` to
+target another deployment host, for example
+`https://app.staging.example.com`. `QAWOLF_API_URL` is a separate API endpoint
+and does not select the deployment host used by CLI commands.
+
 ## Output
 
 When consuming output programmatically, always pass `--json` (or `--agent`).

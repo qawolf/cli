@@ -47,7 +47,7 @@ export const authMessages = {
       failedWithStatus: (status: number, noun: string | undefined) =>
         `QA Wolf API${noun ? ` ${noun}` : ""} request failed (HTTP ${status}).`,
       networkUnreachable: (baseUrl: string, noun: string | undefined) =>
-        `Could not reach the QA Wolf API at ${baseUrl}${noun ? ` to fetch ${noun}` : ""}. Check your network connection and QAWOLF_API_URL.`,
+        `Could not reach the QA Wolf API at ${baseUrl}${noun ? ` to fetch ${noun}` : ""}. Check your network connection and QAWOLF_HOST_URL.`,
       unexpectedResponse: (noun: string | undefined) =>
         `Unexpected${noun ? ` ${noun}` : ""} response from the QA Wolf API.`,
     },

@@ -5,6 +5,7 @@ import { authMessages } from "~/core/messages/index.js";
 import { getConfigDir } from "~/core/paths.js";
 import { exitCodes } from "~/shell/exit.js";
 import { makeDefaultFs } from "~/shell/fs.js";
+import { resolveHostUrl } from "~/shell/resolveHostUrl.js";
 import { requireApiKey } from "~/domains/auth/index.js";
 import {
   createLoggingSystem,
@@ -59,8 +60,7 @@ export function buildBaseContext(
     logPath: defaultLogPath(),
     ...(verboseWrite ? { verboseWrite } : {}),
   });
-  const apiBaseUrl =
-    env["QAWOLF_API_URL"]?.replace(/\/+$/, "") || "https://app.qawolf.com";
+  const apiBaseUrl = resolveHostUrl(env);
   return {
     ctx: {
       ui: createUI(outputMode, {

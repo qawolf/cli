@@ -6,6 +6,7 @@ import type { Reporter } from "~/shell/reporter/types.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { getConfigDir } from "~/core/paths.js";
 import { makeDefaultFs } from "~/shell/fs.js";
+import { resolveHostUrl } from "~/shell/resolveHostUrl.js";
 import { configureTestkit } from "~/shell/testkit.js";
 import { executeWorkerFlow } from "~/domains/runner/executeWorkerFlow.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
@@ -34,9 +35,7 @@ async function runWorker(signals: SignalRegistry): Promise<void> {
 
     await configureTestkit(input.resolvedDir);
     const fs = makeDefaultFs();
-    const apiBaseUrl =
-      process.env["QAWOLF_API_URL"]?.replace(/\/+$/, "") ||
-      "https://app.qawolf.com";
+    const apiBaseUrl = resolveHostUrl(process.env);
     const flowRuntimeDeps = await createFlowRuntimeDeps({
       envDir: input.resolvedDir,
       ctx: { apiBaseUrl, configDir: getConfigDir(), fs },
