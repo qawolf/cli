@@ -3,6 +3,7 @@ import {
   appiumVersion,
   appiumXcuitestDriverVersion,
   emailsVersion,
+  expectWebdriverioVersion,
   flowsVersion,
   playwrightVersion,
   testkitVersion,
@@ -22,4 +23,7 @@ export const pinnedPackages: PinnedPackage[] = [
     name: "appium-uiautomator2-driver",
     version: appiumUiautomator2DriverVersion,
   },
+  // Peer dep of @qawolf/flows ≥0.1.4 — configureFlowRuntime imports it, and
+  // the --legacy-peer-deps install would otherwise never provide it.
+  { name: "expect-webdriverio", version: expectWebdriverioVersion },
 ];
