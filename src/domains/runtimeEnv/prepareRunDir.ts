@@ -63,6 +63,7 @@ export async function prepareRunDir(
   const outerHop = await populateOuterHop({
     projectDir,
     runDir,
+    depsRoot,
     fs,
     ...(args.onInstallStart !== undefined
       ? { onInstallStart: args.onInstallStart }

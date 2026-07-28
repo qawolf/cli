@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 
 import { type Fs } from "~/shell/fs.js";
 
+import { linkPinnedPackages } from "./linkPinnedPackages.js";
 import { spawnNpmInstall, type SpawnInstallResult } from "./npmInstall.js";
 import { pinnedPackages } from "./pinnedPackages.js";
 import { createDirSymlink } from "./symlinkDir.js";
@@ -21,6 +22,9 @@ export type OuterHopResult =
 export type PopulateOuterHopArgs = {
   projectDir: string | undefined;
   runDir: string;
+  // Managed runtime root; pinned packages are linked from here after a
+  // fallback install so outer-hop packages can resolve them (e.g. peer deps).
+  depsRoot: string;
   fs: Fs;
   // Fires just before the fallback npm install so callers can render a status line.
   onInstallStart?: (depCount: number) => void;
@@ -37,8 +41,10 @@ export type PopulateOuterHopArgs = {
  * installable declared dependency (validate-then-trust): candidates missing a
  * dep are recorded and skipped so an unrelated ancestor tree — e.g. a repo the
  * project happens to be nested in — is never symlinked. Falls back to
- * installing the declared deps when no candidate satisfies them. No-ops when
- * `projectDir` is undefined or there is nothing to link or install.
+ * installing the declared deps when no candidate satisfies them, then links
+ * the pinned executor packages alongside the install so outer-hop packages
+ * can resolve them. No-ops when `projectDir` is undefined or there is nothing
+ * to link or install.
  */
 export async function populateOuterHop(
   args: PopulateOuterHopArgs,
@@ -68,6 +74,15 @@ export async function populateOuterHop(
     fs,
     args.install ?? spawnNpmInstall,
   );
+  // The install strips executor packages, but installed project deps may
+  // import them (peer deps are skipped by --legacy-peer-deps, and the inner
+  // hop is not on their resolution path). Link the pinned copies here so
+  // outer-hop packages resolve the same instance the executor uses.
+  await linkPinnedPackages({
+    depsRoot: args.depsRoot,
+    nodeModulesDir: join(runDir, "node_modules"),
+    fs,
+  });
   return { mode: "install", depCount: depNames.length, rejected };
 }
 
