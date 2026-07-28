@@ -1,5 +1,12 @@
 # @qawolf/cli
 
+## 1.3.2
+
+### Patch Changes
+
+- d55f6ab: Fix `ERR_MODULE_NOT_FOUND: Cannot find package '@qawolf/flows'` when a project dependency (such as `@qawolf/pom`) peer-depends on a pinned runtime package. The per-run install skips peer dependencies (`--legacy-peer-deps`) and the pinned packages were only resolvable from staged flow files, not from installed project dependencies. The outer hop now links every pinned package alongside the installed dependencies, so project packages resolve the same pinned instance the executor uses. Also bumps the pinned `@qawolf/flows` to 0.1.4 and pins its new peer `expect-webdriverio`.
+- 7a2f1d1: Record video, HAR, and trace artifacts for browser contexts that flows create themselves via `browser.newContext()` — previously only the context `launch()` returned was recorded, so flows using helpers that build their own context produced empty artifacts. Each context now writes to its own file (`<flow>.har`, `<flow>-2.har`, …).
+
 ## 1.3.1
 
 ### Patch Changes
