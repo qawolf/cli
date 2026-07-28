@@ -16,11 +16,8 @@ import type { WebLaunchDeps, WebLaunchOptions } from "./web/types.js";
 import type { FlowRuntimeDeps } from "./flowRuntimeDeps.js";
 import { FailWithoutRetryError, FlowRunError } from "./errors.js";
 import { initFlowRuntime } from "./initFlowRuntime.js";
-import {
-  createLaunch,
-  notSupported,
-  unsupportedWebDepNames,
-} from "./runWebFlowUtils.js";
+import { createLaunch } from "./createLaunch.js";
+import { notSupported, unsupportedWebDepNames } from "./runWebFlowUtils.js";
 import {
   buildContextSetup,
   initHar,
@@ -86,7 +83,7 @@ export async function runWebFlow({
       : {}),
   };
 
-  const { launch, cleanup } = createLaunch({
+  const { launch, cleanup, artifactPaths } = createLaunch({
     browsers: {
       chromium: deps.chromium,
       firefox: deps.firefox,
@@ -132,11 +129,19 @@ export async function runWebFlow({
   } finally {
     await cleanup();
     const warn = (message: string) => deps.logger?.warn(message);
-    if (harPath !== undefined) {
-      await maybeCleanupHar(deps.fs, harPath, passed, harMode, warn);
+    // Each context the flow created has its own HAR/trace path to clean up.
+    const assigned = artifactPaths();
+    for (const contextHarPath of assigned.harPaths) {
+      await maybeCleanupHar(deps.fs, contextHarPath, passed, harMode, warn);
     }
-    if (tracePath !== undefined) {
-      await maybeCleanupTrace(deps.fs, tracePath, passed, traceMode, warn);
+    for (const contextTracePath of assigned.tracePaths) {
+      await maybeCleanupTrace(
+        deps.fs,
+        contextTracePath,
+        passed,
+        traceMode,
+        warn,
+      );
     }
   }
 }

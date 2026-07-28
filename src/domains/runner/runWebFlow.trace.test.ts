@@ -69,7 +69,9 @@ describe("runWebFlow trace", () => {
         trace: "retain-on-failure",
         outputDir: "/tmp/test-trace",
       },
-      flowPath: fixturePath("pass"),
+      // Cleanup targets paths assigned to real contexts, so the flow must
+      // launch a browser for a trace file to exist.
+      flowPath: fixturePath("launch"),
     });
 
     expect(unlinkMock.mock.calls[0]![0]).toContain("/trace/");

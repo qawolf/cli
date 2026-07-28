@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
-import { createLaunch } from "./runWebFlowUtils.js";
+import { createLaunch } from "./createLaunch.js";
 import {
   makeBrowser,
   makeContext,
@@ -70,6 +70,54 @@ describe("createLaunch cleanup", () => {
     await signals.shutdown("SIGINT");
 
     expect(order).toEqual(["context:start", "context:end", "browser:start"]);
+  });
+
+  it("should wait for an in-progress teardown before cleanup resolves", async () => {
+    const order: string[] = [];
+    let releaseClose: (() => void) | undefined;
+    const closeGate = new Promise<void>((resolve) => {
+      releaseClose = resolve;
+    });
+    let closeStarted: (() => void) | undefined;
+    const closeStartedGate = new Promise<void>((resolve) => {
+      closeStarted = resolve;
+    });
+    const ctx = makeContext();
+    ctx.close = mock(async () => {
+      order.push("close:start");
+      closeStarted?.();
+      await closeGate;
+      order.push("close:end");
+    });
+    const browser = makeBrowser(ctx);
+    const dep = makeDep(browser, ctx);
+    const signals = createSignalRegistry();
+
+    const { launch, cleanup } = createLaunch({
+      browsers: { chromium: dep, firefox: dep, webkit: dep },
+      contextSetup: {},
+      launchBrowserOpts,
+      signals,
+      timeout: 30_000,
+    });
+
+    await launch();
+    // Signal-driven teardown starts and blocks inside context.close().
+    const shutdown = signals.shutdown("SIGINT");
+    await closeStartedGate;
+    let cleanupResolved = false;
+    const cleanupDone = cleanup().then(() => {
+      cleanupResolved = true;
+      order.push("cleanup:done");
+    });
+    // While close() is still blocked, cleanup must not have resolved —
+    // otherwise callers unlink artifacts the teardown is still flushing.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(cleanupResolved).toBe(false);
+
+    releaseClose?.();
+    await Promise.all([shutdown, cleanupDone]);
+    expect(order).toEqual(["close:start", "close:end", "cleanup:done"]);
   });
 });
 

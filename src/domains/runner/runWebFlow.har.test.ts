@@ -80,10 +80,39 @@ describe("runWebFlow HAR", () => {
         harContent: "omit",
         outputDir: "/tmp/test-har",
       },
-      flowPath: fixturePath("pass"),
+      // Cleanup targets paths assigned to real contexts, so the flow must
+      // launch a browser for a HAR file to exist.
+      flowPath: fixturePath("launch"),
     });
 
     expect(unlinkMock.mock.calls[0]![0]).toContain("/har/");
+  });
+
+  it("should delete every per-context HAR file on success when har is retain-on-failure", async () => {
+    const unlinkMock = mock(async (_p: string) => {});
+    const deps = {
+      ...makeWebDeps(),
+      fs: {
+        mkdir: async () => {},
+        writeFile: async () => {},
+        unlink: unlinkMock,
+      },
+    };
+
+    await runWebFlow({
+      deps,
+      options: {
+        ...baseOptions,
+        har: "retain-on-failure",
+        harContent: "omit",
+        outputDir: "/tmp/test-har",
+      },
+      flowPath: fixturePath("ownContext"),
+    });
+
+    const unlinked = unlinkMock.mock.calls.map((c) => c[0]);
+    expect(unlinked).toContain("/tmp/test-har/har/ownContext.har");
+    expect(unlinked).toContain("/tmp/test-har/har/ownContext-2.har");
   });
 
   it("should not delete the HAR file on failure when har is retain-on-failure", async () => {
