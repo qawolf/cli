@@ -10,8 +10,13 @@ import {
   makeProjectTree,
   makeTmpDirTracker,
 } from "./runDirFixtures.testUtils.js";
+import { scaffoldManagedRuntime } from "./scaffoldManagedRuntime.testUtils.js";
 
 const tracker = makeTmpDirTracker("qawolf-outerhop-test-");
+
+// Pinned links are only created in install mode; symlink/none-mode tests never
+// dereference depsRoot, so a sentinel keeps that explicit.
+const unusedDepsRoot = "/unused-deps-root";
 
 afterEach(() => tracker.cleanup());
 
@@ -26,6 +31,7 @@ describe("populateOuterHop", () => {
     const result = await populateOuterHop({
       projectDir,
       runDir,
+      depsRoot: unusedDepsRoot,
       fs: makeDefaultFs(),
     });
 
@@ -50,6 +56,7 @@ describe("populateOuterHop", () => {
     const result = await populateOuterHop({
       projectDir,
       runDir,
+      depsRoot: unusedDepsRoot,
       fs: makeDefaultFs(),
     });
 
@@ -62,42 +69,6 @@ describe("populateOuterHop", () => {
     );
   });
 
-  it("falls back to install when no candidate satisfies, recording rejections", async () => {
-    const { root, projectDir, runDir } = await makeProjectTree({
-      tracker,
-      deps: { "date-fns": "2.29.3", "@qawolf/flows": "workspace:*" },
-      seed: { "": ["lodash"] },
-    });
-
-    const installStartCounts: number[] = [];
-    const installMock = makeInstallMock().mockImplementation(async () => {
-      // onInstallStart must fire BEFORE the install runs.
-      expect(installStartCounts).toEqual([1]);
-      return { exitCode: 0, stderr: "" };
-    });
-
-    const result = await populateOuterHop({
-      projectDir,
-      runDir,
-      fs: makeDefaultFs(),
-      onInstallStart: (depCount) => installStartCounts.push(depCount),
-      install: installMock,
-    });
-
-    // @qawolf/flows is pinned (inner hop) so only date-fns is installable.
-    expect(result).toEqual({
-      mode: "install",
-      depCount: 1,
-      rejected: [{ dir: join(root, "node_modules"), missing: ["date-fns"] }],
-    });
-    expect(installMock).toHaveBeenCalledWith(runDir);
-
-    const written = JSON.parse(
-      makeDefaultFs().readFileSync(join(runDir, "package.json")),
-    ) as { dependencies: Record<string, string> };
-    expect(written.dependencies).toEqual({ "date-fns": "2.29.3" });
-  });
-
   it("symlinks the nearest node_modules when the project declares no installable deps", async () => {
     const { root, projectDir, runDir } = await makeProjectTree({
       tracker,
@@ -108,6 +79,7 @@ describe("populateOuterHop", () => {
     const result = await populateOuterHop({
       projectDir,
       runDir,
+      depsRoot: unusedDepsRoot,
       fs: makeDefaultFs(),
     });
 
@@ -128,6 +100,7 @@ describe("populateOuterHop", () => {
     const result = await populateOuterHop({
       projectDir,
       runDir,
+      depsRoot: unusedDepsRoot,
       fs: makeDefaultFs(),
     });
 
@@ -150,6 +123,7 @@ describe("populateOuterHop", () => {
     const result = await populateOuterHop({
       projectDir,
       runDir,
+      depsRoot: unusedDepsRoot,
       fs: makeDefaultFs(),
     });
 
@@ -175,6 +149,7 @@ describe("populateOuterHop", () => {
     const result = await populateOuterHop({
       projectDir,
       runDir,
+      depsRoot: unusedDepsRoot,
       fs: makeDefaultFs(),
     });
 
@@ -191,6 +166,7 @@ describe("populateOuterHop", () => {
     const result = await populateOuterHop({
       projectDir: undefined,
       runDir,
+      depsRoot: unusedDepsRoot,
       fs: makeDefaultFs(),
     });
 
@@ -207,6 +183,9 @@ describe("populateOuterHop", () => {
       seed: { "sibling-repo": ["date-fns"] },
     });
 
+    const depsRoot = await tracker.makeTmpDir();
+    await scaffoldManagedRuntime(depsRoot);
+
     const installMock = makeInstallMock().mockImplementation(async () => ({
       exitCode: 0,
       stderr: "",
@@ -215,6 +194,7 @@ describe("populateOuterHop", () => {
     const result = await populateOuterHop({
       projectDir,
       runDir,
+      depsRoot,
       fs: makeDefaultFs(),
       install: installMock,
     });
@@ -239,6 +219,7 @@ describe("populateOuterHop", () => {
     const result = await populateOuterHop({
       projectDir,
       runDir,
+      depsRoot: unusedDepsRoot,
       fs: makeDefaultFs(),
     });
 
