@@ -46,7 +46,8 @@ function callCount(f: typeof fetch): number {
 describe("callPublicApi", () => {
   it("sends a write contract as a mutation and returns the value", async () => {
     const runId = "run-id";
-    const f = mockFetch(json(trpcWrapped({ runId })));
+    const url = "https://app.qawolf.com/runs/run-id";
+    const f = mockFetch(json(trpcWrapped({ runId, url })));
 
     const result = await createPlatformClient(apiKey, {
       fetch: f,
@@ -60,7 +61,7 @@ describe("callPublicApi", () => {
     expect(req.url).toBe(`${baseUrl}/api/trpc/public.run.create`);
     expect(req.method).toBe("POST");
     expect(req.auth).toBe(`Bearer ${apiKey}`);
-    expect(result).toEqual({ ok: true, value: { runId } });
+    expect(result).toEqual({ ok: true, value: { runId, url } });
   });
 
   it("does not retry write contracts on network errors", async () => {

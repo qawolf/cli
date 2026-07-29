@@ -76,6 +76,7 @@ describe("handlePublicApiCommand", () => {
       environmentVariables: { BAZ: "qux=quux", FOO: "bar" },
       flowIds: [flowId],
       ignoreRules: false,
+      tagNames: [],
     });
     expect(ui.output).toHaveBeenCalledTimes(1);
     const [data, humanMessage] = (ui.output as ReturnType<typeof mock>).mock

@@ -21,8 +21,11 @@ describe("buildCommandSpecs", () => {
     expect(runCreate?.flags.map((flag) => flag.field)).toEqual([
       "environmentId",
       "environmentVariables",
-      "flowIds",
       "ignoreRules",
+      "pullRequestNumber",
+      "repository",
+      "flowIds",
+      "tagNames",
     ]);
   });
 
