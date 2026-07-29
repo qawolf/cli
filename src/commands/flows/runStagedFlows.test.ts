@@ -59,6 +59,7 @@ function defaultFlags(): FlowsRunFlags {
     harContent: "omit",
     outputDir: "/tmp",
     headed: false,
+    browserDeps: true,
   };
 }
 

@@ -10,6 +10,8 @@ export type InstallBrowsersDeps = {
   readonly cwd: string;
   readonly spawn: SpawnFn;
   readonly platform: NodeJS.Platform;
+  /** When false, skip Playwright's OS-level dependency install (Linux `--with-deps`). */
+  readonly browserDeps: boolean;
   readonly expandPatterns: (
     patterns: string[],
     cwd?: string,
@@ -21,6 +23,8 @@ export type InstallBrowsersDeps = {
 export type InstallBrowserListDeps = {
   readonly spawn: SpawnFn;
   readonly platform: NodeJS.Platform;
+  /** When false, skip Playwright's OS-level dependency install (Linux `--with-deps`). */
+  readonly browserDeps: boolean;
   readonly playwrightCliPath: string;
 };
 
@@ -33,7 +37,7 @@ export async function installBrowserList(
     browsers.map((browser) => ({
       message: installMessages.installingBrowser(browser),
       task: async () => {
-        const args = buildArgs(browser, deps.platform);
+        const args = buildArgs(browser, deps.platform, deps.browserDeps);
         const result = await deps.spawn(deps.playwrightCliPath, args);
         if (result.exitCode !== 0) {
           throw new Error(formatError(browser, result));
@@ -62,6 +66,7 @@ export async function installBrowsers(
   await installBrowserList(ctx, browsers, {
     spawn: deps.spawn,
     platform: deps.platform,
+    browserDeps: deps.browserDeps,
     playwrightCliPath,
   });
 }
@@ -79,8 +84,15 @@ async function collectBrowsers(
   return [...seen].sort();
 }
 
-function buildArgs(browser: BrowserName, platform: NodeJS.Platform): string[] {
-  return platform === "linux"
+function buildArgs(
+  browser: BrowserName,
+  platform: NodeJS.Platform,
+  browserDeps: boolean,
+): string[] {
+  // --with-deps runs apt-get, which needs root even when every package is
+  // already present; --no-browser-deps lets non-root Linux runners with
+  // preinstalled system libraries skip it.
+  return platform === "linux" && browserDeps
     ? ["install", "--with-deps", browser]
     : ["install", browser];
 }

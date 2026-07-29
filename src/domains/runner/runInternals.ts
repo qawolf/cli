@@ -42,6 +42,8 @@ export type FlowsRunFlags = {
   readonly junit?: string | boolean;
   // --deps <dir>: use this prepared dependency directory instead of auto-resolving.
   readonly deps?: string;
+  // --no-browser-deps: skip Playwright's OS dependency install (Linux --with-deps).
+  readonly browserDeps: boolean;
 };
 
 export type FlowsRunDeps = {
@@ -130,9 +132,8 @@ export async function dispatchFlow({
       error: new FlowRunError(flow.name, 1, err),
     };
   }
-  // Stamping is supplementary diagnostic info — surface I/O failures via
-  // deps.warn so the user/support can see them, but never let a lookup
-  // error erase the flow's pass/fail outcome.
+  // Stamping is supplementary diagnostics — surface I/O failures via
+  // deps.warn, but never let a lookup error erase the pass/fail outcome.
   let stamp;
   try {
     stamp = await deps.findFlowStamp(flow.file);
@@ -143,8 +144,7 @@ export async function dispatchFlow({
   if (stamp) run = { ...run, manifest: stamp };
   const durationMs = deps.now() - flowStart;
   const outcome = run.passed ? "pass" : "fail";
-  const attempts = run.attempts;
-  const attempt = pluralize(attempts, "attempt");
+  const attempt = pluralize(run.attempts, "attempt");
   deps.logger?.info(`${outcome}: ${flow.name} (${durationMs}ms, ${attempt})`);
   return { run, durationMs };
 }

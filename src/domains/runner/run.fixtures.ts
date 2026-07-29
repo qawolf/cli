@@ -47,6 +47,7 @@ export function defaultFlags(): FlowsRunFlags {
     harContent: "omit",
     outputDir: "qawolf-output",
     headed: false,
+    browserDeps: true,
   };
 }
 

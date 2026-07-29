@@ -120,6 +120,17 @@ describe("installBrowsers", () => {
     ]);
   });
 
+  it("omits --with-deps on Linux when browserDeps is false", async () => {
+    const { deps, ctx } = setup("Web - Chrome", {
+      platform: "linux",
+      browserDeps: false,
+    });
+
+    await installBrowsers(ctx, undefined, deps);
+
+    expect(deps.spawn).toHaveBeenCalledWith(fakeCli, ["install", "chromium"]);
+  });
+
   it("throws and stops on first non-zero exit", async () => {
     const ctx = makeCtx();
     const deps = makeDeps({
