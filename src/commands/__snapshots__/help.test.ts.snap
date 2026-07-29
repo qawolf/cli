@@ -20,25 +20,14 @@ Commands:
                                directory
   install [options] [pattern]  Install every runtime dependency the project's
                                flows need
-  automate [options]           Request automation for draft flows. First create
-                               a named local .flow.ts draft for every requested
-                               journey that does not already have a matching
-                               draft; never reuse a generic starter or
-                               placeholder. Each new draft must start with a
-                               JSDoc Goal: description, import flow from
-                               @qawolf/flows/web, and use export default
-                               flow(...); a comment-only file or direct
-                               test(...) call is not a valid draft. Commit and
-                               push all changes with Git to publish them, then
-                               list remote drafts to resolve every selected ID.
-                               Do not use patch to create or rename a selected
-                               flow. Finally make one automation request
-                               containing all requested flow IDs.
+  runner                       Drive an interactive runner on the QA Wolf
+                               platform
+  automate [options]           Request an automation that builds the selected
+                               draft flows in an environment.
   environment                  QA Wolf public API environment commands
   flow                         QA Wolf public API flow commands
   issue                        QA Wolf public API issue commands
   run                          Trigger and manage QA Wolf runs on the platform
-  runner                       QA Wolf public API runner commands
   tag                          QA Wolf public API tag commands
   help [command]               display help for command
 "
@@ -257,5 +246,95 @@ Examples:
   $ qawolf flows pull --env staging
   $ qawolf flows pull --env 4e9c... --out ./snapshot
   $ qawolf flows pull --env staging --yes
+"
+`;
+
+exports[`--help output qawolf runner 1`] = `
+"Usage: qawolf runner [options] [command]
+
+Drive an interactive runner on the QA Wolf platform
+
+Options:
+  -h, --help                 display help for command
+
+Commands:
+  launch [options]           Launch an interactive runner and make it this
+                             directory's default
+  stop [options]             Stop an interactive runner
+  run [options] <file>       Run a flow on an interactive runner, shipping the
+                             current directory's files with it
+  events [options] <stream>  Print a runner's journal, one entry per line. QA
+                             Wolf writes console, recorder, run-events,
+                             run-logs, run-status
+  help [command]             display help for command
+"
+`;
+
+exports[`--help output qawolf runner launch 1`] = `
+"Usage: qawolf runner launch [options]
+
+Launch an interactive runner and make it this directory's default
+
+Options:
+  --id <id>       Id to launch under. Relaunching an id attaches to that runner
+  --name <image>  Runner image to run, e.g. node20WithPlaywright
+  -h, --help      display help for command
+
+Examples:
+  $ qawolf runner launch
+  $ qawolf runner launch --name node20WithAndroid
+  $ qawolf runner launch --id ci
+"
+`;
+
+exports[`--help output qawolf runner stop 1`] = `
+"Usage: qawolf runner stop [options]
+
+Stop an interactive runner
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
+                 directory's stored runner
+  -h, --help     display help for command
+"
+`;
+
+exports[`--help output qawolf runner run 1`] = `
+"Usage: qawolf runner run [options] <file>
+
+Run a flow on an interactive runner, shipping the current directory's files with
+it
+
+Options:
+  --follow       Stream the run's logs until it settles (default: false)
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
+                 directory's stored runner
+  -h, --help     display help for command
+
+Examples:
+  $ qawolf runner run flows/checkout.flow.ts
+  $ qawolf runner run flows/checkout.flow.ts --follow > run.log
+"
+`;
+
+exports[`--help output qawolf runner events 1`] = `
+"Usage: qawolf runner events [options] <stream>
+
+Print a runner's journal, one entry per line. QA Wolf writes console, recorder,
+run-events, run-logs, run-status
+
+Options:
+  --follow            Keep reading as new entries arrive (default: false)
+  --run <id>          Restrict run-scoped streams to one run
+  --runner <id>       Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
+                      directory's stored runner
+  --since <sequence>  Read entries after this sequence
+  --tail <count>      Read only the newest <count> entries
+  -h, --help          display help for command
+
+Examples:
+  $ qawolf runner events recorder --tail 5
+  $ qawolf runner events run-logs --run <runId> --follow
+  $ qawolf runner events console --since 120 --json
 "
 `;

@@ -78,6 +78,26 @@ describe("--help output", () => {
     expect(helpFor("flows", "pull")).toMatchSnapshot();
   });
 
+  it("qawolf runner", () => {
+    expect(helpFor("runner")).toMatchSnapshot();
+  });
+
+  it("qawolf runner launch", () => {
+    expect(helpFor("runner", "launch")).toMatchSnapshot();
+  });
+
+  it("qawolf runner stop", () => {
+    expect(helpFor("runner", "stop")).toMatchSnapshot();
+  });
+
+  it("qawolf runner run", () => {
+    expect(helpFor("runner", "run")).toMatchSnapshot();
+  });
+
+  it("qawolf runner events", () => {
+    expect(helpFor("runner", "events")).toMatchSnapshot();
+  });
+
   it("contains no em-dashes in any help text", () => {
     const paths: string[][] = [
       [],
@@ -91,6 +111,11 @@ describe("--help output", () => {
       ["flows", "run"],
       ["flows", "list"],
       ["flows", "pull"],
+      ["runner"],
+      ["runner", "launch"],
+      ["runner", "stop"],
+      ["runner", "run"],
+      ["runner", "events"],
     ];
     for (const path of paths) {
       expect(helpFor(...path)).not.toContain("—");

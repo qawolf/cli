@@ -24,6 +24,21 @@ bun run dev                  # run the CLI
 bun run dev -- <args>        # pass args (e.g. -- --help)
 ```
 
+### Working against unpublished API contracts
+
+`@qawolf/api-contracts` is published from the platform repository. To develop
+against a version that is not on npm yet, build it out of a platform checkout
+into `node_modules`:
+
+```bash
+bun run stage:api-contracts ../platform     # or set QAWOLF_PLATFORM_PATH
+```
+
+It compiles the package with this repo's TypeScript, so the staged copy resolves
+`zod` from this repo's `node_modules` and shares its single zod instance. Once
+the version named in `package.json` is published, `bun install` replaces the
+staged copy and the script is no longer needed.
+
 ## Build
 
 ```bash

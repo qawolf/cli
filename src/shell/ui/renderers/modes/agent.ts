@@ -3,6 +3,7 @@ import {
   writeJsonLine,
   writeStderrLine,
   writeStderrRaw,
+  writeStdoutRaw,
 } from "~/shell/ui/renderers/write.js";
 import { finalizeResults } from "./progress.js";
 import type { RendererSet } from "./types.js";
@@ -32,6 +33,7 @@ export function createAgentRenderers(): RendererSet {
       writeStderrLine(humanMessage);
     },
     gap: () => writeStderrLine(""),
+    stream: (line) => writeStdoutRaw(`${line}\n`),
     write: (text) => writeStderrRaw(text),
     withProgress: async (steps, done) => {
       const results: unknown[] = [];

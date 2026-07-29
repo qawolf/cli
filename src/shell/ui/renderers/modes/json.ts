@@ -1,6 +1,7 @@
 import {
   writeJsonDiagnostic,
   writeJsonLine,
+  writeStdoutRaw,
 } from "~/shell/ui/renderers/write.js";
 import { finalizeResults } from "./progress.js";
 import type { RendererSet } from "./types.js";
@@ -26,6 +27,7 @@ export function createJsonRenderers(): RendererSet {
     error: (title, body) => writeJsonDiagnostic({ type: "error", title, body }),
     output: (data, _humanMessage) => writeJsonLine(data),
     gap: () => {},
+    stream: (line) => writeStdoutRaw(`${line}\n`),
     write: () => {},
     withProgress: async (steps, done) => {
       const results: unknown[] = [];

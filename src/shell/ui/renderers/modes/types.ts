@@ -14,6 +14,15 @@ export type RendererSet = {
   error(title: string, body?: string): void;
   output(data: unknown, humanMessage: string): void;
   gap(): void;
+  /**
+   * One line of primary command data to stdout, in every output mode.
+   *
+   * Apart from `write`, which is decoration and so goes to stderr where an agent
+   * reads it and nowhere at all in json mode. A streamed journal line is the
+   * answer to the command, and `qawolf runner events recorder | jq` has to see it
+   * whether a terminal, a pipe or a harness is on the other end.
+   */
+  stream(line: string): void;
   write(text: string): void;
   withProgress: WithProgressFn;
 };

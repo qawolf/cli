@@ -28,17 +28,37 @@ const groupDescriptions: Record<string, string> = {
 
 // Contracts already served by hand-written commands; the generator must not
 // mint duplicates (flow.list is served by `qawolf flows list --remote`).
-const handWrittenContractNames: ReadonlySet<string> = new Set(["flow.list"]);
-
-// Kept out of generated commands: the hand-written ones above, plus contracts
-// whose input can't be expressed as CLI flags. `issue.update` is a
-// discriminator-less union. `runner.performAction` takes an action union where
-// the arm a caller means is the whole request. An unmappable contract throws
-// while the program is built, taking every command down with it.
-const skippedContractNames: ReadonlySet<string> = new Set([
-  ...handWrittenContractNames,
-  "issue.update",
+//
+// The whole `runner.*` family is hand-written as `qawolf runner`. Three of its
+// inputs carry a file list or an action union and have no flag shape at all, and
+// the four that do need UX the generator cannot give them: an optional
+// `--runner` resolved from flag, environment and stored default; a runner
+// launched on demand and announced; a screenshot decoded into a file. Half the
+// group generated beside the other half hand-written would read as two unrelated
+// command sets sharing a prefix.
+const handWrittenContractNames: ReadonlySet<string> = new Set([
+  "flow.list",
+  "runner.evaluateSnippet",
+  "runner.launch",
   "runner.performAction",
+  "runner.readJournal",
+  "runner.runFlow",
+  "runner.stop",
+  "runner.takeScreenshot",
+]);
+
+// Contracts with no flag shape and no command yet, kept apart from the set above
+// so neither list claims what is only true of the other: these are absent from
+// the CLI rather than served elsewhere. `issue.update` is a discriminator-less
+// union, so no set of flags can say which arm a caller means.
+const unexpressibleContractNames: ReadonlySet<string> = new Set([
+  "issue.update",
+]);
+
+/** Every contract the generator passes over, for whichever of the two reasons. */
+export const skippedContractNames: ReadonlySet<string> = new Set([
+  ...handWrittenContractNames,
+  ...unexpressibleContractNames,
 ]);
 
 const optionEnvironmentVariables = new Map([
