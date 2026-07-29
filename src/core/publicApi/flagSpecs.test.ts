@@ -63,22 +63,19 @@ describe("buildFlagSpecs", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.flags.map((spec) => spec.flag)).toEqual([
-      "--environment-id <value>",
-      "--environment-variables <KEY=VALUE...>",
-      "--flow-ids <values...>",
-      "--ignore-rules",
-    ]);
     expect(
       result.flags.map((spec) => ({
-        field: spec.field,
+        flag: spec.flag,
         required: spec.required,
       })),
     ).toEqual([
-      { field: "environmentId", required: true },
-      { field: "environmentVariables", required: false },
-      { field: "flowIds", required: true },
-      { field: "ignoreRules", required: false },
+      { flag: "--environment-id <value>", required: true },
+      { flag: "--environment-variables <KEY=VALUE...>", required: false },
+      { flag: "--ignore-rules", required: false },
+      { flag: "--pull-request-number <value>", required: false },
+      { flag: "--repository <value>", required: false },
+      { flag: "--flow-ids <values...>", required: false },
+      { flag: "--tag-names <values...>", required: false },
     ]);
   });
 

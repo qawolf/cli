@@ -1,9 +1,31 @@
 import { describe, expect, it } from "bun:test";
+import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { z } from "zod";
 
 import { buildFlagSpecs } from "./flagSpecs.js";
 
 describe("buildFlagSpecs union inputs", () => {
+  it("maps the published issue.create contract input", () => {
+    const result = buildFlagSpecs(publicContractsV1.issue.create.input);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(
+      result.flags.map((spec) => ({
+        flag: spec.flag,
+        required: spec.required,
+      })),
+    ).toEqual([
+      { flag: "--description <value>", required: false },
+      { flag: "--name <value>", required: true },
+      { flag: "--priority <value>", required: false },
+      { flag: "--type <value>", required: true },
+      { flag: "--estimated-due-date <value>", required: false },
+    ]);
+    const type = result.flags.find((spec) => spec.field === "type");
+    expect(type?.description).toBe("One of: bug, coverageRequest");
+  });
+
   it("maps a discriminated union with a required discriminator flag", () => {
     const schema = z.discriminatedUnion("type", [
       z.object({

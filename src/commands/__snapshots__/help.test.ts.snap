@@ -6,20 +6,25 @@ exports[`--help output qawolf 1`] = `
 Run QA Wolf flows locally
 
 Options:
-  -V, --version      output the version number
-  --verbose          Enable debug logging to stderr
-  --json             Output as JSON
-  --agent            Output for agent consumption
-  -h, --help         display help for command
+  -V, --version       output the version number
+  --verbose           Enable debug logging to stderr
+  --json              Output as JSON
+  --agent             Output for agent consumption
+  -h, --help          display help for command
 
 Commands:
-  auth               Manage authentication with QA Wolf
-  doctor [options]   Diagnose problems running flows locally
-  flows              Manage and run QA Wolf flows
-  init [options]     Scaffold a QA Wolf project in the current directory
-  install [pattern]  Install every runtime dependency the project's flows need
-  run                Trigger and manage QA Wolf runs on the platform
-  help [command]     display help for command
+  auth                Manage authentication with QA Wolf
+  doctor [options]    Diagnose problems running flows locally
+  flows               Manage and run QA Wolf flows
+  init [options]      Scaffold a QA Wolf project in the current directory
+  install [pattern]   Install every runtime dependency the project's flows need
+  automate [options]  Request an automation that builds the selected draft flows
+                      in an environment.
+  environment         QA Wolf public API environment commands
+  issue               QA Wolf public API issue commands
+  run                 Trigger and manage QA Wolf runs on the platform
+  tag                 QA Wolf public API tag commands
+  help [command]      display help for command
 "
 `;
 

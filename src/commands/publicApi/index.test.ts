@@ -39,13 +39,19 @@ describe("registerPublicApiCommands", () => {
     expect(create?.options.map((option) => option.flags)).toEqual([
       "--environment-id <value>",
       "--environment-variables <KEY=VALUE...>",
-      "--flow-ids <values...>",
       "--ignore-rules",
+      "--pull-request-number <value>",
+      "--repository <value>",
+      "--flow-ids <values...>",
+      "--tag-names <values...>",
     ]);
     expect(create?.options.map((option) => option.mandatory)).toEqual([
       true,
       false,
-      true,
+      false,
+      false,
+      false,
+      false,
       false,
     ]);
   });
@@ -81,6 +87,7 @@ describe("registerPublicApiCommands", () => {
       environmentId,
       flowIds: [flowId],
       ignoreRules: false,
+      tagNames: [],
     });
   });
 
