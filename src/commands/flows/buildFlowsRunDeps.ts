@@ -49,6 +49,7 @@ export function buildFlowsRunDeps(args: BuildFlowsRunDepsArgs): FlowsRunDeps {
       installBrowserList(innerCtx, browsers, {
         spawn: defaultSpawn,
         platform: process.platform,
+        browserDeps: flags.browserDeps,
         playwrightCliPath: resolvePlaywrightCli(resolvedDir, process.platform),
       }),
     runWebFlow: defaultRunWebFlow,

@@ -9,6 +9,9 @@ import { handleInstall } from "./all.js";
 import { handleInstallBrowsers } from "./browsers.js";
 import { handleInstallClear } from "./clear.js";
 
+const noBrowserDepsDescription =
+  "Skip installing OS-level browser dependencies (Linux --with-deps, which needs root); requires the system libraries to already be present";
+
 export function registerInstallCommand(
   program: Command,
   signals: SignalRegistry,
@@ -19,6 +22,7 @@ export function registerInstallCommand(
       "[pattern]",
       "Glob limiting which flows determine required dependencies",
     )
+    .option("--no-browser-deps", noBrowserDepsDescription)
     .addHelpText(
       "after",
       `
@@ -26,15 +30,21 @@ Examples:
   $ qawolf install
   $ qawolf install "flows/checkout/**"`,
     )
-    .action((pattern: string | undefined, opts: unknown, command: Command) => {
-      return withContext(signals, (ctx) => handleInstall(ctx, pattern))(
-        opts,
-        command,
-      );
-    });
+    .action(
+      (
+        pattern: string | undefined,
+        opts: { browserDeps: boolean },
+        command: Command,
+      ) => {
+        return withContext(signals, (ctx) =>
+          handleInstall(ctx, pattern, { browserDeps: opts.browserDeps }),
+        )(opts, command);
+      },
+    );
 
   declareCommandKind(install.command("browsers [pattern]"), "local")
     .description("Install Playwright browsers used by the project's web flows")
+    .option("--no-browser-deps", noBrowserDepsDescription)
     .addHelpText(
       "after",
       `
@@ -42,12 +52,20 @@ Examples:
   $ qawolf install browsers
   $ qawolf install browsers "flows/web/**"`,
     )
-    .action((pattern: string | undefined, opts: unknown, command: Command) => {
-      return withContext(signals, (ctx) => handleInstallBrowsers(ctx, pattern))(
-        opts,
-        command,
-      );
-    });
+    .action(
+      (
+        pattern: string | undefined,
+        opts: { browserDeps: boolean },
+        command: Command,
+      ) => {
+        return withContext(signals, (ctx) =>
+          handleInstallBrowsers(ctx, pattern, {
+            envDir: undefined,
+            browserDeps: opts.browserDeps,
+          }),
+        )(opts, command);
+      },
+    );
 
   declareCommandKind(install.command("android [pattern]"), "local")
     .description(

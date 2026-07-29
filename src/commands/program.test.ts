@@ -79,6 +79,23 @@ describe("createProgram", () => {
     expect(run).toBeDefined();
   });
 
+  it("registers --no-browser-deps (default true) on flows run, install, and install browsers", () => {
+    const program = createProgram({ signals: noopSignals });
+    const flows = program.commands.find((c) => c.name() === "flows");
+    const run = flows?.commands.find((c) => c.name() === "run");
+    const install = program.commands.find((c) => c.name() === "install");
+    const browsers = install?.commands.find((c) => c.name() === "browsers");
+
+    for (const command of [run, install, browsers]) {
+      expect(command).toBeDefined();
+      const option = command?.options.find(
+        (o) => o.long === "--no-browser-deps",
+      );
+      expect(option).toBeDefined();
+      expect(command?.getOptionValue("browserDeps")).toBe(true);
+    }
+  });
+
   it("throws on unknown option", () => {
     let err: unknown;
     try {

@@ -27,6 +27,7 @@ export type DepsOverrides = {
   metaByFile?: Record<string, FakeMeta>;
   spawn?: SpawnFn;
   platform?: NodeJS.Platform;
+  browserDeps?: boolean;
 };
 
 export function makeDeps(overrides: DepsOverrides): InstallBrowsersDeps {
@@ -36,6 +37,7 @@ export function makeDeps(overrides: DepsOverrides): InstallBrowsersDeps {
     cwd: "/proj",
     spawn: overrides.spawn ?? spawnSequence(ok),
     platform: overrides.platform ?? "darwin",
+    browserDeps: overrides.browserDeps ?? true,
     expandPatterns: mock<InstallBrowsersDeps["expandPatterns"]>(() =>
       Promise.resolve([...files]),
     ),

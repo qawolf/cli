@@ -6,25 +6,27 @@ exports[`--help output qawolf 1`] = `
 Run QA Wolf flows locally
 
 Options:
-  -V, --version       output the version number
-  --verbose           Enable debug logging to stderr
-  --json              Output as JSON
-  --agent             Output for agent consumption
-  -h, --help          display help for command
+  -V, --version                output the version number
+  --verbose                    Enable debug logging to stderr
+  --json                       Output as JSON
+  --agent                      Output for agent consumption
+  -h, --help                   display help for command
 
 Commands:
-  auth                Manage authentication with QA Wolf
-  doctor [options]    Diagnose problems running flows locally
-  flows               Manage and run QA Wolf flows
-  init [options]      Scaffold a QA Wolf project in the current directory
-  install [pattern]   Install every runtime dependency the project's flows need
-  automate [options]  Request an automation that builds the selected draft flows
-                      in an environment.
-  environment         QA Wolf public API environment commands
-  issue               QA Wolf public API issue commands
-  run                 Trigger and manage QA Wolf runs on the platform
-  tag                 QA Wolf public API tag commands
-  help [command]      display help for command
+  auth                         Manage authentication with QA Wolf
+  doctor [options]             Diagnose problems running flows locally
+  flows                        Manage and run QA Wolf flows
+  init [options]               Scaffold a QA Wolf project in the current
+                               directory
+  install [options] [pattern]  Install every runtime dependency the project's
+                               flows need
+  automate [options]           Request an automation that builds the selected
+                               draft flows in an environment.
+  environment                  QA Wolf public API environment commands
+  issue                        QA Wolf public API issue commands
+  run                          Trigger and manage QA Wolf runs on the platform
+  tag                          QA Wolf public API tag commands
+  help [command]               display help for command
 "
 `;
 
@@ -49,18 +51,23 @@ exports[`--help output qawolf install 1`] = `
 Install every runtime dependency the project's flows need
 
 Arguments:
-  pattern             Glob limiting which flows determine required dependencies
+  pattern                       Glob limiting which flows determine required
+                                dependencies
 
 Options:
-  -h, --help          display help for command
+  --no-browser-deps             Skip installing OS-level browser dependencies
+                                (Linux --with-deps, which needs root); requires
+                                the system libraries to already be present
+  -h, --help                    display help for command
 
 Commands:
-  browsers [pattern]  Install Playwright browsers used by the project's web
-                      flows
-  android [pattern]   Install Android system images, AVDs, and the Appium driver
-                      used by the project's Android flows
-  clear [options]     Remove the managed runtime cache (all installed runtime
-                      versions)
+  browsers [options] [pattern]  Install Playwright browsers used by the
+                                project's web flows
+  android [pattern]             Install Android system images, AVDs, and the
+                                Appium driver used by the project's Android
+                                flows
+  clear [options]               Remove the managed runtime cache (all installed
+                                runtime versions)
 
 Examples:
   $ qawolf install
@@ -74,7 +81,10 @@ exports[`--help output qawolf install browsers 1`] = `
 Install Playwright browsers used by the project's web flows
 
 Options:
-  -h, --help  display help for command
+  --no-browser-deps  Skip installing OS-level browser dependencies (Linux
+                     --with-deps, which needs root); requires the system
+                     libraries to already be present
+  -h, --help         display help for command
 
 Examples:
   $ qawolf install browsers
@@ -180,6 +190,9 @@ Options:
   --deps <dir>          Use this prepared dependency directory instead of
                         auto-installing the runtime; or set QAWOLF_RUNTIME_DIR
                         to relocate the managed runtime
+  --no-browser-deps     Skip installing OS-level browser dependencies (Linux
+                        --with-deps, which needs root); requires the system
+                        libraries to already be present
   -h, --help            display help for command
 
 Examples:

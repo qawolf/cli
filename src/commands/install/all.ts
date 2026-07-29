@@ -101,6 +101,7 @@ export async function installAll(
 export async function handleInstall(
   ctx: CommandContext,
   pattern: string | undefined,
+  options: { browserDeps: boolean },
 ): Promise<CommandResult> {
   const { fs } = ctx;
   return installAll(ctx, pattern, {
@@ -109,7 +110,11 @@ export async function handleInstall(
       defaultExpandPatterns(patterns, cwd ?? process.cwd(), undefined, fs),
     peekFlowMeta: makePeekFlowMeta(fs),
     resolveDepsRoot: (files) => resolveDepsRoot({ files, fs }),
-    installBrowsers: handleInstallBrowsers,
+    installBrowsers: (innerCtx, innerPattern, envDir) =>
+      handleInstallBrowsers(innerCtx, innerPattern, {
+        envDir,
+        browserDeps: options.browserDeps,
+      }),
     installAndroid: handleInstallAndroid,
   });
 }

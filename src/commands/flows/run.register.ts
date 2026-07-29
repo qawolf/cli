@@ -103,6 +103,10 @@ export function registerFlowsRunCommand(
       "--deps <dir>",
       "Use this prepared dependency directory instead of auto-installing the runtime; or set QAWOLF_RUNTIME_DIR to relocate the managed runtime",
     )
+    .option(
+      "--no-browser-deps",
+      "Skip installing OS-level browser dependencies (Linux --with-deps, which needs root); requires the system libraries to already be present",
+    )
     .addHelpText("after", runExamples)
     .action(
       (

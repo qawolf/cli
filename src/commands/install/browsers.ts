@@ -11,15 +11,17 @@ import { installBrowsers } from "~/domains/install/browsers.js";
 export async function handleInstallBrowsers(
   ctx: CommandContext,
   pattern: string | undefined,
-  envDir?: string,
+  options: { envDir: string | undefined; browserDeps: boolean },
 ): Promise<CommandResult> {
   const cwd = process.cwd();
   const { fs } = ctx;
+  const { envDir, browserDeps } = options;
 
   return installBrowsers(ctx, pattern, {
     cwd,
     spawn: defaultSpawn,
     platform: process.platform,
+    browserDeps,
     expandPatterns: (patterns, dir) =>
       defaultExpandPatterns(patterns, dir ?? cwd, undefined, fs),
     peekFlowMeta: makePeekFlowMeta(fs),
