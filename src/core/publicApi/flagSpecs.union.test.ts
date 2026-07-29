@@ -92,6 +92,36 @@ describe("buildFlagSpecs union inputs", () => {
     expect(name?.required).toBe(false);
   });
 
+  it("rejects unions without a shared literal discriminator", () => {
+    const schema = z.union([
+      z.object({ flowIds: z.array(z.string()) }),
+      z.object({ tagNames: z.array(z.string()) }),
+    ]);
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result).toEqual({
+      ok: false,
+      field: "",
+      reason: "union branches must share a literal discriminator field",
+    });
+  });
+
+  it("rejects unions whose literal values do not distinguish the branches", () => {
+    const schema = z.union([
+      z.object({ version: z.literal("v1"), a: z.string() }),
+      z.object({ version: z.literal("v1"), b: z.string() }),
+    ]);
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result).toEqual({
+      ok: false,
+      field: "",
+      reason: "union branches must share a literal discriminator field",
+    });
+  });
+
   it("rejects union branches that disagree on a field's flag kind", () => {
     const schema = z.discriminatedUnion("type", [
       z.object({ type: z.literal("a"), value: z.string() }),

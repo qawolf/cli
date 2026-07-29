@@ -77,6 +77,25 @@ function mergeUnion(branches: JsonSchema[]): ShapeResult {
       }
     }
   }
+  // The discriminator is a field required in every branch whose literal
+  // values are distinct, so passing it selects exactly one branch. Without
+  // one, flags cannot express which branch an invocation targets.
+  const discriminator = Object.keys(shape.properties).find((field) => {
+    const values = shapes.map((branch) => branch.properties[field]?.const);
+    return (
+      values.every((value) => typeof value === "string") &&
+      new Set(values).size === shapes.length &&
+      shapes.every((branch) => branch.required.has(field))
+    );
+  });
+  if (discriminator === undefined) {
+    return {
+      ok: false,
+      field: "",
+      reason: "union branches must share a literal discriminator field",
+    };
+  }
+
   for (const [field, fieldSchema] of Object.entries(shape.properties)) {
     const occurrences = shapes.filter((branch) => field in branch.properties);
     if (
@@ -85,10 +104,10 @@ function mergeUnion(branches: JsonSchema[]): ShapeResult {
     ) {
       shape.required.add(field);
     }
-    // A literal field present in every branch is the union's discriminator:
-    // surface its values so --help documents which branch each selects.
-    const values = shapes.map((branch) => branch.properties[field]?.const);
-    if (values.every((value) => typeof value === "string")) {
+    // Surface the discriminator's values so --help documents which branch
+    // each selects.
+    if (field === discriminator) {
+      const values = shapes.map((branch) => branch.properties[field]?.const);
       fieldSchema.description = `One of: ${values.join(", ")}`;
     }
   }
