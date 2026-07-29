@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { collectRunFiles, describeRunFilesCheck } from "./collectFiles.js";
+import { collectRunFiles } from "./collectFiles.js";
 import { makeTestDeps } from "./deps.testUtils.js";
 
 describe("collectRunFiles", () => {
@@ -39,39 +39,5 @@ describe("collectRunFiles", () => {
     expect(collected.ok).toBe(false);
     if (collected.ok) return;
     expect(collected.error).toContain("EMFILE");
-  });
-});
-
-describe("describeRunFilesCheck", () => {
-  it("names the entry point that is not among the collected files", () => {
-    expect(
-      describeRunFilesCheck({
-        entryPointPath: "flows/missing.ts",
-        type: "missing-entry-point",
-      }),
-    ).toContain("flows/missing.ts");
-  });
-
-  it("names the largest files when the content cap is broken", () => {
-    expect(
-      describeRunFilesCheck({
-        byteLength: 5_000_000,
-        largest: [{ byteLength: 4_900_000, path: "dist/bundle.js" }],
-        maxByteLength: 4_194_304,
-        type: "too-large",
-      }),
-    ).toContain("dist/bundle.js");
-  });
-
-  // Escaping inflates content on the way out, so this cap can be broken by files
-  // that are inside the content one. The message has to say which.
-  it("says the request encoding is what was too large", () => {
-    expect(
-      describeRunFilesCheck({
-        byteLength: 12_000_000,
-        maxByteLength: 9_437_184,
-        type: "request-too-large",
-      }),
-    ).toContain("encodes to");
   });
 });

@@ -38,8 +38,8 @@ describe("checkRunFiles", () => {
 
   it("refuses an entry point that is not among the collected files", () => {
     expect(checkRunFiles(packageJson, "flows/missing.flow.ts")).toEqual({
-      entryPointPath: "flows/missing.flow.ts",
-      type: "missing-entry-point",
+      path: "flows/missing.flow.ts",
+      type: "missing-file",
     });
   });
 

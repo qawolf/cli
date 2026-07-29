@@ -53,20 +53,36 @@ function streamCalls(base: CommandContext): [unknown, string][] {
     .calls;
 }
 
+/** What `writeScreenshot` was handed, so a test can assert on decoded bytes. */
+export type WrittenScreenshot = { bytes: Uint8Array; path: string };
+
 export function makeTestDeps(
   overrides: Partial<InteractiveRunnerDeps> = {},
-): InteractiveRunnerDeps {
+): InteractiveRunnerDeps & { written: WrittenScreenshot[] } {
   const files: RunFiles = {
     "flow.ts": "export default {};",
     "package.json": "{}",
   };
+  const written: WrittenScreenshot[] = [];
   return {
     collectRunFiles: async () => files,
     cwd: testCwd,
     env: {},
     makeRunnerId: () => "cli-minted",
+    readFile: async (path) => {
+      const content = files[path];
+      if (content === undefined) throw Error(`no such file: ${path}`);
+      return content;
+    },
+    readStdin: async () => "",
     sleep: async () => {},
     store: makeRunnerStore({ cwd: testCwd, fs: makeMemoryFs() }),
+    // The real one decodes base64 before writing; this keeps the decode in the
+    // test's view so an assertion can catch a caller that wrote the string.
+    writeScreenshot: async ({ imageJpegBase64, path }) => {
+      written.push({ bytes: Buffer.from(imageJpegBase64, "base64"), path });
+    },
+    written,
     ...overrides,
   };
 }

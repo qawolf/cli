@@ -1,35 +1,9 @@
 import type { RunFiles } from "@qawolf/api-contracts/v1";
 
 import { errorMessage } from "~/core/errors.js";
-import type { checkRunFiles } from "~/core/interactiveRunner/runFiles.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
-
-/** What to tell a caller about files a run cannot ship. */
-export function describeRunFilesCheck(
-  check: Exclude<ReturnType<typeof checkRunFiles>, { type: "ok" }>,
-): string {
-  switch (check.type) {
-    case "missing-entry-point":
-      return interactiveRunnerMessages.entryPointNotCollected(
-        check.entryPointPath,
-      );
-    case "missing-package-json":
-      return interactiveRunnerMessages.missingPackageJson;
-    case "too-large":
-      return interactiveRunnerMessages.filesTooLarge(
-        check.byteLength,
-        check.maxByteLength,
-        check.largest,
-      );
-    case "request-too-large":
-      return interactiveRunnerMessages.requestTooLarge(
-        check.byteLength,
-        check.maxByteLength,
-      );
-  }
-}
 
 /**
  * Every shippable file under the working directory is read, so any one of them

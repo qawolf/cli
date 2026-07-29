@@ -71,8 +71,9 @@ src/
 │   ├── flows/           # expandPatterns, peekFlowMeta, flowsList, pull/
 │   ├── init/            # init handler + templates
 │   ├── install/         # installBrowsers, installBrowserList
-│   ├── interactiveRunner/ # remote runners on the platform: launch, stop, runFlow, journal
+│   ├── interactiveRunner/ # remote runners: launch, stop, runFlow, journal, act, exec, screenshot
 │   ├── runner/          # the LOCAL execution engine: flowsRun, runWebFlow, runAndroidFlow, worker dispatch + pool
+│   └── updateCheck/     # startUpdateCheck: new-version notice after commands
 │   └── updateCheck/     # startUpdateCheck: new-version notice after commands
 └── commands/            # Thin CLI glue — Commander registration + composite root
     ├── context.ts       # withContext() Commander action wrapper

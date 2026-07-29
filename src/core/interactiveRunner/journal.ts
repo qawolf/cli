@@ -44,7 +44,8 @@ export function countSkippedEntries(
  * status that means "keep waiting".
  *
  * Declared here rather than imported because the payload schemas live in the
- * platform's private journal package while only the envelope is published. This
+ * platform's private journal package while only the envelope is published
+ * (NOVA-1396: publish them, and this file loses its reason to exist). This
  * is the one place the CLI restates a wire shape, and it stays deliberately
  * minimal so that it cannot disagree with a payload that grows fields.
  */

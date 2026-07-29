@@ -98,6 +98,22 @@ describe("--help output", () => {
     expect(helpFor("runner", "events")).toMatchSnapshot();
   });
 
+  it("qawolf runner keepalive", () => {
+    expect(helpFor("runner", "keepalive")).toMatchSnapshot();
+  });
+
+  it("qawolf runner screenshot", () => {
+    expect(helpFor("runner", "screenshot")).toMatchSnapshot();
+  });
+
+  it("qawolf runner act", () => {
+    expect(helpFor("runner", "act")).toMatchSnapshot();
+  });
+
+  it("qawolf runner exec", () => {
+    expect(helpFor("runner", "exec")).toMatchSnapshot();
+  });
+
   it("contains no em-dashes in any help text", () => {
     const paths: string[][] = [
       [],
@@ -116,6 +132,10 @@ describe("--help output", () => {
       ["runner", "stop"],
       ["runner", "run"],
       ["runner", "events"],
+      ["runner", "keepalive"],
+      ["runner", "screenshot"],
+      ["runner", "act"],
+      ["runner", "exec"],
     ];
     for (const path of paths) {
       expect(helpFor(...path)).not.toContain("—");
