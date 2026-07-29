@@ -14,6 +14,10 @@ export type JsonSchema = {
   required?: string[];
   items?: JsonSchema;
   additionalProperties?: JsonSchema | boolean;
+  allOf?: JsonSchema[];
+  oneOf?: JsonSchema[];
+  anyOf?: JsonSchema[];
+  const?: unknown;
 };
 
 export function flagKind(

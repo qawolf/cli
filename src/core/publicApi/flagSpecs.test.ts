@@ -82,6 +82,62 @@ describe("buildFlagSpecs", () => {
     ]);
   });
 
+  it("merges an intersection of object schemas into one flag set", () => {
+    const schema = z
+      .object({ environmentId: z.string().describe("Environment id") })
+      .and(
+        z
+          .object({
+            flowIds: z.array(z.string()).default([]),
+            tagNames: z.array(z.string()).default([]),
+          })
+          .refine((s) => s.flowIds.length + s.tagNames.length > 0),
+      );
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result).toEqual({
+      ok: true,
+      flags: [
+        {
+          field: "environmentId",
+          flag: "--environment-id <value>",
+          description: "Environment id",
+          required: true,
+          kind: "string",
+        },
+        {
+          field: "flowIds",
+          flag: "--flow-ids <values...>",
+          description: "",
+          required: false,
+          kind: "string-array",
+        },
+        {
+          field: "tagNames",
+          flag: "--tag-names <values...>",
+          description: "",
+          required: false,
+          kind: "string-array",
+        },
+      ],
+    });
+  });
+
+  it("rejects intersections whose members share a field", () => {
+    const schema = z
+      .object({ name: z.string() })
+      .and(z.object({ name: z.string().optional() }));
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result).toEqual({
+      ok: false,
+      field: "name",
+      reason: "field appears in multiple intersection members",
+    });
+  });
+
   it("rejects nested object fields", () => {
     const schema = z.object({
       config: z.object({ nested: z.string() }),

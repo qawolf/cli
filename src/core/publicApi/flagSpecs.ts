@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { flagKind, type FlagKind, type JsonSchema } from "./flagKind.js";
+import { toObjectShape } from "./objectShape.js";
 
 export type FlagSpec = {
   // Contract input field this flag maps to, e.g. "environmentId".
@@ -32,24 +33,18 @@ export function buildFlagSpecs(inputSchema: z.ZodType): FlagSpecsResult {
     io: "input",
   }) as JsonSchema;
 
-  if (jsonSchema.type !== "object" || !jsonSchema.properties) {
-    return {
-      ok: false,
-      field: "",
-      reason: "contract input must be an object schema",
-    };
-  }
+  const result = toObjectShape(jsonSchema);
+  if (!result.ok) return result;
 
-  const required = new Set(jsonSchema.required ?? []);
   const flags: FlagSpec[] = [];
-  for (const [field, fieldSchema] of Object.entries(jsonSchema.properties)) {
+  for (const [field, fieldSchema] of Object.entries(result.shape.properties)) {
     const kind = flagKind(fieldSchema);
     if (!kind.ok) return { ok: false, field, reason: kind.reason };
     flags.push({
       field,
       flag: flagUsage(field, kind.kind),
       description: fieldSchema.description ?? "",
-      required: required.has(field),
+      required: result.shape.required.has(field),
       kind: kind.kind,
     });
   }
