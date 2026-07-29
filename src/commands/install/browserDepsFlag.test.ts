@@ -35,6 +35,19 @@ describe("mergedBrowserDeps", () => {
     expect(seen).toBe(false);
   });
 
+  it("is false when the flag is written before the subcommand", async () => {
+    let seen: boolean | undefined;
+    const program = makeInstallLikeProgram((merged) => {
+      seen = merged;
+    });
+
+    await program.parseAsync(["--no-browser-deps", "browsers"], {
+      from: "user",
+    });
+
+    expect(seen).toBe(false);
+  });
+
   it("is true when the flag is not passed at all", async () => {
     let seen: boolean | undefined;
     const program = makeInstallLikeProgram((merged) => {
