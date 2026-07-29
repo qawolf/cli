@@ -7,6 +7,7 @@ import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { handleInstallAndroid } from "./android.js";
 import { handleInstall } from "./all.js";
 import { handleInstallBrowsers } from "./browsers.js";
+import { mergedBrowserDeps } from "./browserDepsFlag.js";
 import { handleInstallClear } from "./clear.js";
 
 const noBrowserDepsDescription =
@@ -61,7 +62,7 @@ Examples:
         return withContext(signals, (ctx) =>
           handleInstallBrowsers(ctx, pattern, {
             envDir: undefined,
-            browserDeps: opts.browserDeps,
+            browserDeps: mergedBrowserDeps(opts.browserDeps, command),
           }),
         )(opts, command);
       },
