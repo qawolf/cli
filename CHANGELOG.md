@@ -1,5 +1,15 @@
 # @qawolf/cli
 
+## 1.4.0
+
+### Minor Changes
+
+- 4a0ac77: Update `@qawolf/api-contracts` to 0.11.0, expanding the generated command surface: `automate`, `environment create|get|listVariableNames`, `issue create|find|get`, `run find|get`, and `tag create` join the existing `run create` and `flows list --remote`.
+
+  Contract inputs expressed as intersections (`run.create`, which now selects flows by id and/or tag) or discriminated unions (`issue.create`, bug vs coverage request) are now mapped to flags: intersection members merge into one flag set, and a union's literal discriminator becomes a required flag (`--type`, documented as "One of: bug, coverageRequest") with branch-specific fields optional. Validation still runs against the real contract schema before any network call, so branch rules and cross-field constraints keep their precise error messages.
+
+- c269262: Add `--no-browser-deps` to `flows run`, `install`, and `install browsers`. On Linux the CLI runs `playwright install --with-deps`, whose OS dependency step shells out to `apt-get` and needs root — on non-root machines without sudo it hangs or fails at a `su` prompt (`playwright install chromium failed: Password:`) even when every system library is already installed. The new flag skips that step and only installs the browsers themselves, so non-root environments with preinstalled system libraries (for example CI images baked with `playwright install-deps`, or a shared `PLAYWRIGHT_BROWSERS_PATH` cache) can run web flows. Default behavior is unchanged; if libraries are missing at launch, Playwright reports the exact packages to install.
+
 ## 1.3.2
 
 ### Patch Changes
