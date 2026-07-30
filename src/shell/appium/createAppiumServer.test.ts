@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
+import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import type {
@@ -9,6 +10,19 @@ import type {
 import { createAppiumServer } from "./createAppiumServer.js";
 
 const noopSignals = makeNoopSignals();
+
+function emitBanner(output: PassThrough) {
+  setTimeout(
+    () =>
+      output.emit(
+        "data",
+        Buffer.from(
+          "Appium REST http interface listener started on http://localhost:9515\n",
+        ),
+      ),
+    10,
+  );
+}
 
 afterEach(() => {
   mock.restore();
@@ -27,14 +41,14 @@ describe("createAppiumServer", () => {
       exitCode: new Promise<number>(() => {}),
     };
     const spawnFn: SpawnAppiumFn =
-      overrides?.spawn ?? ((_bin, _args, _env) => fakeProcess);
+      overrides?.spawn ?? ((_bin, _args, _platform, _env) => fakeProcess);
     const findFreePort: FindFreePortFn = async () => 9515;
-    const resolveAppiumBin = (_envDir: string) => "/fake/appium";
-    return { spawnFn, killFn, output, findFreePort, resolveAppiumBin };
+    const checkExists = () => true;
+    return { spawnFn, killFn, output, findFreePort, checkExists };
   }
 
   it("should resolve with { port, home, stop } when banner is emitted", async () => {
-    const { spawnFn, output, findFreePort, resolveAppiumBin } = makeTestDeps();
+    const { spawnFn, output, findFreePort, checkExists } = makeTestDeps();
     setTimeout(
       () =>
         output.emit(
@@ -47,7 +61,7 @@ describe("createAppiumServer", () => {
     );
 
     const result = await createAppiumServer("/fake/env", noopSignals, {
-      deps: { spawn: spawnFn, findFreePort, resolveAppiumBin },
+      deps: { spawn: spawnFn, findFreePort, checkExists },
       options: { appiumHome: "/tmp/appium-home", startTimeoutMs: 1_000 },
     });
 
@@ -57,13 +71,13 @@ describe("createAppiumServer", () => {
   });
 
   it("should expose exited promise that resolves with the process exit code", async () => {
-    const { findFreePort, resolveAppiumBin } = makeTestDeps();
+    const { findFreePort, checkExists } = makeTestDeps();
     const output = new PassThrough();
     let resolveExit!: (code: number) => void;
     const exitCode = new Promise<number>((res) => {
       resolveExit = res;
     });
-    const spawnFn: SpawnAppiumFn = (_bin, _args, _env) => ({
+    const spawnFn: SpawnAppiumFn = (_bin, _args, _platform, _env) => ({
       output,
       kill: mock(() => {}),
       exitCode,
@@ -80,7 +94,7 @@ describe("createAppiumServer", () => {
     );
 
     const result = await createAppiumServer("/fake/env", noopSignals, {
-      deps: { spawn: spawnFn, findFreePort, resolveAppiumBin },
+      deps: { spawn: spawnFn, findFreePort, checkExists },
       options: { appiumHome: "/tmp/appium-home", startTimeoutMs: 1_000 },
     });
     resolveExit(0);
@@ -89,7 +103,7 @@ describe("createAppiumServer", () => {
   });
 
   it("should call kill when stop is invoked", async () => {
-    const { spawnFn, killFn, output, findFreePort, resolveAppiumBin } =
+    const { spawnFn, killFn, output, findFreePort, checkExists } =
       makeTestDeps();
     setTimeout(
       () =>
@@ -103,7 +117,7 @@ describe("createAppiumServer", () => {
     );
 
     const result = await createAppiumServer("/fake/env", noopSignals, {
-      deps: { spawn: spawnFn, findFreePort, resolveAppiumBin },
+      deps: { spawn: spawnFn, findFreePort, checkExists },
       options: { appiumHome: "/tmp/appium-home", startTimeoutMs: 1_000 },
     });
     result.stop();
@@ -112,9 +126,9 @@ describe("createAppiumServer", () => {
   });
 
   it("should reject when process exits before banner", async () => {
-    const { findFreePort, resolveAppiumBin } = makeTestDeps();
+    const { findFreePort, checkExists } = makeTestDeps();
     const killFn = mock(() => {});
-    const earlyExitSpawn: SpawnAppiumFn = (_bin, _args, _env) => ({
+    const earlyExitSpawn: SpawnAppiumFn = (_bin, _args, _platform, _env) => ({
       output: new PassThrough(),
       kill: killFn,
       exitCode: Promise.resolve(1),
@@ -123,7 +137,7 @@ describe("createAppiumServer", () => {
     let caught: unknown;
     try {
       await createAppiumServer("/fake/env", noopSignals, {
-        deps: { spawn: earlyExitSpawn, findFreePort, resolveAppiumBin },
+        deps: { spawn: earlyExitSpawn, findFreePort, checkExists },
         options: { startTimeoutMs: 5_000 },
       });
     } catch (e) {
@@ -137,9 +151,9 @@ describe("createAppiumServer", () => {
   });
 
   it("should reject when startup banner does not appear within timeout", async () => {
-    const { findFreePort, resolveAppiumBin } = makeTestDeps();
+    const { findFreePort, checkExists } = makeTestDeps();
     const killFn = mock(() => {});
-    const hangingSpawn: SpawnAppiumFn = (_bin, _args, _env) => ({
+    const hangingSpawn: SpawnAppiumFn = (_bin, _args, _platform, _env) => ({
       output: new PassThrough(),
       kill: killFn,
       exitCode: new Promise<number>(() => {}),
@@ -148,7 +162,7 @@ describe("createAppiumServer", () => {
     let caught: unknown;
     try {
       await createAppiumServer("/fake/env", noopSignals, {
-        deps: { spawn: hangingSpawn, findFreePort, resolveAppiumBin },
+        deps: { spawn: hangingSpawn, findFreePort, checkExists },
         options: { startTimeoutMs: 50 },
       });
     } catch (e) {
@@ -159,25 +173,40 @@ describe("createAppiumServer", () => {
     expect(killFn).toHaveBeenCalledTimes(1);
   });
 
-  it("should reject when resolveAppiumBin throws", async () => {
-    const { spawnFn, findFreePort } = makeTestDeps();
-    const failResolve = (_envDir: string) => {
-      throw new Error(
-        "Appium not found in node_modules. Install it by running: qawolf install",
-      );
+  it("should spawn the win32 shim with the win32 platform when platform is win32", async () => {
+    const { output, findFreePort } = makeTestDeps();
+    const spawnCalls: { bin: string; platform: NodeJS.Platform }[] = [];
+    const spawnFn: SpawnAppiumFn = (bin, _args, platform, _env) => {
+      spawnCalls.push({ bin, platform });
+      return { output, kill: mock(() => {}), exitCode: new Promise(() => {}) };
     };
+    const winShim = join("/fake/env", "node_modules", ".bin", "appium.cmd");
+    emitBanner(output);
 
-    let caught: unknown;
-    try {
-      await createAppiumServer("/fake/env", noopSignals, {
-        deps: { spawn: spawnFn, findFreePort, resolveAppiumBin: failResolve },
-      });
-    } catch (e) {
-      caught = e;
-    }
-    expect(caught).toBeInstanceOf(Error);
-    expect((caught as Error).message).toBe(
-      "Appium not found in node_modules. Install it by running: qawolf install",
-    );
+    await createAppiumServer("/fake/env", noopSignals, {
+      deps: { spawn: spawnFn, findFreePort, checkExists: (p) => p === winShim },
+      options: { platform: "win32", startTimeoutMs: 1_000 },
+    });
+
+    expect(spawnCalls).toEqual([{ bin: winShim, platform: "win32" }]);
+  });
+
+  it("should spawn the first candidate when no binary exists on disk", async () => {
+    const { output, findFreePort } = makeTestDeps();
+    const spawnCalls: string[] = [];
+    const spawnFn: SpawnAppiumFn = (bin, _args, _platform, _env) => {
+      spawnCalls.push(bin);
+      return { output, kill: mock(() => {}), exitCode: new Promise(() => {}) };
+    };
+    emitBanner(output);
+
+    await createAppiumServer("/fake/env", noopSignals, {
+      deps: { spawn: spawnFn, findFreePort, checkExists: () => false },
+      options: { platform: "linux", startTimeoutMs: 1_000 },
+    });
+
+    expect(spawnCalls).toEqual([
+      join("/fake/env", "node_modules", ".bin", "appium"),
+    ]);
   });
 });

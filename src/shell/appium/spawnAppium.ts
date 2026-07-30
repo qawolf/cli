@@ -32,8 +32,8 @@ export function buildAppiumSpawn(
   };
 }
 
-export const defaultSpawnAppium: SpawnAppiumFn = (bin, args, env) => {
-  const built = buildAppiumSpawn(bin, args, process.platform, env);
+export const defaultSpawnAppium: SpawnAppiumFn = (bin, args, platform, env) => {
+  const built = buildAppiumSpawn(bin, args, platform, env);
   const child = spawn(built.cmd, built.args, built.options);
   const output = new PassThrough();
   child.stdout?.pipe(output, { end: false });
