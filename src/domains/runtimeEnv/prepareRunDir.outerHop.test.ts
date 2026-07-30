@@ -1,13 +1,12 @@
+import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 import { afterEach, describe, expect, it } from "bun:test";
-import { readlink, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { prepareRunDir } from "./prepareRunDir.js";
-import {
-  makeProjectTree,
-  makeTmpDirTracker,
-} from "./runDirFixtures.testUtils.js";
+import { makeProjectTree } from "./runDirFixtures.testUtils.js";
 import { scaffoldManagedRuntime } from "./scaffoldManagedRuntime.testUtils.js";
+import { expectLinkTarget } from "./symlinkDir.testUtils.js";
 
 const tracker = makeTmpDirTracker("qawolf-rundir-outerhop-test-");
 
@@ -43,7 +42,8 @@ describe("prepareRunDir outer-hop discovery (nested-bundle topology)", () => {
       mode: "symlink",
       nodeModulesDir: join(world, "node_modules"),
     });
-    expect(await readlink(join(result.runDir, "node_modules"))).toBe(
+    await expectLinkTarget(
+      join(result.runDir, "node_modules"),
       join(world, "node_modules"),
     );
   });

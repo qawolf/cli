@@ -42,7 +42,7 @@ const sampleManifest: Manifest = {
   qawolfCommittedAt: undefined,
   envVarsFetchedAt: undefined,
   flows: [
-    { path: "src/login.flow.ts", contentHash: "hash-login" },
+    { path: join("src", "login.flow.ts"), contentHash: "hash-login" },
     { path: "checkout.flow.ts", contentHash: "hash-checkout" },
   ],
 };
@@ -55,7 +55,7 @@ describe("findFlowStamp", () => {
     const stamp = await findFlowStamp(join(envDir, "src/login.flow.ts"));
     expect(stamp).toEqual({
       envId: "env-abc",
-      path: "src/login.flow.ts",
+      path: join("src", "login.flow.ts"),
       contentHash: "hash-login",
     });
   });

@@ -157,8 +157,10 @@ export default { page, helper };
         "dist",
         "web.js",
       );
-      // @qawolf/flows content is kept external at the absolute on-disk path
-      expect(bundle).toContain(`from "${expectedFlowsPath}"`);
+      // @qawolf/flows content is kept external at the absolute on-disk path.
+      // JSON.stringify matches the bundler's escaped import literal (win32
+      // backslashes are emitted doubled).
+      expect(bundle).toContain(`from ${JSON.stringify(expectedFlowsPath)}`);
       expect(bundle).not.toContain("FLOWS_WEB_MARKER");
       // Non-executor dep is inlined into the bundle
       expect(bundle).toContain("INLINE_DEP_MARKER");

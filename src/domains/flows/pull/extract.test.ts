@@ -5,7 +5,6 @@ import {
   readFile,
   readdir,
   rm,
-  symlink,
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -31,9 +30,7 @@ afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
 });
 
-type StagedEntry =
-  | { kind: "file"; name: string; data: Buffer | string }
-  | { kind: "symlink"; name: string; target: string };
+type StagedEntry = { kind: "file"; name: string; data: Buffer | string };
 
 async function buildArchive(
   archivePathArg: string,
@@ -44,11 +41,7 @@ async function buildArchive(
     for (const e of entries) {
       const target = join(stage, e.name);
       await mkdir(join(target, ".."), { recursive: true });
-      if (e.kind === "file") {
-        await writeFile(target, e.data);
-      } else {
-        await symlink(e.target, target);
-      }
+      await writeFile(target, e.data);
     }
     await tar.c(
       { gzip: true, file: archivePathArg, cwd: stage },
@@ -59,11 +52,13 @@ async function buildArchive(
   }
 }
 
-// Minimal raw-tar+gzip writer for fixtures we can't build with tar.c
-// (paths with `..`, absolute names — tar.c rejects/strips them).
+// Minimal raw-tar+gzip writer for fixtures we can't build with tar.c (paths
+// with `..`, absolute names — tar.c rejects/strips them) or from a staging dir
+// (a symlink entry, which win32 refuses to create without Developer Mode).
 async function writeRawTarGzWithName(
   archivePathArg: string,
   name: string,
+  linkTarget?: string,
 ): Promise<void> {
   // 512-byte tar header per POSIX ustar format.
   const header = Buffer.alloc(512);
@@ -75,7 +70,11 @@ async function writeRawTarGzWithName(
   Buffer.from("00000000000\0", "utf8").copy(header, 136); // mtime
   // checksum field 148-155: filled with spaces during checksum computation
   header.fill(0x20, 148, 156);
-  Buffer.from("0", "utf8").copy(header, 156); // typeflag = '0' (regular file)
+  // typeflag: '0' regular file, '2' symlink
+  Buffer.from(linkTarget === undefined ? "0" : "2", "utf8").copy(header, 156);
+  if (linkTarget !== undefined) {
+    Buffer.from(linkTarget, "utf8").copy(header, 157); // linkname (100 bytes)
+  }
   // ustar magic ("ustar\0") + version ("00")
   Buffer.from("ustar\x0000", "binary").copy(header, 257);
 
@@ -185,12 +184,10 @@ describe("extractTarGz safety guards", () => {
   });
 
   it("rejects symlink entries", async () => {
-    await buildArchive(archivePath, [
-      { kind: "file", name: "a.txt", data: "ok" },
-      { kind: "symlink", name: "link", target: "/etc/passwd" },
-    ]);
+    // Name carries no "link" substring, so the match can only come from the guard.
+    await writeRawTarGzWithName(archivePath, "notes.txt", "/etc/passwd");
 
-    await expectRejects(extractTarGz(archivePath, destDir), /symlink|link/i);
+    await expectRejects(extractTarGz(archivePath, destDir), /symlink/i);
   });
 
   it("creates intermediate directories for nested file entries", async () => {

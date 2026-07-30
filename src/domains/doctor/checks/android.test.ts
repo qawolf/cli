@@ -1,19 +1,23 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 
 import type { SpawnFn } from "~/shell/spawn.js";
 
 import { checkAndroid } from "./android.js";
 import {
-  adbPath,
+  adbPath as adbPosixPath,
   baseDeps,
-  emulatorPath,
+  emulatorPath as emulatorPosixPath,
   envDir,
   findResult,
   sdk,
   spawnRouter,
   success,
 } from "./android.fixtures.js";
+
+// checkAndroid joins these with node:path, so match the OS separator on win32.
+const adbPath = adbPosixPath.replaceAll("/", sep);
+const emulatorPath = emulatorPosixPath.replaceAll("/", sep);
 
 afterEach(() => {
   mock.restore();

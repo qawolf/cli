@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import {
   makeBrowser,
@@ -48,7 +49,7 @@ describe("runWebFlow trace", () => {
 
     expect(startMock).toHaveBeenCalledTimes(1);
     const stopArg = stopMock.mock.calls[0]![0];
-    expect(stopArg.path).toContain("/trace/launch.zip");
+    expect(stopArg.path).toBe(join("/tmp/test-trace", "trace", "launch.zip"));
   });
 
   it("should delete the trace file on success when trace is retain-on-failure", async () => {
@@ -74,7 +75,9 @@ describe("runWebFlow trace", () => {
       flowPath: fixturePath("launch"),
     });
 
-    expect(unlinkMock.mock.calls[0]![0]).toContain("/trace/");
+    expect(unlinkMock.mock.calls[0]![0]).toBe(
+      join("/tmp/test-trace", "trace", "launch.zip"),
+    );
   });
 
   it("should not delete the trace file on failure when trace is retain-on-failure", async () => {

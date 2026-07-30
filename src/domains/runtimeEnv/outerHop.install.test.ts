@@ -1,5 +1,5 @@
+import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 import { afterEach, describe, expect, it } from "bun:test";
-import { readlink } from "node:fs/promises";
 import { join } from "node:path";
 
 import { makeDefaultFs } from "~/shell/fs.js";
@@ -9,10 +9,10 @@ import { pinnedPackages } from "./pinnedPackages.js";
 import {
   makeInstallMock,
   makeProjectTree,
-  makeTmpDirTracker,
   seedNodeModules,
 } from "./runDirFixtures.testUtils.js";
 import { scaffoldManagedRuntime } from "./scaffoldManagedRuntime.testUtils.js";
+import { expectLinkTarget } from "./symlinkDir.testUtils.js";
 
 const tracker = makeTmpDirTracker("qawolf-outerhop-install-test-");
 
@@ -86,7 +86,8 @@ describe("populateOuterHop install mode", () => {
     expect(result.mode).toBe("install");
     for (const { name } of pinnedPackages) {
       const segments = name.split("/");
-      expect(await readlink(join(runDir, "node_modules", ...segments))).toBe(
+      await expectLinkTarget(
+        join(runDir, "node_modules", ...segments),
         join(depsRoot, "node_modules", ...segments),
       );
     }
@@ -116,9 +117,10 @@ describe("populateOuterHop install mode", () => {
       install: installMock,
     });
 
-    expect(
-      await readlink(join(runDir, "node_modules", "@qawolf", "flows")),
-    ).toBe(join(depsRoot, "node_modules", "@qawolf", "flows"));
+    await expectLinkTarget(
+      join(runDir, "node_modules", "@qawolf", "flows"),
+      join(depsRoot, "node_modules", "@qawolf", "flows"),
+    );
   });
 
   it("symlink mode: never injects pinned links into the project's own node_modules", async () => {

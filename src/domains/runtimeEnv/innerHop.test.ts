@@ -1,15 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { realpathSync } from "node:fs";
-import {
-  lstat,
-  mkdir,
-  mkdtemp,
-  readlink,
-  rm,
-  writeFile,
-} from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { lstat, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { makeDefaultFs } from "~/shell/fs.js";
@@ -18,29 +9,18 @@ import { populateInnerHop } from "./innerHop.js";
 import { pinnedPackages } from "./pinnedPackages.js";
 import { scaffoldManagedRuntime } from "./scaffoldManagedRuntime.testUtils.js";
 import { createDirSymlink } from "./symlinkDir.js";
+import { expectLinkTarget } from "./symlinkDir.testUtils.js";
+import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 
-const tmpDirs: string[] = [];
+const tracker = makeTmpDirTracker("qawolf-innerhop-test-");
 
-afterEach(async () => {
-  await Promise.all(
-    tmpDirs.map((d) => rm(d, { recursive: true, force: true })),
-  );
-  tmpDirs.length = 0;
-});
-
-async function makeTmpDir(): Promise<string> {
-  const d = realpathSync(
-    await mkdtemp(join(tmpdir(), "qawolf-innerhop-test-")),
-  );
-  tmpDirs.push(d);
-  return d;
-}
+afterEach(() => tracker.cleanup());
 
 describe("populateInnerHop", () => {
   describe("happy path — directory and symlinks", () => {
     it("creates execDir/node_modules as a real directory, not a symlink", async () => {
-      const depsRoot = await makeTmpDir();
-      const execDir = await makeTmpDir();
+      const depsRoot = await tracker.makeTmpDir();
+      const execDir = await tracker.makeTmpDir();
       await scaffoldManagedRuntime(depsRoot);
 
       await populateInnerHop({ depsRoot, execDir, fs: makeDefaultFs() });
@@ -52,8 +32,8 @@ describe("populateInnerHop", () => {
     });
 
     it("creates one symlink per pinned package pointing into the managed tree", async () => {
-      const depsRoot = await makeTmpDir();
-      const execDir = await makeTmpDir();
+      const depsRoot = await tracker.makeTmpDir();
+      const execDir = await tracker.makeTmpDir();
       await scaffoldManagedRuntime(depsRoot);
 
       await populateInnerHop({ depsRoot, execDir, fs: makeDefaultFs() });
@@ -63,15 +43,13 @@ describe("populateInnerHop", () => {
       for (const { name } of pinnedPackages) {
         const segments = name.split("/");
         const linkPath = join(innerModules, ...segments);
-        expect(await readlink(linkPath)).toBe(
-          join(managedModules, ...segments),
-        );
+        await expectLinkTarget(linkPath, join(managedModules, ...segments));
       }
     });
 
     it("creates the @qawolf scope dir with flows, emails, and testkit symlinks", async () => {
-      const depsRoot = await makeTmpDir();
-      const execDir = await makeTmpDir();
+      const depsRoot = await tracker.makeTmpDir();
+      const execDir = await tracker.makeTmpDir();
       await scaffoldManagedRuntime(depsRoot);
 
       await populateInnerHop({ depsRoot, execDir, fs: makeDefaultFs() });
@@ -83,18 +61,16 @@ describe("populateInnerHop", () => {
 
       for (const pkg of ["flows", "emails", "testkit"]) {
         const linkPath = join(scopeDir, pkg);
-        expect(await readlink(linkPath)).toBe(
-          join(managedModules, "@qawolf", pkg),
-        );
+        await expectLinkTarget(linkPath, join(managedModules, "@qawolf", pkg));
       }
     });
   });
 
   describe("realpath resolution — transitive dep shadowing fix", () => {
     it("flow gets outer-hop project version; executor probe gets managed pinned version via realpath", async () => {
-      const runDir = await makeTmpDir();
-      const depsRoot = await makeTmpDir();
-      const projectDir = await makeTmpDir();
+      const runDir = await tracker.makeTmpDir();
+      const depsRoot = await tracker.makeTmpDir();
+      const projectDir = await tracker.makeTmpDir();
 
       // Scaffold all 7 pinned package dirs in the managed runtime
       await scaffoldManagedRuntime(depsRoot);

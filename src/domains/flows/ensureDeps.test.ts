@@ -1,43 +1,29 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { realpathSync } from "node:fs";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { makeDefaultFs } from "~/shell/fs.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { findEnvDir, resolveUniqueEnvDir } from "./ensureDeps.js";
+import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 
 const defaultFs = makeDefaultFs();
 
-const tmpDirs: string[] = [];
+const tracker = makeTmpDirTracker("qawolf-ensuredeps-test-");
 
-afterEach(async () => {
-  await Promise.all(
-    tmpDirs.map((d) => rm(d, { recursive: true, force: true })),
-  );
-  tmpDirs.length = 0;
-});
-
-async function makeTmpDir(): Promise<string> {
-  const d = realpathSync(
-    await mkdtemp(join(tmpdir(), "qawolf-ensuredeps-test-")),
-  );
-  tmpDirs.push(d);
-  return d;
-}
+afterEach(() => tracker.cleanup());
 
 describe("findEnvDir", () => {
   it("should return the directory containing package.json for a direct file", async () => {
-    const root = await makeTmpDir();
+    const root = await tracker.makeTmpDir();
     await writeFile(join(root, "package.json"), "{}");
     const flowPath = join(root, "my.flow.ts");
     expect(findEnvDir(flowPath, defaultFs)).toBe(root);
   });
 
   it("should walk up to find package.json when flow is nested", async () => {
-    const root = await makeTmpDir();
+    const root = await tracker.makeTmpDir();
     await writeFile(join(root, "package.json"), "{}");
     const nested = join(root, "flows", "sub");
     await mkdir(nested, { recursive: true });
@@ -46,7 +32,7 @@ describe("findEnvDir", () => {
   });
 
   it("should return undefined when no package.json exists in any ancestor", async () => {
-    const root = await makeTmpDir();
+    const root = await tracker.makeTmpDir();
     const nested = join(root, "flows");
     await mkdir(nested, { recursive: true });
     const flowPath = join(nested, "my.flow.ts");
@@ -67,7 +53,7 @@ describe("findEnvDir with injected fs", () => {
 
 describe("resolveUniqueEnvDir", () => {
   it("should return the envDir when all files resolve to the same package", async () => {
-    const root = await makeTmpDir();
+    const root = await tracker.makeTmpDir();
     await writeFile(join(root, "package.json"), "{}");
     const nested = join(root, "flows");
     await mkdir(nested, { recursive: true });
@@ -76,7 +62,7 @@ describe("resolveUniqueEnvDir", () => {
   });
 
   it("should return undefined when no files have a package.json ancestor", async () => {
-    const root = await makeTmpDir();
+    const root = await tracker.makeTmpDir();
     const nested = join(root, "flows");
     await mkdir(nested, { recursive: true });
     const files = [join(nested, "a.flow.ts")];
@@ -88,8 +74,8 @@ describe("resolveUniqueEnvDir", () => {
   });
 
   it("should throw when files span multiple packages", async () => {
-    const rootA = await makeTmpDir();
-    const rootB = await makeTmpDir();
+    const rootA = await tracker.makeTmpDir();
+    const rootB = await tracker.makeTmpDir();
     await writeFile(join(rootA, "package.json"), "{}");
     await writeFile(join(rootB, "package.json"), "{}");
     let caughtError: unknown;

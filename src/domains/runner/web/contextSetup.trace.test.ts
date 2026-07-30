@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { initTrace, maybeCleanupTrace, traceFlowPath } from "./contextSetup.js";
 
@@ -7,7 +8,9 @@ afterEach(() => {
 
 describe("traceFlowPath", () => {
   it("should return <outputDir>/trace/<flowName>.zip", () => {
-    expect(traceFlowPath("/out", "my-flow")).toBe("/out/trace/my-flow.zip");
+    expect(traceFlowPath("/out", "my-flow")).toBe(
+      join("/out", "trace", "my-flow.zip"),
+    );
   });
 });
 
@@ -30,8 +33,10 @@ describe("initTrace", () => {
       "my-flow",
     );
     expect(result.traceMode).toBe("on");
-    expect(result.tracePath).toBe("/out/trace/my-flow.zip");
-    expect(mkdirMock).toHaveBeenCalledWith("/out/trace", { recursive: true });
+    expect(result.tracePath).toBe(join("/out", "trace", "my-flow.zip"));
+    expect(mkdirMock).toHaveBeenCalledWith(join("/out", "trace"), {
+      recursive: true,
+    });
   });
 
   it("should return traceMode and tracePath and call mkdir when trace is retain-on-failure", async () => {
@@ -43,8 +48,10 @@ describe("initTrace", () => {
       "my-flow",
     );
     expect(result.traceMode).toBe("retain-on-failure");
-    expect(result.tracePath).toBe("/out/trace/my-flow.zip");
-    expect(mkdirMock).toHaveBeenCalledWith("/out/trace", { recursive: true });
+    expect(result.tracePath).toBe(join("/out", "trace", "my-flow.zip"));
+    expect(mkdirMock).toHaveBeenCalledWith(join("/out", "trace"), {
+      recursive: true,
+    });
   });
 });
 

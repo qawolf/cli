@@ -3,10 +3,14 @@ import { createRunnerDeps } from "./runnerDeps.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 
 describe("createRunnerDeps", () => {
-  it("resolves exitCode to -1 when the binary is missing instead of crashing on an unhandled error event", async () => {
+  it("resolves exitCode to a failure when the binary is missing instead of crashing on an unhandled error event", async () => {
     const deps = createRunnerDeps(makeNoopSignals(), "/tmp/deps");
     const { exitCode } = deps.spawn("__qawolf_nonexistent_binary_xyzzy__", []);
-    expect(await exitCode).toBe(-1);
+    // POSIX surfaces the missing binary as an ENOENT error event (-1); win32
+    // reports it as a cmd.exe exit code (1 or 9009). Pin "failed", not the code.
+    const code = await exitCode;
+    expect(typeof code).toBe("number");
+    expect(code).not.toBe(0);
   });
 
   it("resolves exitCode with the child's exit code on a normal close", async () => {

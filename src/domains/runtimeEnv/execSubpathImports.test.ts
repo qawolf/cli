@@ -1,28 +1,18 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { realpathSync } from "node:fs";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { type Fs, makeDefaultFs } from "~/shell/fs.js";
 
 import { writeExecSubpathImports } from "./execSubpathImports.js";
+import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 
-const tmpDirs: string[] = [];
+const tracker = makeTmpDirTracker("qawolf-subpath-imports-test-");
 
-afterEach(async () => {
-  await Promise.all(
-    tmpDirs.map((d) => rm(d, { recursive: true, force: true })),
-  );
-  tmpDirs.length = 0;
-});
+afterEach(() => tracker.cleanup());
 
-async function makeExecDir(): Promise<string> {
-  const d = realpathSync(
-    await mkdtemp(join(tmpdir(), "qawolf-subpath-imports-test-")),
-  );
-  tmpDirs.push(d);
-  return d;
+function makeExecDir(): Promise<string> {
+  return tracker.makeTmpDir();
 }
 
 type PackageJson = {

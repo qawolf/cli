@@ -1,6 +1,15 @@
 import type { FsDirent, Fs } from "./fs.js";
-import { dirname } from "node:path";
+import { posix } from "node:path";
 import { Readable } from "node:stream";
+
+const dirname = posix.dirname;
+
+// Callers build paths with a literal "/", but the code under test joins with
+// node:path, which emits "\" and a drive prefix on win32. Key every entry in
+// one POSIX form so both spellings name the same entry.
+function toKey(path: string) {
+  return path.replace(/\\/g, "/").replace(/^[A-Za-z]:/, "");
+}
 
 function throwNoEntError(
   path: string,
@@ -38,24 +47,52 @@ export function makeMemoryFs(): Fs {
     if (dir === "/") dirs.add(dir);
   }
 
-  return {
-    async mkdir(path, opts) {
-      if (!opts?.recursive) {
-        const parent = dirname(path);
-        if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "mkdir");
+  function childNames(path: string) {
+    const prefix = path === "/" ? "/" : path + "/";
+    const names = new Set<string>();
+    for (const f of files.keys()) {
+      if (f.startsWith(prefix)) {
+        const segment = f.slice(prefix.length).split("/")[0];
+        if (segment) names.add(segment);
       }
+    }
+    for (const d of dirs) {
+      if (d !== path && d.startsWith(prefix)) {
+        const rel = d.slice(prefix.length);
+        if (!rel.includes("/")) names.add(rel);
+      }
+    }
+    return [...names];
+  }
+
+  // `rawPath` is only for the error message, so it echoes the caller's spelling.
+  function requireParent(
+    path: string,
+    rawPath: string,
+    kind: "mkdir" | "open",
+  ) {
+    const parent = dirname(path);
+    if (parent !== "/" && !dirs.has(parent)) throwNoEntError(rawPath, kind);
+  }
+
+  return {
+    async mkdir(rawPath, opts) {
+      const path = toKey(rawPath);
+      if (!opts?.recursive) requireParent(path, rawPath, "mkdir");
       dirs.add(path);
       if (opts?.recursive) addParents(path);
     },
-    async pathExists(path) {
+    async pathExists(rawPath) {
+      const path = toKey(rawPath);
       return files.has(path) || dirs.has(path);
     },
-    async readFile(path: string) {
-      const data = files.get(path);
-      if (data === undefined) throwNoEntError(path, "open");
+    async readFile(rawPath: string) {
+      const data = files.get(toKey(rawPath));
+      if (data === undefined) throwNoEntError(rawPath, "open");
       return textDecoder.decode(data);
     },
-    async rm(path, opts) {
+    async rm(rawPath, opts) {
+      const path = toKey(rawPath);
       if (files.has(path)) {
         files.delete(path);
         return;
@@ -88,12 +125,13 @@ export function makeMemoryFs(): Fs {
         }
         return;
       }
-      if (!opts?.force) throwNoEntError(path, "rm");
+      if (!opts?.force) throwNoEntError(rawPath, "rm");
     },
-    async stat(path) {
+    async stat(rawPath) {
+      const path = toKey(rawPath);
       const isFile = files.has(path);
       const isDir = dirs.has(path);
-      if (!isFile && !isDir) throwNoEntError(path, "stat");
+      if (!isFile && !isDir) throwNoEntError(rawPath, "stat");
       return {
         isFile: () => isFile,
         isDirectory: () => isDir,
@@ -102,56 +140,31 @@ export function makeMemoryFs(): Fs {
         mtime: new Date(0),
       };
     },
-    async unlink(path) {
-      if (!files.has(path)) throwNoEntError(path, "unlink");
+    async unlink(rawPath) {
+      const path = toKey(rawPath);
+      if (!files.has(path)) throwNoEntError(rawPath, "unlink");
       files.delete(path);
     },
-    async writeFile(path, data, _options) {
-      const parent = dirname(path);
-      if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "open");
+    async writeFile(rawPath, data, _options) {
+      const path = toKey(rawPath);
+      requireParent(path, rawPath, "open");
       files.set(
         path,
         typeof data === "string" ? textEncoder.encode(data) : data,
       );
     },
-    readdir(path) {
-      if (files.has(path)) throwNotDirError(path, "scandir");
-      if (!dirs.has(path)) throwNoEntError(path, "open");
-      const prefix = path === "/" ? "/" : path + "/";
-      const names = new Set<string>();
-      for (const f of files.keys()) {
-        if (f.startsWith(prefix)) {
-          const segment = f.slice(prefix.length).split("/")[0];
-          if (segment) names.add(segment);
-        }
-      }
-      for (const d of dirs) {
-        if (d !== path && d.startsWith(prefix)) {
-          const rel = d.slice(prefix.length);
-          if (!rel.includes("/")) names.add(rel);
-        }
-      }
-      return Promise.resolve([...names]);
+    readdir(rawPath) {
+      const path = toKey(rawPath);
+      if (files.has(path)) throwNotDirError(rawPath, "scandir");
+      if (!dirs.has(path)) throwNoEntError(rawPath, "open");
+      return Promise.resolve(childNames(path));
     },
-    readdirWithTypes(path) {
-      if (files.has(path)) throwNotDirError(path, "scandir");
-      if (!dirs.has(path)) throwNoEntError(path, "open");
-      const prefix = path === "/" ? "/" : path + "/";
-      const names = new Set<string>();
-      for (const f of files.keys()) {
-        if (f.startsWith(prefix)) {
-          const segment = f.slice(prefix.length).split("/")[0];
-          if (segment) names.add(segment);
-        }
-      }
-      for (const d of dirs) {
-        if (d !== path && d.startsWith(prefix)) {
-          const rel = d.slice(prefix.length);
-          if (!rel.includes("/")) names.add(rel);
-        }
-      }
+    readdirWithTypes(rawPath) {
+      const path = toKey(rawPath);
+      if (files.has(path)) throwNotDirError(rawPath, "scandir");
+      if (!dirs.has(path)) throwNoEntError(rawPath, "open");
       return Promise.resolve<FsDirent[]>(
-        [...names].map((name) => {
+        childNames(path).map((name) => {
           const fullPath = joinPath(path, name);
           const isFileSnapshot = files.has(fullPath);
           const isDirSnapshot = dirs.has(fullPath);
@@ -163,19 +176,17 @@ export function makeMemoryFs(): Fs {
         }),
       );
     },
-    rename(oldPath, newPath) {
+    rename(rawOldPath, rawNewPath) {
+      const oldPath = toKey(rawOldPath);
+      const newPath = toKey(rawNewPath);
       if (files.has(oldPath)) {
-        const parent = dirname(newPath);
-        if (parent !== "/" && !dirs.has(parent))
-          throwNoEntError(newPath, "open");
+        requireParent(newPath, rawNewPath, "open");
         files.set(newPath, files.get(oldPath)!);
         files.delete(oldPath);
         return Promise.resolve();
       }
       if (dirs.has(oldPath)) {
-        const parent = dirname(newPath);
-        if (parent !== "/" && !dirs.has(parent))
-          throwNoEntError(newPath, "open");
+        requireParent(newPath, rawNewPath, "open");
         const oldPrefix = oldPath + "/";
         const newPrefix = newPath + "/";
         dirs.delete(oldPath);
@@ -194,42 +205,40 @@ export function makeMemoryFs(): Fs {
         }
         return Promise.resolve();
       }
-      throwNoEntError(oldPath, "open");
+      throwNoEntError(rawOldPath, "open");
     },
     utimes(_path, _atime, _mtime) {
       return Promise.resolve();
     },
-    createReadStream(path) {
-      const data = files.get(path);
-      if (data === undefined) throwNoEntError(path, "open");
+    createReadStream(rawPath) {
+      const data = files.get(toKey(rawPath));
+      if (data === undefined) throwNoEntError(rawPath, "open");
       return Readable.from([data]);
     },
-    async copyFile(source, destination) {
-      const data = files.get(source);
-      if (data === undefined) throwNoEntError(source, "open");
-      const parent = dirname(destination);
-      if (parent !== "/" && !dirs.has(parent))
-        throwNoEntError(destination, "open");
+    async copyFile(rawSource, rawDestination) {
+      const destination = toKey(rawDestination);
+      const data = files.get(toKey(rawSource));
+      if (data === undefined) throwNoEntError(rawSource, "open");
+      requireParent(destination, rawDestination, "open");
       files.set(destination, data.slice());
     },
-    existsSync(path) {
+    existsSync(rawPath) {
+      const path = toKey(rawPath);
       return files.has(path) || dirs.has(path);
     },
-    readFileSync(path) {
-      const data = files.get(path);
-      if (data === undefined) throwNoEntError(path, "open");
+    readFileSync(rawPath) {
+      const data = files.get(toKey(rawPath));
+      if (data === undefined) throwNoEntError(rawPath, "open");
       return textDecoder.decode(data);
     },
-    writeFileSync(path, data) {
-      const parent = dirname(path);
-      if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "open");
+    writeFileSync(rawPath, data) {
+      const path = toKey(rawPath);
+      requireParent(path, rawPath, "open");
       files.set(path, textEncoder.encode(data));
     },
-    mkdirSync(path, opts) {
-      if (!opts?.recursive) {
-        const parent = dirname(path);
-        if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "mkdir");
-      }
+    mkdirSync(rawPath, opts) {
+      const path = toKey(rawPath);
+      if (!opts?.recursive) requireParent(path, rawPath, "mkdir");
       dirs.add(path);
       if (opts?.recursive) addParents(path);
     },

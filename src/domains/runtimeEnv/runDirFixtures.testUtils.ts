@@ -1,35 +1,8 @@
 import { mock } from "bun:test";
-import { realpathSync } from "node:fs";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-/** Tracks temp dirs created by a test file so afterEach can remove them. */
-export type TmpDirTracker = {
-  makeTmpDir(): Promise<string>;
-  track(dir: string): void;
-  cleanup(): Promise<void>;
-};
-
-export function makeTmpDirTracker(prefix: string): TmpDirTracker {
-  const dirs: string[] = [];
-  return {
-    async makeTmpDir() {
-      const d = realpathSync(await mkdtemp(join(tmpdir(), prefix)));
-      dirs.push(d);
-      return d;
-    },
-    track(dir) {
-      dirs.push(dir);
-    },
-    async cleanup() {
-      await Promise.all(
-        dirs.map((d) => rm(d, { recursive: true, force: true })),
-      );
-      dirs.length = 0;
-    },
-  };
-}
+import type { TmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 
 /** Writes <base>/node_modules/<name>/package.json for each package name. */
 export async function seedNodeModules(

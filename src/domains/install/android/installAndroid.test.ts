@@ -134,9 +134,7 @@ describe("installAndroid", () => {
       caught = e;
     }
     expect(caught).toBeInstanceOf(Error);
-    expect((caught as Error).message).toContain(
-      "cmdline-tools/latest/bin/sdkmanager",
-    );
+    expect((caught as Error).message).toContain(sdkManagerPath);
     expect((caught as Error).message).toContain(
       "https://developer.android.com",
     );

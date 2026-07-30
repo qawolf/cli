@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { join } from "node:path";
+import { join, normalize } from "node:path";
 
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import { pinnedPackages } from "~/domains/runtimeEnv/pinnedPackages.js";
@@ -41,7 +41,9 @@ describe("resolveDepsRoot", () => {
     });
 
     expect(result).toEqual({
-      depsRoot: projectDir,
+      // resolveDepsRoot walks up the flow path with node:path, so on win32 it
+      // returns the drive-relative spelling of this POSIX fixture path.
+      depsRoot: normalize(projectDir),
       source: "project",
       installed: false,
     });

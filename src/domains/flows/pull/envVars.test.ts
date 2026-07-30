@@ -18,14 +18,23 @@ afterEach(async () => {
 });
 
 describe("writeEnvFile", () => {
-  it("writes the file at <dir>/.env with mode 0600", async () => {
+  it("writes the file at <dir>/.env", async () => {
     await writeEnvFile(workDir, { TOKEN: "abc", URL: "https://example.com" });
 
     const body = await readFile(join(workDir, ".env"), "utf8");
     expect(body).toBe('TOKEN="abc"\nURL="https://example.com"\n');
-    const stats = await stat(join(workDir, ".env"));
-    expect(stats.mode & 0o777).toBe(0o600);
   });
+
+  // Windows has no POSIX mode bits — it reports 0o666/0o444 whatever mode we pass.
+  it.skipIf(process.platform === "win32")(
+    "writes .env with mode 0600",
+    async () => {
+      await writeEnvFile(workDir, { TOKEN: "abc" });
+
+      const stats = await stat(join(workDir, ".env"));
+      expect(stats.mode & 0o777).toBe(0o600);
+    },
+  );
 
   it("skips writing .env when no vars are present", async () => {
     await writeEnvFile(workDir, {});

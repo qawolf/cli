@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { describe, expect, it } from "bun:test";
 
 import {
@@ -108,7 +109,7 @@ describe("checkFileAssets", () => {
     const [result] = results;
     expect(result?.name).toBe("file-assets");
     expect(result?.status).toBe("warn");
-    expect(result?.detail).toContain("flows/upload.flow.ts");
+    expect(result?.detail).toContain(join("flows", "upload.flow.ts"));
     expect(result?.detail).toContain("QAWOLF_SCREENSHOTS_DIR");
     expect(result?.detail).toContain("QAWOLF_DOWNLOADS_DIR");
     expect(result?.detail).toContain(fileAssetsWarnReasons["file-asset"]);
@@ -162,7 +163,7 @@ describe("checkFileAssets", () => {
       }),
       cwd: "/repo",
     });
-    expect(result?.detail).toMatch(/^flows\/login\.flow\.ts /);
+    expect(result?.detail).toMatch(/^flows[\\/]login\.flow\.ts /);
   });
 
   it("falls back to the absolute path when cwd is the same as the file", async () => {
@@ -189,7 +190,7 @@ describe("checkFileAssets", () => {
     });
     expect(results).toHaveLength(1);
     expect(results[0]?.status).toBe("warn");
-    expect(results[0]?.detail).toContain("flows/locked.flow.ts");
+    expect(results[0]?.detail).toContain(join("flows", "locked.flow.ts"));
     expect(results[0]?.detail).toContain("could not be read");
     expect(results[0]?.detail).toContain("EACCES");
   });

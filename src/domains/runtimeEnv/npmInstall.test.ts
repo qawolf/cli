@@ -68,8 +68,20 @@ describe("spawnNpmInstall", () => {
     const result = await promise;
 
     expect(result.exitCode).toBe(0);
-    expect(calls[0]?.cmd).toBe("npm");
-    expect(calls[0]?.args).toEqual(["install", "--legacy-peer-deps"]);
+    // spawnNpmInstall builds for process.platform: bare npm on posix, npm.cmd
+    // routed through cmd.exe on win32. cwd forwards unchanged on both.
+    if (process.platform === "win32") {
+      expect(calls[0]?.cmd).toBe(process.env["ComSpec"] ?? "cmd.exe");
+      expect(calls[0]?.args).toEqual([
+        "/d",
+        "/s",
+        "/c",
+        '"npm.cmd ^^^"install^^^" ^^^"--legacy-peer-deps^^^""',
+      ]);
+    } else {
+      expect(calls[0]?.cmd).toBe("npm");
+      expect(calls[0]?.args).toEqual(["install", "--legacy-peer-deps"]);
+    }
     expect(calls[0]?.options).toMatchObject({ cwd: "/tmp/env" });
   });
 });

@@ -116,7 +116,7 @@ describe("handleFlowsPull json mode output", () => {
       "manifestPath",
     ]);
     expect(payload).toEqual({
-      assetsDir: expect.stringContaining("/assets"),
+      assetsDir: expect.stringContaining(join(workDir, "assets")),
       assetDownloadedCount: 0,
       assetReusedCount: 0,
       assetSkippedCount: 0,

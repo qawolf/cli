@@ -1,9 +1,12 @@
 import { describe, expect, it } from "bun:test";
+import { resolve } from "node:path";
 
 import { loadConfig, type LoadConfigDeps } from "./loadConfig.js";
 
 const cwd = "/fake/cwd";
-const configPath = "/fake/cwd/qawolf.config.ts";
+// Match how loadConfig derives the path: on win32 resolve() adds a drive letter
+// and backslashes, so a POSIX literal here would never equal the incoming path.
+const configPath = resolve(cwd, "qawolf.config.ts");
 
 function withConfig(value: unknown): LoadConfigDeps {
   return {

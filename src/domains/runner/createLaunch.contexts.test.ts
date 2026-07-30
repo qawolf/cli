@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { createLaunch } from "./createLaunch.js";
 import type { ContextSetupOptions } from "./web/types.js";
@@ -84,7 +85,7 @@ describe("createLaunch flow-created contexts", () => {
     await result.browser.newContext({});
 
     expect(harPaths[0]).toBe("/out/har/flow.har");
-    expect(harPaths[1]).toBe("/out/har/flow-2.har");
+    expect(harPaths[1]).toBe(join("/out/har", "flow-2.har"));
   });
 
   it("should track flow-created contexts for tracing and teardown", async () => {
@@ -162,7 +163,10 @@ describe("createLaunch flow-created contexts", () => {
     await cleanup();
 
     // Contexts stop in creation order: launch()'s context first.
-    expect(stopPaths).toEqual(["/out/trace/flow.zip", "/out/trace/flow-2.zip"]);
+    expect(stopPaths).toEqual([
+      "/out/trace/flow.zip",
+      join("/out/trace", "flow-2.zip"),
+    ]);
   });
 
   it("should track a caller-provided recordHar path instead of the generated one", async () => {
@@ -227,8 +231,8 @@ describe("createLaunch flow-created contexts", () => {
     await result.browser.newContext({});
 
     expect(artifactPaths()).toEqual({
-      harPaths: ["/out/har/flow.har", "/out/har/flow-2.har"],
-      tracePaths: ["/out/trace/flow.zip", "/out/trace/flow-2.zip"],
+      harPaths: ["/out/har/flow.har", join("/out/har", "flow-2.har")],
+      tracePaths: ["/out/trace/flow.zip", join("/out/trace", "flow-2.zip")],
     });
   });
 });

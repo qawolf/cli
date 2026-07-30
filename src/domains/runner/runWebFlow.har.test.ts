@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import type { ContextSetupOptions } from "./web/types.js";
 import {
@@ -56,7 +57,9 @@ describe("runWebFlow HAR", () => {
 
     type Arg = { recordHar?: { path: string; mode: string; content: string } };
     const arg = newContextMock.mock.calls[0]![0] as Arg;
-    expect(arg.recordHar?.path).toContain("/har/launch.har");
+    expect(arg.recordHar?.path).toBe(
+      join("/tmp/test-har", "har", "launch.har"),
+    );
     expect(arg.recordHar?.mode).toBe("minimal");
     expect(arg.recordHar?.content).toBe("omit");
   });
@@ -85,7 +88,9 @@ describe("runWebFlow HAR", () => {
       flowPath: fixturePath("launch"),
     });
 
-    expect(unlinkMock.mock.calls[0]![0]).toContain("/har/");
+    expect(unlinkMock.mock.calls[0]![0]).toBe(
+      join("/tmp/test-har", "har", "launch.har"),
+    );
   });
 
   it("should delete every per-context HAR file on success when har is retain-on-failure", async () => {
@@ -111,8 +116,10 @@ describe("runWebFlow HAR", () => {
     });
 
     const unlinked = unlinkMock.mock.calls.map((c) => c[0]);
-    expect(unlinked).toContain("/tmp/test-har/har/ownContext.har");
-    expect(unlinked).toContain("/tmp/test-har/har/ownContext-2.har");
+    expect(unlinked).toContain(join("/tmp/test-har", "har", "ownContext.har"));
+    expect(unlinked).toContain(
+      join("/tmp/test-har", "har", "ownContext-2.har"),
+    );
   });
 
   it("should not delete the HAR file on failure when har is retain-on-failure", async () => {

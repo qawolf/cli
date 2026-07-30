@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
+import { parseDotenv } from "~/core/dotenv.js";
 import { makeDefaultFs } from "~/shell/fs.js";
 import { readManifest } from "~/shell/manifest/io.js";
 import { buildBundle } from "./pull.fixtures.js";
@@ -58,7 +59,7 @@ describe("stageBundle", () => {
     }
     expect(manifest.flows.map((f) => f.path).sort()).toEqual([
       "checkout.flow.ts",
-      "nested/login.flow.ts",
+      join("nested", "login.flow.ts"),
     ]);
   });
 
@@ -133,11 +134,18 @@ describe("stageBundle", () => {
     });
 
     expect(result.envVarCount).toBe(3);
-    expect(await readFile(join(destDir, ".env"), "utf8")).toBe(
-      `BASE_URL="https://example.com"\nTEAM_STORAGE_DIR="${assetsAbs}"\nTOKEN="abc"\n`,
-    );
-    const stats = await stat(join(destDir, ".env"));
-    expect(stats.mode & 0o777).toBe(0o600);
+    // Assert the parsed values, not the bytes: serializeDotenv escapes the
+    // backslashes in a win32 path, and dotenv.test.ts already pins that format.
+    expect(parseDotenv(await readFile(join(destDir, ".env"), "utf8"))).toEqual({
+      BASE_URL: "https://example.com",
+      TEAM_STORAGE_DIR: assetsAbs,
+      TOKEN: "abc",
+    });
+    // Windows has no POSIX mode bits — it reports 0o666/0o444 whatever mode we pass.
+    if (process.platform !== "win32") {
+      const stats = await stat(join(destDir, ".env"));
+      expect(stats.mode & 0o777).toBe(0o600);
+    }
 
     const manifest = await readManifest(destDir);
     if (manifest === "missing" || manifest === "malformed") {
@@ -193,10 +201,7 @@ describe("stageBundle", () => {
       "const p = `${process.env.TEAM_STORAGE_DIR}/${name}.fig`;\n",
     );
     // The written .env overrides the API's TEAM_STORAGE_DIR with assetsAbs.
-    const envContents = await readFile(join(destDir, ".env"), "utf8");
-    expect(envContents).toContain(`TEAM_STORAGE_DIR="${assetsDir}"`);
-    expect(envContents).not.toContain(
-      `TEAM_STORAGE_DIR="/home/wolf/team-storage"`,
-    );
+    const env = parseDotenv(await readFile(join(destDir, ".env"), "utf8"));
+    expect(env["TEAM_STORAGE_DIR"]).toBe(assetsDir);
   });
 });

@@ -1,28 +1,16 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { realpathSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 import { prepareRunDir } from "./prepareRunDir.js";
 
-const tmpDirs: string[] = [];
+const tracker = makeTmpDirTracker("qawolf-stage-test-");
 
-afterEach(async () => {
-  await Promise.all(
-    tmpDirs.map((d) => rm(d, { recursive: true, force: true })),
-  );
-  tmpDirs.length = 0;
-});
-
-async function makeTmpDir(): Promise<string> {
-  const d = realpathSync(await mkdtemp(join(tmpdir(), "qawolf-stage-test-")));
-  tmpDirs.push(d);
-  return d;
-}
+afterEach(() => tracker.cleanup());
 
 async function makeDepsRoot(): Promise<string> {
-  const depsRoot = await makeTmpDir();
+  const depsRoot = await tracker.makeTmpDir();
   await mkdir(join(depsRoot, "node_modules"), { recursive: true });
   return depsRoot;
 }
@@ -30,10 +18,10 @@ async function makeDepsRoot(): Promise<string> {
 describe("stageFlowFiles — basename collision", () => {
   it("stages files with the same basename from different dirs into distinct subdir paths", async () => {
     const [runRoot, depsRoot, dirA, dirB] = await Promise.all([
-      makeTmpDir(),
+      tracker.makeTmpDir(),
       makeDepsRoot(),
-      makeTmpDir(),
-      makeTmpDir(),
+      tracker.makeTmpDir(),
+      tracker.makeTmpDir(),
     ]);
     const flowA = join(dirA, "flow.ts");
     const flowB = join(dirB, "flow.ts");
@@ -48,7 +36,7 @@ describe("stageFlowFiles — basename collision", () => {
       depsRoot,
       runRoot,
     });
-    tmpDirs.push(result.runDir);
+    tracker.track(result.runDir);
 
     expect(result.files).toHaveLength(2);
     const [pathA, pathB] = result.files;
