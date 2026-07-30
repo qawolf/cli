@@ -5,6 +5,8 @@ import { buildSpawnOptions, spawn as nodeSpawn } from "~/shell/spawn.js";
 
 export type SpawnInstallResult = { exitCode: number; stderr: string };
 
+export type NpmSpawnFn = typeof nodeSpawn;
+
 export function buildNpmInstallSpawn(
   cwd: string,
   platform: NodeJS.Platform,
@@ -23,10 +25,13 @@ export function buildNpmInstallSpawn(
  * exit code and stderr. Uses the richer `stderr || err.message` fallback on
  * spawn error so callers always have diagnostic context.
  */
-export function spawnNpmInstall(cwd: string): Promise<SpawnInstallResult> {
+export function spawnNpmInstall(
+  cwd: string,
+  spawn: NpmSpawnFn = nodeSpawn,
+): Promise<SpawnInstallResult> {
   return new Promise((resolve) => {
     const { cmd, args, options } = buildNpmInstallSpawn(cwd, process.platform);
-    const child = nodeSpawn(cmd, args, options);
+    const child = spawn(cmd, args, options);
     let stderr = "";
     // Drain stdout so a large install (playwright + appium) can't fill the pipe
     // buffer and stall npm; we only need the exit code and stderr.

@@ -23,9 +23,9 @@ export type SpawnFn = (
 //   Do not pass attacker-controlled values in `cmd` or `args`. Node's
 //   cmd.exe escaping protects against shell-metacharacter injection in
 //   args, but only when those args are passed as separate array elements
-//   (never concatenated into `cmd`). Today the only such call site is
-//   playwright.cmd with literal args (browser names, --version); audit any
-//   new .cmd/.bat caller before merging.
+//   (never concatenated into `cmd`). Today the call sites are playwright.cmd
+//   (browser names, --version) and npm.cmd (install, ping), all literal args;
+//   audit any new .cmd/.bat caller before merging.
 export function buildSpawnOptions(
   cmd: string,
   platform: NodeJS.Platform,
