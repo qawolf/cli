@@ -122,6 +122,10 @@ jobs:
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
+      # Temporary: WIZ-11286 and WIZ-11287 need a win32 measurement. Revert once
+      # both tickets are settled.
+      - name: Probe — win32 open questions
+        run: bun test/spawn/win32Probe.mjs
       - run: bun run test
       # build:bundle skips the postbuild hook, which shells out to bash to
       # prepend a shebang and chmod dist/cli.js. Windows needs neither to run
