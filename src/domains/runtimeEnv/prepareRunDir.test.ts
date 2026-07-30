@@ -11,9 +11,11 @@ import { expectLinkTarget } from "./symlinkDir.testUtils.js";
 const tmpDirs: string[] = [];
 
 afterEach(async () => {
-  await Promise.all(
-    tmpDirs.map((d) => rm(d, { recursive: true, force: true })),
-  );
+  // Reverse creation order, one at a time: a later dir can hold a junction into
+  // an earlier one, and win32 fails to remove a junction whose target is gone.
+  for (const d of [...tmpDirs].reverse()) {
+    await rm(d, { recursive: true, force: true });
+  }
   tmpDirs.length = 0;
 });
 

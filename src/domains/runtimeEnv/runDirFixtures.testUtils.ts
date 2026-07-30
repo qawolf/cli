@@ -23,9 +23,12 @@ export function makeTmpDirTracker(prefix: string): TmpDirTracker {
       dirs.push(dir);
     },
     async cleanup() {
-      await Promise.all(
-        dirs.map((d) => rm(d, { recursive: true, force: true })),
-      );
+      // Reverse creation order, one at a time: a later dir can hold a junction
+      // into an earlier one, and win32 fails to remove a junction whose target
+      // is already gone.
+      for (const d of [...dirs].reverse()) {
+        await rm(d, { recursive: true, force: true });
+      }
       dirs.length = 0;
     },
   };
