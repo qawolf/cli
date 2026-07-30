@@ -128,6 +128,18 @@ describe("allPinnedResolved", () => {
     expect(allPinnedResolved(dir, fs, "win32")).toBe(true);
   });
 
+  // CreateProcess reports ENOENT for the extension-less shim, measured on
+  // windows-latest in WIZ-11286.
+  it("returns false on win32 when only the extension-less POSIX shim exists", () => {
+    const fs = makeMemoryFs();
+    for (const { name, version } of pinnedPackages) {
+      seedPackage(fs, name, version);
+    }
+    seedShim(fs, "playwright", "#!/bin/sh");
+
+    expect(allPinnedResolved(dir, fs, "win32")).toBe(false);
+  });
+
   it("ignores a .cmd shim off win32", () => {
     const fs = makeMemoryFs();
     for (const { name, version } of pinnedPackages) {
