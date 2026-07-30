@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import type { AdbFn } from "./adb.js";
-import type { SpawnFn } from "./createAndroidEmulator.js";
+import type { SpawnEmulatorFn } from "./createAndroidEmulator.js";
 import { createAndroidEmulator } from "./createAndroidEmulator.js";
 
 afterEach(() => {
@@ -19,7 +19,7 @@ function makeAdb(bootCompleted = true): AdbFn {
 describe("createAndroidEmulator", () => {
   it("resolves with serial and stop when adb confirms boot", async () => {
     const stopFn = mock(() => {});
-    const spawnFn: SpawnFn = (_bin, _args) => ({ stop: stopFn });
+    const spawnFn: SpawnEmulatorFn = (_bin, _args) => ({ stop: stopFn });
 
     const result = await createAndroidEmulator({
       avdName: "Pixel_4",
@@ -33,7 +33,7 @@ describe("createAndroidEmulator", () => {
 
   it("calls proc stop when stop() is invoked", async () => {
     const stopFn = mock(() => {});
-    const spawnFn: SpawnFn = (_bin, _args) => ({ stop: stopFn });
+    const spawnFn: SpawnEmulatorFn = (_bin, _args) => ({ stop: stopFn });
 
     const result = await createAndroidEmulator({
       avdName: "Pixel_4",
@@ -47,7 +47,7 @@ describe("createAndroidEmulator", () => {
 
   it("kills proc and rethrows when boot times out", async () => {
     const stopFn = mock(() => {});
-    const spawnFn: SpawnFn = (_bin, _args) => ({ stop: stopFn });
+    const spawnFn: SpawnEmulatorFn = (_bin, _args) => ({ stop: stopFn });
     const hangingAdb: AdbFn = async (args) => {
       if (args.includes("wait-for-device")) return { stdout: "" };
       return { stdout: "0\n" }; // never signals boot_completed=1
@@ -71,7 +71,7 @@ describe("createAndroidEmulator", () => {
   });
 
   it("serial uses the provided port", async () => {
-    const spawnFn: SpawnFn = (_bin, _args) => ({ stop: () => {} });
+    const spawnFn: SpawnEmulatorFn = (_bin, _args) => ({ stop: () => {} });
 
     const result = await createAndroidEmulator({
       avdName: "Pixel_7",
@@ -84,7 +84,7 @@ describe("createAndroidEmulator", () => {
 
   it("rejects and kills proc when boot sequence throws", async () => {
     const stopFn = mock(() => {});
-    const spawnFn: SpawnFn = (_bin, _args) => ({ stop: stopFn });
+    const spawnFn: SpawnEmulatorFn = (_bin, _args) => ({ stop: stopFn });
     const failingAdb: AdbFn = async (args) => {
       if (args.includes("wait-for-device")) throw new Error("adb server died");
       return { stdout: "" };
@@ -107,7 +107,7 @@ describe("createAndroidEmulator", () => {
   });
 
   it("does not crash when adb wait-for-device rejects after timeout", async () => {
-    const spawnFn: SpawnFn = (_bin, _args) => ({ stop: () => {} });
+    const spawnFn: SpawnEmulatorFn = (_bin, _args) => ({ stop: () => {} });
     // wait-for-device outlasts the boot timeout, then rejects — simulates adb server
     // dying after Promise.race has already settled with the deadline error.
     const adbWithDelayedRejection: AdbFn = (args) => {

@@ -10,9 +10,12 @@ function androidHome(): string | undefined {
   return process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"];
 }
 
-export type SpawnFn = (bin: string, args: string[]) => { stop: () => void };
+export type SpawnEmulatorFn = (
+  bin: string,
+  args: string[],
+) => { stop: () => void };
 
-const defaultSpawn: SpawnFn = (bin, args) => {
+const defaultSpawnEmulator: SpawnEmulatorFn = (bin, args) => {
   const child = spawn(bin, args, { stdio: "ignore" });
   child.unref();
   return { stop: () => child.kill() };
@@ -73,11 +76,11 @@ function waitForBoot(
 export async function createAndroidEmulator(params: {
   avdName: string;
   port: number;
-  deps?: { spawn?: SpawnFn; adb?: AdbFn };
+  deps?: { spawn?: SpawnEmulatorFn; adb?: AdbFn };
   options?: { bootTimeoutMs?: number };
 }): Promise<{ serial: string; stop: () => void }> {
   const { avdName, port } = params;
-  const spawnFn = params.deps?.spawn ?? defaultSpawn;
+  const spawnFn = params.deps?.spawn ?? defaultSpawnEmulator;
   const adbFn = params.deps?.adb ?? defaultAdb;
   const timeoutMs = params.options?.bootTimeoutMs ?? defaultBootTimeoutMs;
   const serial = `emulator-${port}`;
