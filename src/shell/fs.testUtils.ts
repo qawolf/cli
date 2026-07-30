@@ -38,12 +38,32 @@ export function makeMemoryFs(): Fs {
     if (dir === "/") dirs.add(dir);
   }
 
+  function childNames(path: string) {
+    const prefix = path === "/" ? "/" : path + "/";
+    const names = new Set<string>();
+    for (const f of files.keys()) {
+      if (f.startsWith(prefix)) {
+        const segment = f.slice(prefix.length).split("/")[0];
+        if (segment) names.add(segment);
+      }
+    }
+    for (const d of dirs) {
+      if (d !== path && d.startsWith(prefix)) {
+        const rel = d.slice(prefix.length);
+        if (!rel.includes("/")) names.add(rel);
+      }
+    }
+    return [...names];
+  }
+
+  function requireParent(path: string, kind: "mkdir" | "open") {
+    const parent = dirname(path);
+    if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, kind);
+  }
+
   return {
     async mkdir(path, opts) {
-      if (!opts?.recursive) {
-        const parent = dirname(path);
-        if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "mkdir");
-      }
+      if (!opts?.recursive) requireParent(path, "mkdir");
       dirs.add(path);
       if (opts?.recursive) addParents(path);
     },
@@ -107,8 +127,7 @@ export function makeMemoryFs(): Fs {
       files.delete(path);
     },
     async writeFile(path, data, _options) {
-      const parent = dirname(path);
-      if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "open");
+      requireParent(path, "open");
       files.set(
         path,
         typeof data === "string" ? textEncoder.encode(data) : data,
@@ -117,41 +136,13 @@ export function makeMemoryFs(): Fs {
     readdir(path) {
       if (files.has(path)) throwNotDirError(path, "scandir");
       if (!dirs.has(path)) throwNoEntError(path, "open");
-      const prefix = path === "/" ? "/" : path + "/";
-      const names = new Set<string>();
-      for (const f of files.keys()) {
-        if (f.startsWith(prefix)) {
-          const segment = f.slice(prefix.length).split("/")[0];
-          if (segment) names.add(segment);
-        }
-      }
-      for (const d of dirs) {
-        if (d !== path && d.startsWith(prefix)) {
-          const rel = d.slice(prefix.length);
-          if (!rel.includes("/")) names.add(rel);
-        }
-      }
-      return Promise.resolve([...names]);
+      return Promise.resolve(childNames(path));
     },
     readdirWithTypes(path) {
       if (files.has(path)) throwNotDirError(path, "scandir");
       if (!dirs.has(path)) throwNoEntError(path, "open");
-      const prefix = path === "/" ? "/" : path + "/";
-      const names = new Set<string>();
-      for (const f of files.keys()) {
-        if (f.startsWith(prefix)) {
-          const segment = f.slice(prefix.length).split("/")[0];
-          if (segment) names.add(segment);
-        }
-      }
-      for (const d of dirs) {
-        if (d !== path && d.startsWith(prefix)) {
-          const rel = d.slice(prefix.length);
-          if (!rel.includes("/")) names.add(rel);
-        }
-      }
       return Promise.resolve<FsDirent[]>(
-        [...names].map((name) => {
+        childNames(path).map((name) => {
           const fullPath = joinPath(path, name);
           const isFileSnapshot = files.has(fullPath);
           const isDirSnapshot = dirs.has(fullPath);
@@ -165,17 +156,13 @@ export function makeMemoryFs(): Fs {
     },
     rename(oldPath, newPath) {
       if (files.has(oldPath)) {
-        const parent = dirname(newPath);
-        if (parent !== "/" && !dirs.has(parent))
-          throwNoEntError(newPath, "open");
+        requireParent(newPath, "open");
         files.set(newPath, files.get(oldPath)!);
         files.delete(oldPath);
         return Promise.resolve();
       }
       if (dirs.has(oldPath)) {
-        const parent = dirname(newPath);
-        if (parent !== "/" && !dirs.has(parent))
-          throwNoEntError(newPath, "open");
+        requireParent(newPath, "open");
         const oldPrefix = oldPath + "/";
         const newPrefix = newPath + "/";
         dirs.delete(oldPath);
@@ -207,9 +194,7 @@ export function makeMemoryFs(): Fs {
     async copyFile(source, destination) {
       const data = files.get(source);
       if (data === undefined) throwNoEntError(source, "open");
-      const parent = dirname(destination);
-      if (parent !== "/" && !dirs.has(parent))
-        throwNoEntError(destination, "open");
+      requireParent(destination, "open");
       files.set(destination, data.slice());
     },
     existsSync(path) {
@@ -221,15 +206,11 @@ export function makeMemoryFs(): Fs {
       return textDecoder.decode(data);
     },
     writeFileSync(path, data) {
-      const parent = dirname(path);
-      if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "open");
+      requireParent(path, "open");
       files.set(path, textEncoder.encode(data));
     },
     mkdirSync(path, opts) {
-      if (!opts?.recursive) {
-        const parent = dirname(path);
-        if (parent !== "/" && !dirs.has(parent)) throwNoEntError(path, "mkdir");
-      }
+      if (!opts?.recursive) requireParent(path, "mkdir");
       dirs.add(path);
       if (opts?.recursive) addParents(path);
     },
