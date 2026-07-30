@@ -27,6 +27,12 @@ import type {
   CommandContext,
   CommandResult,
 } from "~/shell/commandContext.js";
+import { fetchLatestVersion } from "~/shell/npmRegistry.js";
+import {
+  startUpdateCheck,
+  type UpdateNotifier,
+} from "~/domains/updateCheck/updateCheck.js";
+import packageJson from "../../package.json" with { type: "json" };
 
 type ContextAction = (ctx: CommandContext) => Promise<CommandResult>;
 type AuthContextAction = (ctx: AuthCommandContext) => Promise<CommandResult>;
@@ -39,6 +45,7 @@ export function buildBaseContext(
   ctx: CommandContext;
   apiBaseUrl: string;
   loggingSystem: LoggingSystem;
+  updateNotifier: UpdateNotifier;
 } {
   const env = process.env;
   const flags = command.optsWithGlobals<GlobalFlags>();
@@ -61,12 +68,22 @@ export function buildBaseContext(
     ...(verboseWrite ? { verboseWrite } : {}),
   });
   const apiBaseUrl = resolveHostUrl(env);
+  const fs = makeDefaultFs();
+  const ui = createUI(outputMode, {
+    clack,
+    ...(verboseTarget ? { verboseTarget } : {}),
+  });
+  const updateNotifier = startUpdateCheck({
+    env,
+    currentVersion: packageJson.version,
+    configDir: getConfigDir(),
+    fs,
+    fetchLatestVersion: () => fetchLatestVersion(packageJson.name),
+    renderNotice: (body, title) => ui.note(body, title),
+  });
   return {
     ctx: {
-      ui: createUI(outputMode, {
-        clack,
-        ...(verboseTarget ? { verboseTarget } : {}),
-      }),
+      ui,
       configDir: getConfigDir(),
       outputMode,
       isInteractive: isInteractive({
@@ -76,10 +93,11 @@ export function buildBaseContext(
       apiBaseUrl,
       signals,
       log: (scope) => loggingSystem.createLogger(scope),
-      fs: makeDefaultFs(),
+      fs,
     },
     apiBaseUrl,
     loggingSystem,
+    updateNotifier,
   };
 }
 
@@ -88,7 +106,10 @@ export function withContext(
   fn: ContextAction,
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
-    const { ctx, loggingSystem } = buildBaseContext(command, signals);
+    const { ctx, loggingSystem, updateNotifier } = buildBaseContext(
+      command,
+      signals,
+    );
     try {
       const result = await fn(ctx);
       if (result !== undefined) {
@@ -100,6 +121,7 @@ export function withContext(
       process.exitCode = 1;
     } finally {
       loggingSystem.flush();
+      await updateNotifier.notifyIfOutdated();
     }
   };
 }
@@ -113,7 +135,7 @@ export function withAuthContext(
   } = {},
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
-    const { ctx, apiBaseUrl, loggingSystem } = buildBaseContext(
+    const { ctx, apiBaseUrl, loggingSystem, updateNotifier } = buildBaseContext(
       command,
       signals,
     );
@@ -127,6 +149,7 @@ export function withAuthContext(
     });
     if (resolved === undefined) {
       loggingSystem.flush();
+      await updateNotifier.notifyIfOutdated();
       return;
     }
 
@@ -150,6 +173,7 @@ export function withAuthContext(
       process.exitCode = 1;
     } finally {
       loggingSystem.flush();
+      await updateNotifier.notifyIfOutdated();
     }
   };
 }
