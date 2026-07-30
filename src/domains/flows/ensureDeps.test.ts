@@ -6,7 +6,7 @@ import { makeDefaultFs } from "~/shell/fs.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { findEnvDir, resolveUniqueEnvDir } from "./ensureDeps.js";
-import { makeTmpDirTracker } from "~/domains/runtimeEnv/runDirFixtures.testUtils.js";
+import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 
 const defaultFs = makeDefaultFs();
 

@@ -10,7 +10,7 @@ import { pinnedPackages } from "./pinnedPackages.js";
 import { scaffoldManagedRuntime } from "./scaffoldManagedRuntime.testUtils.js";
 import { createDirSymlink } from "./symlinkDir.js";
 import { expectLinkTarget } from "./symlinkDir.testUtils.js";
-import { makeTmpDirTracker } from "./runDirFixtures.testUtils.js";
+import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 
 const tracker = makeTmpDirTracker("qawolf-innerhop-test-");
 

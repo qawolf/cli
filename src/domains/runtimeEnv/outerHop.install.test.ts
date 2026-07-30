@@ -1,3 +1,4 @@
+import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 import { afterEach, describe, expect, it } from "bun:test";
 import { join } from "node:path";
 
@@ -8,7 +9,6 @@ import { pinnedPackages } from "./pinnedPackages.js";
 import {
   makeInstallMock,
   makeProjectTree,
-  makeTmpDirTracker,
   seedNodeModules,
 } from "./runDirFixtures.testUtils.js";
 import { scaffoldManagedRuntime } from "./scaffoldManagedRuntime.testUtils.js";

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "bun:test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { makeTmpDirTracker } from "./runDirFixtures.testUtils.js";
+import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 import { prepareRunDir } from "./prepareRunDir.js";
 
 const tracker = makeTmpDirTracker("qawolf-stage-test-");

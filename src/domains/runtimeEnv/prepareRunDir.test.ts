@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "bun:test";
 import { lstat, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { makeTmpDirTracker } from "./runDirFixtures.testUtils.js";
+import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 import { prepareRunDir } from "./prepareRunDir.js";
 import { scaffoldManagedRuntime } from "./scaffoldManagedRuntime.testUtils.js";
 import { expectLinkTarget } from "./symlinkDir.testUtils.js";

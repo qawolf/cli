@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { type Fs, makeDefaultFs } from "~/shell/fs.js";
 
 import { writeExecSubpathImports } from "./execSubpathImports.js";
-import { makeTmpDirTracker } from "./runDirFixtures.testUtils.js";
+import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 
 const tracker = makeTmpDirTracker("qawolf-subpath-imports-test-");
 
