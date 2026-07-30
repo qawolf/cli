@@ -27,6 +27,7 @@ type CheckDeps = {
   readonly envDir: string | undefined;
   readonly resolveAppiumBin: (envDir: string) => string;
   readonly requiredAvds: readonly string[];
+  readonly platform: NodeJS.Platform;
 };
 
 export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
@@ -63,6 +64,7 @@ export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
           envDir: deps.envDir,
           resolveAppiumBin: deps.resolveAppiumBin,
           requiredAvds: deps.requiredAvds,
+          platform: deps.platform,
         })
       : Promise.resolve<CheckResult[]>([]),
   ]);

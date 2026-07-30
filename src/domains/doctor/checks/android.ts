@@ -16,6 +16,7 @@ export type CheckAndroidDeps = {
   readonly envDir: string | undefined;
   readonly resolveAppiumBin: (envDir: string) => string;
   readonly requiredAvds: readonly string[];
+  readonly platform: NodeJS.Platform;
 };
 
 export async function checkAndroid(
@@ -23,9 +24,9 @@ export async function checkAndroid(
 ): Promise<CheckResult[]> {
   const home = checkHome(deps.androidHome, deps.checkExists);
   const [adb, emulator, avds] = await Promise.all([
-    checkAdb(deps.spawn, deps.androidHome),
-    checkEmulatorBin(deps.spawn, deps.androidHome),
-    checkAvds(deps.spawn, deps.androidHome, deps.requiredAvds),
+    checkAdb(deps.spawn, deps.androidHome, deps.platform),
+    checkEmulatorBin(deps.spawn, deps.androidHome, deps.platform),
+    checkAvds(deps.spawn, deps.androidHome, deps.requiredAvds, deps.platform),
   ]);
   const { appium, bin } = checkAppium(
     deps.envDir,

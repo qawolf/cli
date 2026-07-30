@@ -21,3 +21,21 @@ export function adbBin(
   const name = withExeSuffix("adb", platform);
   return home ? join(home, "platform-tools", name) : name;
 }
+
+// cmdline-tools ships each command as a POSIX script plus a .bat wrapper.
+function cmdlineToolsBin(
+  home: string,
+  name: string,
+  platform: NodeJS.Platform,
+): string {
+  const file = platform === "win32" ? `${name}.bat` : name;
+  return join(home, "cmdline-tools", "latest", "bin", file);
+}
+
+export function sdkManagerBin(home: string, platform: NodeJS.Platform): string {
+  return cmdlineToolsBin(home, "sdkmanager", platform);
+}
+
+export function avdManagerBin(home: string, platform: NodeJS.Platform): string {
+  return cmdlineToolsBin(home, "avdmanager", platform);
+}

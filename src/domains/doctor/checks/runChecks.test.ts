@@ -15,6 +15,7 @@ const androidDeps = {
   envDir: undefined,
   resolveAppiumBin: (dir: string) => `${dir}/node_modules/.bin/appium`,
   requiredAvds: [] as readonly string[],
+  platform: "linux" as NodeJS.Platform,
 };
 
 describe("runChecks", () => {

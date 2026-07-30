@@ -1,3 +1,4 @@
+import { adbBin, emulatorBin } from "~/core/androidBins.js";
 import { doctorMessages } from "~/core/messages/index.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
@@ -33,8 +34,9 @@ export function checkHome(
 export async function checkAdb(
   spawn: SpawnFn,
   androidHome: string | undefined,
+  platform: NodeJS.Platform,
 ): Promise<CheckResult> {
-  const bin = androidHome ? `${androidHome}/platform-tools/adb` : "adb";
+  const bin = adbBin(androidHome, platform);
   const result = await spawn(bin, ["--version"]);
   if (result.exitCode < 0) {
     return {
@@ -52,8 +54,9 @@ export async function checkAdb(
 export async function checkEmulatorBin(
   spawn: SpawnFn,
   androidHome: string | undefined,
+  platform: NodeJS.Platform,
 ): Promise<CheckResult> {
-  const bin = androidHome ? `${androidHome}/emulator/emulator` : "emulator";
+  const bin = emulatorBin(androidHome, platform);
   const result = await spawn(bin, ["-version"]);
   if (result.exitCode < 0) {
     return {
@@ -79,9 +82,10 @@ export async function checkAvds(
   spawn: SpawnFn,
   androidHome: string | undefined,
   requiredAvds: readonly string[],
+  platform: NodeJS.Platform,
 ): Promise<CheckResult[]> {
   if (requiredAvds.length === 0) return [];
-  const bin = androidHome ? `${androidHome}/emulator/emulator` : "emulator";
+  const bin = emulatorBin(androidHome, platform);
   const result = await spawn(bin, ["-list-avds"]);
   if (result.exitCode < 0) {
     return [
