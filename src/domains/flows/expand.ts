@@ -1,5 +1,5 @@
 import type { Fs } from "~/shell/fs.js";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { glob } from "tinyglobby";
 import { extractFlowMeta, type PeekFlowMetaFn } from "~/core/flowMeta.js";
 import type { Logger } from "~/shell/logger.js";
@@ -44,7 +44,11 @@ export async function expandPatterns(
       cwd: root,
       absolute: true,
     });
-    for (const file of matches) {
+    for (const match of matches) {
+      // tinyglobby emits forward slashes even on win32; the rest of the CLI
+      // builds paths with node:path. prepareRunDir's remapPath compares the
+      // two forms, so canonicalize here.
+      const file = resolve(match);
       seen.add(file);
       logger?.trace(`found: ${file}`);
     }
