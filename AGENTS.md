@@ -32,15 +32,15 @@ Tests use Bun's test runner. Run a single test file with `bun run test <path>`. 
 src/
 ├── main.ts              # Entry point — createProgram().parse()
 ├── core/                # Pure functions and types — zero I/O
+│   ├── androidBins.ts   # Android SDK binary paths per platform
 │   ├── androidTargets.ts # Android target parsing helpers
-│   ├── appiumBins.ts    # appiumCliCandidates
 │   ├── batchMap.ts      # bounded-concurrency async map
 │   ├── errors.ts        # errorMessage, isNoEntError
 │   ├── flowMeta.ts      # extractFlowMeta, targetToBrowser, flowBasename
 │   ├── messages/        # user-facing strings (auth, doctor, flows, init, install, runner)
+│   ├── nodeModulesBins.ts # node_modules/.bin shim candidates per platform
 │   ├── paths.ts         # getConfigDir
 │   ├── patternArgs.ts   # CLI pattern argument parsing
-│   ├── playwrightBins.ts # playwrightCliCandidates
 │   ├── pluralize.ts     # pluralize
 │   ├── sleep.ts         # sleep
 │   └── types.ts         # BrowserName, VideoMode, TraceMode, HarMode, TestCounts

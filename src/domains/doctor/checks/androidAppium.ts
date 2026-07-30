@@ -2,8 +2,8 @@ import { join } from "node:path";
 
 import envPaths from "env-paths";
 
-import { appiumCliCandidates } from "~/core/appiumBins.js";
 import { doctorMessages } from "~/core/messages/index.js";
+import { appiumCliCandidates } from "~/core/nodeModulesBins.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 

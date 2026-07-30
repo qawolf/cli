@@ -1,5 +1,5 @@
 import { doctorMessages } from "~/core/messages/index.js";
-import { playwrightCliCandidates } from "~/core/playwrightBins.js";
+import { playwrightCliCandidates } from "~/core/nodeModulesBins.js";
 import type { SpawnFn } from "~/shell/spawn.js";
 
 import type { CheckResult } from "~/domains/doctor/types.js";
