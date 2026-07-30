@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
+import { join } from "node:path";
+
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext } from "~/shell/commandContext.js";
 import { installUiautomator2Driver } from "./driver.js";
@@ -7,7 +9,8 @@ afterEach(() => {
   mock.restore();
 });
 
-const appiumBinPath = "/env/node_modules/.bin/appium";
+const envDir = "/env";
+const appiumBinPath = join(envDir, "node_modules", ".bin", "appium");
 const success: SpawnResult = { exitCode: 0, stdout: "", stderr: "" };
 
 type SpawnOpts = Parameters<SpawnFn>[2];
@@ -43,7 +46,7 @@ function makeCtx(): CommandContext {
 }
 
 function makeDeps(spawn: SpawnFn) {
-  return { spawn, appiumBinPath, platform: "linux" as NodeJS.Platform };
+  return { spawn, envDir, platform: "linux" as NodeJS.Platform };
 }
 
 describe("installUiautomator2Driver", () => {

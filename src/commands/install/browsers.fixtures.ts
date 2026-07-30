@@ -1,11 +1,13 @@
 import { mock } from "bun:test";
+import { join } from "node:path";
 
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import { makeCtx, makeFakeUI } from "~/shell/commandContext.testUtils.js";
 
 import type { InstallBrowsersDeps } from "~/domains/install/browsers.js";
 
-export const fakeCli = "/fake/node_modules/.bin/playwright";
+export const envDir = "/fake";
+export const fakeCli = join(envDir, "node_modules", ".bin", "playwright");
 
 export const ok: SpawnResult = { exitCode: 0, stdout: "", stderr: "" };
 
@@ -47,7 +49,8 @@ export function makeDeps(overrides: DepsOverrides): InstallBrowsersDeps {
         target: metaByFile[file]?.target,
       }),
     ),
-    resolvePlaywrightCliPath: async () => fakeCli,
+    checkExists: () => true,
+    resolveDepsRoot: async () => envDir,
   };
 }
 

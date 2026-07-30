@@ -31,12 +31,11 @@ export function readInstalledVersion(
 
 /**
  * Returns true when every pinned package is installed at its exact pinned
- * version AND the .bin/playwright shim exists (required by resolvePlaywrightCli
- * and installBrowserList).
+ * version AND the .bin/playwright shim exists (required by installBrowserList).
  */
 export function allPinnedResolved(dir: string, fs: Fs): boolean {
   // npm/bun create an extension-less POSIX shim and a .cmd wrapper on Windows;
-  // either one satisfies resolvePlaywrightCli, so accept both names.
+  // either one satisfies playwrightCliCandidates, so accept both names.
   const binDir = join(dir, "node_modules", ".bin");
   const hasPlaywrightShim =
     fs.existsSync(join(binDir, "playwright")) ||

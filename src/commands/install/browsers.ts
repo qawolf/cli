@@ -5,7 +5,6 @@ import {
 import { resolveDepsRoot } from "~/commands/resolveDepsRoot.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
-import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { installBrowsers } from "~/domains/install/browsers.js";
 
 export async function handleInstallBrowsers(
@@ -25,10 +24,8 @@ export async function handleInstallBrowsers(
     expandPatterns: (patterns, dir) =>
       defaultExpandPatterns(patterns, dir ?? cwd, undefined, fs),
     peekFlowMeta: makePeekFlowMeta(fs),
-    resolvePlaywrightCliPath: async (files) => {
-      const depsRoot =
-        envDir ?? (await resolveDepsRoot({ files, fs })).depsRoot;
-      return resolvePlaywrightCli(depsRoot, process.platform);
-    },
+    checkExists: (path) => fs.existsSync(path),
+    resolveDepsRoot: async (files) =>
+      envDir ?? (await resolveDepsRoot({ files, fs })).depsRoot,
   });
 }

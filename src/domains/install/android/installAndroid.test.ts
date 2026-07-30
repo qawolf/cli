@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
+import { join } from "node:path";
+
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext } from "~/shell/commandContext.js";
 import { installAndroid } from "./index.js";
@@ -8,9 +10,9 @@ afterEach(() => {
 });
 
 const sdk = "/sdk";
-const sdkManagerPath = `${sdk}/cmdline-tools/latest/bin/sdkmanager`;
-const avdManagerPath = `${sdk}/cmdline-tools/latest/bin/avdmanager`;
-const appiumBinPath = "/cwd/node_modules/.bin/appium";
+const binDir = join(sdk, "cmdline-tools", "latest", "bin");
+const sdkManagerPath = join(binDir, "sdkmanager");
+const appiumBinPath = join("/cwd", "node_modules", ".bin", "appium");
 
 const success: SpawnResult = { exitCode: 0, stdout: "", stderr: "" };
 
@@ -61,8 +63,6 @@ function makeDeps(
     androidHome: sdk,
     checkExists: overrides.checkExists ?? (() => false),
     platform: "linux" as NodeJS.Platform,
-    sdkManagerPath,
-    avdManagerPath,
     expandPatterns: overrides.expandPatterns ?? (async () => ["/flow.ts"]),
     peekFlowMeta:
       overrides.peekFlowMeta ??
@@ -71,11 +71,32 @@ function makeDeps(
         target: "Android - Pixel 9 (Android 15)",
       })),
     resolveDepsRoot: async () => "/cwd",
-    resolveAppiumBin: () => appiumBinPath,
   };
 }
 
 describe("installAndroid", () => {
+  it("spawns the .bat and .cmd wrappers when the platform is win32", async () => {
+    const ctx = makeCtx();
+    const spawn = makeSpawn();
+    const deps = {
+      ...makeDeps({ spawn: spawn.fn }),
+      platform: "win32" as const,
+    };
+
+    await installAndroid(ctx, undefined, deps);
+
+    const spawned = spawn.calls.map((call) => call[0]);
+    expect(spawned).toContain(
+      join(sdk, "cmdline-tools", "latest", "bin", "sdkmanager.bat"),
+    );
+    expect(spawned).toContain(
+      join(sdk, "cmdline-tools", "latest", "bin", "avdmanager.bat"),
+    );
+    expect(spawned).toContain(
+      join("/cwd", "node_modules", ".bin", "appium.cmd"),
+    );
+  });
+
   it("should return void and log info when no Android flows are found", async () => {
     const ctx = makeCtx();
     const { fn: spawn, calls } = makeSpawn();

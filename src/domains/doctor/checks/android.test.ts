@@ -8,6 +8,7 @@ import {
   adbPath,
   baseDeps,
   emulatorPath,
+  envDir,
   findResult,
   sdk,
   spawnRouter,
@@ -194,5 +195,14 @@ describe("checkAndroid: Windows binary names", () => {
     const spawned = spawn.mock.calls.map((call) => call[0]);
     expect(spawned).toContain(join(sdk, "platform-tools", "adb.exe"));
     expect(spawned).toContain(join(sdk, "emulator", "emulator.exe"));
+  });
+
+  it("launches appium.cmd on win32", async () => {
+    const spawn = mock<SpawnFn>(() => Promise.resolve(success));
+    await checkAndroid(baseDeps({ spawn, platform: "win32" }));
+    const spawned = spawn.mock.calls.map((call) => call[0]);
+    expect(spawned).toContain(
+      join(envDir, "node_modules", ".bin", "appium.cmd"),
+    );
   });
 });

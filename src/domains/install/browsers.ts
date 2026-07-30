@@ -1,6 +1,7 @@
 import { targetToBrowser, type PeekFlowMetaFn } from "~/core/flowMeta.js";
 import { installMessages } from "~/core/messages/index.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
+import { playwrightCliCandidates } from "~/core/playwrightBins.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { BrowserName } from "~/core/types.js";
@@ -17,7 +18,9 @@ export type InstallBrowsersDeps = {
     cwd?: string,
   ) => Promise<string[]>;
   readonly peekFlowMeta: PeekFlowMetaFn;
-  readonly resolvePlaywrightCliPath: (files: string[]) => Promise<string>;
+  readonly checkExists: (path: string) => boolean;
+  /** Resolves the dependency root (override / project / managed) from expanded flow files. */
+  readonly resolveDepsRoot: (files: string[]) => Promise<string>;
 };
 
 export type InstallBrowserListDeps = {
@@ -25,7 +28,8 @@ export type InstallBrowserListDeps = {
   readonly platform: NodeJS.Platform;
   /** When false, skip Playwright's OS-level dependency install (Linux `--with-deps`). */
   readonly browserDeps: boolean;
-  readonly playwrightCliPath: string;
+  readonly envDir: string;
+  readonly checkExists: (path: string) => boolean;
 };
 
 export async function installBrowserList(
@@ -33,12 +37,17 @@ export async function installBrowserList(
   browsers: BrowserName[],
   deps: InstallBrowserListDeps,
 ): Promise<void> {
+  const cliPath = playwrightCliCandidates(deps.envDir, deps.platform).find(
+    deps.checkExists,
+  );
+  if (!cliPath) throw new Error(installMessages.playwrightNotFound);
+
   await ctx.ui.withProgress(
     browsers.map((browser) => ({
       message: installMessages.installingBrowser(browser),
       task: async () => {
         const args = buildArgs(browser, deps.platform, deps.browserDeps);
-        const result = await deps.spawn(deps.playwrightCliPath, args, {
+        const result = await deps.spawn(cliPath, args, {
           platform: deps.platform,
         });
         if (result.exitCode !== 0) {
@@ -64,12 +73,12 @@ export async function installBrowsers(
     return;
   }
 
-  const playwrightCliPath = await deps.resolvePlaywrightCliPath(files);
   await installBrowserList(ctx, browsers, {
     spawn: deps.spawn,
     platform: deps.platform,
     browserDeps: deps.browserDeps,
-    playwrightCliPath,
+    envDir: await deps.resolveDepsRoot(files),
+    checkExists: deps.checkExists,
   });
 }
 

@@ -20,12 +20,10 @@ type CheckDeps = {
   readonly flowFiles: readonly string[];
   readonly readFile: (path: string) => Promise<string>;
   readonly cwd: string;
-  readonly playwrightCliPath: string | undefined;
   readonly runAndroidChecks: boolean;
   readonly androidHome: string | undefined;
   readonly checkExists: (path: string) => boolean;
   readonly envDir: string | undefined;
-  readonly resolveAppiumBin: (envDir: string) => string;
   readonly requiredAvds: readonly string[];
   readonly platform: NodeJS.Platform;
 };
@@ -46,8 +44,9 @@ export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
     }),
     checkPlaywright({
       spawn: deps.spawn,
-      playwrightCliPath: deps.playwrightCliPath,
+      envDir: deps.envDir,
       platform: deps.platform,
+      checkExists: deps.checkExists,
     }),
     checkApiKey({ apiKey: deps.apiKey }),
     checkApiUrl({ fetch: deps.fetch, apiBaseUrl: deps.apiBaseUrl }),
@@ -63,7 +62,6 @@ export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
           androidHome: deps.androidHome,
           checkExists: deps.checkExists,
           envDir: deps.envDir,
-          resolveAppiumBin: deps.resolveAppiumBin,
           requiredAvds: deps.requiredAvds,
           platform: deps.platform,
         })

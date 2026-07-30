@@ -18,9 +18,6 @@ export type InstallAndroidDeps = {
   readonly arch: NodeJS.Architecture;
   readonly androidHome: string;
   readonly checkExists: (path: string) => boolean;
-  readonly sdkManagerPath: string;
-  readonly avdManagerPath: string;
-  /** Must match the platform that resolved the sdkmanager, avdmanager and appium paths. */
   readonly platform: NodeJS.Platform;
   readonly expandPatterns: (
     patterns: string[],
@@ -29,8 +26,6 @@ export type InstallAndroidDeps = {
   readonly peekFlowMeta: PeekFlowMetaFn;
   /** Resolves the dependency root (override / project / managed) from expanded flow files. */
   readonly resolveDepsRoot: (files: string[]) => Promise<string>;
-  /** Resolves the appium binary path from an env dir. */
-  readonly resolveAppiumBin: (envDir: string) => string;
 };
 
 export async function installAndroid(
@@ -51,17 +46,14 @@ export async function installAndroid(
 
   await installAvds(ctx, specs, {
     spawn: deps.spawn,
-    sdkManagerPath: deps.sdkManagerPath,
-    avdManagerPath: deps.avdManagerPath,
     androidHome: deps.androidHome,
     checkExists: deps.checkExists,
     platform: deps.platform,
   });
 
-  const depsRoot = await deps.resolveDepsRoot(files);
   await installUiautomator2Driver(ctx, {
     spawn: deps.spawn,
-    appiumBinPath: deps.resolveAppiumBin(depsRoot),
+    envDir: await deps.resolveDepsRoot(files),
     platform: deps.platform,
   });
 

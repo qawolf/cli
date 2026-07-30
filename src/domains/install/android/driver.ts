@@ -1,14 +1,14 @@
 import { join } from "node:path";
 import envPaths from "env-paths";
 import type { CommandContext } from "~/shell/commandContext.js";
+import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
 import type { SpawnFn } from "~/shell/spawn.js";
 import { installMessages } from "~/core/messages/index.js";
 import { appiumUiautomator2DriverVersion } from "~/generated/dependencyVersions.js";
 
 export type InstallDriverDeps = {
   readonly spawn: SpawnFn;
-  readonly appiumBinPath: string;
-  /** Must match the platform that resolved appiumBinPath. */
+  readonly envDir: string;
   readonly platform: NodeJS.Platform;
 };
 
@@ -22,9 +22,11 @@ export async function installUiautomator2Driver(
   ctx: CommandContext,
   deps: InstallDriverDeps,
 ): Promise<void> {
+  const appiumBinPath = resolveAppiumBin(deps.envDir, deps.platform);
+
   // Check whether the driver is already installed before attempting install.
   const listResult = await deps.spawn(
-    deps.appiumBinPath,
+    appiumBinPath,
     ["driver", "list", "--installed"],
     { env: appiumEnv, platform: deps.platform },
   );
@@ -36,7 +38,7 @@ export async function installUiautomator2Driver(
 
   ctx.ui.step(installMessages.android.installingUiautomator2);
   const installResult = await deps.spawn(
-    deps.appiumBinPath,
+    appiumBinPath,
     ["driver", "install", `uiautomator2@${appiumUiautomator2DriverVersion}`],
     { env: appiumEnv, platform: deps.platform },
   );

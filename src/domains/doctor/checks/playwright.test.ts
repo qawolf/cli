@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
+import { join } from "node:path";
 
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 
@@ -12,23 +13,79 @@ function spawnReturning(result: SpawnResult): SpawnFn {
   return mock<SpawnFn>(() => Promise.resolve(result));
 }
 
-const fakeCli = "/fake/node_modules/.bin/playwright";
+const envDir = "/fake";
+const fakeCli = join(envDir, "node_modules", ".bin", "playwright");
 
 const checkDeps = (spawn: SpawnFn) => ({
   spawn,
-  playwrightCliPath: fakeCli,
+  envDir,
   platform: "linux" as NodeJS.Platform,
+  checkExists: () => true,
 });
 
 describe("checkPlaywright", () => {
-  it("fails immediately when playwrightCliPath is null (resolution failure)", async () => {
+  it("spawns the .cmd shim when the platform is win32", async () => {
+    const spawn = spawnReturning({
+      exitCode: 0,
+      stdout: "Version 1.49.1\n",
+      stderr: "",
+    });
+    const r = await checkPlaywright({
+      spawn,
+      envDir,
+      platform: "win32",
+      checkExists: () => true,
+    });
+    expect(r.status).toBe("pass");
+    expect(spawn).toHaveBeenCalledWith(
+      join(envDir, "node_modules", ".bin", "playwright.cmd"),
+      ["--version"],
+      { platform: "win32" },
+    );
+  });
+
+  it("falls back to the extension-less shim on win32 when .cmd is missing", async () => {
+    const spawn = spawnReturning({
+      exitCode: 0,
+      stdout: "Version 1.49.1\n",
+      stderr: "",
+    });
+    const r = await checkPlaywright({
+      spawn,
+      envDir,
+      platform: "win32",
+      checkExists: (path) => !path.endsWith(".cmd"),
+    });
+    expect(r.status).toBe("pass");
+    expect(spawn).toHaveBeenCalledWith(fakeCli, ["--version"], {
+      platform: "win32",
+    });
+  });
+
+  it("fails immediately when there is no env dir to resolve from", async () => {
     const spawn = mock<SpawnFn>(() =>
       Promise.resolve({ exitCode: 0, stdout: "", stderr: "" }),
     );
     const r = await checkPlaywright({
       spawn,
-      playwrightCliPath: undefined,
+      envDir: undefined,
       platform: "linux",
+      checkExists: () => true,
+    });
+    expect(r.status).toBe("fail");
+    expect(r.detail).toContain("Could not find");
+    expect(spawn).not.toHaveBeenCalled();
+  });
+
+  it("fails immediately when no candidate shim exists", async () => {
+    const spawn = mock<SpawnFn>(() =>
+      Promise.resolve({ exitCode: 0, stdout: "", stderr: "" }),
+    );
+    const r = await checkPlaywright({
+      spawn,
+      envDir,
+      platform: "linux",
+      checkExists: () => false,
     });
     expect(r.status).toBe("fail");
     expect(r.detail).toContain("Could not find");

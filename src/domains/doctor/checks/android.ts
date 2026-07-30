@@ -14,7 +14,6 @@ export type CheckAndroidDeps = {
   readonly androidHome: string | undefined;
   readonly checkExists: (path: string) => boolean;
   readonly envDir: string | undefined;
-  readonly resolveAppiumBin: (envDir: string) => string;
   readonly requiredAvds: readonly string[];
   readonly platform: NodeJS.Platform;
 };
@@ -30,7 +29,7 @@ export async function checkAndroid(
   ]);
   const { appium, bin } = checkAppium(
     deps.envDir,
-    deps.resolveAppiumBin,
+    deps.platform,
     deps.checkExists,
   );
   const uiautomator2 = await checkUiautomator2(deps.spawn, bin, deps.platform);

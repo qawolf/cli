@@ -9,12 +9,10 @@ import type { CheckResult } from "~/domains/doctor/types.js";
 import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
 import { expandPatterns, makePeekFlowMeta } from "~/domains/flows/expand.js";
 import { resolveDepsRootIfPresent } from "~/domains/runtimeEnv/index.js";
-import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
 import {
   type CommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
-import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 
 type HandleDoctorOpts = { readonly all: boolean };
@@ -46,14 +44,6 @@ export async function handleDoctor(
     projectDir !== undefined ? { projectDir } : {},
     fs,
   );
-  let playwrightCliPath: string | undefined;
-  try {
-    playwrightCliPath = envDir
-      ? resolvePlaywrightCli(envDir, process.platform)
-      : undefined;
-  } catch {
-    playwrightCliPath = undefined;
-  }
 
   const resolved = await resolveApiKey(ctx.configDir, fs);
 
@@ -79,12 +69,10 @@ export async function handleDoctor(
     flowFiles,
     readFile: (path) => ctx.fs.readFile(path),
     cwd,
-    playwrightCliPath,
     runAndroidChecks,
     androidHome: process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"],
     checkExists: (path: string) => ctx.fs.existsSync(path),
     envDir,
-    resolveAppiumBin: (dir) => resolveAppiumBin(dir, process.platform),
     requiredAvds,
     platform: process.platform,
   });

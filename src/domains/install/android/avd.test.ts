@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
+import { join } from "node:path";
+
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext } from "~/shell/commandContext.js";
 import { installAvds } from "./avd.js";
@@ -8,8 +10,8 @@ afterEach(() => {
 });
 
 const sdk = "/sdk";
-const sdkManagerPath = `${sdk}/cmdline-tools/latest/bin/sdkmanager`;
-const avdManagerPath = `${sdk}/cmdline-tools/latest/bin/avdmanager`;
+const binDir = join(sdk, "cmdline-tools", "latest", "bin");
+const sdkManagerPath = join(binDir, "sdkmanager");
 
 const success: SpawnResult = { exitCode: 0, stdout: "", stderr: "" };
 
@@ -55,8 +57,6 @@ function makeDeps(
 ) {
   return {
     spawn: overrides.spawn ?? makeSpawn().fn,
-    sdkManagerPath,
-    avdManagerPath,
     androidHome: sdk,
     checkExists: overrides.checkExists ?? (() => false),
     platform: "linux" as NodeJS.Platform,
