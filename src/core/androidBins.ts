@@ -1,7 +1,7 @@
 import { join } from "node:path";
 
-// The SDK ships emulator.exe and adb.exe on Windows. libuv appends .exe only
-// during a PATH search, so an explicit ANDROID_HOME path needs the extension.
+// The SDK ships emulator.exe and adb.exe on Windows. Name the extension rather
+// than rely on libuv appending it during the spawn path search.
 function withExeSuffix(name: string, platform: NodeJS.Platform): string {
   return platform === "win32" ? `${name}.exe` : name;
 }
