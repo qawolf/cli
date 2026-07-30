@@ -23,7 +23,9 @@ describe("installBrowsers", () => {
 
     expect(result).toBeUndefined();
     expect(deps.spawn).toHaveBeenCalledTimes(1);
-    expect(deps.spawn).toHaveBeenCalledWith(fakeCli, ["install", "chromium"]);
+    expect(deps.spawn).toHaveBeenCalledWith(fakeCli, ["install", "chromium"], {
+      platform: "darwin",
+    });
     expect(ui.withProgress).toHaveBeenCalledWith(
       expect.anything(),
       "Installed 1 browser.",
@@ -44,10 +46,11 @@ describe("installBrowsers", () => {
 
     await installBrowsers(ctx, undefined, deps);
 
+    const darwin = { platform: "darwin" };
     expect(callsOf(deps.spawn)).toEqual([
-      [fakeCli, ["install", "chromium"]],
-      [fakeCli, ["install", "firefox"]],
-      [fakeCli, ["install", "webkit"]],
+      [fakeCli, ["install", "chromium"], darwin],
+      [fakeCli, ["install", "firefox"], darwin],
+      [fakeCli, ["install", "webkit"], darwin],
     ]);
     expect(ctx.ui.withProgress).toHaveBeenCalledWith(
       expect.anything(),
@@ -113,11 +116,11 @@ describe("installBrowsers", () => {
 
     await installBrowsers(ctx, undefined, deps);
 
-    expect(deps.spawn).toHaveBeenCalledWith(fakeCli, [
-      "install",
-      "--with-deps",
-      "chromium",
-    ]);
+    expect(deps.spawn).toHaveBeenCalledWith(
+      fakeCli,
+      ["install", "--with-deps", "chromium"],
+      { platform: "linux" },
+    );
   });
 
   it("omits --with-deps on Linux when browserDeps is false", async () => {
@@ -128,7 +131,9 @@ describe("installBrowsers", () => {
 
     await installBrowsers(ctx, undefined, deps);
 
-    expect(deps.spawn).toHaveBeenCalledWith(fakeCli, ["install", "chromium"]);
+    expect(deps.spawn).toHaveBeenCalledWith(fakeCli, ["install", "chromium"], {
+      platform: "linux",
+    });
   });
 
   it("throws and stops on first non-zero exit", async () => {

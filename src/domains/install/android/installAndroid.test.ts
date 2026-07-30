@@ -16,9 +16,9 @@ const success: SpawnResult = { exitCode: 0, stdout: "", stderr: "" };
 
 function makeSpawn(overrides: Record<string, SpawnResult> = {}): {
   fn: SpawnFn;
-  calls: [string, string[], ({ stdin?: string } | undefined)?][];
+  calls: Parameters<SpawnFn>[];
 } {
-  const calls: [string, string[], ({ stdin?: string } | undefined)?][] = [];
+  const calls: Parameters<SpawnFn>[] = [];
   const fn: SpawnFn = (cmd, args, opts) => {
     calls.push([cmd, args, opts]);
     const key = args[0] ?? cmd;
@@ -60,6 +60,7 @@ function makeDeps(
     arch: overrides.arch ?? "arm64",
     androidHome: sdk,
     checkExists: overrides.checkExists ?? (() => false),
+    platform: "linux" as NodeJS.Platform,
     sdkManagerPath,
     avdManagerPath,
     expandPatterns: overrides.expandPatterns ?? (async () => ["/flow.ts"]),
@@ -92,7 +93,11 @@ describe("installAndroid", () => {
   it("should call sdkmanager --version as the first spawn call", async () => {
     const { fn: spawn, calls } = makeSpawn();
     await installAndroid(makeCtx(), undefined, makeDeps({ spawn }));
-    expect(calls[0]).toEqual([sdkManagerPath, ["--version"], undefined]);
+    expect(calls[0]).toEqual([
+      sdkManagerPath,
+      ["--version"],
+      { platform: "linux" },
+    ]);
   });
 
   it("should throw with path and install URL when sdkmanager --version returns non-zero", async () => {
@@ -118,7 +123,10 @@ describe("installAndroid", () => {
     const { fn: spawn, calls } = makeSpawn();
     await installAndroid(makeCtx(), undefined, makeDeps({ spawn }));
     const licensesCall = calls.find(([, args]) => args[0] === "--licenses");
-    expect(licensesCall?.[2]).toEqual({ stdin: "y\n".repeat(20) });
+    expect(licensesCall?.[2]).toEqual({
+      stdin: "y\n".repeat(20),
+      platform: "linux",
+    });
   });
 
   it("should install each unique system image exactly once when two files share the same preset", async () => {

@@ -6,6 +6,7 @@ import type { CheckResult } from "~/domains/doctor/types.js";
 type PlaywrightDeps = {
   readonly spawn: SpawnFn;
   readonly playwrightCliPath: string | undefined;
+  readonly platform: NodeJS.Platform;
 };
 
 export async function checkPlaywright(
@@ -19,7 +20,9 @@ export async function checkPlaywright(
     };
   }
 
-  const result = await deps.spawn(deps.playwrightCliPath, ["--version"]);
+  const result = await deps.spawn(deps.playwrightCliPath, ["--version"], {
+    platform: deps.platform,
+  });
 
   if (result.exitCode < 0) {
     return {

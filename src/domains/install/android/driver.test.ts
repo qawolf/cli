@@ -43,7 +43,7 @@ function makeCtx(): CommandContext {
 }
 
 function makeDeps(spawn: SpawnFn) {
-  return { spawn, appiumBinPath };
+  return { spawn, appiumBinPath, platform: "linux" as NodeJS.Platform };
 }
 
 describe("installUiautomator2Driver", () => {

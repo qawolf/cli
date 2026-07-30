@@ -18,7 +18,7 @@ describe("checkNpmRegistry", () => {
     const spawn = spawnReturning({ exitCode: 0, stdout: "", stderr: "" });
     const r = await checkNpmRegistry({ spawn, platform: "linux" });
     expect(r).toEqual({ name: "npm-registry", status: "pass" });
-    expect(spawn).toHaveBeenCalledWith("npm", ["ping"]);
+    expect(spawn).toHaveBeenCalledWith("npm", ["ping"], { platform: "linux" });
   });
 
   it("warns on non-zero exit", async () => {
@@ -35,11 +35,13 @@ describe("checkNpmRegistry", () => {
   it("pings via npm.cmd on win32", async () => {
     const spawn = spawnReturning({ exitCode: 0, stdout: "", stderr: "" });
     await checkNpmRegistry({ spawn, platform: "win32" });
-    expect(spawn).toHaveBeenCalledWith("npm.cmd", ["ping"]);
+    expect(spawn).toHaveBeenCalledWith("npm.cmd", ["ping"], {
+      platform: "win32",
+    });
   });
 
-  // With shell:true, cmd.exe launches successfully and reports a missing
-  // npm.cmd as exit 9009, so the spawn `error` path never fires on win32.
+  // cmd.exe launches successfully and reports a missing npm.cmd as exit 9009,
+  // so the spawn `error` path never fires on win32.
   it("reports a missing npm on win32, where cmd.exe exits 9009", async () => {
     const spawn = spawnReturning({
       exitCode: 9009,

@@ -17,6 +17,7 @@ const fakeCli = "/fake/node_modules/.bin/playwright";
 const checkDeps = (spawn: SpawnFn) => ({
   spawn,
   playwrightCliPath: fakeCli,
+  platform: "linux" as NodeJS.Platform,
 });
 
 describe("checkPlaywright", () => {
@@ -27,6 +28,7 @@ describe("checkPlaywright", () => {
     const r = await checkPlaywright({
       spawn,
       playwrightCliPath: undefined,
+      platform: "linux",
     });
     expect(r.status).toBe("fail");
     expect(r.detail).toContain("Could not find");
@@ -45,7 +47,9 @@ describe("checkPlaywright", () => {
       status: "pass",
       version: "1.49.1",
     });
-    expect(spawn).toHaveBeenCalledWith(fakeCli, ["--version"]);
+    expect(spawn).toHaveBeenCalledWith(fakeCli, ["--version"], {
+      platform: "linux",
+    });
   });
 
   it("fails when spawn errors (process failed to launch)", async () => {

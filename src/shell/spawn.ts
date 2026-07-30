@@ -10,10 +10,16 @@ export type SpawnResult = {
   readonly stderr: string;
 };
 
+// platform is required so one call site decides both the command name and how
+// the command is invoked. Pass the same platform that resolved cmd.
 export type SpawnFn = (
   cmd: string,
   args: string[],
-  opts?: { stdin?: string; env?: Record<string, string | undefined> },
+  opts: {
+    platform: NodeJS.Platform;
+    stdin?: string;
+    env?: Record<string, string | undefined>;
+  },
 ) => Promise<SpawnResult>;
 
 // Node 18.20.2+/20.12.2+/24 refuses to execute .bat/.cmd files on win32 except
@@ -50,7 +56,7 @@ export function buildSpawnCommand(
 
 export const defaultSpawn: SpawnFn = (cmd, args, opts) =>
   new Promise((resolve) => {
-    const env = opts?.env ? { ...process.env, ...opts.env } : undefined;
+    const env = opts.env ? { ...process.env, ...opts.env } : undefined;
     const built = buildSpawnCommand(cmd, args, process.platform, env);
     const child = spawn(built.cmd, built.args, built.options);
     let stdout = "";

@@ -49,13 +49,17 @@ describe("checkAndroid: adb", () => {
   it("invokes adb at the SDK-relative path when ANDROID_HOME is set", async () => {
     const spawn = spawnRouter({});
     await checkAndroid(baseDeps({ spawn }));
-    expect(spawn).toHaveBeenCalledWith(adbPath, ["--version"]);
+    expect(spawn).toHaveBeenCalledWith(adbPath, ["--version"], {
+      platform: "linux",
+    });
   });
 
   it("invokes bare `adb` when ANDROID_HOME is missing", async () => {
     const spawn = spawnRouter({});
     await checkAndroid(baseDeps({ spawn, androidHome: undefined }));
-    expect(spawn).toHaveBeenCalledWith("adb", ["--version"]);
+    expect(spawn).toHaveBeenCalledWith("adb", ["--version"], {
+      platform: "linux",
+    });
   });
 
   it("fails when adb cannot launch, surfacing the spawn error and attempted path", async () => {

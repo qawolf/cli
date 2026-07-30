@@ -29,6 +29,7 @@ export async function handleInstallAndroid(
     arch: process.arch,
     androidHome,
     checkExists: (path: string) => fs.existsSync(path),
+    platform: process.platform,
     sdkManagerPath: sdkManagerBin(androidHome, process.platform),
     avdManagerPath: avdManagerBin(androidHome, process.platform),
     expandPatterns: (patterns, cwd) =>

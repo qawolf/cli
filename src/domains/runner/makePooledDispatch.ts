@@ -18,6 +18,7 @@ export function makePooledDispatch(
       spawn: defaultSpawn,
       command,
       prefixArgs,
+      platform: process.platform,
       workerEnv,
       resolvedDir,
       webOptions,

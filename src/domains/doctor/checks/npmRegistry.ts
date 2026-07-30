@@ -12,9 +12,12 @@ type NpmRegistryDeps = {
 export async function checkNpmRegistry(
   deps: NpmRegistryDeps,
 ): Promise<CheckResult> {
-  const result = await deps.spawn(resolveNpmCommand(deps.platform), ["ping"]);
+  const { platform } = deps;
+  const result = await deps.spawn(resolveNpmCommand(platform), ["ping"], {
+    platform,
+  });
 
-  // cmd.exe's "command not found" code. win32 runs npm.cmd through a shell,
+  // cmd.exe's "command not found" code. win32 runs npm.cmd through cmd.exe,
   // so the spawn itself succeeds and a missing npm surfaces here instead of
   // on the exitCode < 0 path.
   const cmdNotFound = deps.platform === "win32" && result.exitCode === 9009;

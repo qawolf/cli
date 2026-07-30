@@ -28,15 +28,17 @@ export async function runWorkerOnce(args: {
   prefixArgs: readonly string[];
   flow: ResolvedFlow;
   optionsJson: string;
+  platform: NodeJS.Platform;
   workerEnv?: Record<string, string | undefined> | undefined;
 }): Promise<DispatchResult> {
-  const { spawn, command, prefixArgs, flow, optionsJson, workerEnv } = args;
+  const { spawn, command, prefixArgs, flow, optionsJson, platform, workerEnv } =
+    args;
   const result = await spawn(
     command,
     [...prefixArgs, "flows", "__run-worker", flow.file],
     workerEnv !== undefined
-      ? { stdin: optionsJson, env: workerEnv }
-      : { stdin: optionsJson },
+      ? { stdin: optionsJson, env: workerEnv, platform }
+      : { stdin: optionsJson, platform },
   );
 
   const line = lastNonEmptyLine(result.stdout);
@@ -74,6 +76,7 @@ export function createSubprocessDispatch(env: {
   prefixArgs: readonly string[];
   workerEnv?: Record<string, string | undefined> | undefined;
   resolvedDir: string;
+  platform: NodeJS.Platform;
   webOptions: RunWebFlowOptions;
   androidOptions: RunAndroidFlowOptions;
 }): PooledDispatch {
@@ -82,6 +85,7 @@ export function createSubprocessDispatch(env: {
       spawn: env.spawn,
       command: env.command,
       prefixArgs: env.prefixArgs,
+      platform: env.platform,
       workerEnv: env.workerEnv,
       flow,
       optionsJson: serializeWorkerInput({

@@ -33,6 +33,6 @@ export async function checkAndroid(
     deps.resolveAppiumBin,
     deps.checkExists,
   );
-  const uiautomator2 = await checkUiautomator2(deps.spawn, bin);
+  const uiautomator2 = await checkUiautomator2(deps.spawn, bin, deps.platform);
   return [home, adb, emulator, ...avds, appium, uiautomator2];
 }
