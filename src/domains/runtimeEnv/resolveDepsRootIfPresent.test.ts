@@ -24,7 +24,10 @@ describe("resolveDepsRootIfPresent", () => {
     const overrideDir = "/override/env";
     seedFullEnv(fs, overrideDir);
 
-    const result = resolveDepsRootIfPresent({ overrideDir }, fs);
+    const result = resolveDepsRootIfPresent(
+      { overrideDir, platform: "linux" },
+      fs,
+    );
 
     expect(result).toBe(overrideDir);
   });
@@ -35,7 +38,7 @@ describe("resolveDepsRootIfPresent", () => {
     seedFullEnv(fs, projectDir);
 
     const result = resolveDepsRootIfPresent(
-      { overrideDir: "/missing/override", projectDir },
+      { overrideDir: "/missing/override", projectDir, platform: "linux" },
       fs,
     );
 
@@ -47,7 +50,10 @@ describe("resolveDepsRootIfPresent", () => {
     const projectDir = "/user/project";
     seedFullEnv(fs, projectDir);
 
-    const result = resolveDepsRootIfPresent({ projectDir }, fs);
+    const result = resolveDepsRootIfPresent(
+      { projectDir, platform: "linux" },
+      fs,
+    );
 
     expect(result).toBe(projectDir);
   });
@@ -57,7 +63,7 @@ describe("resolveDepsRootIfPresent", () => {
     const managed = managedEnvDir();
     seedFullEnv(fs, managed);
 
-    const result = resolveDepsRootIfPresent({}, fs);
+    const result = resolveDepsRootIfPresent({ platform: "linux" }, fs);
 
     expect(result).toBe(managed);
   });
@@ -66,7 +72,7 @@ describe("resolveDepsRootIfPresent", () => {
     const fs = makeMemoryFs();
 
     const result = resolveDepsRootIfPresent(
-      { projectDir: "/missing/project" },
+      { projectDir: "/missing/project", platform: "linux" },
       fs,
     );
 
@@ -76,7 +82,7 @@ describe("resolveDepsRootIfPresent", () => {
   it("returns undefined when called with no args and managed env is absent", () => {
     const fs = makeMemoryFs();
 
-    const result = resolveDepsRootIfPresent({}, fs);
+    const result = resolveDepsRootIfPresent({ platform: "linux" }, fs);
 
     expect(result).toBeUndefined();
   });

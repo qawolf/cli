@@ -35,7 +35,7 @@ describe("ensureRuntimeEnv", () => {
     const { install } = makeNoopInstall();
 
     const result = await ensureRuntimeEnv(
-      { overrideDir },
+      { overrideDir, platform: "linux" },
       { fs, install, resolveManagedDir: () => managedDir },
     );
 
@@ -54,7 +54,7 @@ describe("ensureRuntimeEnv", () => {
     let caughtError: unknown;
     try {
       await ensureRuntimeEnv(
-        { overrideDir },
+        { overrideDir, platform: "linux" },
         { fs, install, resolveManagedDir: () => managedDir },
       );
     } catch (e) {
@@ -72,7 +72,7 @@ describe("ensureRuntimeEnv", () => {
     const { install, wasCalled } = makeNoopInstall();
 
     const result = await ensureRuntimeEnv(
-      { projectDir },
+      { projectDir, platform: "linux" },
       { fs, install, resolveManagedDir: () => managedDir },
     );
 
@@ -94,7 +94,7 @@ describe("ensureRuntimeEnv", () => {
     };
 
     const result = await ensureRuntimeEnv(
-      {},
+      { platform: "linux" },
       { fs, install, resolveManagedDir: () => managedDir },
     );
 
@@ -114,7 +114,7 @@ describe("ensureRuntimeEnv", () => {
     let caughtError: unknown;
     try {
       await ensureRuntimeEnv(
-        {},
+        { platform: "linux" },
         { fs, install, resolveManagedDir: () => managedDir },
       );
     } catch (e) {
@@ -134,7 +134,7 @@ describe("ensureRuntimeEnv", () => {
     const { install, wasCalled } = makeNoopInstall();
 
     const result = await ensureRuntimeEnv(
-      {},
+      { platform: "linux" },
       { fs, install, resolveManagedDir: () => managedDir },
     );
 

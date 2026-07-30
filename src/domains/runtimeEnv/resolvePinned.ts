@@ -1,5 +1,6 @@
 import { join } from "node:path";
 
+import { playwrightCliCandidates } from "~/core/playwrightBins.js";
 import type { Fs } from "~/shell/fs.js";
 
 import { pinnedPackages } from "./pinnedPackages.js";
@@ -31,15 +32,17 @@ export function readInstalledVersion(
 
 /**
  * Returns true when every pinned package is installed at its exact pinned
- * version AND the .bin/playwright shim exists (required by installBrowserList).
+ * version AND a Playwright shim exists (required by installBrowserList).
  */
-export function allPinnedResolved(dir: string, fs: Fs): boolean {
-  // npm/bun create an extension-less POSIX shim and a .cmd wrapper on Windows;
-  // either one satisfies playwrightCliCandidates, so accept both names.
-  const binDir = join(dir, "node_modules", ".bin");
-  const hasPlaywrightShim =
-    fs.existsSync(join(binDir, "playwright")) ||
-    fs.existsSync(join(binDir, "playwright.cmd"));
+export function allPinnedResolved(
+  dir: string,
+  fs: Fs,
+  platform: NodeJS.Platform,
+): boolean {
+  // Same list installBrowserList resolves from, so the two cannot disagree.
+  const hasPlaywrightShim = playwrightCliCandidates(dir, platform).some(
+    (path) => fs.existsSync(path),
+  );
   if (!hasPlaywrightShim) {
     return false;
   }

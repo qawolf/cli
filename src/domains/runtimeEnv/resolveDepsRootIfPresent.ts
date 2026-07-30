@@ -13,11 +13,17 @@ export function resolveDepsRootIfPresent(
   args: EnsureRuntimeEnvArgs,
   fs: Fs = makeDefaultFs(),
 ): string | undefined {
-  if (args.overrideDir !== undefined && allPinnedResolved(args.overrideDir, fs))
+  if (
+    args.overrideDir !== undefined &&
+    allPinnedResolved(args.overrideDir, fs, args.platform)
+  )
     return args.overrideDir;
-  if (args.projectDir !== undefined && allPinnedResolved(args.projectDir, fs))
+  if (
+    args.projectDir !== undefined &&
+    allPinnedResolved(args.projectDir, fs, args.platform)
+  )
     return args.projectDir;
   const managed = managedEnvDir();
-  if (allPinnedResolved(managed, fs)) return managed;
+  if (allPinnedResolved(managed, fs, args.platform)) return managed;
   return undefined;
 }

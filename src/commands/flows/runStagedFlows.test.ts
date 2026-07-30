@@ -194,6 +194,7 @@ describe("runStagedFlows", () => {
 
     expect(resolveDepsRootMock).toHaveBeenCalledWith({
       files: ["/some/flow.ts"],
+      platform: process.platform,
       overrideDir: "/custom/deps",
     });
   });

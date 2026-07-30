@@ -61,6 +61,7 @@ export async function runStagedFlows(
         task: () =>
           deps.resolveDepsRoot({
             files,
+            platform: process.platform,
             ...(flags.deps !== undefined ? { overrideDir: flags.deps } : {}),
           }),
       },

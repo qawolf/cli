@@ -61,7 +61,9 @@ function makeDeps(
     spawn: overrides.spawn ?? makeSpawn().fn,
     arch: overrides.arch ?? "arm64",
     androidHome: sdk,
-    checkExists: overrides.checkExists ?? (() => false),
+    // Runtime deps are installed; no AVD or license file exists yet.
+    checkExists:
+      overrides.checkExists ?? ((path: string) => path.includes(".bin")),
     platform: "linux" as NodeJS.Platform,
     expandPatterns: overrides.expandPatterns ?? (async () => ["/flow.ts"]),
     peekFlowMeta:

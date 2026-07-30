@@ -16,9 +16,10 @@ describe("playwrightCliCandidates", () => {
     ]);
   });
 
-  it("prefers playwright.cmd over the extension-less shim on win32", () => {
+  it("includes the bun-written .exe on win32, after the npm .cmd shim", () => {
     expect(playwrightCliCandidates(envDir, "win32")).toEqual([
       join(binDir, "playwright.cmd"),
+      join(binDir, "playwright.exe"),
       join(binDir, "playwright"),
     ]);
   });

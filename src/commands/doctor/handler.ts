@@ -41,7 +41,10 @@ export async function handleDoctor(
   // Playwright/Appium live in the resolved runtime dir (managed env or project), not cwd.
   const projectDir = resolveProjectDirSafe([...flowFiles], fs);
   const envDir = resolveDepsRootIfPresent(
-    projectDir !== undefined ? { projectDir } : {},
+    {
+      platform: process.platform,
+      ...(projectDir !== undefined ? { projectDir } : {}),
+    },
     fs,
   );
 

@@ -46,7 +46,12 @@ function makeCtx(): CommandContext {
 }
 
 function makeDeps(spawn: SpawnFn) {
-  return { spawn, envDir, platform: "linux" as NodeJS.Platform };
+  return {
+    spawn,
+    envDir,
+    platform: "linux" as NodeJS.Platform,
+    checkExists: () => true,
+  };
 }
 
 describe("installUiautomator2Driver", () => {
@@ -106,6 +111,22 @@ describe("installUiautomator2Driver", () => {
     expect(installCall?.[1][0]).toBe("driver");
     expect(installCall?.[1][1]).toBe("install");
     expect(installCall?.[1][2]).toMatch(/^uiautomator2@/);
+  });
+
+  it("should throw without spawning when no appium shim exists", async () => {
+    const { fn: spawn, calls } = makeSpawn();
+    let caught: unknown;
+    try {
+      await installUiautomator2Driver(makeCtx(), {
+        ...makeDeps(spawn),
+        checkExists: () => false,
+      });
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toContain("appium not found");
+    expect(calls).toHaveLength(0);
   });
 
   it("should pass APPIUM_HOME env to both list and install spawn calls", async () => {

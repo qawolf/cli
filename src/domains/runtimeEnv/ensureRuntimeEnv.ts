@@ -13,6 +13,7 @@ export type EnsureRuntimeEnvResult = {
 };
 
 export type EnsureRuntimeEnvArgs = {
+  platform: NodeJS.Platform;
   projectDir?: string;
   overrideDir?: string;
 };
@@ -36,10 +37,15 @@ export async function ensureRuntimeEnv(
   const resolveManagedDir = deps.resolveManagedDir ?? defaultManagedEnvDir;
   const install =
     deps.install ??
-    ((t) => installPinned(t, { fs, spawnInstall: defaultSpawnInstall }));
+    ((t) =>
+      installPinned(t, {
+        fs,
+        spawnInstall: defaultSpawnInstall,
+        platform: args.platform,
+      }));
 
   if (args.overrideDir !== undefined) {
-    if (allPinnedResolved(args.overrideDir, fs)) {
+    if (allPinnedResolved(args.overrideDir, fs, args.platform)) {
       return {
         depsRoot: args.overrideDir,
         source: "override",
@@ -52,17 +58,20 @@ export async function ensureRuntimeEnv(
     );
   }
 
-  if (args.projectDir !== undefined && allPinnedResolved(args.projectDir, fs)) {
+  if (
+    args.projectDir !== undefined &&
+    allPinnedResolved(args.projectDir, fs, args.platform)
+  ) {
     return { depsRoot: args.projectDir, source: "project", installed: false };
   }
 
   const managed = resolveManagedDir();
-  if (allPinnedResolved(managed, fs)) {
+  if (allPinnedResolved(managed, fs, args.platform)) {
     return { depsRoot: managed, source: "managed", installed: false };
   }
 
   await install(managed);
-  if (!allPinnedResolved(managed, fs)) {
+  if (!allPinnedResolved(managed, fs, args.platform)) {
     throw new Error(
       `Managed runtime is incomplete after install at ${managed}.`,
     );

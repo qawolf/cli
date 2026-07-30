@@ -1,8 +1,8 @@
 import { join } from "node:path";
 import envPaths from "env-paths";
 import type { CommandContext } from "~/shell/commandContext.js";
-import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
 import type { SpawnFn } from "~/shell/spawn.js";
+import { appiumCliCandidates } from "~/core/appiumBins.js";
 import { installMessages } from "~/core/messages/index.js";
 import { appiumUiautomator2DriverVersion } from "~/generated/dependencyVersions.js";
 
@@ -10,6 +10,7 @@ export type InstallDriverDeps = {
   readonly spawn: SpawnFn;
   readonly envDir: string;
   readonly platform: NodeJS.Platform;
+  readonly checkExists: (path: string) => boolean;
 };
 
 // Must match the APPIUM_HOME used by createAppiumServer so that drivers
@@ -22,7 +23,13 @@ export async function installUiautomator2Driver(
   ctx: CommandContext,
   deps: InstallDriverDeps,
 ): Promise<void> {
-  const appiumBinPath = resolveAppiumBin(deps.envDir, deps.platform);
+  const candidates = appiumCliCandidates(deps.envDir, deps.platform);
+  const appiumBinPath = candidates.find(deps.checkExists);
+  if (!appiumBinPath) {
+    throw new Error(
+      installMessages.android.appiumNotFound(candidates[0] ?? deps.envDir),
+    );
+  }
 
   // Check whether the driver is already installed before attempting install.
   const listResult = await deps.spawn(

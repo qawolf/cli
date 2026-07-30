@@ -1,4 +1,4 @@
-import { type Fs, makeDefaultFs } from "~/shell/fs.js";
+import { type Fs } from "~/shell/fs.js";
 
 import { spawnNpmInstall, type SpawnInstallResult } from "./npmInstall.js";
 import { scaffoldManagedEnv } from "./managedEnvDir.js";
@@ -7,19 +7,20 @@ import { shimFlowsDeps } from "./shimDeps.js";
 
 type SpawnInstallFn = (cwd: string) => Promise<SpawnInstallResult>;
 
-export type InstallPinnedDeps = { fs: Fs; spawnInstall: SpawnInstallFn };
+export type InstallPinnedDeps = {
+  fs: Fs;
+  spawnInstall: SpawnInstallFn;
+  platform: NodeJS.Platform;
+};
 
 export const defaultSpawnInstall = spawnNpmInstall;
 
 export async function installPinned(
   targetDir: string,
-  deps: InstallPinnedDeps = {
-    fs: makeDefaultFs(),
-    spawnInstall: defaultSpawnInstall,
-  },
+  deps: InstallPinnedDeps,
 ): Promise<void> {
   // Short-circuit: another process or a previous run already completed the install.
-  if (allPinnedResolved(targetDir, deps.fs)) {
+  if (allPinnedResolved(targetDir, deps.fs, deps.platform)) {
     return;
   }
 
@@ -45,7 +46,11 @@ export async function installPinned(
   try {
     await deps.fs.rename(tempDir, targetDir);
   } catch (err) {
-    const anotherShardWon = allPinnedResolved(targetDir, deps.fs);
+    const anotherShardWon = allPinnedResolved(
+      targetDir,
+      deps.fs,
+      deps.platform,
+    );
     if (anotherShardWon) {
       await deps.fs.rm(tempDir, { recursive: true, force: true });
       return;
