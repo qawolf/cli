@@ -1,7 +1,7 @@
 import type { SpawnOptions } from "node:child_process";
 
 import { resolveNpmCommand } from "~/shell/npm.js";
-import { buildSpawnOptions, spawn as nodeSpawn } from "~/shell/spawn.js";
+import { buildSpawnCommand, spawn as nodeSpawn } from "~/shell/spawn.js";
 
 export type SpawnInstallResult = { exitCode: number; stderr: string };
 
@@ -11,13 +11,14 @@ export function buildNpmInstallSpawn(
   cwd: string,
   platform: NodeJS.Platform,
 ): { cmd: string; args: string[]; options: SpawnOptions } {
-  const cmd = resolveNpmCommand(platform);
-  return {
-    cmd,
+  const built = buildSpawnCommand(
+    resolveNpmCommand(platform),
     // npm 7+ strict peer-dep resolution rejects peerOptional conflicts — revert to npm 6 behaviour.
-    args: ["install", "--legacy-peer-deps"],
-    options: { ...buildSpawnOptions(cmd, platform, undefined), cwd },
-  };
+    ["install", "--legacy-peer-deps"],
+    platform,
+    undefined,
+  );
+  return { ...built, options: { ...built.options, cwd } };
 }
 
 /**

@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
 import {
   buildNpmInstallSpawn,
@@ -7,21 +7,36 @@ import {
   spawnNpmInstall,
 } from "./npmInstall.js";
 
+const originalComSpec = process.env["ComSpec"];
+
+afterEach(() => {
+  if (originalComSpec === undefined) delete process.env["ComSpec"];
+  else process.env["ComSpec"] = originalComSpec;
+});
+
 describe("buildNpmInstallSpawn", () => {
-  it("spawns npm.cmd through a shell on win32", () => {
+  it("routes npm.cmd through cmd.exe on win32 and keeps cwd", () => {
+    process.env["ComSpec"] = "C:\\Windows\\System32\\cmd.exe";
     const { cmd, args, options } = buildNpmInstallSpawn(
       "C:\\proj\\env",
       "win32",
     );
-    expect(cmd).toBe("npm.cmd");
-    expect(args).toEqual(["install", "--legacy-peer-deps"]);
-    expect(options.shell).toBe(true);
+    expect(cmd).toBe("C:\\Windows\\System32\\cmd.exe");
+    expect(args).toEqual([
+      "/d",
+      "/s",
+      "/c",
+      '"npm.cmd ^^^"install^^^" ^^^"--legacy-peer-deps^^^""',
+    ]);
+    expect(options.windowsVerbatimArguments).toBe(true);
+    expect(options.shell).toBeUndefined();
     expect(options.cwd).toBe("C:\\proj\\env");
   });
 
   it("spawns bare npm without a shell on posix", () => {
-    const { cmd, options } = buildNpmInstallSpawn("/tmp/env", "linux");
+    const { cmd, args, options } = buildNpmInstallSpawn("/tmp/env", "linux");
     expect(cmd).toBe("npm");
+    expect(args).toEqual(["install", "--legacy-peer-deps"]);
     expect(options.shell).toBeUndefined();
     expect(options.cwd).toBe("/tmp/env");
   });
