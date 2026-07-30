@@ -48,5 +48,8 @@ export const installMessages = {
       `avdmanager failed to create ${avdName}: ${detail}`,
     uiautomator2InstallFailed: (detail: string) =>
       `appium driver install uiautomator2 failed: ${detail}`,
+    appiumNotFound: (appiumPath: string) =>
+      `appium not found at ${appiumPath}.\n` +
+      `Reinstall the runtime dependencies with \`qawolf install\`.`,
   },
 } as const;

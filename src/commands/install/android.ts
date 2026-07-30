@@ -32,6 +32,8 @@ export async function handleInstallAndroid(
       defaultExpandPatterns(patterns, cwd ?? process.cwd(), undefined, fs),
     peekFlowMeta: makePeekFlowMeta(fs),
     resolveDepsRoot: async (files) =>
-      envDir ?? (await resolveDepsRootHelper({ files, fs })).depsRoot,
+      envDir ??
+      (await resolveDepsRootHelper({ files, fs, platform: process.platform }))
+        .depsRoot,
   });
 }

@@ -44,7 +44,7 @@ describe("checkPlaywright", () => {
     );
   });
 
-  it("falls back to the extension-less shim on win32 when .cmd is missing", async () => {
+  it("spawns the .exe on win32 when bun wrote no .cmd shim", async () => {
     const spawn = spawnReturning({
       exitCode: 0,
       stdout: "Version 1.49.1\n",
@@ -54,12 +54,14 @@ describe("checkPlaywright", () => {
       spawn,
       envDir,
       platform: "win32",
-      checkExists: (path) => !path.endsWith(".cmd"),
+      checkExists: (path) => path.endsWith(".exe"),
     });
     expect(r.status).toBe("pass");
-    expect(spawn).toHaveBeenCalledWith(fakeCli, ["--version"], {
-      platform: "win32",
-    });
+    expect(spawn).toHaveBeenCalledWith(
+      join(envDir, "node_modules", ".bin", "playwright.exe"),
+      ["--version"],
+      { platform: "win32" },
+    );
   });
 
   it("fails immediately when there is no env dir to resolve from", async () => {

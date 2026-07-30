@@ -33,6 +33,7 @@ src/
 ├── main.ts              # Entry point — createProgram().parse()
 ├── core/                # Pure functions and types — zero I/O
 │   ├── androidTargets.ts # Android target parsing helpers
+│   ├── appiumBins.ts    # appiumCliCandidates
 │   ├── batchMap.ts      # bounded-concurrency async map
 │   ├── errors.ts        # errorMessage, isNoEntError
 │   ├── flowMeta.ts      # extractFlowMeta, targetToBrowser, flowBasename

@@ -109,7 +109,8 @@ export async function handleInstall(
     expandPatterns: (patterns, cwd) =>
       defaultExpandPatterns(patterns, cwd ?? process.cwd(), undefined, fs),
     peekFlowMeta: makePeekFlowMeta(fs),
-    resolveDepsRoot: (files) => resolveDepsRoot({ files, fs }),
+    resolveDepsRoot: (files) =>
+      resolveDepsRoot({ files, fs, platform: process.platform }),
     installBrowsers: (innerCtx, innerPattern, envDir) =>
       handleInstallBrowsers(innerCtx, innerPattern, {
         envDir,

@@ -2,9 +2,16 @@ import { join } from "node:path";
 
 import envPaths from "env-paths";
 
+import { existsSync } from "node:fs";
+
+import { appiumCliCandidates } from "~/core/appiumBins.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
-import { resolveAppiumBin } from "./resolveAppiumBin.js";
 import { defaultSpawnAppium, findFreePort } from "./spawnAppium.js";
+
+function defaultResolveAppiumBin(envDir: string): string {
+  const candidates = appiumCliCandidates(envDir, process.platform);
+  return candidates.find(existsSync) ?? (candidates[0] as string);
+}
 
 export type AppiumProcess = {
   output: NodeJS.ReadableStream;
@@ -90,8 +97,7 @@ export async function createAppiumServer(
   const spawnFn = params?.deps?.spawn ?? defaultSpawnAppium;
   const findFreePortFn = params?.deps?.findFreePort ?? findFreePort;
   const resolveAppiumBinFn =
-    params?.deps?.resolveAppiumBin ??
-    ((dir: string) => resolveAppiumBin(dir, process.platform));
+    params?.deps?.resolveAppiumBin ?? defaultResolveAppiumBin;
   const appiumHome =
     params?.options?.appiumHome ?? join(envPaths("qawolf").data, "appium");
   const timeoutMs = params?.options?.startTimeoutMs ?? defaultStartTimeoutMs;

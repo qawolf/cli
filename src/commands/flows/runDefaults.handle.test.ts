@@ -132,6 +132,7 @@ describe("handleFlowsRun", () => {
     expect(result).toBeUndefined();
     expect(resolveDepsRootMock).toHaveBeenCalledWith({
       files: ["/some/file.flow.ts"],
+      platform: process.platform,
     });
     expect(flowsRunMock).toHaveBeenCalledTimes(1);
   });
@@ -158,6 +159,7 @@ describe("handleFlowsRun", () => {
 
     expect(resolveDepsRootMock).toHaveBeenCalledWith({
       files: ["/some/flow.ts"],
+      platform: process.platform,
     });
     expect(configureTestkitMock).toHaveBeenCalledTimes(1);
     expect(flowsRunMock).toHaveBeenCalledTimes(1);
@@ -184,6 +186,7 @@ describe("handleFlowsRun", () => {
 
     expect(resolveDepsRootMock).toHaveBeenCalledWith({
       files: [`${envDir}/login.flow.ts`],
+      platform: process.platform,
     });
     expect(configureTestkitMock).toHaveBeenCalledWith(envDir);
     expect(flowsRunMock).toHaveBeenCalledTimes(1);
@@ -234,6 +237,7 @@ describe("handleFlowsRun", () => {
 
     expect(resolveDepsRootMock).toHaveBeenCalledWith({
       files: ["/some/flow.ts"],
+      platform: process.platform,
       overrideDir: "/custom/deps",
     });
   });

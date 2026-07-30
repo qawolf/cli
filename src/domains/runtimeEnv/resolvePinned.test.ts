@@ -68,12 +68,21 @@ describe("readInstalledVersion", () => {
   });
 });
 
+function seedShim(
+  fs: ReturnType<typeof makeMemoryFs>,
+  name: string,
+  contents: string,
+): void {
+  fs.mkdirSync(join(dir, "node_modules", ".bin"), { recursive: true });
+  fs.writeFileSync(join(dir, "node_modules", ".bin", name), contents);
+}
+
 describe("allPinnedResolved", () => {
   it("returns true when all packages match and .bin/playwright exists", () => {
     const fs = makeMemoryFs();
     seedAllPackages(fs);
 
-    expect(allPinnedResolved(dir, fs)).toBe(true);
+    expect(allPinnedResolved(dir, fs, "linux")).toBe(true);
   });
 
   it("returns false when one package version does not match", () => {
@@ -86,7 +95,7 @@ describe("allPinnedResolved", () => {
       JSON.stringify({ version: "0.0.0" }),
     );
 
-    expect(allPinnedResolved(dir, fs)).toBe(false);
+    expect(allPinnedResolved(dir, fs, "linux")).toBe(false);
   });
 
   it("returns false when .bin/playwright shim is absent", () => {
@@ -96,7 +105,7 @@ describe("allPinnedResolved", () => {
     }
     // No .bin/playwright
 
-    expect(allPinnedResolved(dir, fs)).toBe(false);
+    expect(allPinnedResolved(dir, fs, "linux")).toBe(false);
   });
 
   it("returns true when only the Windows .bin/playwright.cmd shim exists", () => {
@@ -104,12 +113,28 @@ describe("allPinnedResolved", () => {
     for (const { name, version } of pinnedPackages) {
       seedPackage(fs, name, version);
     }
-    fs.mkdirSync(join(dir, "node_modules", ".bin"), { recursive: true });
-    fs.writeFileSync(
-      join(dir, "node_modules", ".bin", "playwright.cmd"),
-      "@echo off",
-    );
+    seedShim(fs, "playwright.cmd", "@echo off");
 
-    expect(allPinnedResolved(dir, fs)).toBe(true);
+    expect(allPinnedResolved(dir, fs, "win32")).toBe(true);
+  });
+
+  it("returns true when only the Windows .bin/playwright.exe shim exists", () => {
+    const fs = makeMemoryFs();
+    for (const { name, version } of pinnedPackages) {
+      seedPackage(fs, name, version);
+    }
+    seedShim(fs, "playwright.exe", "MZ");
+
+    expect(allPinnedResolved(dir, fs, "win32")).toBe(true);
+  });
+
+  it("ignores a .cmd shim off win32", () => {
+    const fs = makeMemoryFs();
+    for (const { name, version } of pinnedPackages) {
+      seedPackage(fs, name, version);
+    }
+    seedShim(fs, "playwright.cmd", "@echo off");
+
+    expect(allPinnedResolved(dir, fs, "linux")).toBe(false);
   });
 });

@@ -55,6 +55,7 @@ export async function installAndroid(
     spawn: deps.spawn,
     envDir: await deps.resolveDepsRoot(files),
     platform: deps.platform,
+    checkExists: deps.checkExists,
   });
 
   ctx.ui.success(

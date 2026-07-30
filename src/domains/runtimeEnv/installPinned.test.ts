@@ -33,6 +33,7 @@ describe("installPinned", () => {
     await installPinned(targetDir, {
       fs,
       spawnInstall: makeSpawnInstall(0),
+      platform: "linux",
     });
 
     // Target dir should exist with a package.json (scaffolded before install)
@@ -50,6 +51,7 @@ describe("installPinned", () => {
       await installPinned(targetDir, {
         fs,
         spawnInstall: makeSpawnInstall(1, "npm ERR! some failure"),
+        platform: "linux",
       });
     } catch (e) {
       caughtError = e;
@@ -75,6 +77,7 @@ describe("installPinned", () => {
         spawnCalled = true;
         return { exitCode: 0, stderr: "" };
       },
+      platform: "linux",
     });
 
     expect(spawnCalled).toBe(false);

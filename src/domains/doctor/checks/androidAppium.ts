@@ -2,9 +2,9 @@ import { join } from "node:path";
 
 import envPaths from "env-paths";
 
+import { appiumCliCandidates } from "~/core/appiumBins.js";
 import { doctorMessages } from "~/core/messages/index.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
-import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 
 function firstLine(result: SpawnResult): string {
@@ -33,13 +33,14 @@ export function checkAppium(
       bin: undefined,
     };
   }
-  const bin = resolveAppiumBin(envDir, platform);
-  if (!checkExists(bin)) {
+  const candidates = appiumCliCandidates(envDir, platform);
+  const bin = candidates.find(checkExists);
+  if (!bin) {
     return {
       appium: {
         name: "appium",
         status: "warn",
-        detail: doctorMessages.appium.binaryMissing(bin),
+        detail: doctorMessages.appium.binaryMissing(candidates[0] ?? envDir),
       },
       bin: undefined,
     };

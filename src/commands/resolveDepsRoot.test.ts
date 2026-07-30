@@ -37,6 +37,7 @@ describe("resolveDepsRoot", () => {
     const result = await resolveDepsRoot({
       files: [join(projectDir, "flows", "login.flow.ts")],
       fs,
+      platform: "linux",
     });
 
     expect(result).toEqual({
@@ -56,6 +57,7 @@ describe("resolveDepsRoot", () => {
     const result = await resolveDepsRoot({
       files: ["/repo/a/x.flow.ts", "/repo/b/y.flow.ts"],
       fs,
+      platform: "linux",
     });
 
     expect(result).toEqual({
@@ -74,6 +76,7 @@ describe("resolveDepsRoot", () => {
       files: ["/anywhere/x.flow.ts"],
       overrideDir,
       fs,
+      platform: "linux",
     });
 
     expect(result).toEqual({

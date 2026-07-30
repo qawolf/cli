@@ -7,6 +7,7 @@ import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 
 export type ResolveDepsRootArgs = {
   files: string[];
+  platform: NodeJS.Platform;
   overrideDir?: string;
   fs?: Fs;
 };
@@ -24,6 +25,7 @@ export function resolveDepsRoot(
   const projectDir = resolveProjectDirSafe(args.files, fs);
   return ensureRuntimeEnv(
     {
+      platform: args.platform,
       ...(projectDir !== undefined ? { projectDir } : {}),
       ...(args.overrideDir !== undefined
         ? { overrideDir: args.overrideDir }

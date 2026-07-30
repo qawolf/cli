@@ -26,6 +26,8 @@ export async function handleInstallBrowsers(
     peekFlowMeta: makePeekFlowMeta(fs),
     checkExists: (path) => fs.existsSync(path),
     resolveDepsRoot: async (files) =>
-      envDir ?? (await resolveDepsRoot({ files, fs })).depsRoot,
+      envDir ??
+      (await resolveDepsRoot({ files, fs, platform: process.platform }))
+        .depsRoot,
   });
 }
