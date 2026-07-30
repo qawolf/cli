@@ -4,19 +4,98 @@ on:
   push:
     branches: [main]
 
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
-  release:
-    name: Release
-    environment: release
+  mode:
+    name: Detect release mode
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
-      id-token: write
+      contents: read # read-only detection (changeset files + remote tag lookup)
+    outputs:
+      has_changesets: ${{ steps.detect.outputs.has_changesets }}
+      needs_publish: ${{ steps.detect.outputs.needs_publish }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Detect pending changesets and unpublished version
+        id: detect
+        run: |
+          shopt -s nullglob
+          has_changesets=false
+          for f in .changeset/*.md; do
+            [[ "$(basename "$f")" == "README.md" ]] && continue
+            has_changesets=true
+            break
+          done
+
+          # Only publish when the current version has never been tagged, so
+          # docs-only merges don't leave a run stuck awaiting approval.
+          needs_publish=false
+          if [[ "$has_changesets" == "false" ]]; then
+            version=$(jq -r .version package.json)
+            if [[ -z "$(git ls-remote --tags origin "refs/tags/v${version}")" ]]; then
+              needs_publish=true
+            fi
+          fi
+
+          echo "has_changesets=$has_changesets" >> "$GITHUB_OUTPUT"
+          echo "needs_publish=$needs_publish" >> "$GITHUB_OUTPUT"
+
+  version:
+    name: Version PR
+    needs: mode
+    if: needs.mode.outputs.has_changesets == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: release-version-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: write # push the changeset-release branch
+      pull-requests: write # open/update the Version Packages PR
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+
+      # No build needed: version-packages only runs `changeset version` and oxfmt.
+      - run: bun install --frozen-lockfile
+
+      # GITHUB_TOKEN can't create PRs under org policy, and PRs it opens don't
+      # trigger CI; the App token does both.
+      - name: Generate qa-wolf-ops token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.QA_WOLF_OPS_CLIENT_ID }}
+          private-key: ${{ secrets.QA_WOLF_OPS_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Create or update Version Packages PR
+        uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1.8.0
+        with:
+          version: bun run version-packages
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
+  publish:
+    name: Publish
+    needs: mode
+    if: needs.mode.outputs.needs_publish == 'true'
+    environment: release
+    runs-on: ubuntu-latest
+    concurrency:
+      group: release-publish-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: write # push the release tag and create the GitHub Release
+      id-token: write # OIDC for npm provenance
     outputs:
       published: ${{ steps.changesets.outputs.published }}
       tag: ${{ steps.tag.outputs.tag }}
@@ -33,27 +112,27 @@ jobs:
 
       - run: bun run build
 
-      # GITHUB_TOKEN can't create PRs under org policy, and PRs it opens don't
-      # trigger CI; the App token does both.
+      # The App token creates the GitHub Release, so the release:published
+      # trigger in release-binaries fires (default-token releases don't
+      # trigger workflows).
       - name: Generate qa-wolf-ops token
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ secrets.QA_WOLF_OPS_CLIENT_ID }}
           private-key: ${{ secrets.QA_WOLF_OPS_PRIVATE_KEY }}
+          permission-contents: write
 
-      - name: Create Release PR or Publish
+      - name: Publish to npm
         id: changesets
         uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1.8.0
         with:
-          version: bun run version-packages
           publish: bunx changeset publish
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
 
-      # Only set when a publish actually happened; safe on version-mode runs.
       - name: Resolve release tag
         id: tag
         if: steps.changesets.outputs.published == 'true'
@@ -65,10 +144,10 @@ jobs:
 
   binaries:
     name: Binaries
-    needs: release
-    if: needs.release.outputs.published == 'true'
+    needs: publish
+    if: needs.publish.outputs.published == 'true'
     permissions:
-      contents: write
+      contents: write # upload binaries to the GitHub Release (reusable workflow)
     uses: ./.github/workflows/release-binaries.yml
     with:
-      tag: ${{ needs.release.outputs.tag }}
+      tag: ${{ needs.publish.outputs.tag }}
