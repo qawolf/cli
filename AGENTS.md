@@ -39,6 +39,7 @@ src/
 │   ├── messages/        # user-facing strings (auth, doctor, flows, init, install, runner)
 │   ├── paths.ts         # getConfigDir
 │   ├── patternArgs.ts   # CLI pattern argument parsing
+│   ├── playwrightBins.ts # playwrightCliCandidates
 │   ├── pluralize.ts     # pluralize
 │   ├── sleep.ts         # sleep
 │   └── types.ts         # BrowserName, VideoMode, TraceMode, HarMode, TestCounts
@@ -51,7 +52,6 @@ src/
 │   ├── manifest/        # bundle manifest read/lookup
 │   ├── npm.ts           # resolveNpmCommand
 │   ├── platform/        # tRPC client, getIdentity, signed-URL/bundle download, team storage
-│   ├── playwright.ts    # resolvePlaywrightCli
 │   ├── reporter/        # Reporter interface, console + JUnit + composite reporters
 │   ├── resolveExport.ts # ESM export resolution
 │   ├── signals/         # SignalRegistry for graceful shutdown

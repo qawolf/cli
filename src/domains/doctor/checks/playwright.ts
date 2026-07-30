@@ -1,18 +1,24 @@
 import { doctorMessages } from "~/core/messages/index.js";
+import { playwrightCliCandidates } from "~/core/playwrightBins.js";
 import type { SpawnFn } from "~/shell/spawn.js";
 
 import type { CheckResult } from "~/domains/doctor/types.js";
 
 type PlaywrightDeps = {
   readonly spawn: SpawnFn;
-  readonly playwrightCliPath: string | undefined;
+  readonly envDir: string | undefined;
   readonly platform: NodeJS.Platform;
+  readonly checkExists: (path: string) => boolean;
 };
 
 export async function checkPlaywright(
   deps: PlaywrightDeps,
 ): Promise<CheckResult> {
-  if (deps.playwrightCliPath === undefined) {
+  const cliPath = deps.envDir
+    ? playwrightCliCandidates(deps.envDir, deps.platform).find(deps.checkExists)
+    : undefined;
+
+  if (cliPath === undefined) {
     return {
       name: "playwright",
       status: "fail",
@@ -20,7 +26,7 @@ export async function checkPlaywright(
     };
   }
 
-  const result = await deps.spawn(deps.playwrightCliPath, ["--version"], {
+  const result = await deps.spawn(cliPath, ["--version"], {
     platform: deps.platform,
   });
 

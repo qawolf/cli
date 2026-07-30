@@ -12,8 +12,7 @@ const androidDeps = {
   runAndroidChecks: false,
   androidHome: undefined,
   checkExists: () => true,
-  envDir: undefined,
-  resolveAppiumBin: (dir: string) => `${dir}/node_modules/.bin/appium`,
+  envDir: "/proj",
   requiredAvds: [] as readonly string[],
   platform: "linux" as NodeJS.Platform,
 };
@@ -41,7 +40,6 @@ describe("runChecks", () => {
       flowFiles: [],
       readFile: () => Promise.resolve(""),
       cwd: "/repo",
-      playwrightCliPath: "/fake/node_modules/.bin/playwright",
       ...androidDeps,
     });
 
@@ -77,11 +75,9 @@ describe("runChecks", () => {
       flowFiles: [],
       readFile: () => Promise.resolve(""),
       cwd: "/repo",
-      playwrightCliPath: "/fake/node_modules/.bin/playwright",
       ...androidDeps,
       runAndroidChecks: true,
       androidHome: "/sdk",
-      envDir: "/proj",
     });
 
     expect(results.map((result) => result.name)).toEqual([
@@ -129,7 +125,6 @@ describe("runChecks", () => {
         return Promise.resolve(source);
       },
       cwd: "/repo",
-      playwrightCliPath: "/fake/node_modules/.bin/playwright",
       ...androidDeps,
     });
 

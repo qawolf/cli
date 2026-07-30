@@ -2,7 +2,6 @@ import { makePeekFlowMeta } from "~/domains/flows/expand.js";
 import { findFlowStamp as defaultFindFlowStamp } from "~/shell/manifest/lookup.js";
 import { installBrowserList } from "~/domains/install/browsers.js";
 import { defaultSpawn } from "~/shell/spawn.js";
-import { resolvePlaywrightCli } from "~/shell/playwright.js";
 import { runAndroidFlow as defaultRunAndroidFlow } from "~/domains/runner/runAndroidFlow.js";
 import { runWebFlow as defaultRunWebFlow } from "~/domains/runner/runWebFlow.js";
 import { makePooledDispatch } from "~/domains/runner/makePooledDispatch.js";
@@ -50,7 +49,8 @@ export function buildFlowsRunDeps(args: BuildFlowsRunDepsArgs): FlowsRunDeps {
         spawn: defaultSpawn,
         platform: process.platform,
         browserDeps: flags.browserDeps,
-        playwrightCliPath: resolvePlaywrightCli(resolvedDir, process.platform),
+        envDir: resolvedDir,
+        checkExists: (path) => ctx.fs.existsSync(path),
       }),
     runWebFlow: defaultRunWebFlow,
     runWebFlowDeps: { ...runWebFlowDeps, flowRuntimeDeps },

@@ -1,4 +1,5 @@
 import { mock } from "bun:test";
+import { join } from "node:path";
 
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 
@@ -8,7 +9,7 @@ export const sdk = "/sdk";
 export const adbPath = `${sdk}/platform-tools/adb`;
 export const emulatorPath = `${sdk}/emulator/emulator`;
 export const envDir = "/proj";
-export const appiumBin = `${envDir}/node_modules/.bin/appium`;
+export const appiumBin = join(envDir, "node_modules", ".bin", "appium");
 
 export const success: SpawnResult = { exitCode: 0, stdout: "", stderr: "" };
 export const launchFail: SpawnResult = {
@@ -32,7 +33,6 @@ export function baseDeps(
     androidHome: sdk,
     checkExists: mock<(path: string) => boolean>(() => true),
     envDir,
-    resolveAppiumBin: (dir: string) => `${dir}/node_modules/.bin/appium`,
     requiredAvds: [] as readonly string[],
     platform: "linux" as NodeJS.Platform,
     ...over,

@@ -11,6 +11,8 @@ export const installMessages = {
   installingBrowser: (browser: string) => `Install ${browser}`,
   browsersInstalled: (count: number) =>
     `Installed ${pluralize(count, "browser")}.`,
+  playwrightNotFound:
+    "Could not find Playwright. Install it in your project (`npm install playwright` or `bun add playwright`).",
   playwrightInstallFailed: (browser: string, detail: string) =>
     `playwright install ${browser} failed: ${detail}`,
   playwrightInstallLaunchFailed: (browser: string) =>

@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
+import { join } from "node:path";
 
 import { installBrowsers } from "~/domains/install/browsers.js";
 import {
+  envDir,
   fakeCli,
   callsOf,
   makeDeps,
@@ -16,6 +18,18 @@ afterEach(() => {
 });
 
 describe("installBrowsers", () => {
+  it("spawns the .cmd shim when the platform is win32", async () => {
+    const { deps, ctx } = setup("Web - Chrome", { platform: "win32" });
+
+    await installBrowsers(ctx, undefined, deps);
+
+    expect(deps.spawn).toHaveBeenCalledWith(
+      join(envDir, "node_modules", ".bin", "playwright.cmd"),
+      ["install", "chromium"],
+      { platform: "win32" },
+    );
+  });
+
   it("spawns playwright cli with install <browser> on darwin (no --with-deps)", async () => {
     const { ui, deps, ctx } = setup("Web - Chrome");
 

@@ -4,6 +4,7 @@ import envPaths from "env-paths";
 
 import { doctorMessages } from "~/core/messages/index.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
+import { resolveAppiumBin } from "~/shell/appium/resolveAppiumBin.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 
 function firstLine(result: SpawnResult): string {
@@ -19,7 +20,7 @@ const appiumHome = join(envPaths("qawolf").data, "appium");
 
 export function checkAppium(
   envDir: string | undefined,
-  resolveAppiumBin: (envDir: string) => string,
+  platform: NodeJS.Platform,
   checkExists: (path: string) => boolean,
 ): { appium: CheckResult; bin: string | undefined } {
   if (!envDir) {
@@ -32,7 +33,7 @@ export function checkAppium(
       bin: undefined,
     };
   }
-  const bin = resolveAppiumBin(envDir);
+  const bin = resolveAppiumBin(envDir, platform);
   if (!checkExists(bin)) {
     return {
       appium: {
