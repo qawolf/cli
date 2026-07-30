@@ -111,6 +111,43 @@ describe("handleRunnerScreenshot", () => {
     expect(result?.exitCode).toBe(2);
   });
 
+  // A runner started for this command would have no screen yet, so auto-launching
+  // one would bill a pod in order to answer screen-not-ready every time.
+  it("never launches a runner, and names both things the caller needs", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerScreenshot(
+      ctx,
+      { out: "shot.jpg", runner: undefined },
+      deps,
+    );
+
+    expect(result?.exitCode).toBe(2);
+    expect(result?.error).toContain("qawolf runner launch");
+    expect(result?.error).toContain("navigate it or run a flow on it first");
+    expect(callPublicApi).not.toHaveBeenCalled();
+    expect(deps.written).toEqual([]);
+  });
+
+  it("takes the stored default when no flag names a runner", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { imageJpegBase64, outcome: "captured" },
+    });
+    const deps = makeTestDeps();
+    await deps.store.writeDefaultRunnerId("from-store");
+
+    await handleRunnerScreenshot(
+      ctx,
+      { out: "shot.jpg", runner: undefined },
+      deps,
+    );
+
+    expect(callPublicApi.mock.calls[0]?.[1]).toEqual({ id: "from-store" });
+  });
+
   it("reports an unreachable runner, writing nothing", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({

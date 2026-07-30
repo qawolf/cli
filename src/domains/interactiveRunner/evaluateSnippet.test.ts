@@ -210,6 +210,9 @@ describe("handleRunnerExec", () => {
     );
 
     expect(result?.error).toContain("no live page");
+    // A fresh node20WithPlaywright runner does run a browser, so telling the
+    // caller to check the image would send them after the wrong thing.
+    expect(result?.error).toContain("run a flow on it or navigate it first");
     expect(result?.error).toContain("not proof the snippet did not run");
     expect(result?.exitCode).toBe(4);
   });

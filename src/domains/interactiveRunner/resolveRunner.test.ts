@@ -86,6 +86,26 @@ describe("resolveRunner", () => {
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 
+  it("uses a command's own wording when it supplies one", async () => {
+    const { ctx } = makeAuthCtx();
+
+    const resolved = await resolveRunner(
+      ctx,
+      {
+        autoLaunch: false,
+        noRunnerIdMessage: "Launch one and open a page first.",
+        runner: undefined,
+      },
+      makeTestDeps(),
+    );
+
+    expect(resolved).toEqual({
+      error: "Launch one and open a page first.",
+      exitCode: 2,
+      type: "failed",
+    });
+  });
+
   it("refuses an id the published schema does not admit", async () => {
     const { ctx } = makeAuthCtx();
 
