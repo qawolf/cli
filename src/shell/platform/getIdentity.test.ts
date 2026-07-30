@@ -54,6 +54,16 @@ describe("getIdentity", () => {
     expect(result).toEqual({ ok: true, data: { team } });
   });
 
+  it("returns ok with parsed data for an organization identity", async () => {
+    const organization = { id: "org_1", name: "Acme Org" };
+    const result = await getIdentity("sk_orgkey", {
+      fetch: createFetchMock(jsonResponse({ organization })),
+      baseUrl: "https://test.qawolf.com",
+    });
+
+    expect(result).toEqual({ ok: true, data: { organization } });
+  });
+
   it("returns http WireError with status on auth failure", async () => {
     const result = await getIdentity("qawolf_badkey", {
       fetch: createFetchMock(

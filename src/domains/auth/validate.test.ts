@@ -21,18 +21,32 @@ function makeDeps(result: PlatformResult<IdentityResponse>) {
 }
 
 describe("validateApiKey", () => {
-  it("returns valid with team identity on successful verification", async () => {
-    const teamData = {
-      createdAt: "2024-01-15T00:00:00.000Z",
-      id: "team_123",
-      name: "Acme Corp",
-      slug: "acme",
-    };
-    const deps = makeDeps({ ok: true, value: { team: teamData } });
+  it("returns valid on successful team verification", async () => {
+    const deps = makeDeps({
+      ok: true,
+      value: {
+        team: {
+          createdAt: "2024-01-15T00:00:00.000Z",
+          id: "team_123",
+          name: "Acme Corp",
+          slug: "acme",
+        },
+      },
+    });
 
     const result = await validateApiKey(deps);
-    expect(result).toEqual({ valid: true, team: teamData });
+    expect(result).toEqual({ valid: true });
     expect(deps.platformClient.getIdentity).toHaveBeenCalled();
+  });
+
+  it("returns valid on successful organization verification", async () => {
+    const deps = makeDeps({
+      ok: true,
+      value: { organization: { id: "org_1", name: "Acme Org" } },
+    });
+
+    const result = await validateApiKey(deps);
+    expect(result).toEqual({ valid: true });
   });
 
   it("returns invalid when API responds with 401 (already formatted by platform client)", async () => {

@@ -1,5 +1,3 @@
-import type { IdentityResponse } from "~/shell/platform/getIdentity.js";
-
 // "keychain" = OS credential store (macOS Keychain, Windows Credential Manager, etc.)
 // "file"     = fallback JSON file in the config directory
 export type StorageSource = "keychain" | "file";
@@ -16,8 +14,6 @@ export type LoadApiKeyResult =
   | { found: true; key: string; source: StorageSource }
   | { found: false; errors?: { keychain?: string; file?: string } };
 
-type TeamIdentity = IdentityResponse["team"];
-
 export type ValidateApiKeyResult =
-  | { valid: true; team: TeamIdentity }
+  | { valid: true }
   | { valid: false; error: string };

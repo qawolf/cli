@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import type { ApiKeyResult } from "~/domains/auth/types.js";
 import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
-import type { IdentityResponse } from "~/shell/platform/getIdentity.js";
+import type {
+  IdentityResponse,
+  TeamIdentity,
+} from "~/shell/platform/getIdentity.js";
 import type { PlatformResult } from "~/shell/platform/requestWithRetry.js";
 import { makeCtx } from "~/shell/commandContext.testUtils.js";
 import { handleWhoami } from "./whoami.js";
@@ -10,7 +13,7 @@ afterEach(() => {
   mock.restore();
 });
 
-function makeTeam(): IdentityResponse["team"] {
+function makeTeam(): TeamIdentity {
   return {
     id: "t1",
     name: "Acme Corp",
@@ -117,6 +120,43 @@ describe("handleWhoami", () => {
           authenticated: true,
           source: "env",
         }),
+        expect.any(String),
+      );
+    });
+  });
+
+  describe("organization identity", () => {
+    function makeOrgDeps() {
+      return makeDeps({
+        getIdentity: mock(() =>
+          Promise.resolve({
+            ok: true as const,
+            value: { organization: { id: "org_1", name: "Acme Org" } },
+          }),
+        ),
+      });
+    }
+
+    it("outputs the organization in JSON output", async () => {
+      const ctx = makeCtx("json", { apiBaseUrl: "https://app.qawolf.com" });
+      await handleWhoami(ctx, makeOrgDeps());
+
+      expect(ctx.ui.output).toHaveBeenCalledWith(
+        expect.objectContaining({
+          authenticated: true,
+          organization: { id: "org_1", name: "Acme Org" },
+          source: "env",
+        }),
+        expect.any(String),
+      );
+    });
+
+    it("includes the organization name in the human note", async () => {
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
+      await handleWhoami(ctx, makeOrgDeps());
+
+      expect(ctx.ui.note).toHaveBeenCalledWith(
+        expect.stringContaining("Acme Org"),
         expect.any(String),
       );
     });

@@ -110,6 +110,13 @@ export function createPlatformClient(
     async listTeamStorageFiles() {
       const identity = await this.getIdentity();
       if (!identity.ok) return identity;
+      if (!("team" in identity.value)) {
+        return {
+          ok: false,
+          error:
+            "Team storage requires a team API key; organization keys are not supported here.",
+        };
+      }
       return listTeamStorageFiles(
         trpc,
         { teamId: identity.value.team.id },

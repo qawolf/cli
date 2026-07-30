@@ -66,7 +66,33 @@ export async function handleWhoami(
     return { error: "invalid key" };
   }
 
-  const { team } = identity.value;
+  const { value } = identity;
+
+  if ("organization" in value) {
+    const { organization } = value;
+    if (ctx.ui.mode === "human") {
+      ctx.ui.note(
+        authMessages.whoami.organizationNote({
+          organization,
+          source: resolved.source,
+        }),
+        authMessages.whoamiAuthenticated,
+      );
+      ctx.ui.outro(authMessages.outroReady);
+    } else {
+      ctx.ui.output(
+        {
+          authenticated: true,
+          organization,
+          source: resolved.source,
+        },
+        authMessages.whoami.authenticatedAs(organization.name, resolved.source),
+      );
+    }
+    return;
+  }
+
+  const { team } = value;
   const teamUrl = team.slug
     ? new URL("/" + encodeURIComponent(team.slug), ctx.apiBaseUrl).toString()
     : undefined;
