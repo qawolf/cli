@@ -101,3 +101,41 @@ jobs:
             node dist/cli.js --version
             node test/node20/smoke.mjs
           fi
+
+  # Only a Windows runner reaches CreateProcess, so only this job catches a
+  # win32 spawn regression. WIZ-11274 (`spawn npm ENOENT`) shipped through that
+  # gap. `test/spawn/smoke.mjs` explains the mechanism.
+  #
+  # TODO WIZ-11279: add `bun run test` here. Around 30 test files assert POSIX
+  # separators or file modes, so the suite fails on win32 today.
+  #
+  # Every multi-line step sets `shell: bash`. The windows-latest default is
+  # pwsh, which reports only the last command's exit code, so an earlier
+  # failure would pass silently.
+  windows-smoke:
+    name: Windows smoke
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      # build:bundle skips the postbuild hook, which shells out to bash to
+      # prepend a shebang and chmod dist/cli.js. Windows needs neither to run
+      # `node dist/cli.js`.
+      - run: bun run build:bundle
+      - name: Bundle spawn helpers for smoke
+        shell: bash
+        run: |
+          bun build src/shell/npm.ts --target=node --format=esm --outfile test/spawn/npm.generated.mjs
+          bun build src/shell/spawn.ts --target=node --format=esm --outfile test/spawn/spawn.generated.mjs
+      - name: Smoke — bundle boots + npm spawns
+        shell: bash
+        run: |
+          node dist/cli.js --version
+          node test/spawn/smoke.mjs

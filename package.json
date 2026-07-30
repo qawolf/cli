@@ -35,7 +35,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "bun run generate && bun scripts/build.ts",
+    "build": "bun run build:bundle",
+    "build:bundle": "bun run generate && bun scripts/build.ts",
     "build:binary": "bun run build && bun scripts/buildBinary.ts",
     "dev": "bun run src/main.ts",
     "format": "oxfmt .",
