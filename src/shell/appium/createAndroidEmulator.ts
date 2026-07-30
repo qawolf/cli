@@ -1,14 +1,11 @@
 import { spawn } from "node:child_process";
 
 import { emulatorBin } from "~/core/androidBins.js";
+import { androidSdkHome } from "~/shell/androidSdkHome.js";
 import { defaultAdb, type AdbFn } from "./adb.js";
 
 const defaultBootTimeoutMs = 120_000;
 const pollIntervalMs = 2_000;
-
-function androidHome(): string | undefined {
-  return process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"];
-}
 
 export type SpawnEmulatorFn = (
   bin: string,
@@ -85,7 +82,7 @@ export async function createAndroidEmulator(params: {
   const timeoutMs = params.options?.bootTimeoutMs ?? defaultBootTimeoutMs;
   const serial = `emulator-${port}`;
 
-  const proc = spawnFn(emulatorBin(androidHome(), process.platform), [
+  const proc = spawnFn(emulatorBin(androidSdkHome(), process.platform), [
     "-avd",
     avdName,
     "-no-audio",

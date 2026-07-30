@@ -1,5 +1,4 @@
-import { join } from "node:path";
-import envPaths from "env-paths";
+import { getAppiumHome } from "~/core/paths.js";
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { SpawnFn } from "~/shell/spawn.js";
 import { installMessages } from "~/core/messages/index.js";
@@ -13,16 +12,11 @@ export type InstallDriverDeps = {
   readonly checkExists: (path: string) => boolean;
 };
 
-// Must match the APPIUM_HOME used by createAppiumServer so that drivers
-// installed here are found when the server starts during flows run.
-const appiumEnv = {
-  APPIUM_HOME: join(envPaths("qawolf").data, "appium"),
-};
-
 export async function installUiautomator2Driver(
   ctx: CommandContext,
   deps: InstallDriverDeps,
 ): Promise<void> {
+  const appiumEnv = { APPIUM_HOME: getAppiumHome() };
   const candidates = appiumCliCandidates(deps.envDir, deps.platform);
   const appiumBinPath = candidates.find(deps.checkExists);
   if (!appiumBinPath) {
