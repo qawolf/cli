@@ -57,7 +57,7 @@ export function buildSpawnCommand(
 export const defaultSpawn: SpawnFn = (cmd, args, opts) =>
   new Promise((resolve) => {
     const env = opts.env ? { ...process.env, ...opts.env } : undefined;
-    const built = buildSpawnCommand(cmd, args, process.platform, env);
+    const built = buildSpawnCommand(cmd, args, opts.platform, env);
     const child = spawn(built.cmd, built.args, built.options);
     let stdout = "";
     let stderr = "";

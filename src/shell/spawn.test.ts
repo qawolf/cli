@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
 
-import { buildSpawnCommand } from "./spawn.js";
+import { buildSpawnCommand, defaultSpawn } from "./spawn.js";
 
 const originalComSpec = process.env["ComSpec"];
 
@@ -102,5 +102,31 @@ describe("buildSpawnCommand", () => {
       env,
       windowsVerbatimArguments: true,
     });
+  });
+});
+
+describe.skipIf(process.platform === "win32")("defaultSpawn", () => {
+  // /bin/echo stands in for cmd.exe so a POSIX host can observe the win32
+  // routing that buildSpawnCommand produces.
+  it("routes a .cmd through the shell named by the caller's platform", async () => {
+    process.env["ComSpec"] = "/bin/echo";
+
+    const result = await defaultSpawn("C:\\tools\\npm.cmd", ["ping"], {
+      platform: "win32",
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toStartWith('/d /s /c "C:\\tools\\npm.cmd ');
+  });
+
+  it("spawns the command directly when the caller passes a posix platform", async () => {
+    process.env["ComSpec"] = "/bin/echo";
+
+    const result = await defaultSpawn("/bin/echo", ["hello"], {
+      platform: "linux",
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.trim()).toBe("hello");
   });
 });
