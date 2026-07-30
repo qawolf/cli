@@ -5,13 +5,9 @@ import envPaths from "env-paths";
 import { existsSync } from "node:fs";
 
 import { appiumCliCandidates } from "~/core/appiumBins.js";
+import { installMessages } from "~/core/messages/index.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { defaultSpawnAppium, findFreePort } from "./spawnAppium.js";
-
-function defaultResolveAppiumBin(envDir: string): string {
-  const candidates = appiumCliCandidates(envDir, process.platform);
-  return candidates.find(existsSync) ?? (candidates[0] as string);
-}
 
 export type AppiumProcess = {
   output: NodeJS.ReadableStream;
@@ -21,6 +17,7 @@ export type AppiumProcess = {
 export type SpawnAppiumFn = (
   bin: string,
   args: string[],
+  platform: NodeJS.Platform,
   env: Record<string, string | undefined>,
 ) => AppiumProcess;
 export type FindFreePortFn = () => Promise<number>;
@@ -81,11 +78,12 @@ export async function createAppiumServer(
     deps?: {
       spawn?: SpawnAppiumFn;
       findFreePort?: FindFreePortFn;
-      resolveAppiumBin?: (envDir: string) => string;
+      checkExists?: (path: string) => boolean;
     };
     options?: {
       appiumHome?: string;
       startTimeoutMs?: number;
+      platform?: NodeJS.Platform;
     };
   },
 ): Promise<{
@@ -96,17 +94,25 @@ export async function createAppiumServer(
 }> {
   const spawnFn = params?.deps?.spawn ?? defaultSpawnAppium;
   const findFreePortFn = params?.deps?.findFreePort ?? findFreePort;
-  const resolveAppiumBinFn =
-    params?.deps?.resolveAppiumBin ?? defaultResolveAppiumBin;
+  const checkExists = params?.deps?.checkExists ?? existsSync;
   const appiumHome =
     params?.options?.appiumHome ?? join(envPaths("qawolf").data, "appium");
   const timeoutMs = params?.options?.startTimeoutMs ?? defaultStartTimeoutMs;
-  const bin = resolveAppiumBinFn(envDir);
+  const platform = params?.options?.platform ?? process.platform;
+  const candidates = appiumCliCandidates(envDir, platform);
+  const bin = candidates.find(checkExists);
+  if (!bin) {
+    throw new Error(
+      installMessages.android.appiumNotFound(candidates[0] ?? envDir),
+    );
+  }
   const port = await findFreePortFn();
-  const proc = spawnFn(bin, ["--port", String(port), "--log-level", "info"], {
-    ...process.env,
-    APPIUM_HOME: appiumHome,
-  });
+  const proc = spawnFn(
+    bin,
+    ["--port", String(port), "--log-level", "info"],
+    platform,
+    { ...process.env, APPIUM_HOME: appiumHome },
+  );
   let stopped = false;
   const stop = () => {
     if (stopped) return;
