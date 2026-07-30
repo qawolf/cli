@@ -1,26 +1,49 @@
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
-import { buildAppiumSpawnOptions } from "./spawnAppium.js";
+import { buildAppiumSpawn } from "./spawnAppium.js";
 
-describe("buildAppiumSpawnOptions", () => {
+const originalComSpec = process.env["ComSpec"];
+
+afterEach(() => {
+  if (originalComSpec === undefined) delete process.env["ComSpec"];
+  else process.env["ComSpec"] = originalComSpec;
+});
+
+describe("buildAppiumSpawn", () => {
   const env = { APPIUM_HOME: "/data/appium" };
 
   it("pipes stdout and stderr and passes the env through", () => {
     expect(
-      buildAppiumSpawnOptions("/envs/node20/.bin/appium", "linux", env),
+      buildAppiumSpawn(
+        "/envs/node20/.bin/appium",
+        ["--port", "4723"],
+        "linux",
+        env,
+      ),
     ).toEqual({
-      stdio: ["ignore", "pipe", "pipe"],
-      env,
+      cmd: "/envs/node20/.bin/appium",
+      args: ["--port", "4723"],
+      options: { stdio: ["ignore", "pipe", "pipe"], env },
     });
   });
 
-  it("sets shell on win32 so Node will run the .cmd shim", () => {
-    expect(
-      buildAppiumSpawnOptions(
-        "C:\\envs\\node20\\.bin\\appium.cmd",
-        "win32",
-        env,
-      ).shell,
-    ).toBe(true);
+  it("routes the .cmd shim through cmd.exe on win32, keeping stdio", () => {
+    process.env["ComSpec"] = "C:\\Windows\\System32\\cmd.exe";
+    const built = buildAppiumSpawn(
+      "C:\\envs\\node20\\.bin\\appium.cmd",
+      ["--port", "4723"],
+      "win32",
+      env,
+    );
+    expect(built.cmd).toBe("C:\\Windows\\System32\\cmd.exe");
+    expect(built.args).toEqual([
+      "/d",
+      "/s",
+      "/c",
+      '"C:\\envs\\node20\\.bin\\appium.cmd ^^^"--port^^^" ^^^"4723^^^""',
+    ]);
+    expect(built.options.stdio).toEqual(["ignore", "pipe", "pipe"]);
+    expect(built.options.windowsVerbatimArguments).toBe(true);
+    expect(built.options.shell).toBeUndefined();
   });
 });

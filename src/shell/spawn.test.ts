@@ -1,61 +1,106 @@
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
-import { buildSpawnOptions } from "./spawn.js";
+import { buildSpawnCommand } from "./spawn.js";
 
-describe("buildSpawnOptions", () => {
-  it("returns an empty options object on linux/darwin", () => {
-    expect(
-      buildSpawnOptions("/usr/local/bin/playwright", "linux", undefined),
-    ).toEqual({});
-    expect(
-      buildSpawnOptions("/usr/local/bin/playwright", "darwin", undefined),
-    ).toEqual({});
+const originalComSpec = process.env["ComSpec"];
+
+afterEach(() => {
+  if (originalComSpec === undefined) delete process.env["ComSpec"];
+  else process.env["ComSpec"] = originalComSpec;
+});
+
+describe("buildSpawnCommand", () => {
+  it("passes the command through untouched on linux/darwin", () => {
+    const built = buildSpawnCommand(
+      "/usr/local/bin/playwright",
+      ["--version"],
+      "linux",
+      undefined,
+    );
+    expect(built).toEqual({
+      cmd: "/usr/local/bin/playwright",
+      args: ["--version"],
+      options: {},
+    });
   });
 
-  it("does not set shell on linux/darwin even for a .cmd-suffixed path", () => {
-    const opts = buildSpawnOptions("/tmp/weird.cmd", "linux", undefined);
-    expect(opts.shell).toBeUndefined();
+  it("does not rewrite a .cmd-suffixed path on linux/darwin", () => {
+    const built = buildSpawnCommand("/tmp/weird.cmd", [], "linux", undefined);
+    expect(built.cmd).toBe("/tmp/weird.cmd");
   });
 
-  it("sets shell:true on win32 for a .cmd file", () => {
-    const opts = buildSpawnOptions(
+  it("routes a win32 .cmd through cmd.exe", () => {
+    process.env["ComSpec"] = "C:\\Windows\\System32\\cmd.exe";
+    const built = buildSpawnCommand(
       "C:\\proj\\node_modules\\.bin\\playwright.cmd",
+      ["--version"],
       "win32",
       undefined,
     );
-    expect(opts.shell).toBe(true);
+    expect(built).toEqual({
+      cmd: "C:\\Windows\\System32\\cmd.exe",
+      args: [
+        "/d",
+        "/s",
+        "/c",
+        '"C:\\proj\\node_modules\\.bin\\playwright.cmd ^^^"--version^^^""',
+      ],
+      options: { windowsVerbatimArguments: true },
+    });
   });
 
-  it("sets shell:true on win32 for a .bat file", () => {
-    const opts = buildSpawnOptions("C:\\tool.bat", "win32", undefined);
-    expect(opts.shell).toBe(true);
+  it("matches the .cmd/.bat suffix case-insensitively on win32", () => {
+    expect(buildSpawnCommand("C:\\x.CMD", [], "win32", undefined).args[0]).toBe(
+      "/d",
+    );
+    expect(buildSpawnCommand("C:\\x.Bat", [], "win32", undefined).args[0]).toBe(
+      "/d",
+    );
   });
 
-  it("sets shell:true on win32 case-insensitively", () => {
-    expect(buildSpawnOptions("C:\\x.CMD", "win32", undefined).shell).toBe(true);
-    expect(buildSpawnOptions("C:\\x.Bat", "win32", undefined).shell).toBe(true);
-  });
-
-  it("does not set shell on win32 for .exe or extension-less files", () => {
+  it("spawns .exe and extension-less files directly on win32", () => {
     expect(
-      buildSpawnOptions("C:\\Windows\\System32\\cmd.exe", "win32", undefined)
-        .shell,
-    ).toBeUndefined();
-    expect(
-      buildSpawnOptions(
-        "C:\\proj\\node_modules\\.bin\\playwright",
+      buildSpawnCommand(
+        "C:\\Windows\\System32\\cmd.exe",
+        [],
         "win32",
         undefined,
-      ).shell,
+      ).cmd,
+    ).toBe("C:\\Windows\\System32\\cmd.exe");
+    expect(
+      buildSpawnCommand(
+        "C:\\proj\\node_modules\\.bin\\playwright",
+        [],
+        "win32",
+        undefined,
+      ).cmd,
+    ).toBe("C:\\proj\\node_modules\\.bin\\playwright");
+  });
+
+  it("falls back to cmd.exe when ComSpec is unset", () => {
+    delete process.env["ComSpec"];
+    expect(buildSpawnCommand("C:\\x.cmd", [], "win32", undefined).cmd).toBe(
+      "cmd.exe",
+    );
+  });
+
+  it("never sets shell", () => {
+    expect(
+      buildSpawnCommand("C:\\x.cmd", ["a"], "win32", undefined).options.shell,
+    ).toBeUndefined();
+    expect(
+      buildSpawnCommand("/bin/sh", ["a"], "linux", undefined).options.shell,
     ).toBeUndefined();
   });
 
-  it("threads env through unchanged", () => {
+  it("threads env through on both platforms", () => {
     const env = { FOO: "bar" };
-    expect(buildSpawnOptions("/bin/sh", "linux", env)).toEqual({ env });
-    expect(buildSpawnOptions("C:\\x.cmd", "win32", env)).toEqual({
+    expect(buildSpawnCommand("/bin/sh", [], "linux", env).options).toEqual({
       env,
-      shell: true,
+    });
+    expect(buildSpawnCommand("C:\\x.cmd", [], "win32", env).options).toEqual({
+      env,
+      windowsVerbatimArguments: true,
     });
   });
 });
