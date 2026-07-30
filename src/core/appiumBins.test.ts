@@ -16,11 +16,10 @@ describe("appiumCliCandidates", () => {
     ]);
   });
 
-  it("includes the bun-written .exe on win32, after the npm .cmd shim", () => {
+  it("lists the npm .cmd then the bun .exe on win32, and nothing else", () => {
     expect(appiumCliCandidates(envDir, "win32")).toEqual([
       join(binDir, "appium.cmd"),
       join(binDir, "appium.exe"),
-      join(binDir, "appium"),
     ]);
   });
 });

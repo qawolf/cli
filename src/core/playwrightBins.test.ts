@@ -16,11 +16,10 @@ describe("playwrightCliCandidates", () => {
     ]);
   });
 
-  it("includes the bun-written .exe on win32, after the npm .cmd shim", () => {
+  it("lists the npm .cmd then the bun .exe on win32, and nothing else", () => {
     expect(playwrightCliCandidates(envDir, "win32")).toEqual([
       join(binDir, "playwright.cmd"),
       join(binDir, "playwright.exe"),
-      join(binDir, "playwright"),
     ]);
   });
 });
