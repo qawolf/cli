@@ -144,8 +144,9 @@ describe("peekFlowMeta", () => {
 });
 
 describe("expandPatterns", () => {
-  // Assertions compare exactly against join-derived paths on purpose: that is
-  // what pins the canonical form on win32, where the glob emits forward slashes.
+  // These assertions compare exactly against join-derived paths on purpose.
+  // The glob emits forward slashes on win32. Exact equality is what pins the
+  // canonical form there, so do not normalize either side.
   let mainTmpDir: string;
   let noQawolfTmpDir: string;
   let multiEnvTmpDir: string;
