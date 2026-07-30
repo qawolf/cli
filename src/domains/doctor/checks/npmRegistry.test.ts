@@ -15,7 +15,7 @@ function spawnReturning(result: SpawnResult): SpawnFn {
 describe("checkNpmRegistry", () => {
   it("passes on exit 0", async () => {
     const spawn = spawnReturning({ exitCode: 0, stdout: "", stderr: "" });
-    const r = await checkNpmRegistry({ spawn });
+    const r = await checkNpmRegistry({ spawn, platform: "linux" });
     expect(r).toEqual({ name: "npm-registry", status: "pass" });
     expect(spawn).toHaveBeenCalledWith("npm", ["ping"]);
   });
@@ -26,14 +26,20 @@ describe("checkNpmRegistry", () => {
       stdout: "",
       stderr: "registry unreachable\n",
     });
-    const r = await checkNpmRegistry({ spawn });
+    const r = await checkNpmRegistry({ spawn, platform: "linux" });
     expect(r.status).toBe("warn");
     expect(r.detail).toBe("registry unreachable");
   });
 
+  it("pings via npm.cmd on win32", async () => {
+    const spawn = spawnReturning({ exitCode: 0, stdout: "", stderr: "" });
+    await checkNpmRegistry({ spawn, platform: "win32" });
+    expect(spawn).toHaveBeenCalledWith("npm.cmd", ["ping"]);
+  });
+
   it("warns when npm is missing", async () => {
     const spawn = spawnReturning({ exitCode: -1, stdout: "", stderr: "" });
-    const r = await checkNpmRegistry({ spawn });
+    const r = await checkNpmRegistry({ spawn, platform: "linux" });
     expect(r.status).toBe("warn");
     expect(r.detail).toContain("not installed");
   });

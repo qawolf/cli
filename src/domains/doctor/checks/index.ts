@@ -27,6 +27,7 @@ type CheckDeps = {
   readonly envDir: string | undefined;
   readonly resolveAppiumBin: (envDir: string) => string;
   readonly requiredAvds: readonly string[];
+  readonly platform: NodeJS.Platform;
 };
 
 export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
@@ -49,7 +50,7 @@ export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
     }),
     checkApiKey({ apiKey: deps.apiKey }),
     checkApiUrl({ fetch: deps.fetch, apiBaseUrl: deps.apiBaseUrl }),
-    checkNpmRegistry({ spawn: deps.spawn }),
+    checkNpmRegistry({ spawn: deps.spawn, platform: deps.platform }),
     checkFileAssets({
       files: deps.flowFiles,
       readFile: deps.readFile,
