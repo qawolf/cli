@@ -191,22 +191,28 @@ describe("createAppiumServer", () => {
     expect(spawnCalls).toEqual([{ bin: winShim, platform: "win32" }]);
   });
 
-  it("should spawn the first candidate when no binary exists on disk", async () => {
+  it("should reject without spawning when no binary exists on disk", async () => {
     const { output, findFreePort } = makeTestDeps();
     const spawnCalls: string[] = [];
     const spawnFn: SpawnAppiumFn = (bin, _args, _platform, _env) => {
       spawnCalls.push(bin);
       return { output, kill: mock(() => {}), exitCode: new Promise(() => {}) };
     };
-    emitBanner(output);
 
-    await createAppiumServer("/fake/env", noopSignals, {
-      deps: { spawn: spawnFn, findFreePort, checkExists: () => false },
-      options: { platform: "linux", startTimeoutMs: 1_000 },
-    });
-
-    expect(spawnCalls).toEqual([
-      join("/fake/env", "node_modules", ".bin", "appium"),
-    ]);
+    let caught: unknown;
+    try {
+      await createAppiumServer("/fake/env", noopSignals, {
+        deps: { spawn: spawnFn, findFreePort, checkExists: () => false },
+        options: { platform: "linux", startTimeoutMs: 1_000 },
+      });
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toBe(
+      `appium not found at ${join("/fake/env", "node_modules", ".bin", "appium")}.\n` +
+        "Reinstall the runtime dependencies with `qawolf install`.",
+    );
+    expect(spawnCalls).toEqual([]);
   });
 });

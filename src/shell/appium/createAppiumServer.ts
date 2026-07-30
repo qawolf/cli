@@ -5,6 +5,7 @@ import envPaths from "env-paths";
 import { existsSync } from "node:fs";
 
 import { appiumCliCandidates } from "~/core/appiumBins.js";
+import { installMessages } from "~/core/messages/index.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { defaultSpawnAppium, findFreePort } from "./spawnAppium.js";
 
@@ -99,7 +100,12 @@ export async function createAppiumServer(
   const timeoutMs = params?.options?.startTimeoutMs ?? defaultStartTimeoutMs;
   const platform = params?.options?.platform ?? process.platform;
   const candidates = appiumCliCandidates(envDir, platform);
-  const bin = candidates.find(checkExists) ?? (candidates[0] as string);
+  const bin = candidates.find(checkExists);
+  if (!bin) {
+    throw new Error(
+      installMessages.android.appiumNotFound(candidates[0] ?? envDir),
+    );
+  }
   const port = await findFreePortFn();
   const proc = spawnFn(
     bin,
