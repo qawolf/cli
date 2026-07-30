@@ -77,7 +77,7 @@ function seedShim(
 }
 
 describe("allPinnedResolved", () => {
-  it("returns true when all packages match and .bin/playwright exists", () => {
+  it("returns true when all packages match and both shims exist", () => {
     const fs = makeMemoryFs();
     seedAllPackages(fs);
 
@@ -97,12 +97,12 @@ describe("allPinnedResolved", () => {
     expect(allPinnedResolved(dir, fs, "linux")).toBe(false);
   });
 
-  it("returns false when .bin/playwright shim is absent", () => {
+  it("returns false when the .bin/playwright shim is absent", () => {
     const fs = makeMemoryFs();
     for (const { name, version } of pinnedPackages) {
       seedPackage(fs, name, version);
     }
-    // No .bin/playwright
+    seedShim(fs, "appium", "#!/bin/sh");
 
     expect(allPinnedResolved(dir, fs, "linux")).toBe(false);
   });
@@ -119,7 +119,7 @@ describe("allPinnedResolved", () => {
     expect(allPinnedResolved(dir, fs, "linux")).toBe(false);
   });
 
-  it("returns true when only the Windows .bin/playwright.cmd shim exists", () => {
+  it("returns true when only the Windows .cmd shims exist", () => {
     const fs = makeMemoryFs();
     for (const { name, version } of pinnedPackages) {
       seedPackage(fs, name, version);
@@ -130,7 +130,7 @@ describe("allPinnedResolved", () => {
     expect(allPinnedResolved(dir, fs, "win32")).toBe(true);
   });
 
-  it("returns true when only the Windows .bin/playwright.exe shim exists", () => {
+  it("returns true when only the Windows .exe shims exist", () => {
     const fs = makeMemoryFs();
     for (const { name, version } of pinnedPackages) {
       seedPackage(fs, name, version);

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
 
-import { toolNotInstalled, toolNotRunnable } from "./toolNotFound.js";
+import {
+  packageLoadFailed,
+  toolNotInstalled,
+  toolNotRunnable,
+} from "./toolNotFound.js";
 
 describe("toolNotInstalled", () => {
   it("names the path it looked for", () => {
@@ -26,6 +30,17 @@ describe("toolNotRunnable", () => {
       toolNotRunnable("Could not run `appium driver list`", "ENOENT"),
     ).toBe(
       "Could not run `appium driver list` (ENOENT).\n" +
+        "Run `qawolf install` to install the runtime dependencies.",
+    );
+  });
+});
+
+describe("packageLoadFailed", () => {
+  it("names the package, the env dir and the underlying detail", () => {
+    expect(
+      packageLoadFailed("@qawolf/emails", "/env", "Package not found"),
+    ).toBe(
+      "Could not load @qawolf/emails from /env (Package not found).\n" +
         "Run `qawolf install` to install the runtime dependencies.",
     );
   });
