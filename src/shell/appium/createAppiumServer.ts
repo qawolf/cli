@@ -4,7 +4,7 @@ import envPaths from "env-paths";
 
 import { existsSync } from "node:fs";
 
-import { appiumCliCandidates } from "~/core/appiumBins.js";
+import { appiumCliCandidates } from "~/core/nodeModulesBins.js";
 import { installMessages } from "~/core/messages/index.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { defaultSpawnAppium, findFreePort } from "./spawnAppium.js";

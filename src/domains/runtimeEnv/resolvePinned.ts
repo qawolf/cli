@@ -1,7 +1,9 @@
 import { join } from "node:path";
 
-import { appiumCliCandidates } from "~/core/appiumBins.js";
-import { playwrightCliCandidates } from "~/core/playwrightBins.js";
+import {
+  appiumCliCandidates,
+  playwrightCliCandidates,
+} from "~/core/nodeModulesBins.js";
 import type { Fs } from "~/shell/fs.js";
 
 import { pinnedPackages } from "./pinnedPackages.js";

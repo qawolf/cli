@@ -1,7 +1,7 @@
 import { targetToBrowser, type PeekFlowMetaFn } from "~/core/flowMeta.js";
 import { installMessages } from "~/core/messages/index.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
-import { playwrightCliCandidates } from "~/core/playwrightBins.js";
+import { playwrightCliCandidates } from "~/core/nodeModulesBins.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import type { BrowserName } from "~/core/types.js";

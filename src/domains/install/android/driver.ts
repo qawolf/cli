@@ -2,8 +2,8 @@ import { join } from "node:path";
 import envPaths from "env-paths";
 import type { CommandContext } from "~/shell/commandContext.js";
 import type { SpawnFn } from "~/shell/spawn.js";
-import { appiumCliCandidates } from "~/core/appiumBins.js";
 import { installMessages } from "~/core/messages/index.js";
+import { appiumCliCandidates } from "~/core/nodeModulesBins.js";
 import { appiumUiautomator2DriverVersion } from "~/generated/dependencyVersions.js";
 
 export type InstallDriverDeps = {
