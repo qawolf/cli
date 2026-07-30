@@ -9,8 +9,8 @@ import { resolveDepsRoot } from "./resolveDepsRoot.js";
 
 type MemFs = ReturnType<typeof makeMemoryFs>;
 
-// Materializes every pinned package at its exact version plus the .bin/playwright
-// shim so allPinnedResolved(dir) returns true for `dir`.
+// Materializes every pinned package at its exact version plus the .bin CLI
+// shims so allPinnedResolved(dir) returns true for `dir`.
 function seedFullEnv(fs: MemFs, dir: string): void {
   for (const { name, version } of pinnedPackages) {
     const pkgDir = join(dir, "node_modules", ...name.split("/"));
@@ -20,6 +20,7 @@ function seedFullEnv(fs: MemFs, dir: string): void {
   const binDir = join(dir, "node_modules", ".bin");
   fs.mkdirSync(binDir, { recursive: true });
   fs.writeFileSync(join(binDir, "playwright"), "#!/bin/sh");
+  fs.writeFileSync(join(binDir, "appium"), "#!/bin/sh");
 }
 
 function seedPackageJson(fs: MemFs, dir: string): void {

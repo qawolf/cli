@@ -23,10 +23,9 @@ function seedAllPackages(fs: ReturnType<typeof makeMemoryFs>): void {
     seedPackage(fs, name, version);
   }
   fs.mkdirSync(join(dir, "node_modules", ".bin"), { recursive: true });
-  fs.writeFileSync(
-    join(dir, "node_modules", ".bin", "playwright"),
-    "#!/bin/sh",
-  );
+  for (const name of ["playwright", "appium"]) {
+    fs.writeFileSync(join(dir, "node_modules", ".bin", name), "#!/bin/sh");
+  }
 }
 
 describe("readInstalledVersion", () => {
@@ -108,12 +107,25 @@ describe("allPinnedResolved", () => {
     expect(allPinnedResolved(dir, fs, "linux")).toBe(false);
   });
 
+  it("returns false when the .bin/appium shim is absent", () => {
+    const fs = makeMemoryFs();
+    for (const { name, version } of pinnedPackages) {
+      seedPackage(fs, name, version);
+    }
+    seedShim(fs, "playwright", "#!/bin/sh");
+    // No .bin/appium — the state that used to leave a resolved root with no
+    // runnable Appium, so `flows run` failed after install reported success.
+
+    expect(allPinnedResolved(dir, fs, "linux")).toBe(false);
+  });
+
   it("returns true when only the Windows .bin/playwright.cmd shim exists", () => {
     const fs = makeMemoryFs();
     for (const { name, version } of pinnedPackages) {
       seedPackage(fs, name, version);
     }
     seedShim(fs, "playwright.cmd", "@echo off");
+    seedShim(fs, "appium.cmd", "@echo off");
 
     expect(allPinnedResolved(dir, fs, "win32")).toBe(true);
   });
@@ -124,6 +136,7 @@ describe("allPinnedResolved", () => {
       seedPackage(fs, name, version);
     }
     seedShim(fs, "playwright.exe", "MZ");
+    seedShim(fs, "appium.exe", "MZ");
 
     expect(allPinnedResolved(dir, fs, "win32")).toBe(true);
   });

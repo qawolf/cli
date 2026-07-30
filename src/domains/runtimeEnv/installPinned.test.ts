@@ -14,7 +14,7 @@ function makeSpawnInstall(exitCode: number, stderr = "") {
 }
 
 // Seeds a dir so allPinnedResolved returns true: every pinned package at its
-// exact version plus the .bin/playwright shim.
+// exact version plus the .bin CLI shims.
 function seedFullEnv(fs: ReturnType<typeof makeMemoryFs>, dir: string): void {
   for (const { name, version } of pinnedPackages) {
     const pkgDir = join(dir, "node_modules", ...name.split("/"));
@@ -24,6 +24,7 @@ function seedFullEnv(fs: ReturnType<typeof makeMemoryFs>, dir: string): void {
   const binDir = join(dir, "node_modules", ".bin");
   fs.mkdirSync(binDir, { recursive: true });
   fs.writeFileSync(join(binDir, "playwright"), "#!/bin/sh");
+  fs.writeFileSync(join(binDir, "appium"), "#!/bin/sh");
 }
 
 describe("installPinned", () => {

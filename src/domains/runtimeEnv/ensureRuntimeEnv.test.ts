@@ -17,6 +17,7 @@ function seedFullEnv(fs: ReturnType<typeof makeMemoryFs>, dir: string): void {
   const binDir = join(dir, "node_modules", ".bin");
   fs.mkdirSync(binDir, { recursive: true });
   fs.writeFileSync(join(binDir, "playwright"), "#!/bin/sh");
+  fs.writeFileSync(join(binDir, "appium"), "#!/bin/sh");
 }
 
 function makeNoopInstall() {
