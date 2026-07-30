@@ -106,7 +106,8 @@
     "dist/",
     "node_modules/",
     "knip.config.ts",
-    "test/node20/"
+    "test/node20/",
+    "test/spawn/"
   ],
   "overrides": [
     {
