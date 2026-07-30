@@ -11,9 +11,9 @@ function parseRelease(version: string): Release | undefined {
 }
 
 /**
- * True when `latest` is a strictly newer release than `current`. Only plain
- * `major.minor.patch` versions compare; anything else (prereleases, garbage)
- * returns false so callers stay silent rather than mis-notify.
+ * Only plain `major.minor.patch` versions compare. Prereleases and
+ * unparseable input return false, so callers stay silent rather than
+ * mis-notify.
  */
 export function isNewerVersion(current: string, latest: string): boolean {
   const cur = parseRelease(current);

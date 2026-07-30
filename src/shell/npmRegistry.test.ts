@@ -2,8 +2,9 @@ import { describe, expect, it } from "bun:test";
 
 import { fetchLatestVersion } from "./npmRegistry.js";
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
+// Bodies are raw response text, matching what the registry puts on the wire.
+function registryResponse(body: string, status = 200): Response {
+  return new Response(body, {
     status,
     headers: { "content-type": "application/json" },
   });
@@ -15,7 +16,7 @@ describe("fetchLatestVersion", () => {
     const version = await fetchLatestVersion("@qawolf/cli", {
       fetchFn: (url) => {
         requestedUrl = url;
-        return Promise.resolve(jsonResponse({ version: "9.9.9" }));
+        return Promise.resolve(registryResponse('{"version":"9.9.9"}'));
       },
     });
     expect(version).toBe("9.9.9");
@@ -24,7 +25,8 @@ describe("fetchLatestVersion", () => {
 
   it("returns undefined on non-2xx responses", async () => {
     const version = await fetchLatestVersion("@qawolf/cli", {
-      fetchFn: () => Promise.resolve(jsonResponse({ error: "not found" }, 404)),
+      fetchFn: () =>
+        Promise.resolve(registryResponse('{"error":"not found"}', 404)),
     });
     expect(version).toBeUndefined();
   });
@@ -37,10 +39,9 @@ describe("fetchLatestVersion", () => {
   });
 
   it("returns undefined on unexpected payloads", async () => {
-    // oxlint-disable-next-line unicorn/no-null -- a JSON `null` body is a real registry response shape
-    for (const body of [null, "1.2.3", {}, { version: 123 }]) {
+    for (const body of ["null", '"1.2.3"', "{}", '{"version":123}']) {
       const version = await fetchLatestVersion("@qawolf/cli", {
-        fetchFn: () => Promise.resolve(jsonResponse(body)),
+        fetchFn: () => Promise.resolve(registryResponse(body)),
       });
       expect(version).toBeUndefined();
     }
@@ -48,7 +49,7 @@ describe("fetchLatestVersion", () => {
 
   it("returns undefined when the body is not JSON", async () => {
     const version = await fetchLatestVersion("@qawolf/cli", {
-      fetchFn: () => Promise.resolve(new Response("<html></html>")),
+      fetchFn: () => Promise.resolve(registryResponse("<html></html>")),
     });
     expect(version).toBeUndefined();
   });

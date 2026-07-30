@@ -8,9 +8,8 @@ const noticeFile = "last-update-notice";
 
 export type UpdateNotifier = {
   /**
-   * Print the update notice if the background check has already found a
-   * newer, not-yet-announced version. Never waits on the network and never
-   * throws.
+   * Announces only if the check already settled on a newer, not-yet-announced
+   * version. Never waits on the network; never throws.
    */
   notifyIfOutdated(): Promise<void>;
 };
@@ -20,14 +19,9 @@ const noopNotifier: UpdateNotifier = {
 };
 
 /**
- * Kick off a background check against the npm registry for a newer published
- * CLI version. Call `notifyIfOutdated` after the command finishes: it takes
- * the fetch result only if it already settled, and announces each new version
- * at most once (tracked in a config-dir state file).
- *
- * The notice renders per output mode (clack box, plain stderr lines, or a
- * JSONL diagnostic); `renderNotice` should wire to `ui.note`. No-op when
- * `QAWOLF_NO_UPDATE_CHECK` is set.
+ * Starts a background check for a newer published CLI version. Call
+ * `notifyIfOutdated` after the command finishes. Wire `renderNotice` to
+ * `ui.note` so each output mode formats the notice itself.
  */
 export function startUpdateCheck(deps: {
   env: Record<string, string | undefined>;

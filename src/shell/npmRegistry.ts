@@ -7,9 +7,9 @@ type FetchLike = (
 ) => Promise<Response>;
 
 /**
- * Latest published version of `packageName` per the npm registry's `latest`
- * dist-tag, or undefined on any failure (offline, timeout, bad payload).
- * The update check must never break a command.
+ * Reads the registry's `latest` dist-tag. Returns undefined on any failure
+ * (offline, timeout, bad payload), because the update check must never break
+ * a command.
  */
 export async function fetchLatestVersion(
   packageName: string,
