@@ -2,6 +2,7 @@ import { createRunnerDeps } from "./runnerDeps.js";
 import type { RunWebFlowDeps } from "./runWebFlow.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { resolveFromEnvDir } from "~/shell/resolveExport.js";
+import { runnerMessages } from "~/core/messages/index.js";
 
 export async function defaultRunWebFlowDeps(
   cwd = process.cwd(),
@@ -24,10 +25,7 @@ export async function defaultRunWebFlowDeps(
       "chromium" | "firefox" | "webkit"
     >;
   } catch (err) {
-    throw new Error(
-      "Could not load Playwright. Install it in your project: `npm install playwright` or `bun add playwright`.",
-      { cause: err },
-    );
+    throw new Error(runnerMessages.playwrightLoadFailed(cwd), { cause: err });
   }
   const { chromium, firefox, webkit } = playwright;
   return {

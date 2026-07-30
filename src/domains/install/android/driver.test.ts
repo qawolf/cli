@@ -125,7 +125,10 @@ describe("installUiautomator2Driver", () => {
       caught = e;
     }
     expect(caught).toBeInstanceOf(Error);
-    expect((caught as Error).message).toContain("appium not found");
+    expect((caught as Error).message).toContain("Appium not found at ");
+    expect((caught as Error).message).toContain(
+      "Run `qawolf install clear`, then retry.",
+    );
     expect(calls).toHaveLength(0);
   });
 

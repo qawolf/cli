@@ -1,3 +1,5 @@
+import { clearAndRetry, toolNotInstalled } from "./toolNotFound.js";
+
 export const doctorMessages = {
   intro: "qawolf doctor",
   agentLine: (
@@ -53,19 +55,16 @@ export const doctorMessages = {
     notInstalled: "npm is not installed or not on PATH",
   },
   playwright: {
-    notFound:
-      "Could not find Playwright. Run `qawolf flows run` to install it, or run `npm install playwright` in your flow directory.",
+    notFound: (path?: string) => toolNotInstalled("Playwright", path),
     launchFailed:
       "Could not launch Playwright. Try reinstalling the qawolf CLI.",
     versionUnparseable: "Could not parse playwright version output",
   },
   appium: {
-    noEnvDir:
-      "No env dir found. Run `qawolf flows run` to install Appium dependencies.",
-    binaryMissing: (bin: string) =>
-      `Appium binary missing at ${bin}. Run \`qawolf flows run\` to install.`,
+    notFound: (path?: string) => toolNotInstalled("Appium", path),
     driverListFailed: (detail: string) =>
-      `Could not run \`appium driver list\` (${detail}). The Appium binary may be broken — try \`qawolf flows run\` to reinstall.`,
+      `Could not run \`appium driver list\` (${detail}). ` +
+      `The Appium binary may be broken. ${clearAndRetry}`,
     cannotCheckDriverList: "Cannot check driver list without Appium binary.",
     uiautomator2NotInstalled:
       "uiautomator2 driver not installed. Run `qawolf install android` to install it.",
