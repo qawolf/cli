@@ -1,7 +1,8 @@
-import { spawn } from "node:child_process";
+import { spawn, type SpawnOptions } from "node:child_process";
 import net from "node:net";
 import { PassThrough } from "node:stream";
 
+import { buildSpawnOptions } from "~/shell/spawn.js";
 import type {
   AppiumProcess,
   FindFreePortFn,
@@ -18,8 +19,23 @@ export const findFreePort: FindFreePortFn = () =>
     server.on("error", reject);
   });
 
+export function buildAppiumSpawnOptions(
+  bin: string,
+  platform: NodeJS.Platform,
+  env: Record<string, string | undefined>,
+): SpawnOptions {
+  return {
+    stdio: ["ignore", "pipe", "pipe"],
+    ...buildSpawnOptions(bin, platform, env),
+  };
+}
+
 export const defaultSpawnAppium: SpawnAppiumFn = (bin, args, env) => {
-  const child = spawn(bin, args, { stdio: ["ignore", "pipe", "pipe"], env });
+  const child = spawn(
+    bin,
+    args,
+    buildAppiumSpawnOptions(bin, process.platform, env),
+  );
   const output = new PassThrough();
   child.stdout?.pipe(output, { end: false });
   child.stderr?.pipe(output, { end: false });

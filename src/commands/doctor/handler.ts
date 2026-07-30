@@ -84,7 +84,7 @@ export async function handleDoctor(
     androidHome: process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"],
     checkExists: (path: string) => ctx.fs.existsSync(path),
     envDir,
-    resolveAppiumBin,
+    resolveAppiumBin: (dir) => resolveAppiumBin(dir, process.platform),
     requiredAvds,
   });
   const allResults = [cliCheck, ...results];

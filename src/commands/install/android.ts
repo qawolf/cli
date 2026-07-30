@@ -49,6 +49,6 @@ export async function handleInstallAndroid(
     peekFlowMeta: makePeekFlowMeta(fs),
     resolveDepsRoot: async (files) =>
       envDir ?? (await resolveDepsRootHelper({ files, fs })).depsRoot,
-    resolveAppiumBin,
+    resolveAppiumBin: (dir) => resolveAppiumBin(dir, process.platform),
   });
 }

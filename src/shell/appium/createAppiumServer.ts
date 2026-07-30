@@ -89,7 +89,9 @@ export async function createAppiumServer(
 }> {
   const spawnFn = params?.deps?.spawn ?? defaultSpawnAppium;
   const findFreePortFn = params?.deps?.findFreePort ?? findFreePort;
-  const resolveAppiumBinFn = params?.deps?.resolveAppiumBin ?? resolveAppiumBin;
+  const resolveAppiumBinFn =
+    params?.deps?.resolveAppiumBin ??
+    ((dir: string) => resolveAppiumBin(dir, process.platform));
   const appiumHome =
     params?.options?.appiumHome ?? join(envPaths("qawolf").data, "appium");
   const timeoutMs = params?.options?.startTimeoutMs ?? defaultStartTimeoutMs;

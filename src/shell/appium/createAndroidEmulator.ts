@@ -1,4 +1,5 @@
 import { execFile, spawn } from "node:child_process";
+import { join } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -9,14 +10,26 @@ function androidHome(): string | undefined {
   return process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"];
 }
 
-function emulatorBin(): string {
-  const home = androidHome();
-  return home ? `${home}/emulator/emulator` : "emulator";
+// The SDK ships emulator.exe and adb.exe on Windows. libuv appends .exe only
+// during a PATH search, so an explicit ANDROID_HOME path needs the extension.
+function withExeSuffix(name: string, platform: NodeJS.Platform): string {
+  return platform === "win32" ? `${name}.exe` : name;
 }
 
-function adbBin(): string {
-  const home = androidHome();
-  return home ? `${home}/platform-tools/adb` : "adb";
+export function emulatorBin(
+  home: string | undefined,
+  platform: NodeJS.Platform,
+): string {
+  const name = withExeSuffix("emulator", platform);
+  return home ? join(home, "emulator", name) : name;
+}
+
+export function adbBin(
+  home: string | undefined,
+  platform: NodeJS.Platform,
+): string {
+  const name = withExeSuffix("adb", platform);
+  return home ? join(home, "platform-tools", name) : name;
 }
 
 export type SpawnFn = (bin: string, args: string[]) => { stop: () => void };
@@ -29,7 +42,10 @@ const defaultSpawn: SpawnFn = (bin, args) => {
 };
 
 const defaultAdb: AdbFn = async (args) => {
-  const { stdout } = await execFileAsync(adbBin(), args);
+  const { stdout } = await execFileAsync(
+    adbBin(androidHome(), process.platform),
+    args,
+  );
   return { stdout };
 };
 
@@ -97,7 +113,7 @@ export async function createAndroidEmulator(params: {
   const timeoutMs = params.options?.bootTimeoutMs ?? defaultBootTimeoutMs;
   const serial = `emulator-${port}`;
 
-  const proc = spawnFn(emulatorBin(), [
+  const proc = spawnFn(emulatorBin(androidHome(), process.platform), [
     "-avd",
     avdName,
     "-no-audio",
