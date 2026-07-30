@@ -49,6 +49,7 @@ src/
 │   ├── fs.ts            # filesystem helpers
 │   ├── logger.ts        # pino-based structured logger
 │   ├── manifest/        # bundle manifest read/lookup
+│   ├── npm.ts           # resolveNpmCommand
 │   ├── platform/        # tRPC client, getIdentity, signed-URL/bundle download, team storage
 │   ├── playwright.ts    # resolvePlaywrightCli
 │   ├── reporter/        # Reporter interface, console + JUnit + composite reporters

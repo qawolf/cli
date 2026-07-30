@@ -86,6 +86,7 @@ export async function handleDoctor(
     envDir,
     resolveAppiumBin,
     requiredAvds,
+    platform: process.platform,
   });
   const allResults = [cliCheck, ...results];
   renderResults(ctx.ui, allResults);
