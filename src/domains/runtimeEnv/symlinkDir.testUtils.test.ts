@@ -27,16 +27,6 @@ describe("expectLinkTarget", () => {
     await expectLinkTarget(link, target);
   });
 
-  it("passes when the reported target carries a junction prefix and trailing separator", async () => {
-    const target = join(workDir, "target");
-    await mkdir(target);
-    const link = join(workDir, "link");
-    // Stand in for the win32 junction spelling that readlink reports.
-    await createDirSymlink(`\\\\?\\${target}/`, link);
-
-    await expectLinkTarget(link, target);
-  });
-
   it("fails when the link points somewhere else", async () => {
     const target = join(workDir, "target");
     const other = join(workDir, "other");

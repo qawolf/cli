@@ -144,6 +144,10 @@ describe("peekFlowMeta", () => {
 });
 
 describe("expandPatterns", () => {
+  // tinyglobby returns forward-slash absolute paths even on win32, where join
+  // uses backslashes; compare on a normalized separator.
+  const toPosix = (p: string) => p.replaceAll("\\", "/");
+
   let mainTmpDir: string;
   let noQawolfTmpDir: string;
   let multiEnvTmpDir: string;
@@ -193,17 +197,22 @@ describe("expandPatterns", () => {
       undefined,
       defaultFs,
     );
-    expect(result).toContain(join(noQawolfTmpDir, "a.flow.ts"));
-    expect(result).toContain(join(noQawolfTmpDir, "sub", "b.flow.ts"));
+    expect(result.map(toPosix)).toContain(
+      toPosix(join(noQawolfTmpDir, "a.flow.ts")),
+    );
+    expect(result.map(toPosix)).toContain(
+      toPosix(join(noQawolfTmpDir, "sub", "b.flow.ts")),
+    );
   });
 
   it("should return files from the .qawolf env dir alongside cwd flows when no patterns provided", async () => {
     const result = await expandPatterns([], mainTmpDir, undefined, defaultFs);
-    expect(result).toContain(
-      join(mainTmpDir, ".qawolf", "staging", "c.flow.ts"),
+    const files = result.map(toPosix);
+    expect(files).toContain(
+      toPosix(join(mainTmpDir, ".qawolf", "staging", "c.flow.ts")),
     );
-    expect(result).toContain(join(mainTmpDir, "a.flow.ts"));
-    expect(result).toContain(join(mainTmpDir, "sub", "b.flow.ts"));
+    expect(files).toContain(toPosix(join(mainTmpDir, "a.flow.ts")));
+    expect(files).toContain(toPosix(join(mainTmpDir, "sub", "b.flow.ts")));
   });
 
   it("should resolve a pattern relative to each env dir root", async () => {
@@ -213,10 +222,11 @@ describe("expandPatterns", () => {
       undefined,
       defaultFs,
     );
-    expect(result).toContain(
-      join(mainTmpDir, ".qawolf", "staging", "c.flow.ts"),
+    const files = result.map(toPosix);
+    expect(files).toContain(
+      toPosix(join(mainTmpDir, ".qawolf", "staging", "c.flow.ts")),
     );
-    expect(result).toContain(join(mainTmpDir, "a.flow.ts"));
+    expect(files).toContain(toPosix(join(mainTmpDir, "a.flow.ts")));
   });
 
   it("should return empty array when no files match", async () => {
@@ -236,13 +246,14 @@ describe("expandPatterns", () => {
       undefined,
       defaultFs,
     );
-    expect(result).toContain(
-      join(multiEnvTmpDir, ".qawolf", "staging", "s.flow.ts"),
+    const files = result.map(toPosix);
+    expect(files).toContain(
+      toPosix(join(multiEnvTmpDir, ".qawolf", "staging", "s.flow.ts")),
     );
-    expect(result).toContain(
-      join(multiEnvTmpDir, ".qawolf", "prod", "p.flow.ts"),
+    expect(files).toContain(
+      toPosix(join(multiEnvTmpDir, ".qawolf", "prod", "p.flow.ts")),
     );
-    expect(result).toContain(join(multiEnvTmpDir, "a.flow.ts"));
+    expect(files).toContain(toPosix(join(multiEnvTmpDir, "a.flow.ts")));
   });
 
   it("should discover .flow.js files alongside .flow.ts with the default pattern", async () => {
@@ -251,8 +262,9 @@ describe("expandPatterns", () => {
     await writeFile(join(tmp, "b.flow.js"), "// b");
     try {
       const result = await expandPatterns([], tmp, undefined, defaultFs);
-      expect(result).toContain(join(tmp, "a.flow.ts"));
-      expect(result).toContain(join(tmp, "b.flow.js"));
+      const files = result.map(toPosix);
+      expect(files).toContain(toPosix(join(tmp, "a.flow.ts")));
+      expect(files).toContain(toPosix(join(tmp, "b.flow.js")));
     } finally {
       await rm(tmp, { recursive: true, force: true });
     }
