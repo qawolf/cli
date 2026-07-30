@@ -1,6 +1,6 @@
 import { createAppiumServer } from "~/shell/appium/createAppiumServer.js";
 import { createEmulatorPool } from "~/shell/appium/createEmulatorPool.js";
-import { defaultAdb } from "~/shell/appium/emulatorSetup.js";
+import { defaultAdb } from "~/shell/appium/adb.js";
 import type { AppiumDriver } from "~/shell/appium/types.js";
 import type { RunAndroidFlowDeps } from "./runAndroidFlow.js";
 import { createRunnerDeps } from "./runnerDeps.js";

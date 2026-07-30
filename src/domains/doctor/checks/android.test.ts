@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
+import { join } from "node:path";
 
 import type { SpawnFn } from "~/shell/spawn.js";
 
@@ -177,5 +178,17 @@ describe("checkAndroid: android-avd", () => {
     expect(avd?.detail).toContain("PANIC: Broken AVD system path");
     // Distinct from the launch-failure branch — must not use that wording.
     expect(avd?.detail).not.toContain("Could not launch emulator");
+  });
+});
+
+describe("checkAndroid: Windows binary names", () => {
+  it("launches adb.exe and emulator.exe on win32", async () => {
+    const spawn = mock<SpawnFn>(() => Promise.resolve(success));
+    await checkAndroid(
+      baseDeps({ spawn, platform: "win32", requiredAvds: ["Pixel_9"] }),
+    );
+    const spawned = spawn.mock.calls.map((call) => call[0]);
+    expect(spawned).toContain(join(sdk, "platform-tools", "adb.exe"));
+    expect(spawned).toContain(join(sdk, "emulator", "emulator.exe"));
   });
 });

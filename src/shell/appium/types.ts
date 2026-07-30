@@ -1,4 +1,4 @@
-import type { AdbFn } from "./createAndroidEmulator.js";
+import type { AdbFn } from "./adb.js";
 import type { EmulatorSlot } from "./createEmulatorPool.js"; // (D2)
 
 export type AppiumDriver = {

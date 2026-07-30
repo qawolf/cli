@@ -1,5 +1,4 @@
-import { join } from "node:path";
-
+import { avdManagerBin, sdkManagerBin } from "~/core/androidBins.js";
 import {
   expandPatterns as defaultExpandPatterns,
   makePeekFlowMeta,
@@ -30,25 +29,13 @@ export async function handleInstallAndroid(
     arch: process.arch,
     androidHome,
     checkExists: (path: string) => fs.existsSync(path),
-    sdkManagerPath: join(
-      androidHome,
-      "cmdline-tools",
-      "latest",
-      "bin",
-      "sdkmanager",
-    ),
-    avdManagerPath: join(
-      androidHome,
-      "cmdline-tools",
-      "latest",
-      "bin",
-      "avdmanager",
-    ),
+    sdkManagerPath: sdkManagerBin(androidHome, process.platform),
+    avdManagerPath: avdManagerBin(androidHome, process.platform),
     expandPatterns: (patterns, cwd) =>
       defaultExpandPatterns(patterns, cwd ?? process.cwd(), undefined, fs),
     peekFlowMeta: makePeekFlowMeta(fs),
     resolveDepsRoot: async (files) =>
       envDir ?? (await resolveDepsRootHelper({ files, fs })).depsRoot,
-    resolveAppiumBin,
+    resolveAppiumBin: (dir) => resolveAppiumBin(dir, process.platform),
   });
 }

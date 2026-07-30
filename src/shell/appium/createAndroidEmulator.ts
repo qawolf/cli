@@ -1,7 +1,8 @@
-import { execFile, spawn } from "node:child_process";
-import { promisify } from "node:util";
+import { spawn } from "node:child_process";
 
-const execFileAsync = promisify(execFile);
+import { emulatorBin } from "~/core/androidBins.js";
+import { defaultAdb, type AdbFn } from "./adb.js";
+
 const defaultBootTimeoutMs = 120_000;
 const pollIntervalMs = 2_000;
 
@@ -9,28 +10,12 @@ function androidHome(): string | undefined {
   return process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"];
 }
 
-function emulatorBin(): string {
-  const home = androidHome();
-  return home ? `${home}/emulator/emulator` : "emulator";
-}
-
-function adbBin(): string {
-  const home = androidHome();
-  return home ? `${home}/platform-tools/adb` : "adb";
-}
-
 export type SpawnFn = (bin: string, args: string[]) => { stop: () => void };
-export type AdbFn = (args: string[]) => Promise<{ stdout: string }>;
 
 const defaultSpawn: SpawnFn = (bin, args) => {
   const child = spawn(bin, args, { stdio: "ignore" });
   child.unref();
   return { stop: () => child.kill() };
-};
-
-const defaultAdb: AdbFn = async (args) => {
-  const { stdout } = await execFileAsync(adbBin(), args);
-  return { stdout };
 };
 
 async function bootSequence(
@@ -97,7 +82,7 @@ export async function createAndroidEmulator(params: {
   const timeoutMs = params.options?.bootTimeoutMs ?? defaultBootTimeoutMs;
   const serial = `emulator-${port}`;
 
-  const proc = spawnFn(emulatorBin(), [
+  const proc = spawnFn(emulatorBin(androidHome(), process.platform), [
     "-avd",
     avdName,
     "-no-audio",
