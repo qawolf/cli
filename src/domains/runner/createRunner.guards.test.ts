@@ -11,10 +11,6 @@ function makeDeps(): RunnerDeps {
       writeFile: async () => {},
       unlink: async () => {},
     },
-    spawn: () => ({
-      exitCode: Promise.resolve(0),
-      kill: () => {},
-    }),
     signals: makeNoopSignals(),
     depsRoot: "/tmp",
     createStorage: <T>() => ({

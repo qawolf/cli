@@ -18,7 +18,6 @@ export function makeRunnerDeps(): RunnerDeps {
       writeFile: async () => {},
       unlink: async () => {},
     },
-    spawn: () => ({ exitCode: Promise.resolve(0), kill: () => {} }),
     signals: makeNoopSignals(),
     // Point to the CLI project root where @qawolf/flows is installed in tests.
     depsRoot: join(import.meta.dirname, "../../.."),

@@ -1,6 +1,6 @@
 import {
   createAndroidEmulator,
-  type SpawnFn,
+  type SpawnEmulatorFn,
 } from "./createAndroidEmulator.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import type { AdbFn } from "./adb.js";
@@ -11,7 +11,7 @@ const baseConsolePort = 5554;
 
 export function createEmulatorPool(params: {
   signals: SignalRegistry;
-  deps?: { spawn?: SpawnFn; adb?: AdbFn };
+  deps?: { spawn?: SpawnEmulatorFn; adb?: AdbFn };
 }): {
   bootForAvd: (avdName: string, count: number) => Promise<void>;
   checkOut: (avdName: string) => Promise<EmulatorSlot>;

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import type { AdbFn } from "./adb.js";
-import type { SpawnFn } from "./createAndroidEmulator.js";
+import type { SpawnEmulatorFn } from "./createAndroidEmulator.js";
 import { createEmulatorPool } from "./createEmulatorPool.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 
@@ -17,7 +17,7 @@ function makeAdb(): AdbFn {
   };
 }
 
-function makeSpawn(onStop?: () => void): SpawnFn {
+function makeSpawn(onStop?: () => void): SpawnEmulatorFn {
   return (_bin, _args) => ({ stop: onStop ?? (() => {}) });
 }
 
@@ -40,7 +40,7 @@ describe("createEmulatorPool", () => {
 
   it("bootForAvd is a no-op when called twice for the same AVD", async () => {
     let spawnCount = 0;
-    const countingSpawn: SpawnFn = (_bin, _args) => {
+    const countingSpawn: SpawnEmulatorFn = (_bin, _args) => {
       spawnCount++;
       return { stop: () => {} };
     };
@@ -93,7 +93,7 @@ describe("createEmulatorPool", () => {
 
   it("closeAll stops all emulators and resets state", async () => {
     const stops: ReturnType<typeof mock<() => void>>[] = [];
-    const trackingSpawn: SpawnFn = (_bin, _args) => {
+    const trackingSpawn: SpawnEmulatorFn = (_bin, _args) => {
       const s = mock(() => {});
       stops.push(s);
       return { stop: s };
@@ -135,7 +135,7 @@ describe("createEmulatorPool", () => {
 
   it("bootForAvd works again for same AVD after closeAll", async () => {
     let spawnCount = 0;
-    const countingSpawn: SpawnFn = (_bin, _args) => {
+    const countingSpawn: SpawnEmulatorFn = (_bin, _args) => {
       spawnCount++;
       return { stop: () => {} };
     };

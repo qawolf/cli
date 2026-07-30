@@ -36,19 +36,8 @@ export type AsyncStorage<T> = {
 
 export type RunnerFs = Pick<Fs, "mkdir" | "writeFile" | "unlink">;
 
-export type RunnerSpawnResult = {
-  exitCode: Promise<number>;
-  kill: () => void;
-};
-
-export type RunnerSpawnFn = (
-  command: string,
-  args: string[],
-) => RunnerSpawnResult;
-
 export type RunnerDeps = {
   fs: RunnerFs;
-  spawn: RunnerSpawnFn;
   signals: SignalRegistry;
   createStorage: <T>() => AsyncStorage<T>;
   // Directory the flow runtime resolves @qawolf/flows + playwright from.
