@@ -21,9 +21,9 @@ const spec = {
 
 function makeSpawn(overrides: Record<string, SpawnResult> = {}): {
   fn: SpawnFn;
-  calls: [string, string[], ({ stdin?: string } | undefined)?][];
+  calls: Parameters<SpawnFn>[];
 } {
-  const calls: [string, string[], ({ stdin?: string } | undefined)?][] = [];
+  const calls: Parameters<SpawnFn>[] = [];
   const fn: SpawnFn = (cmd, args, opts) => {
     calls.push([cmd, args, opts]);
     return Promise.resolve(overrides[args[0] ?? cmd] ?? success);
@@ -59,6 +59,7 @@ function makeDeps(
     avdManagerPath,
     androidHome: sdk,
     checkExists: overrides.checkExists ?? (() => false),
+    platform: "linux" as NodeJS.Platform,
   };
 }
 
@@ -80,7 +81,10 @@ describe("installAvds", () => {
     const { fn: spawn, calls } = makeSpawn();
     await installAvds(makeCtx(), [spec], makeDeps({ spawn }));
     const licensesCall = calls.find(([, args]) => args[0] === "--licenses");
-    expect(licensesCall?.[2]).toEqual({ stdin: "y\n".repeat(20) });
+    expect(licensesCall?.[2]).toEqual({
+      stdin: "y\n".repeat(20),
+      platform: "linux",
+    });
   });
 
   it("should skip system image install when image directory exists", async () => {

@@ -47,6 +47,7 @@ export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
     checkPlaywright({
       spawn: deps.spawn,
       playwrightCliPath: deps.playwrightCliPath,
+      platform: deps.platform,
     }),
     checkApiKey({ apiKey: deps.apiKey }),
     checkApiUrl({ fetch: deps.fetch, apiBaseUrl: deps.apiBaseUrl }),

@@ -20,6 +20,8 @@ export type InstallAndroidDeps = {
   readonly checkExists: (path: string) => boolean;
   readonly sdkManagerPath: string;
   readonly avdManagerPath: string;
+  /** Must match the platform that resolved the sdkmanager, avdmanager and appium paths. */
+  readonly platform: NodeJS.Platform;
   readonly expandPatterns: (
     patterns: string[],
     cwd?: string,
@@ -53,12 +55,14 @@ export async function installAndroid(
     avdManagerPath: deps.avdManagerPath,
     androidHome: deps.androidHome,
     checkExists: deps.checkExists,
+    platform: deps.platform,
   });
 
   const depsRoot = await deps.resolveDepsRoot(files);
   await installUiautomator2Driver(ctx, {
     spawn: deps.spawn,
     appiumBinPath: deps.resolveAppiumBin(depsRoot),
+    platform: deps.platform,
   });
 
   ctx.ui.success(

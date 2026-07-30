@@ -15,6 +15,8 @@ export type InstallAvdsDeps = {
   readonly avdManagerPath: string;
   readonly androidHome: string;
   readonly checkExists: (path: string) => boolean;
+  /** Must match the platform that resolved sdkManagerPath and avdManagerPath. */
+  readonly platform: NodeJS.Platform;
 };
 
 export async function installAvds(
@@ -23,7 +25,9 @@ export async function installAvds(
   deps: InstallAvdsDeps,
 ): Promise<void> {
   // Verify sdkmanager is reachable before doing any work.
-  const versionResult = await deps.spawn(deps.sdkManagerPath, ["--version"]);
+  const versionResult = await deps.spawn(deps.sdkManagerPath, ["--version"], {
+    platform: deps.platform,
+  });
   if (versionResult.exitCode !== 0) {
     throw new Error(
       installMessages.android.sdkmanagerNotFound(deps.sdkManagerPath),
@@ -39,6 +43,7 @@ export async function installAvds(
     ctx.ui.step(installMessages.android.acceptingLicenses);
     await deps.spawn(deps.sdkManagerPath, ["--licenses"], {
       stdin: "y\n".repeat(20),
+      platform: deps.platform,
     });
   }
 
@@ -65,7 +70,9 @@ export async function installAvds(
     ctx.ui.step(
       installMessages.android.installingSystemImage(spec.systemImage),
     );
-    const result = await deps.spawn(deps.sdkManagerPath, [spec.systemImage]);
+    const result = await deps.spawn(deps.sdkManagerPath, [spec.systemImage], {
+      platform: deps.platform,
+    });
     if (result.exitCode !== 0) {
       const detail =
         (result.stderr || result.stdout)
@@ -83,11 +90,11 @@ export async function installAvds(
   }
 
   // List existing AVDs to skip creation when already present.
-  const listResult = await deps.spawn(deps.avdManagerPath, [
-    "list",
-    "avd",
-    "-c",
-  ]);
+  const listResult = await deps.spawn(
+    deps.avdManagerPath,
+    ["list", "avd", "-c"],
+    { platform: deps.platform },
+  );
   const existingAvds = new Set(
     listResult.stdout
       .split("\n")
@@ -102,17 +109,21 @@ export async function installAvds(
       continue;
     }
     ctx.ui.step(installMessages.android.creatingAvd(spec.avdName));
-    const result = await deps.spawn(deps.avdManagerPath, [
-      "create",
-      "avd",
-      "-n",
-      spec.avdName,
-      "-k",
-      spec.systemImage,
-      "-d",
-      spec.deviceId,
-      "--force",
-    ]);
+    const result = await deps.spawn(
+      deps.avdManagerPath,
+      [
+        "create",
+        "avd",
+        "-n",
+        spec.avdName,
+        "-k",
+        spec.systemImage,
+        "-d",
+        spec.deviceId,
+        "--force",
+      ],
+      { platform: deps.platform },
+    );
     if (result.exitCode !== 0) {
       const detail =
         (result.stderr || result.stdout)

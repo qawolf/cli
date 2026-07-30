@@ -49,6 +49,7 @@ export function checkAppium(
 export async function checkUiautomator2(
   spawn: SpawnFn,
   appiumBin: string | undefined,
+  platform: NodeJS.Platform,
 ): Promise<CheckResult> {
   if (!appiumBin) {
     return {
@@ -59,6 +60,7 @@ export async function checkUiautomator2(
   }
   const result = await spawn(appiumBin, ["driver", "list", "--installed"], {
     env: { APPIUM_HOME: appiumHome },
+    platform,
   });
   if (result.exitCode !== 0) {
     return {

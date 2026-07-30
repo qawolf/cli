@@ -37,7 +37,7 @@ export async function checkAdb(
   platform: NodeJS.Platform,
 ): Promise<CheckResult> {
   const bin = adbBin(androidHome, platform);
-  const result = await spawn(bin, ["--version"]);
+  const result = await spawn(bin, ["--version"], { platform });
   if (result.exitCode < 0) {
     return {
       name: "adb",
@@ -57,7 +57,7 @@ export async function checkEmulatorBin(
   platform: NodeJS.Platform,
 ): Promise<CheckResult> {
   const bin = emulatorBin(androidHome, platform);
-  const result = await spawn(bin, ["-version"]);
+  const result = await spawn(bin, ["-version"], { platform });
   if (result.exitCode < 0) {
     return {
       name: "android-emulator",
@@ -86,7 +86,7 @@ export async function checkAvds(
 ): Promise<CheckResult[]> {
   if (requiredAvds.length === 0) return [];
   const bin = emulatorBin(androidHome, platform);
-  const result = await spawn(bin, ["-list-avds"]);
+  const result = await spawn(bin, ["-list-avds"], { platform });
   if (result.exitCode < 0) {
     return [
       {

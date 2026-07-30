@@ -44,7 +44,7 @@ function fakeSpawn(result: SpawnResult): {
   const calls: { cmd: string; args: string[]; stdin: string | undefined }[] =
     [];
   const spawn: SpawnFn = (cmd, args, opts) => {
-    calls.push({ cmd, args, stdin: opts?.stdin });
+    calls.push({ cmd, args, stdin: opts.stdin });
     return Promise.resolve(result);
   };
   return { spawn, calls };
@@ -64,6 +64,7 @@ describe("runWorkerOnce", () => {
       prefixArgs: [],
       flow,
       optionsJson: "{}",
+      platform: "linux",
     });
 
     expect(out.run.passed).toBe(true);
@@ -84,6 +85,7 @@ describe("runWorkerOnce", () => {
       prefixArgs: ["/app/cli.js"],
       flow,
       optionsJson: '{"retries":0}',
+      platform: "linux",
     });
 
     expect(calls).toHaveLength(1);
@@ -110,6 +112,7 @@ describe("runWorkerOnce", () => {
       prefixArgs: [],
       flow,
       optionsJson: "{}",
+      platform: "linux",
     });
 
     expect(out.run.passed).toBe(false);
@@ -132,6 +135,7 @@ describe("runWorkerOnce", () => {
       prefixArgs: [],
       flow,
       optionsJson: "{}",
+      platform: "linux",
     });
 
     expect(out.run.passed).toBe(false);
@@ -155,6 +159,7 @@ describe("createSubprocessDispatch", () => {
       command: "/bin/qawolf",
       prefixArgs: [],
       resolvedDir: "/proj",
+      platform: "linux",
       webOptions,
       androidOptions,
     });

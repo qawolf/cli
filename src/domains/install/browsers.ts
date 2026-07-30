@@ -38,7 +38,9 @@ export async function installBrowserList(
       message: installMessages.installingBrowser(browser),
       task: async () => {
         const args = buildArgs(browser, deps.platform, deps.browserDeps);
-        const result = await deps.spawn(deps.playwrightCliPath, args);
+        const result = await deps.spawn(deps.playwrightCliPath, args, {
+          platform: deps.platform,
+        });
         if (result.exitCode !== 0) {
           throw new Error(formatError(browser, result));
         }

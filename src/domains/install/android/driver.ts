@@ -8,6 +8,8 @@ import { appiumUiautomator2DriverVersion } from "~/generated/dependencyVersions.
 export type InstallDriverDeps = {
   readonly spawn: SpawnFn;
   readonly appiumBinPath: string;
+  /** Must match the platform that resolved appiumBinPath. */
+  readonly platform: NodeJS.Platform;
 };
 
 // Must match the APPIUM_HOME used by createAppiumServer so that drivers
@@ -24,7 +26,7 @@ export async function installUiautomator2Driver(
   const listResult = await deps.spawn(
     deps.appiumBinPath,
     ["driver", "list", "--installed"],
-    { env: appiumEnv },
+    { env: appiumEnv, platform: deps.platform },
   );
   // Appium writes driver list output to stderr on some versions.
   if ((listResult.stdout + listResult.stderr).includes("uiautomator2")) {
@@ -36,7 +38,7 @@ export async function installUiautomator2Driver(
   const installResult = await deps.spawn(
     deps.appiumBinPath,
     ["driver", "install", `uiautomator2@${appiumUiautomator2DriverVersion}`],
-    { env: appiumEnv },
+    { env: appiumEnv, platform: deps.platform },
   );
   if (installResult.exitCode !== 0) {
     const output = installResult.stderr + installResult.stdout;
