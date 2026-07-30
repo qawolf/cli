@@ -1,0 +1,4 @@
+# The windows-latest runner checks out with core.autocrlf=true. Tests compare
+# committed text to values carrying "\n" (SKILL.md frontmatter, help snapshots),
+# so a CRLF working tree would fail them.
+* text=auto eol=lf
