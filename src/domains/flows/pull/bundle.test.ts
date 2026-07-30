@@ -139,7 +139,7 @@ describe("buildManifest", () => {
 
     expect(manifest.flows.map((f) => f.path).sort()).toEqual([
       "a.flow.ts",
-      "nested/b.flow.js",
+      join("nested", "b.flow.js"),
     ]);
     expect(manifest.flows[0]?.contentHash).toMatch(/^[a-f0-9]{64}$/);
   });

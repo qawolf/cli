@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { describe, expect, it } from "bun:test";
 
 import {
@@ -25,7 +26,7 @@ function makeDeps() {
 describe("resolveJUnitOutputPath", () => {
   it("defaults to junit-report.xml inside the output dir when the flag is bare", () => {
     expect(resolveJUnitOutputPath(true, "qawolf-output")).toBe(
-      "qawolf-output/junit-report.xml",
+      join("qawolf-output", "junit-report.xml"),
     );
   });
 
@@ -37,10 +38,10 @@ describe("resolveJUnitOutputPath", () => {
 
   it("falls back to the default path for an empty or whitespace value", () => {
     expect(resolveJUnitOutputPath("", "qawolf-output")).toBe(
-      "qawolf-output/junit-report.xml",
+      join("qawolf-output", "junit-report.xml"),
     );
     expect(resolveJUnitOutputPath("   ", "qawolf-output")).toBe(
-      "qawolf-output/junit-report.xml",
+      join("qawolf-output", "junit-report.xml"),
     );
   });
 });

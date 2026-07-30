@@ -422,4 +422,28 @@ describe("makeMemoryFs", () => {
     await fs.writeFile("/d/f.txt", "data", { mode: 0o600 });
     expect(await fs.readFile("/d/f.txt")).toBe("data");
   });
+
+  // Path keying — tests build paths with a literal "/" while the code under
+  // test joins with node:path, which emits "\" and a drive prefix on win32.
+  it("should name the same entry from a win32-separated path as from its POSIX form", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/a/b", { recursive: true });
+    await fs.writeFile("\\a\\b\\f.txt", "data");
+    expect(await fs.readFile("/a/b/f.txt")).toBe("data");
+  });
+
+  it("should name the same entry from a drive-qualified path as from its POSIX form", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/a", { recursive: true });
+    await fs.writeFile("C:\\a\\f.txt", "data");
+    expect(await fs.readFile("/a/f.txt")).toBe("data");
+  });
+
+  it("should list a win32-separated write through a POSIX readdir", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("\\x\\y", { recursive: true });
+    await fs.writeFile("\\x\\y\\f.txt", "data");
+    expect(await fs.readdir("/x/y")).toEqual(["f.txt"]);
+    expect(await fs.pathExists("/x")).toBe(true);
+  });
 });

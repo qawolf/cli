@@ -1,14 +1,7 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { realpathSync } from "node:fs";
-import {
-  lstat,
-  mkdir,
-  mkdtemp,
-  readlink,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -18,6 +11,7 @@ import { populateInnerHop } from "./innerHop.js";
 import { pinnedPackages } from "./pinnedPackages.js";
 import { scaffoldManagedRuntime } from "./scaffoldManagedRuntime.testUtils.js";
 import { createDirSymlink } from "./symlinkDir.js";
+import { expectLinkTarget } from "./symlinkDir.testUtils.js";
 
 const tmpDirs: string[] = [];
 
@@ -63,9 +57,7 @@ describe("populateInnerHop", () => {
       for (const { name } of pinnedPackages) {
         const segments = name.split("/");
         const linkPath = join(innerModules, ...segments);
-        expect(await readlink(linkPath)).toBe(
-          join(managedModules, ...segments),
-        );
+        await expectLinkTarget(linkPath, join(managedModules, ...segments));
       }
     });
 
@@ -83,9 +75,7 @@ describe("populateInnerHop", () => {
 
       for (const pkg of ["flows", "emails", "testkit"]) {
         const linkPath = join(scopeDir, pkg);
-        expect(await readlink(linkPath)).toBe(
-          join(managedModules, "@qawolf", pkg),
-        );
+        await expectLinkTarget(linkPath, join(managedModules, "@qawolf", pkg));
       }
     });
   });

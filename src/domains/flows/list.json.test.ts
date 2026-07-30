@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import type { CommandContext } from "~/shell/commandContext.js";
@@ -69,7 +70,7 @@ describe("flowsList json mode output", () => {
 
     expect(ui.json).toHaveBeenCalledWith([
       {
-        file: "src/flows/login.flow.ts",
+        file: join("src", "flows", "login.flow.ts"),
         name: "Login",
         tags: [],
         target: "Web - Chrome",
@@ -97,7 +98,7 @@ describe("flowsList json mode output", () => {
 
     expect(ui.json).toHaveBeenCalledWith([
       {
-        file: "src/flows/checkout.flow.ts",
+        file: join("src", "flows", "checkout.flow.ts"),
         name: "checkout",
         tags: [],
         target: "Web - Firefox",
@@ -119,7 +120,7 @@ describe("flowsList json mode output", () => {
 
     expect(ui.json).toHaveBeenCalledWith([
       {
-        file: "src/flows/legacy.flow.js",
+        file: join("src", "flows", "legacy.flow.js"),
         name: "legacy",
         tags: [],
         target: "Web - Chrome",
@@ -144,7 +145,7 @@ describe("flowsList json mode output", () => {
 
     expect(ui.json).toHaveBeenCalledWith([
       {
-        file: "src/flows/mobile.flow.ts",
+        file: join("src", "flows", "mobile.flow.ts"),
         name: "Mobile",
         tags: [],
         target: "Android - Pixel",

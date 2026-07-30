@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import type { CommandContext } from "~/shell/commandContext.js";
@@ -68,7 +69,7 @@ describe("flowsList agent mode", () => {
       .join("");
     expect(output).toContain("Login");
     expect(output).toContain("Web - Chrome");
-    expect(output).toContain("src/flows/login.flow.ts");
+    expect(output).toContain(join("src", "flows", "login.flow.ts"));
     expect(ui.intro).not.toHaveBeenCalled();
     expect(ui.outro).not.toHaveBeenCalled();
     expect(ui.json).not.toHaveBeenCalled();

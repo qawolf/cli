@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import {
   makeCtx,
@@ -145,9 +146,9 @@ describe("cleanup()", () => {
     await context.launch();
     const result = await context.cleanup(true);
     expect(result.videoPaths).toHaveLength(1);
-    expect(result.videoPaths[0]).toBe("/tmp/vid/video.mp4");
+    expect(result.videoPaths[0]).toBe(join("/tmp/vid", "video.mp4"));
     expect(writeFile).toHaveBeenCalledWith(
-      "/tmp/vid/video.mp4",
+      join("/tmp/vid", "video.mp4"),
       expect.any(Buffer),
     );
   });

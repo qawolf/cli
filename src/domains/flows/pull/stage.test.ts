@@ -136,8 +136,11 @@ describe("stageBundle", () => {
     expect(await readFile(join(destDir, ".env"), "utf8")).toBe(
       `BASE_URL="https://example.com"\nTEAM_STORAGE_DIR="${assetsAbs}"\nTOKEN="abc"\n`,
     );
-    const stats = await stat(join(destDir, ".env"));
-    expect(stats.mode & 0o777).toBe(0o600);
+    // Windows has no POSIX mode bits — it reports 0o666/0o444 whatever mode we pass.
+    if (process.platform !== "win32") {
+      const stats = await stat(join(destDir, ".env"));
+      expect(stats.mode & 0o777).toBe(0o600);
+    }
 
     const manifest = await readManifest(destDir);
     if (manifest === "missing" || manifest === "malformed") {

@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import {
   buildContextSetup,
@@ -13,7 +14,9 @@ afterEach(() => {
 
 describe("harFlowPath", () => {
   it("should return <outputDir>/har/<flowName>.har", () => {
-    expect(harFlowPath("/out", "my-flow")).toBe("/out/har/my-flow.har");
+    expect(harFlowPath("/out", "my-flow")).toBe(
+      join("/out", "har", "my-flow.har"),
+    );
   });
 });
 
@@ -121,8 +124,10 @@ describe("initHar", () => {
       "my-flow",
     );
     expect(result.harMode).toBe("on");
-    expect(result.harPath).toBe("/out/har/my-flow.har");
-    expect(mkdirMock).toHaveBeenCalledWith("/out/har", { recursive: true });
+    expect(result.harPath).toBe(join("/out", "har", "my-flow.har"));
+    expect(mkdirMock).toHaveBeenCalledWith(join("/out", "har"), {
+      recursive: true,
+    });
   });
 
   it("should return harMode and harPath and call mkdir when har is retain-on-failure", async () => {
@@ -134,8 +139,10 @@ describe("initHar", () => {
       "my-flow",
     );
     expect(result.harMode).toBe("retain-on-failure");
-    expect(result.harPath).toBe("/out/har/my-flow.har");
-    expect(mkdirMock).toHaveBeenCalledWith("/out/har", { recursive: true });
+    expect(result.harPath).toBe(join("/out", "har", "my-flow.har"));
+    expect(mkdirMock).toHaveBeenCalledWith(join("/out", "har"), {
+      recursive: true,
+    });
   });
 });
 
@@ -162,7 +169,7 @@ describe("buildContextSetup", () => {
       viewport: { width: 1280, height: 720 },
       screen: { width: 1280, height: 720 },
       recordVideo: {
-        dir: "/out/videos",
+        dir: join("/out", "videos"),
         size: { width: 1280, height: 720 },
       },
     });
@@ -195,7 +202,7 @@ describe("buildContextSetup", () => {
       viewport: { width: 1280, height: 720 },
       screen: { width: 1280, height: 720 },
       recordVideo: {
-        dir: "/out/videos",
+        dir: join("/out", "videos"),
         size: { width: 1280, height: 720 },
       },
       recordHar: {

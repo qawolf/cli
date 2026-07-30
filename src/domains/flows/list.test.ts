@@ -136,10 +136,10 @@ describe("flowsList human mode table", () => {
       /^name\s+target\s+file$/,
     );
     expect(stripAnsi(lines[1])).toMatch(
-      /^Login\s+Web - Chrome\s+src\/flows\/login\.flow\.ts$/,
+      /^Login\s+Web - Chrome\s+src[\\/]flows[\\/]login\.flow\.ts$/,
     );
     expect(stripAnsi(lines[2])).toMatch(
-      /^Checkout\s+Web - Firefox\s+src\/flows\/sub\/checkout\.flow\.ts$/,
+      /^Checkout\s+Web - Firefox\s+src[\\/]flows[\\/]sub[\\/]checkout\.flow\.ts$/,
     );
     expect(ui.intro).toHaveBeenCalledWith("Flows");
     expect(ui.outro).toHaveBeenCalledWith("2 flows");
@@ -163,7 +163,7 @@ describe("flowsList human mode table", () => {
     const lines = output.split("\n").filter((l) => l.length > 0);
 
     expect(stripAnsi(lines[1])).toMatch(
-      /^Untargeted\s+src\/flows\/untargeted\.flow\.ts$/,
+      /^Untargeted\s+src[\\/]flows[\\/]untargeted\.flow\.ts$/,
     );
   });
 });

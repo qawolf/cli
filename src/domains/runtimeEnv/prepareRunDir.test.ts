@@ -1,18 +1,12 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { realpathSync } from "node:fs";
-import {
-  lstat,
-  mkdir,
-  mkdtemp,
-  readlink,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { prepareRunDir } from "./prepareRunDir.js";
 import { scaffoldManagedRuntime } from "./scaffoldManagedRuntime.testUtils.js";
+import { expectLinkTarget } from "./symlinkDir.testUtils.js";
 
 const tmpDirs: string[] = [];
 
@@ -53,7 +47,8 @@ describe("prepareRunDir", () => {
 
       const innerHop = join(result.runDir, "exec", "node_modules");
       expect((await lstat(innerHop)).isDirectory()).toBe(true);
-      expect(await readlink(join(innerHop, "@qawolf", "flows"))).toBe(
+      await expectLinkTarget(
+        join(innerHop, "@qawolf", "flows"),
         join(depsRoot, "node_modules", "@qawolf", "flows"),
       );
     });
@@ -79,7 +74,7 @@ describe("prepareRunDir", () => {
 
       const outerHop = join(result.runDir, "node_modules");
       expect((await lstat(outerHop)).isSymbolicLink()).toBe(true);
-      expect(await readlink(outerHop)).toBe(projectNm);
+      await expectLinkTarget(outerHop, projectNm);
     });
 
     it("leaves outer hop absent when no projectDir or no installable deps", async () => {
@@ -173,7 +168,8 @@ describe("prepareRunDir", () => {
       // exec/node_modules is the inner hop — a real dir, not a copy of project nm
       const execNm = join(result.runDir, "exec", "node_modules");
       expect((await lstat(execNm)).isDirectory()).toBe(true);
-      expect(await readlink(join(execNm, "@qawolf", "flows"))).toBe(
+      await expectLinkTarget(
+        join(execNm, "@qawolf", "flows"),
         join(depsRoot, "node_modules", "@qawolf", "flows"),
       );
     });
@@ -224,14 +220,15 @@ describe("prepareRunDir", () => {
       // Inner hop is a real directory; @qawolf/flows symlinks into the managed tree
       const innerHop = join(result.runDir, "exec", "node_modules");
       expect((await lstat(innerHop)).isDirectory()).toBe(true);
-      expect(await readlink(join(innerHop, "@qawolf", "flows"))).toBe(
+      await expectLinkTarget(
+        join(innerHop, "@qawolf", "flows"),
         join(depsRoot, "node_modules", "@qawolf", "flows"),
       );
 
       // Outer hop remains a symlink to the project node_modules
       const outerHop = join(result.runDir, "node_modules");
       expect((await lstat(outerHop)).isSymbolicLink()).toBe(true);
-      expect(await readlink(outerHop)).toBe(projectNm);
+      await expectLinkTarget(outerHop, projectNm);
     });
   });
 });

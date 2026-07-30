@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { readlink, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { makeDefaultFs } from "~/shell/fs.js";
@@ -11,6 +11,7 @@ import {
   makeTmpDirTracker,
 } from "./runDirFixtures.testUtils.js";
 import { scaffoldManagedRuntime } from "./scaffoldManagedRuntime.testUtils.js";
+import { expectLinkTarget } from "./symlinkDir.testUtils.js";
 
 const tracker = makeTmpDirTracker("qawolf-outerhop-test-");
 
@@ -39,7 +40,8 @@ describe("populateOuterHop", () => {
       mode: "symlink",
       nodeModulesDir: join(projectDir, "node_modules"),
     });
-    expect(await readlink(join(runDir, "node_modules"))).toBe(
+    await expectLinkTarget(
+      join(runDir, "node_modules"),
       join(projectDir, "node_modules"),
     );
   });
@@ -64,7 +66,8 @@ describe("populateOuterHop", () => {
       mode: "symlink",
       nodeModulesDir: join(root, "node_modules"),
     });
-    expect(await readlink(join(runDir, "node_modules"))).toBe(
+    await expectLinkTarget(
+      join(runDir, "node_modules"),
       join(root, "node_modules"),
     );
   });
@@ -131,7 +134,8 @@ describe("populateOuterHop", () => {
       mode: "symlink",
       nodeModulesDir: join(root, "repo", "node_modules"),
     });
-    expect(await readlink(join(runDir, "node_modules"))).toBe(
+    await expectLinkTarget(
+      join(runDir, "node_modules"),
       join(root, "repo", "node_modules"),
     );
   });
