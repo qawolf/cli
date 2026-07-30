@@ -4,6 +4,8 @@ import type { configureTestkitClient } from "@qawolf/testkit";
 
 import { runnerMessages } from "~/core/messages/index.js";
 import { resolveFromEnvDir } from "~/shell/resolveExport.js";
+import { packageLoadFailed } from "~/core/messages/index.js";
+import { errorMessage } from "~/core/errors.js";
 type TestkitModule = {
   createTestkitClient: typeof createTestkitClient;
   configureTestkitClient: typeof configureTestkitClient;
@@ -46,7 +48,7 @@ async function loadSdkDeps(cwd: string): Promise<TestkitModule> {
     };
   } catch (err) {
     throw new Error(
-      "Could not load @qawolf/testkit. Install it in your project: `npm install @qawolf/testkit` or `bun add @qawolf/testkit`.",
+      packageLoadFailed("@qawolf/testkit", cwd, errorMessage(err)),
       { cause: err },
     );
   }

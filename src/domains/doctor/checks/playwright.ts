@@ -14,15 +14,16 @@ type PlaywrightDeps = {
 export async function checkPlaywright(
   deps: PlaywrightDeps,
 ): Promise<CheckResult> {
-  const cliPath = deps.envDir
-    ? playwrightCliCandidates(deps.envDir, deps.platform).find(deps.checkExists)
-    : undefined;
+  const candidates = deps.envDir
+    ? playwrightCliCandidates(deps.envDir, deps.platform)
+    : [];
+  const cliPath = candidates.find(deps.checkExists);
 
   if (cliPath === undefined) {
     return {
       name: "playwright",
       status: "fail",
-      detail: doctorMessages.playwright.notFound,
+      detail: doctorMessages.playwright.notFound(candidates[0]),
     };
   }
 

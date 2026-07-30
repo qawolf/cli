@@ -42,7 +42,7 @@ export async function installPinned(
   await shimFlowsDeps(tempDir, deps.fs);
 
   // Atomic publish: the first shard to rename wins; others detect the completed
-  // .bin/playwright shim and quietly remove their own temp dir.
+  // CLI shims and quietly remove their own temp dir.
   try {
     await deps.fs.rename(tempDir, targetDir);
   } catch (err) {

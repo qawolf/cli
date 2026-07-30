@@ -1,5 +1,7 @@
 import { pluralize } from "~/core/pluralize.js";
 
+import { toolNotInstalled } from "./toolNotFound.js";
+
 export const installMessages = {
   noFlowsFound: "No flows requiring installation were found.",
   iosNotSupported: "iOS targets are not supported in v0.1.",
@@ -11,8 +13,8 @@ export const installMessages = {
   installingBrowser: (browser: string) => `Install ${browser}`,
   browsersInstalled: (count: number) =>
     `Installed ${pluralize(count, "browser")}.`,
-  playwrightNotFound:
-    "Could not find Playwright. Install it in your project (`npm install playwright` or `bun add playwright`).",
+  playwrightNotFound: (playwrightPath: string) =>
+    toolNotInstalled("Playwright", playwrightPath),
   playwrightInstallFailed: (browser: string, detail: string) =>
     `playwright install ${browser} failed: ${detail}`,
   playwrightInstallLaunchFailed: (browser: string) =>
@@ -49,7 +51,6 @@ export const installMessages = {
     uiautomator2InstallFailed: (detail: string) =>
       `appium driver install uiautomator2 failed: ${detail}`,
     appiumNotFound: (appiumPath: string) =>
-      `appium not found at ${appiumPath}.\n` +
-      `Reinstall the runtime dependencies with \`qawolf install\`.`,
+      toolNotInstalled("Appium", appiumPath),
   },
 } as const;

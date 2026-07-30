@@ -75,7 +75,10 @@ describe("checkPlaywright", () => {
       checkExists: () => true,
     });
     expect(r.status).toBe("fail");
-    expect(r.detail).toContain("Could not find");
+    expect(r.detail).toBe(
+      "Playwright is not installed.\n" +
+        "Run `qawolf install` to install the runtime dependencies.",
+    );
     expect(spawn).not.toHaveBeenCalled();
   });
 
@@ -90,7 +93,10 @@ describe("checkPlaywright", () => {
       checkExists: () => false,
     });
     expect(r.status).toBe("fail");
-    expect(r.detail).toContain("Could not find");
+    expect(r.detail).toBe(
+      `Playwright not found at ${fakeCli}.\n` +
+        "Run `qawolf install` to install the runtime dependencies.",
+    );
     expect(spawn).not.toHaveBeenCalled();
   });
 

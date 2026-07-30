@@ -21,7 +21,10 @@ describe("checkAndroid: appium and uiautomator2-driver", () => {
     const appium = findResult(results, "appium");
     const driver = findResult(results, "uiautomator2-driver");
     expect(appium?.status).toBe("warn");
-    expect(appium?.detail).toContain("qawolf flows run");
+    expect(appium?.detail).toBe(
+      "Appium is not installed.\n" +
+        "Run `qawolf install` to install the runtime dependencies.",
+    );
     expect(driver?.status).toBe("warn");
   });
 
@@ -30,7 +33,10 @@ describe("checkAndroid: appium and uiautomator2-driver", () => {
     const results = await checkAndroid(baseDeps({ checkExists }));
     const appium = findResult(results, "appium");
     expect(appium?.status).toBe("warn");
-    expect(appium?.detail).toContain(appiumBin);
+    expect(appium?.detail).toBe(
+      `Appium not found at ${appiumBin}.\n` +
+        "Run `qawolf install` to install the runtime dependencies.",
+    );
   });
 
   it("passes uiautomator2-driver when 'appium driver list' output mentions uiautomator2", async () => {
@@ -79,6 +85,8 @@ describe("checkAndroid: appium and uiautomator2-driver", () => {
     expect(driver?.detail).toContain("ENOENT");
     // Must NOT recommend `qawolf install android` since Appium itself is broken.
     expect(driver?.detail).not.toContain("qawolf install android");
+    expect(driver?.detail).toContain("Run `qawolf install`");
+    expect(driver?.detail).not.toContain("qawolf flows run");
   });
 
   it("warns uiautomator2-driver with an Appium-failure message when the driver list exits non-zero", async () => {

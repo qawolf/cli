@@ -37,10 +37,13 @@ export async function installBrowserList(
   browsers: BrowserName[],
   deps: InstallBrowserListDeps,
 ): Promise<void> {
-  const cliPath = playwrightCliCandidates(deps.envDir, deps.platform).find(
-    deps.checkExists,
-  );
-  if (!cliPath) throw new Error(installMessages.playwrightNotFound);
+  const candidates = playwrightCliCandidates(deps.envDir, deps.platform);
+  const cliPath = candidates.find(deps.checkExists);
+  if (!cliPath) {
+    throw new Error(
+      installMessages.playwrightNotFound(candidates[0] ?? deps.envDir),
+    );
+  }
 
   await ctx.ui.withProgress(
     browsers.map((browser) => ({

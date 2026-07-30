@@ -23,24 +23,14 @@ export function checkAppium(
   platform: NodeJS.Platform,
   checkExists: (path: string) => boolean,
 ): { appium: CheckResult; bin: string | undefined } {
-  if (!envDir) {
-    return {
-      appium: {
-        name: "appium",
-        status: "warn",
-        detail: doctorMessages.appium.noEnvDir,
-      },
-      bin: undefined,
-    };
-  }
-  const candidates = appiumCliCandidates(envDir, platform);
+  const candidates = envDir ? appiumCliCandidates(envDir, platform) : [];
   const bin = candidates.find(checkExists);
   if (!bin) {
     return {
       appium: {
         name: "appium",
         status: "warn",
-        detail: doctorMessages.appium.binaryMissing(candidates[0] ?? envDir),
+        detail: doctorMessages.appium.notFound(candidates[0]),
       },
       bin: undefined,
     };

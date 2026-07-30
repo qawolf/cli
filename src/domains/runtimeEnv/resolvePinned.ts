@@ -1,5 +1,6 @@
 import { join } from "node:path";
 
+import { appiumCliCandidates } from "~/core/appiumBins.js";
 import { playwrightCliCandidates } from "~/core/playwrightBins.js";
 import type { Fs } from "~/shell/fs.js";
 
@@ -32,18 +33,21 @@ export function readInstalledVersion(
 
 /**
  * Returns true when every pinned package is installed at its exact pinned
- * version AND a Playwright shim exists (required by installBrowserList).
+ * version AND both CLI shims exist. A matching package version does not imply
+ * a runnable shim, so checking versions alone can resolve a root that later
+ * fails to spawn the binary.
  */
 export function allPinnedResolved(
   dir: string,
   fs: Fs,
   platform: NodeJS.Platform,
 ): boolean {
-  // Same list installBrowserList resolves from, so the two cannot disagree.
-  const hasPlaywrightShim = playwrightCliCandidates(dir, platform).some(
-    (path) => fs.existsSync(path),
+  // The same candidate lists installBrowserList and createAppiumServer resolve
+  // from, so this check and those two cannot disagree.
+  const shimsPresent = [playwrightCliCandidates, appiumCliCandidates].every(
+    (candidates) => candidates(dir, platform).some((p) => fs.existsSync(p)),
   );
-  if (!hasPlaywrightShim) {
+  if (!shimsPresent) {
     return false;
   }
   return pinnedPackages.every(

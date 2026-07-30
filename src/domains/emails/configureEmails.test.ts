@@ -126,3 +126,22 @@ describe("configureEmails", () => {
     expect((caughtError as Error).message).toBe("registration failed");
   });
 });
+
+describe("configureEmails: load failure", () => {
+  it("names the env dir and points at `qawolf install`", async () => {
+    let caught: unknown;
+    try {
+      await configureEmails({ emailerUrl: "https://x" }, "/nonexistent/env");
+    } catch (e) {
+      caught = e;
+    }
+
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toStartWith(
+      "Could not load @qawolf/emails from /nonexistent/env (",
+    );
+    expect((caught as Error).message).toEndWith(
+      "Run `qawolf install` to install the runtime dependencies.",
+    );
+  });
+});
