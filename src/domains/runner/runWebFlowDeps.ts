@@ -3,9 +3,10 @@ import type { RunWebFlowDeps } from "./runWebFlow.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { resolveFromEnvDir } from "~/shell/resolveExport.js";
 import { runnerMessages } from "~/core/messages/index.js";
+import { errorMessage } from "~/core/errors.js";
 
 export async function defaultRunWebFlowDeps(
-  cwd = process.cwd(),
+  envDir = process.cwd(),
   signals: SignalRegistry,
 ): Promise<RunWebFlowDeps> {
   // Loaded via resolveFromEnvDir + import() so the binary finds playwright in
@@ -19,19 +20,24 @@ export async function defaultRunWebFlowDeps(
   // (the runner only reads .path() / .delete() on the video).
   let playwright: Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
   try {
-    const playwrightPath = resolveFromEnvDir(cwd, "playwright");
+    const playwrightPath = resolveFromEnvDir(envDir, "playwright");
     playwright = (await import(playwrightPath)) as Pick<
       RunWebFlowDeps,
       "chromium" | "firefox" | "webkit"
     >;
   } catch (err) {
-    throw new Error(runnerMessages.playwrightLoadFailed(cwd), { cause: err });
+    throw new Error(
+      runnerMessages.playwrightLoadFailed(envDir, errorMessage(err)),
+      {
+        cause: err,
+      },
+    );
   }
   const { chromium, firefox, webkit } = playwright;
   return {
     chromium,
     firefox,
     webkit,
-    ...createRunnerDeps(signals, cwd),
+    ...createRunnerDeps(signals, envDir),
   };
 }

@@ -5,18 +5,21 @@ import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.j
 import { defaultRunWebFlowDeps } from "./runWebFlowDeps.js";
 
 describe("defaultRunWebFlowDeps", () => {
-  it("blames the resolved deps root when Playwright cannot be loaded", async () => {
+  it("names the env dir and the underlying cause when Playwright cannot load", async () => {
     let caught: unknown;
     try {
-      await defaultRunWebFlowDeps("/nonexistent/project", makeNoopSignals());
+      await defaultRunWebFlowDeps("/nonexistent/env", makeNoopSignals());
     } catch (e) {
       caught = e;
     }
 
-    expect((caught as Error).message).toBe(
-      "Could not load Playwright from /nonexistent/project.\n" +
-        "The resolved dependencies directory is incomplete. " +
-        "Run `qawolf install clear`, then retry.",
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toStartWith(
+      "Could not load Playwright from /nonexistent/env (",
     );
+    expect((caught as Error).message).toEndWith(
+      "Run `qawolf install` to install the runtime dependencies.",
+    );
+    expect((caught as Error).cause).toBeDefined();
   });
 });

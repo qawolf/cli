@@ -1,6 +1,6 @@
 import { pluralize } from "~/core/pluralize.js";
 
-import { toolMissingFromDepsRoot } from "./toolNotFound.js";
+import { toolNotInstalled } from "./toolNotFound.js";
 
 export const installMessages = {
   noFlowsFound: "No flows requiring installation were found.",
@@ -14,7 +14,7 @@ export const installMessages = {
   browsersInstalled: (count: number) =>
     `Installed ${pluralize(count, "browser")}.`,
   playwrightNotFound: (playwrightPath: string) =>
-    toolMissingFromDepsRoot("Playwright", playwrightPath),
+    toolNotInstalled("Playwright", playwrightPath),
   playwrightInstallFailed: (browser: string, detail: string) =>
     `playwright install ${browser} failed: ${detail}`,
   playwrightInstallLaunchFailed: (browser: string) =>
@@ -51,6 +51,6 @@ export const installMessages = {
     uiautomator2InstallFailed: (detail: string) =>
       `appium driver install uiautomator2 failed: ${detail}`,
     appiumNotFound: (appiumPath: string) =>
-      toolMissingFromDepsRoot("Appium", appiumPath),
+      toolNotInstalled("Appium", appiumPath),
   },
 } as const;

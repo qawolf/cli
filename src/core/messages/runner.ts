@@ -1,10 +1,10 @@
 import { pluralize } from "~/core/pluralize.js";
 
-import { depsRootIncomplete } from "./toolNotFound.js";
+import { packageLoadFailed } from "./toolNotFound.js";
 
 export const runnerMessages = {
-  playwrightLoadFailed: (depsRoot: string) =>
-    `Could not load Playwright from ${depsRoot}.\n${depsRootIncomplete}`,
+  playwrightLoadFailed: (envDir: string, detail: string) =>
+    packageLoadFailed("Playwright", envDir, detail),
   androidWorkersUnsupported:
     "Android flows are not yet supported with --workers > 1; rerun Android flows with --workers 1.",
   noFlowsMatched: "No flows matched.",

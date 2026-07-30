@@ -211,8 +211,7 @@ describe("createAppiumServer", () => {
     expect(caught).toBeInstanceOf(Error);
     expect((caught as Error).message).toBe(
       `Appium not found at ${join("/fake/env", "node_modules", ".bin", "appium")}.\n` +
-        "The resolved dependencies directory is incomplete. " +
-        "Run `qawolf install clear`, then retry.",
+        "Run `qawolf install` to install the runtime dependencies.",
     );
     expect(spawnCalls).toEqual([]);
   });

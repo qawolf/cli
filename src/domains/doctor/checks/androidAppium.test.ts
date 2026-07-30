@@ -85,7 +85,7 @@ describe("checkAndroid: appium and uiautomator2-driver", () => {
     expect(driver?.detail).toContain("ENOENT");
     // Must NOT recommend `qawolf install android` since Appium itself is broken.
     expect(driver?.detail).not.toContain("qawolf install android");
-    expect(driver?.detail).toContain("Run `qawolf install clear`, then retry.");
+    expect(driver?.detail).toContain("Run `qawolf install`");
     expect(driver?.detail).not.toContain("qawolf flows run");
   });
 

@@ -5,6 +5,8 @@ import type {
 } from "@qawolf/emails";
 
 import { resolveFromEnvDir } from "~/shell/resolveExport.js";
+import { packageLoadFailed } from "~/core/messages/index.js";
+import { errorMessage } from "~/core/errors.js";
 
 type EmailsModule = {
   createEmailsClient: typeof createEmailsClient;
@@ -27,7 +29,7 @@ async function loadSdkDeps(cwd: string): Promise<EmailsModule> {
     return (await import(emailsPath)) as EmailsModule;
   } catch (err) {
     throw new Error(
-      "Could not load @qawolf/emails. Install it in your project: `npm install @qawolf/emails` or `bun add @qawolf/emails`.",
+      packageLoadFailed("@qawolf/emails", cwd, errorMessage(err)),
       { cause: err },
     );
   }

@@ -31,10 +31,10 @@ describe("installBrowserList", () => {
       caught = e;
     }
 
+    expect(caught).toBeInstanceOf(Error);
     expect((caught as Error).message).toBe(
       `Playwright not found at ${playwrightBin}.\n` +
-        "The resolved dependencies directory is incomplete. " +
-        "Run `qawolf install clear`, then retry.",
+        "Run `qawolf install` to install the runtime dependencies.",
     );
   });
 });

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "bun:test";
 
-import { toolMissingFromDepsRoot, toolNotInstalled } from "./toolNotFound.js";
+import { toolNotInstalled, toolNotRunnable } from "./toolNotFound.js";
 
 describe("toolNotInstalled", () => {
-  it("names the path it looked for and points at `qawolf install`", () => {
+  it("names the path it looked for", () => {
     expect(
       toolNotInstalled("Playwright", "/env/node_modules/.bin/playwright"),
     ).toBe(
@@ -20,14 +20,13 @@ describe("toolNotInstalled", () => {
   });
 });
 
-describe("toolMissingFromDepsRoot", () => {
-  it("blames the resolved deps root instead of repeating `qawolf install`", () => {
+describe("toolNotRunnable", () => {
+  it("keeps the failure detail and gives the same remedy", () => {
     expect(
-      toolMissingFromDepsRoot("Appium", "/env/node_modules/.bin/appium"),
+      toolNotRunnable("Could not run `appium driver list`", "ENOENT"),
     ).toBe(
-      "Appium not found at /env/node_modules/.bin/appium.\n" +
-        "The resolved dependencies directory is incomplete. " +
-        "Run `qawolf install clear`, then retry.",
+      "Could not run `appium driver list` (ENOENT).\n" +
+        "Run `qawolf install` to install the runtime dependencies.",
     );
   });
 });

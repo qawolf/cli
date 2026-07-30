@@ -1,4 +1,4 @@
-import { clearAndRetry, toolNotInstalled } from "./toolNotFound.js";
+import { toolNotInstalled, toolNotRunnable } from "./toolNotFound.js";
 
 export const doctorMessages = {
   intro: "qawolf doctor",
@@ -63,8 +63,7 @@ export const doctorMessages = {
   appium: {
     notFound: (path?: string) => toolNotInstalled("Appium", path),
     driverListFailed: (detail: string) =>
-      `Could not run \`appium driver list\` (${detail}). ` +
-      `The Appium binary may be broken. ${clearAndRetry}`,
+      toolNotRunnable("Could not run `appium driver list`", detail),
     cannotCheckDriverList: "Cannot check driver list without Appium binary.",
     uiautomator2NotInstalled:
       "uiautomator2 driver not installed. Run `qawolf install android` to install it.",
