@@ -1,9 +1,8 @@
-import { execFile, spawn } from "node:child_process";
-import { promisify } from "node:util";
+import { spawn } from "node:child_process";
 
-import { adbBin, emulatorBin } from "~/core/androidBins.js";
+import { emulatorBin } from "~/core/androidBins.js";
+import { defaultAdb, type AdbFn } from "./adb.js";
 
-const execFileAsync = promisify(execFile);
 const defaultBootTimeoutMs = 120_000;
 const pollIntervalMs = 2_000;
 
@@ -12,20 +11,11 @@ function androidHome(): string | undefined {
 }
 
 export type SpawnFn = (bin: string, args: string[]) => { stop: () => void };
-export type AdbFn = (args: string[]) => Promise<{ stdout: string }>;
 
 const defaultSpawn: SpawnFn = (bin, args) => {
   const child = spawn(bin, args, { stdio: "ignore" });
   child.unref();
   return { stop: () => child.kill() };
-};
-
-const defaultAdb: AdbFn = async (args) => {
-  const { stdout } = await execFileAsync(
-    adbBin(androidHome(), process.platform),
-    args,
-  );
-  return { stdout };
 };
 
 async function bootSequence(

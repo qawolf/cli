@@ -1,7 +1,8 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { EmulatorSlot } from "./createEmulatorPool.js"; // (D2)
-import { configureEmulator, defaultAdb } from "./emulatorSetup.js";
+import { defaultAdb } from "./adb.js";
+import { configureEmulator } from "./emulatorSetup.js";
 import type {
   AndroidCleanupResult,
   AndroidLaunchContext,

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
-import type { AdbFn, SpawnFn } from "./createAndroidEmulator.js";
+import type { AdbFn } from "./adb.js";
+import type { SpawnFn } from "./createAndroidEmulator.js";
 import { createAndroidEmulator } from "./createAndroidEmulator.js";
 
 afterEach(() => {

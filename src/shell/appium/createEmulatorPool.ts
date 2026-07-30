@@ -1,9 +1,9 @@
 import {
   createAndroidEmulator,
-  type AdbFn,
   type SpawnFn,
 } from "./createAndroidEmulator.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+import type { AdbFn } from "./adb.js";
 
 export type EmulatorSlot = { serial: string; avdName: string };
 
