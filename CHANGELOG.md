@@ -1,5 +1,11 @@
 # @qawolf/cli
 
+## 1.4.2
+
+### Patch Changes
+
+- f759778: Fix Windows runs failing with "Could not load @qawolf/testkit ... Received protocol 'c:'". The Node ESM loader requires file:// URLs for absolute paths on win32, so the testkit, Playwright, and emails loaders now convert resolved paths before dynamic import.
+
 ## 1.4.1
 
 ### Patch Changes
