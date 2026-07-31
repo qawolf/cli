@@ -46,7 +46,7 @@ export async function expandPatterns(
     });
     for (const match of matches) {
       // tinyglobby emits forward slashes even on win32; the rest of the CLI
-      // builds paths with node:path. prepareRunDir's remapPath compares the
+      // builds paths with node:path. stageFlowFiles' remapPath compares the
       // two forms, so canonicalize here.
       const file = resolve(match);
       seen.add(file);

@@ -69,6 +69,15 @@ describe("resolveUniqueEnvDir", () => {
     expect(resolveUniqueEnvDir(files, defaultFs)).toBeUndefined();
   });
 
+  it("should return the one package dir even when a file sits outside it", async () => {
+    const root = await tracker.makeTmpDir();
+    const pkg = join(root, "pkg");
+    await mkdir(pkg, { recursive: true });
+    await writeFile(join(pkg, "package.json"), "{}");
+    const files = [join(pkg, "a.flow.ts"), join(root, "b.flow.ts")];
+    expect(resolveUniqueEnvDir(files, defaultFs)).toBe(pkg);
+  });
+
   it("should return undefined for an empty file list", async () => {
     expect(resolveUniqueEnvDir([], defaultFs)).toBeUndefined();
   });
