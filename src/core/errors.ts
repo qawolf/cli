@@ -18,6 +18,15 @@ export function isNoEntError(err: unknown): boolean {
   return errorCode(err) === "ENOENT";
 }
 
+/**
+ * Whether a thrown value is a request aborted by `AbortSignal.timeout` rather
+ * than a connection that failed. The runtime names that abort `TimeoutError`,
+ * which is what separates "we stopped waiting" from "we could not reach it".
+ */
+export function isTimeoutError(err: unknown): boolean {
+  return err instanceof Error && err.name === "TimeoutError";
+}
+
 const missingPackagePattern = /Cannot find (?:package|module) '([^']+)'/;
 const pathLikeSpecifierPattern = /^(?:\.|\/|[A-Za-z]:[\\/])/;
 

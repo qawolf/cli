@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isTimeoutError } from "~/core/errors.js";
 import type { WireResult } from "./createTrpcClient.js";
 import { toError } from "./toError.js";
 
@@ -18,6 +19,8 @@ type GetIdentityDeps = {
   baseUrl: string;
 };
 
+const timeoutMs = 10_000;
+
 export async function getIdentity(
   apiKey: string,
   deps: GetIdentityDeps,
@@ -28,9 +31,12 @@ export async function getIdentity(
   try {
     response = await deps.fetch(url, {
       headers: { Authorization: `Bearer ${apiKey}` },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (error: unknown) {
+    if (isTimeoutError(error)) {
+      return { ok: false, error: { kind: "timeout", timeoutMs } };
+    }
     return {
       ok: false,
       error: { kind: "network", cause: toError(error) },

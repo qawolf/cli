@@ -2,7 +2,11 @@ import { type PublicApiContractKind } from "@qawolf/api-contracts/v1";
 import type { z } from "zod";
 
 import { describeRequestError } from "./describeErrors.js";
-import type { TrpcClient, WireResult } from "./createTrpcClient.js";
+import type {
+  RequestOptions,
+  TrpcClient,
+  WireResult,
+} from "./createTrpcClient.js";
 import { type PlatformResult, requestWithRetry } from "./requestWithRetry.js";
 
 // Structural view of a public API contract, parameterized by the wire
@@ -24,17 +28,19 @@ export function callPublicApi<Input, Output>(
   trpc: TrpcClient,
   contract: PublicApiContractOf<Input, Output>,
   input: Input,
+  options?: RequestOptions,
 ): Promise<WireResult<Output>> {
   const path = `public.${contract.name}`;
   if (contract.kind === "read") {
-    return trpc.query(path, input, contract.output);
+    return trpc.query(path, input, contract.output, options);
   }
-  return trpc.mutation(path, input, contract.output);
+  return trpc.mutation(path, input, contract.output, options);
 }
 
 export type CallPublicApiMethod = <Input, Output>(
   contract: PublicApiContractOf<Input, Output>,
   input: Input,
+  options?: RequestOptions,
 ) => Promise<PlatformResult<Output>>;
 
 type MethodDeps = {
@@ -50,9 +56,9 @@ export function makeCallPublicApiMethod(
   deps: MethodDeps,
   readBackoffMs: readonly number[],
 ): CallPublicApiMethod {
-  return async (contract, input) =>
+  return async (contract, input, options) =>
     requestWithRetry({
-      call: () => callPublicApi(trpc, contract, input),
+      call: () => callPublicApi(trpc, contract, input, options),
       backoffMs: contract.kind === "read" ? readBackoffMs : [],
       describe: (err) => describeRequestError(err, deps.baseUrl, contract.name),
       sleep: deps.sleep,

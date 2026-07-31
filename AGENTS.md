@@ -35,8 +35,9 @@ src/
 │   ├── androidBins.ts   # Android SDK binary paths per platform
 │   ├── androidTargets.ts # Android target parsing helpers
 │   ├── batchMap.ts      # bounded-concurrency async map
-│   ├── errors.ts        # errorMessage, isNoEntError
+│   ├── errors.ts        # errorMessage, isNoEntError, isTimeoutError
 │   ├── flowMeta.ts      # extractFlowMeta, targetToBrowser, flowBasename
+│   ├── formatSeconds.ts # formatSeconds
 │   ├── messages/        # user-facing strings (auth, doctor, flows, init, install, runner)
 │   ├── nodeModulesBins.ts # node_modules/.bin shim candidates per platform
 │   ├── paths.ts         # getConfigDir

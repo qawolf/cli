@@ -1,3 +1,4 @@
+import { isTimeoutError } from "~/core/errors.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import type { WireResult } from "./createTrpcClient.js";
 import { toError } from "./toError.js";
@@ -19,6 +20,9 @@ export async function fetchSignedUrl(
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (error: unknown) {
+    if (isTimeoutError(error)) {
+      return { ok: false, error: { kind: "timeout", timeoutMs } };
+    }
     return { ok: false, error: { cause: toError(error), kind: "network" } };
   }
 

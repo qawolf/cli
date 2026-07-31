@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { createTrpcClient } from "./createTrpcClient.js";
 import { callPublicApi } from "./callPublicApi.js";
+import { makeHangingFetch } from "./slowFetch.testUtils.js";
 
 afterEach(() => {
   mock.restore();
@@ -76,6 +77,26 @@ describe("callPublicApi", () => {
       expect.objectContaining({ method: "GET" }),
     );
     expect(result).toEqual({ ok: true, data: { status: "completed" } });
+  });
+
+  it("hands the caller's timeout to the wire call", async () => {
+    const trpc = createTrpcClient(apiKey, {
+      baseUrl,
+      defaultTimeoutMs: 60_000,
+      fetch: makeHangingFetch(),
+    });
+
+    const result = await callPublicApi(
+      trpc,
+      publicContractsV1.run.create,
+      { environmentId: "environment-id", flowIds: ["flow-id"] },
+      { timeoutMs: 20 },
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: "timeout", timeoutMs: 20 },
+    });
   });
 
   it("returns a parse error when the response does not match the output schema", async () => {

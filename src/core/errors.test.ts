@@ -1,6 +1,31 @@
 import { describe, expect, it } from "bun:test";
 
-import { errorCode, extractMissingPackage, isNoEntError } from "./errors.js";
+import {
+  errorCode,
+  extractMissingPackage,
+  isNoEntError,
+  isTimeoutError,
+} from "./errors.js";
+
+describe("isTimeoutError", () => {
+  it("recognizes the abort a reached AbortSignal.timeout throws", () => {
+    expect(
+      isTimeoutError(
+        new DOMException("The operation timed out.", "TimeoutError"),
+      ),
+    ).toBe(true);
+  });
+
+  it("does not claim a failed connection or a caller's abort", () => {
+    expect(isTimeoutError(new TypeError("fetch failed"))).toBe(false);
+    expect(
+      isTimeoutError(
+        new DOMException("This operation was aborted", "AbortError"),
+      ),
+    ).toBe(false);
+    expect(isTimeoutError("TimeoutError")).toBe(false);
+  });
+});
 
 describe("errorCode", () => {
   it("returns the string code of an error-like value", () => {
