@@ -107,7 +107,8 @@
     "node_modules/",
     "knip.config.ts",
     "test/node20/",
-    "test/spawn/"
+    "test/spawn/",
+    "test/testkit/"
   ],
   "overrides": [
     {

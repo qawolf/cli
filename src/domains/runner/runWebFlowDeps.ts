@@ -1,6 +1,7 @@
 import { createRunnerDeps } from "./runnerDeps.js";
 import type { RunWebFlowDeps } from "./runWebFlow.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+import { importFromPath } from "~/shell/importFromPath.js";
 import { resolveFromEnvDir } from "~/shell/resolveExport.js";
 import { runnerMessages } from "~/core/messages/index.js";
 import { errorMessage } from "~/core/errors.js";
@@ -21,7 +22,7 @@ export async function defaultRunWebFlowDeps(
   let playwright: Pick<RunWebFlowDeps, "chromium" | "firefox" | "webkit">;
   try {
     const playwrightPath = resolveFromEnvDir(envDir, "playwright");
-    playwright = (await import(playwrightPath)) as Pick<
+    playwright = (await importFromPath(playwrightPath)) as Pick<
       RunWebFlowDeps,
       "chromium" | "firefox" | "webkit"
     >;

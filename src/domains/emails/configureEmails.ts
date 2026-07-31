@@ -4,6 +4,7 @@ import type {
   createEmailsClient,
 } from "@qawolf/emails";
 
+import { importFromPath } from "~/shell/importFromPath.js";
 import { resolveFromEnvDir } from "~/shell/resolveExport.js";
 import { packageLoadFailed } from "~/core/messages/index.js";
 import { errorMessage } from "~/core/errors.js";
@@ -26,7 +27,7 @@ export type EmailsConfig =
 async function loadSdkDeps(cwd: string): Promise<EmailsModule> {
   try {
     const emailsPath = resolveFromEnvDir(cwd, "@qawolf/emails");
-    return (await import(emailsPath)) as EmailsModule;
+    return (await importFromPath(emailsPath)) as EmailsModule;
   } catch (err) {
     throw new Error(
       packageLoadFailed("@qawolf/emails", cwd, errorMessage(err)),
