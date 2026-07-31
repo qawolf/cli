@@ -27,10 +27,13 @@ export async function flowsListRemote(
   pattern: string | undefined,
   options: FlowsListRemoteOptions,
 ): Promise<CommandResult> {
-  const result = await ctx.platform.callPublicApi(publicContractsV1.flow.list, {
-    environmentId: options.env,
-    includeDrafts: options.includeDrafts,
-  });
+  const result = await ctx.platformClient.callPublicApi(
+    publicContractsV1.flow.list,
+    {
+      environmentId: options.env,
+      includeDrafts: options.includeDrafts,
+    },
+  );
   if (!result.ok) {
     return { error: result.error };
   }

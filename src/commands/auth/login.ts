@@ -48,7 +48,7 @@ export async function handleLogin(ctx: CommandContext): Promise<CommandResult> {
         message: authMessages.verifying,
         task: async () => {
           const v = await validateApiKey({
-            platform: createPlatformClient(result.value, {
+            platformClient: createPlatformClient(result.value, {
               baseUrl: ctx.apiBaseUrl,
               fetch: globalThis.fetch,
             }),

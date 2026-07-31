@@ -17,7 +17,7 @@ export type CommandContext = {
 };
 
 export type AuthCommandContext = CommandContext & {
-  readonly platform: PlatformClient;
+  readonly platformClient: PlatformClient;
   readonly apiKeySource: string;
 };
 

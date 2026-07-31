@@ -13,7 +13,7 @@ type CreateFlowRuntimeDepsArgs = {
   readonly envDir: string;
   readonly ctx: Pick<CommandContext, "apiBaseUrl" | "configDir" | "fs"> &
     Partial<Pick<CommandContext, "log">>;
-  readonly platform?: PlatformClient;
+  readonly platformClient?: PlatformClient;
   readonly env?: Record<string, string | undefined>;
   readonly resolveApiKeyFn?: typeof resolveApiKey;
   readonly configureEmailsFn?: typeof configureEmails;
@@ -24,22 +24,22 @@ type GetInbox = NonNullable<FlowRuntimeDeps["getInbox"]>;
 
 type LazyGetInboxArgs = Omit<
   Required<CreateFlowRuntimeDepsArgs>,
-  "platform"
+  "platformClient"
 > & {
-  readonly platform: PlatformClient | undefined;
+  readonly platformClient: PlatformClient | undefined;
 };
 
 async function maybeGetIdentityTeamId(
-  platform: PlatformClient,
+  platformClient: PlatformClient,
 ): Promise<string | undefined> {
-  const identity = await platform.getIdentity();
+  const identity = await platformClient.getIdentity();
   return identity.ok ? identity.value.team.id : undefined;
 }
 
 function lazyGetInbox({
   envDir,
   ctx,
-  platform,
+  platformClient,
   env,
   resolveApiKeyFn,
   configureEmailsFn,
@@ -55,17 +55,17 @@ function lazyGetInbox({
         ? await resolveApiKeyFn(ctx.configDir, ctx.fs)
         : undefined;
 
-    if (teamId === undefined && platform !== undefined) {
-      teamId = await maybeGetIdentityTeamId(platform);
+    if (teamId === undefined && platformClient !== undefined) {
+      teamId = await maybeGetIdentityTeamId(platformClient);
     }
 
     if (teamId === undefined && apiKeyResult !== undefined) {
-      const identityPlatform = createPlatform(apiKeyResult.key, {
+      const identityClient = createPlatform(apiKeyResult.key, {
         baseUrl: ctx.apiBaseUrl,
         fetch: globalThis.fetch,
         ...(ctx.log ? { logger: ctx.log("trpc") } : {}),
       });
-      teamId = await maybeGetIdentityTeamId(identityPlatform);
+      teamId = await maybeGetIdentityTeamId(identityClient);
     }
 
     const teamIdPart = teamId !== undefined ? { teamId } : {};
@@ -100,7 +100,7 @@ function lazyGetInbox({
 export async function createFlowRuntimeDeps({
   envDir,
   ctx,
-  platform,
+  platformClient,
   env = process.env,
   resolveApiKeyFn = resolveApiKey,
   configureEmailsFn = configureEmails,
@@ -109,7 +109,7 @@ export async function createFlowRuntimeDeps({
   const getInbox = lazyGetInbox({
     envDir,
     ctx,
-    platform,
+    platformClient,
     env,
     resolveApiKeyFn,
     configureEmailsFn,

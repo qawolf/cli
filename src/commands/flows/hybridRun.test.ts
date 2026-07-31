@@ -68,7 +68,7 @@ function makeCtx(): AuthCommandContext {
     outputMode: "human",
     isInteractive: false,
     apiKeySource: "env",
-    platform: {} as unknown,
+    platformClient: {} as unknown,
     fs: makeMemoryFs(),
     signals: makeNoopSignals(),
     ui: makeFakeUI("human"),

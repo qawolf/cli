@@ -12,7 +12,7 @@ export async function fetchBundleAndEnvVars(
   ctx: AuthCommandContext,
   envId: string,
 ): Promise<FetchedBundle> {
-  const { platform } = ctx;
+  const { platformClient } = ctx;
   let tmpArchive: string | undefined;
   let bundleFetchedAt: Date | undefined;
   let envVars: Record<string, string> | undefined;
@@ -23,7 +23,7 @@ export async function fetchBundleAndEnvVars(
       {
         message: flowsMessages.pull.downloadingBundle,
         task: async () => {
-          const result = await platform.downloadBundle(envId);
+          const result = await platformClient.downloadBundle(envId);
           if (!result.ok) throw new Error(result.error);
           tmpArchive = result.value.tmpArchive;
           bundleFetchedAt = new Date();
@@ -32,7 +32,7 @@ export async function fetchBundleAndEnvVars(
       {
         message: flowsMessages.pull.fetchingEnvVars,
         task: async () => {
-          const result = await platform.getEnvVars(envId);
+          const result = await platformClient.getEnvVars(envId);
           if (!result.ok) throw new Error(result.error);
           envVars = result.value;
           envVarsFetchedAt = new Date();
