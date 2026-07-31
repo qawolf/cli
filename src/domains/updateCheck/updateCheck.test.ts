@@ -12,6 +12,7 @@ function makeNotifier(overrides: {
   currentVersion?: string;
   fs?: Fs;
   fetchLatestVersion?: () => Promise<string | undefined>;
+  renderNotice?: () => void;
 }) {
   const written: { body: string; title: string }[] = [];
   let fetchCalls = 0;
@@ -26,7 +27,10 @@ function makeNotifier(overrides: {
         overrides.fetchLatestVersion ?? (() => Promise.resolve("2.0.0"))
       )();
     },
-    renderNotice: (body, title) => written.push({ body, title }),
+    renderNotice: (body, title) => {
+      written.push({ body, title });
+      overrides.renderNotice?.();
+    },
   });
   return { notifier, written, fetchCalls: () => fetchCalls };
 }
@@ -109,5 +113,23 @@ describe("startUpdateCheck", () => {
     await settle();
     await notifier.notifyIfOutdated();
     expect(written).toHaveLength(1);
+  });
+
+  it("does not throw when rendering fails, and retries next run", async () => {
+    const fs = makeMemoryFs();
+    const first = makeNotifier({
+      fs,
+      renderNotice: () => {
+        throw new Error("EPIPE");
+      },
+    });
+    await settle();
+    await first.notifier.notifyIfOutdated();
+
+    // A failed render must not record the version as announced.
+    const second = makeNotifier({ fs });
+    await settle();
+    await second.notifier.notifyIfOutdated();
+    expect(second.written).toHaveLength(1);
   });
 });

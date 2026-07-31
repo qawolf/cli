@@ -56,10 +56,17 @@ export function startUpdateCheck(deps: {
         // No notice recorded yet. Fall through and announce.
       }
 
-      deps.renderNotice(
-        updateCheckMessages.body(deps.currentVersion, latest),
-        updateCheckMessages.title,
-      );
+      try {
+        deps.renderNotice(
+          updateCheckMessages.body(deps.currentVersion, latest),
+          updateCheckMessages.title,
+        );
+      } catch {
+        // The command already finished, and a write can still fail (EPIPE on a
+        // closed pipe). Leave the marker unwritten so the next run retries.
+        return;
+      }
+
       try {
         await deps.fs.mkdir(deps.configDir, { recursive: true });
         await deps.fs.writeFile(noticePath, `${latest}\n`);
