@@ -5,7 +5,11 @@ import { z } from "zod";
 import type { Logger } from "~/shell/logger.js";
 
 import { createTrpcClient } from "./createTrpcClient.js";
-import { makeDelayedFetch, makeHangingFetch } from "./slowFetch.testUtils.js";
+import {
+  makeDelayedFetch,
+  makeHangingFetch,
+  makeTimingOutBodyFetch,
+} from "./slowFetch.testUtils.js";
 
 afterEach(() => {
   mock.restore();
@@ -75,6 +79,23 @@ describe("createTrpcClient timeouts", () => {
     );
 
     expect(result).toEqual({ ok: true, data: { ok: true } });
+  });
+
+  // The deadline outlives the headers. Calling this a parse error would cost the
+  // caller both the retry and the true reason.
+  it("calls a deadline reached while reading the body a timeout, not a parse error", async () => {
+    const client = createTrpcClient(apiKey, {
+      baseUrl,
+      defaultTimeoutMs: 20,
+      fetch: makeTimingOutBodyFetch(),
+    });
+
+    const result = await client.query(path, {}, z.unknown());
+
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: "timeout", timeoutMs: 20 },
+    });
   });
 
   it("logs the deadline it reached rather than an absent cause", async () => {

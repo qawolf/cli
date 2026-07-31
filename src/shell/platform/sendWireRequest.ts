@@ -44,6 +44,11 @@ export async function sendWireRequest<T>(
   try {
     body = await response.json();
   } catch (error: unknown) {
+    // The deadline outlives the headers, so a stall part-way through the body
+    // reaches it here — a timeout rather than a body we could not make sense of.
+    if (isTimeoutError(error)) {
+      return { ok: false, error: { kind: "timeout", timeoutMs } };
+    }
     return { ok: false, error: { cause: toError(error), kind: "parse" } };
   }
 

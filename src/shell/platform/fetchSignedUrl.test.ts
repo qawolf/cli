@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import { fetchSignedUrl } from "./fetchSignedUrl.js";
+import { makeTimingOutBodyFetch } from "./slowFetch.testUtils.js";
 
 const cleanups: (() => void)[] = [];
 
@@ -106,5 +107,35 @@ describe("fetchSignedUrl", () => {
       ok: false,
       error: { cause, kind: "network" },
     });
+  });
+
+  // A download stalls part-way far more often than it fails to start, and the
+  // deadline covers the bytes as well as the headers.
+  it("returns a timeout when the download stalls part-way through the body", async () => {
+    const dest = createTempDest();
+
+    const result = await fetchSignedUrl(
+      { dest, url },
+      { fetch: makeTimingOutBodyFetch() },
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: "timeout", timeoutMs: 30_000 },
+    });
+  });
+
+  // The split that made the timeout visible must not reclassify a failed write.
+  it("still returns a network error when the body arrives but the write fails", async () => {
+    const fs = makeMemoryFs();
+    const cause = new Error("disk full");
+    fs.writeFile = mock(() => Promise.reject(cause));
+
+    const result = await fetchSignedUrl(
+      { dest: "/assets/file.txt", url },
+      { fetch: asFetch(createFetchMock(new Response("bytes"))), fs },
+    );
+
+    expect(result).toEqual({ ok: false, error: { cause, kind: "network" } });
   });
 });

@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, mock, type Mock } from "bun:test";
 
 import { createPlatformClient } from "./createPlatformClient.js";
-import { timeoutAbortError } from "./slowFetch.testUtils.js";
+import {
+  makeTimingOutBodyFetch,
+  timeoutAbortError,
+} from "./slowFetch.testUtils.js";
 
 afterEach(() => {
   mock.restore();
@@ -23,6 +26,23 @@ describe("a request that reached its deadline", () => {
     const f = mock<typeof fetch>().mockRejectedValue(
       timeoutAbortError(),
     ) as unknown as typeof fetch;
+
+    const result = await createPlatformClient(apiKey, {
+      fetch: f,
+      baseUrl,
+      sleep: noSleep,
+    }).getIdentity();
+
+    expect(callCount(f)).toBe(3);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/did not answer within 10s/);
+  });
+
+  // Identity answers its headers first, so this is the deadline landing while the
+  // body is still arriving — retried like any other timeout, not read as a team
+  // the API described in a shape we did not recognize.
+  it("is retried and named a timeout when the body is what ran out of time", async () => {
+    const f = makeTimingOutBodyFetch();
 
     const result = await createPlatformClient(apiKey, {
       fetch: f,

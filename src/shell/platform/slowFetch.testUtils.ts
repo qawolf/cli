@@ -28,6 +28,25 @@ export function makeHangingFetch(): typeof fetch {
   ) as unknown as typeof fetch;
 }
 
+/**
+ * A fetch whose headers arrive but whose body never does: the response is ok and
+ * reading it raises the timeout, which is what a stall part-way through a
+ * download looks like to a caller.
+ */
+export function makeTimingOutBodyFetch(): typeof fetch {
+  return mock<FetchImpl>(
+    async () =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.error(timeoutAbortError());
+          },
+        }),
+        { headers: { "content-type": "application/json" } },
+      ),
+  ) as unknown as typeof fetch;
+}
+
 /** A fetch that answers after `delayMs`, unless its deadline arrives first. */
 export function makeDelayedFetch(
   makeResponse: () => Response,

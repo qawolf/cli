@@ -51,7 +51,16 @@ export async function getIdentity(
     };
   }
 
-  const json: unknown = await response.json().catch(() => undefined);
+  let json: unknown;
+  try {
+    json = await response.json();
+  } catch (error: unknown) {
+    if (isTimeoutError(error)) {
+      return { ok: false, error: { kind: "timeout", timeoutMs } };
+    }
+    json = undefined;
+  }
+
   const parsed = identityResponseSchema.safeParse(json);
   if (!parsed.success) {
     return { ok: false, error: { kind: "parse", cause: parsed.error } };
