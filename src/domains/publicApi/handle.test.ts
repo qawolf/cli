@@ -43,12 +43,12 @@ const countSpec = (): CommandSpec => {
   return spec;
 };
 
-function ctxWith(ui: UI, platform: PlatformClient): AuthCommandContext {
+function ctxWith(ui: UI, platformClient: PlatformClient): AuthCommandContext {
   return {
     ...makeCtx("human"),
     ui,
     apiKeySource: "env",
-    platform,
+    platformClient,
   };
 }
 

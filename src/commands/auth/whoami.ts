@@ -34,13 +34,16 @@ export async function handleWhoami(
     return { error: "not authenticated" };
   }
 
-  const platform = (deps.createPlatform ?? createPlatformClient)(resolved.key, {
-    baseUrl: ctx.apiBaseUrl,
-    fetch: globalThis.fetch,
-    logger: ctx.log("trpc"),
-  });
+  const platformClient = (deps.createPlatform ?? createPlatformClient)(
+    resolved.key,
+    {
+      baseUrl: ctx.apiBaseUrl,
+      fetch: globalThis.fetch,
+      logger: ctx.log("trpc"),
+    },
+  );
 
-  const identity = await platform.getIdentity();
+  const identity = await platformClient.getIdentity();
 
   if (!identity.ok) {
     if (ctx.ui.mode === "human") {

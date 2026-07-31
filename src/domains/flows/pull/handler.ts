@@ -93,7 +93,8 @@ export async function handleFlowsPull(
         {
           message: flowsMessages.pull.downloadingTeamStorageAssets,
           task: async () => {
-            const result = await ctx.platform.syncTeamStorageAssets(assetsAbs);
+            const result =
+              await ctx.platformClient.syncTeamStorageAssets(assetsAbs);
             if (!result.ok) throw new Error(result.error);
             return result.value;
           },

@@ -62,23 +62,23 @@ async function run(opts: {
   flows?: SampleFlow[];
   pattern?: string;
   options?: FlowsListRemoteOptions;
-  platform?: PlatformClient;
-}): Promise<{ ui: UI; platform: PlatformClient; result: unknown }> {
+  platformClient?: PlatformClient;
+}): Promise<{ ui: UI; platformClient: PlatformClient; result: unknown }> {
   const ui = makeFakeUI();
-  const platform =
-    opts.platform ?? platformWithFlows(opts.flows ?? sampleFlows);
+  const platformClient =
+    opts.platformClient ?? platformWithFlows(opts.flows ?? sampleFlows);
   const ctx: AuthCommandContext = {
     ...makeBaseCtx(opts.mode),
     ui: { ...ui, mode: opts.mode },
     apiKeySource: "env",
-    platform,
+    platformClient,
   };
   const result = await flowsListRemote(
     ctx,
     opts.pattern,
     opts.options ?? defaultOptions,
   );
-  return { ui, platform, result };
+  return { ui, platformClient, result };
 }
 
 const stripAnsi = (s: string | undefined): string =>
@@ -87,12 +87,12 @@ const stripAnsi = (s: string | undefined): string =>
 
 describe("flowsListRemote wire call", () => {
   it("calls public.flow.list with the environment and drafts flag", async () => {
-    const { platform } = await run({
+    const { platformClient } = await run({
       mode: "json",
       options: { env: "env-1", includeDrafts: true },
     });
 
-    expect(platform.callPublicApi).toHaveBeenCalledWith(
+    expect(platformClient.callPublicApi).toHaveBeenCalledWith(
       publicContractsV1.flow.list,
       { environmentId: "env-1", includeDrafts: true },
     );
@@ -229,7 +229,7 @@ describe("flowsListRemote platform error", () => {
   it("returns a CommandResult with the platform error message", async () => {
     const { ui, result } = await run({
       mode: "human",
-      platform: makeMockPlatformClient({
+      platformClient: makeMockPlatformClient({
         callPublicApi: makeCallPublicApiMock().mockResolvedValue({
           ok: false,
           error: "QA Wolf API rejected the flow.list request (HTTP 401).",

@@ -130,7 +130,7 @@ export function withAuthContext(
       return;
     }
 
-    const platform = (deps.createPlatform ?? createPlatformClient)(
+    const platformClient = (deps.createPlatform ?? createPlatformClient)(
       resolved.key,
       { baseUrl: apiBaseUrl, fetch: globalThis.fetch, logger: ctx.log("trpc") },
     );
@@ -138,7 +138,7 @@ export function withAuthContext(
     try {
       const result = await fn({
         ...ctx,
-        platform,
+        platformClient,
         apiKeySource: resolved.source,
       });
       if (result !== undefined) {

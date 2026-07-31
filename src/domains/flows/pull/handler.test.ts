@@ -68,7 +68,7 @@ function makeCtx(
     signals: noopSignals,
     log: () => makeNoopLogger(),
     fs: makeDefaultFs(),
-    platform: makeMockPlatformClient({
+    platformClient: makeMockPlatformClient({
       downloadBundle: mock().mockResolvedValue({
         ok: true,
         value: { tmpArchive: bundlePath },

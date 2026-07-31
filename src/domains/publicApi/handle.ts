@@ -94,7 +94,10 @@ export async function handlePublicApiCommand(
   const parsed = spec.contract.input.safeParse(assembled.input);
   if (!parsed.success) return { error: z.prettifyError(parsed.error) };
 
-  const result = await ctx.platform.callPublicApi(spec.contract, parsed.data);
+  const result = await ctx.platformClient.callPublicApi(
+    spec.contract,
+    parsed.data,
+  );
   if (!result.ok) return { error: result.error };
 
   ctx.ui.output(result.value, renderHuman(result.value));

@@ -13,7 +13,7 @@ afterEach(() => {
 
 function makeDeps(result: PlatformResult<IdentityResponse>) {
   return {
-    platform: makeMockPlatformClient({
+    platformClient: makeMockPlatformClient({
       getIdentity:
         mock<PlatformClient["getIdentity"]>().mockResolvedValue(result),
     }),
@@ -32,7 +32,7 @@ describe("validateApiKey", () => {
 
     const result = await validateApiKey(deps);
     expect(result).toEqual({ valid: true, team: teamData });
-    expect(deps.platform.getIdentity).toHaveBeenCalled();
+    expect(deps.platformClient.getIdentity).toHaveBeenCalled();
   });
 
   it("returns invalid when API responds with 401 (already formatted by platform client)", async () => {
