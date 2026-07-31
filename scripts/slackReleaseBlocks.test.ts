@@ -1,11 +1,26 @@
 import { describe, expect, it } from "bun:test";
+import { readFileSync } from "node:fs";
 
 import {
   buildSlackPayload,
+  expectedBinaries,
   parseReleaseInput,
   type ReleaseInput,
   type SlackPayload,
 } from "./slackReleaseBlocks.js";
+
+describe("expectedBinaries", () => {
+  it("stays in sync with the release-binaries workflow matrix", () => {
+    const workflow = readFileSync(
+      new URL("../.github/workflows/release-binaries.yml", import.meta.url),
+      "utf8",
+    );
+    const outfiles = [...workflow.matchAll(/outfile: dist\/(\S+)/g)].map(
+      (match) => match[1] ?? "",
+    );
+    expect(expectedBinaries.map((binary) => binary.asset)).toEqual(outfiles);
+  });
+});
 
 const release: ReleaseInput = {
   tagName: "v1.4.0",

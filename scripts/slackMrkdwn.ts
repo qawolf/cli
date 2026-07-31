@@ -6,14 +6,18 @@ const groupTitles: Record<string, string> = {
   "Patch Changes": "🩹 Patch changes",
 };
 
+function escapeMrkdwn(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 // Pragmatic, not a full markdown parser: bold, links, and bullets are the
 // only constructs changesets emit.
 export function toMrkdwn(markdown: string): string {
   return (
-    markdown
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
+    escapeMrkdwn(markdown)
       .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, "<$2|$1>")
       .replace(/\*\*([^*\n]+)\*\*/g, "*$1*")
       .replace(/^(\s*)[-*]\s+/gm, "$1• ")
@@ -44,7 +48,7 @@ export function splitReleaseNotes(body: string): NoteGroup[] {
   }
   if (current.text.trim()) groups.push(current);
   return groups.map((group) => ({
-    title: group.title,
+    title: group.title === undefined ? undefined : escapeMrkdwn(group.title),
     text: toMrkdwn(group.text),
   }));
 }

@@ -3,7 +3,8 @@
 import { splitReleaseNotes } from "./slackMrkdwn.js";
 
 // Keep in sync with the matrix outfiles in .github/workflows/release-binaries.yml
-const expectedBinaries = [
+// (a test asserts this; exported for it)
+export const expectedBinaries = [
   { asset: "qawolf-linux-x64", label: "linux-x64" },
   { asset: "qawolf-linux-arm64", label: "linux-arm64" },
   { asset: "qawolf-darwin-x64", label: "darwin-x64" },
