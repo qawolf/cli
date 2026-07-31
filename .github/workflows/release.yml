@@ -20,6 +20,7 @@ jobs:
     outputs:
       published: ${{ steps.changesets.outputs.published }}
       tag: ${{ steps.tag.outputs.tag }}
+      slack_ts: ${{ steps.slack.outputs.ts }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -63,6 +64,26 @@ jobs:
           VERSION=$(echo "$PUBLISHED_PACKAGES" | bun -e "const d = await Bun.stdin.text(); console.log(JSON.parse(d)[0].version)")
           echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
 
+      # continue-on-error: a Slack outage must never fail a release
+      - name: Notify Slack of release
+        id: slack
+        if: steps.changesets.outputs.published == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_RELEASE_CHANNEL_ID }}
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          payload=$(gh release view "$RELEASE_TAG" --json body,url,tagName \
+            | bun scripts/slackReleaseMessage.ts --phase publish --channel "$SLACK_CHANNEL_ID")
+          response=$(curl -sf -X POST https://slack.com/api/chat.postMessage \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            --data "$payload")
+          printf '%s' "$response" | jq -e '.ok' > /dev/null
+          echo "ts=$(printf '%s' "$response" | jq -r '.ts')" >> "$GITHUB_OUTPUT"
+
   binaries:
     name: Binaries
     needs: release
@@ -72,3 +93,42 @@ jobs:
     uses: ./.github/workflows/release-binaries.yml
     with:
       tag: ${{ needs.release.outputs.tag }}
+
+  notify-binaries:
+    name: Notify Slack of binaries
+    needs: [release, binaries]
+    # always(): the binaries matrix runs with fail-fast off, so report partial
+    # failures too. Skips when nothing was published or the publish-time Slack
+    # message did not post (no ts to update).
+    if: always() && needs.release.outputs.published == 'true' && needs.release.outputs.slack_ts != ''
+    # the Slack secrets are scoped to the release environment
+    environment: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+
+      # The release assets are the ground truth for which binaries built: a
+      # target only has an asset after its build, smoke test, and upload all
+      # succeeded. No bun install — the script is dependency-free.
+      - name: Update release message with binary status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_RELEASE_CHANNEL_ID }}
+          RELEASE_TAG: ${{ needs.release.outputs.tag }}
+          SLACK_TS: ${{ needs.release.outputs.slack_ts }}
+        run: |
+          payload=$(gh release view "$RELEASE_TAG" --json body,url,tagName,assets \
+            | bun scripts/slackReleaseMessage.ts --phase binaries --channel "$SLACK_CHANNEL_ID" --ts "$SLACK_TS")
+          curl -sf -X POST https://slack.com/api/chat.update \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            --data "$payload" | jq -e '.ok' > /dev/null
