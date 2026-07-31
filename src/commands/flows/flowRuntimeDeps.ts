@@ -13,7 +13,6 @@ type CreateFlowRuntimeDepsArgs = {
   readonly envDir: string;
   readonly ctx: Pick<CommandContext, "apiBaseUrl" | "configDir" | "fs"> &
     Partial<Pick<CommandContext, "log">>;
-  readonly platformClient?: PlatformClient;
   readonly env?: Record<string, string | undefined>;
   readonly resolveApiKeyFn?: typeof resolveApiKey;
   readonly configureEmailsFn?: typeof configureEmails;
@@ -22,12 +21,7 @@ type CreateFlowRuntimeDepsArgs = {
 
 type GetInbox = NonNullable<FlowRuntimeDeps["getInbox"]>;
 
-type LazyGetInboxArgs = Omit<
-  Required<CreateFlowRuntimeDepsArgs>,
-  "platformClient"
-> & {
-  readonly platformClient: PlatformClient | undefined;
-};
+type LazyGetInboxArgs = Required<CreateFlowRuntimeDepsArgs>;
 
 async function maybeGetIdentityTeamId(
   platformClient: PlatformClient,
@@ -39,7 +33,6 @@ async function maybeGetIdentityTeamId(
 function lazyGetInbox({
   envDir,
   ctx,
-  platformClient,
   env,
   resolveApiKeyFn,
   configureEmailsFn,
@@ -54,10 +47,6 @@ function lazyGetInbox({
       explicitEmailerUrl === undefined
         ? await resolveApiKeyFn(ctx.configDir, ctx.fs)
         : undefined;
-
-    if (teamId === undefined && platformClient !== undefined) {
-      teamId = await maybeGetIdentityTeamId(platformClient);
-    }
 
     if (teamId === undefined && apiKeyResult !== undefined) {
       const identityClient = createPlatform(apiKeyResult.key, {
@@ -100,7 +89,6 @@ function lazyGetInbox({
 export async function createFlowRuntimeDeps({
   envDir,
   ctx,
-  platformClient,
   env = process.env,
   resolveApiKeyFn = resolveApiKey,
   configureEmailsFn = configureEmails,
@@ -109,7 +97,6 @@ export async function createFlowRuntimeDeps({
   const getInbox = lazyGetInbox({
     envDir,
     ctx,
-    platformClient,
     env,
     resolveApiKeyFn,
     configureEmailsFn,

@@ -7,6 +7,7 @@ import type { FlowRuntimeDeps } from "~/domains/runner/flowRuntimeDeps.js";
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
+import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
 import { runStagingRoot } from "~/domains/runtimeEnv/index.js";
 import {
   handleHybridFlowsRun,
@@ -68,12 +69,12 @@ function makeCtx(): AuthCommandContext {
     outputMode: "human",
     isInteractive: false,
     apiKeySource: "env",
-    platformClient: {} as unknown,
+    platformClient: makeMockPlatformClient(),
     fs: makeMemoryFs(),
     signals: makeNoopSignals(),
     ui: makeFakeUI("human"),
     log: () => makeNoopLogger(),
-  } as unknown as AuthCommandContext;
+  };
 }
 
 function defaultFlags(): FlowsRunFlags {
