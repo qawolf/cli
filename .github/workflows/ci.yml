@@ -146,3 +146,13 @@ jobs:
       - name: Smoke — cmd.exe argument escaping round-trips
         shell: bash
         run: node test/spawn/cmdEscapeSmoke.mjs
+      # Only Node-on-win32 rejects raw absolute paths in import() ("protocol
+      # 'c:'"), so only this job catches a regression in the file:// URL
+      # conversion. WIZ-11313 shipped through that gap.
+      - name: Bundle testkit loader for smoke
+        shell: bash
+        run: |
+          bun build src/shell/testkit.ts --target=node --format=esm --outfile test/testkit/testkit.generated.mjs
+      - name: Smoke — testkit loads from an absolute win32 path
+        shell: bash
+        run: node test/testkit/loadSmoke.mjs

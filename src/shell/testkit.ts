@@ -3,6 +3,7 @@ import type { createTestkitClient } from "@qawolf/testkit/client";
 import type { configureTestkitClient } from "@qawolf/testkit";
 
 import { runnerMessages } from "~/core/messages/index.js";
+import { importFromPath } from "~/shell/importFromPath.js";
 import { resolveFromEnvDir } from "~/shell/resolveExport.js";
 import { packageLoadFailed } from "~/core/messages/index.js";
 import { errorMessage } from "~/core/errors.js";
@@ -27,8 +28,8 @@ function notAvailableLocally(name: string): never {
 async function loadSdkDeps(cwd: string): Promise<TestkitModule> {
   const testkitDir = join(cwd, "node_modules", "@qawolf", "testkit");
   try {
-    const clientMod = (await import(
-      resolveFromEnvDir(cwd, "@qawolf/testkit/client")
+    const clientMod = (await importFromPath(
+      resolveFromEnvDir(cwd, "@qawolf/testkit/client"),
     )) as Pick<TestkitModule, "createTestkitClient">;
     if (typeof clientMod.createTestkitClient !== "function")
       throw new Error("createTestkitClient is not a function");
@@ -36,8 +37,8 @@ async function loadSdkDeps(cwd: string): Promise<TestkitModule> {
     // TODO WIZ-10612: route through resolveFromEnvDir once @qawolf/testkit
     // exposes a dedicated exports-map entry, or Bun fixes the scoped-package
     // traversal bug that prevents loading the main entry here.
-    const scopeMod = (await import(
-      join(testkitDir, "dist", "clientScope.js")
+    const scopeMod = (await importFromPath(
+      join(testkitDir, "dist", "clientScope.js"),
     )) as Pick<TestkitModule, "configureTestkitClient">;
     if (typeof scopeMod.configureTestkitClient !== "function")
       throw new Error("configureTestkitClient is not a function");
