@@ -1,3 +1,5 @@
+import { formatSeconds } from "~/core/formatSeconds.js";
+
 export const authMessages = {
   title: "QA Wolf Authentication",
   promptApiKey: "Paste your QA Wolf API Key",
@@ -36,6 +38,8 @@ export const authMessages = {
         `Could not verify API key: ${detail || `HTTP ${status}`}`,
       couldNotVerifyNetwork: (cause: string) =>
         `Could not verify API key: ${cause}`,
+      timedOut: (timeoutMs: number) =>
+        `Could not verify API key: the QA Wolf API did not answer within ${formatSeconds(timeoutMs)}.`,
     },
     request: {
       rejected401: (noun: string | undefined) =>
@@ -48,6 +52,8 @@ export const authMessages = {
         `QA Wolf API${noun ? ` ${noun}` : ""} request failed (HTTP ${status}).`,
       networkUnreachable: (baseUrl: string, noun: string | undefined) =>
         `Could not reach the QA Wolf API at ${baseUrl}${noun ? ` to fetch ${noun}` : ""}. Check your network connection and QAWOLF_HOST_URL.`,
+      timedOut: (timeoutMs: number, noun: string | undefined) =>
+        `The QA Wolf API${noun ? ` ${noun}` : ""} request timed out after ${formatSeconds(timeoutMs)}. The work may still be finishing on the platform.`,
       unexpectedResponse: (noun: string | undefined) =>
         `Unexpected${noun ? ` ${noun}` : ""} response from the QA Wolf API.`,
     },
@@ -58,6 +64,8 @@ export const authMessages = {
         `Could not download the flow bundle (HTTP ${status}).`,
       networkUnreachable:
         "Could not reach the flow bundle storage. Check your network connection and try again.",
+      timedOut: (timeoutMs: number) =>
+        `Downloading the flow bundle timed out after ${formatSeconds(timeoutMs)}. Please try again.`,
       malformed:
         "The flow bundle download was malformed. Please run `qawolf flows pull` again.",
     },

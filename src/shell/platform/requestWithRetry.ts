@@ -18,10 +18,10 @@ type RequestWithRetryArgs<T> = {
   sleep: ((ms: number) => Promise<void>) | undefined;
 };
 
-// Retries `call` on transient network errors only; HTTP/parse errors are
-// deterministic and surface immediately. The infinite loop is bounded by the
-// `backoffMs` array: once `backoffMs[attempt]` is undefined, the next non-ok
-// result surfaces the error.
+// Retries `call` on transient network errors and reached deadlines only;
+// HTTP/parse errors are deterministic and surface immediately. The infinite loop
+// is bounded by the `backoffMs` array: once `backoffMs[attempt]` is undefined,
+// the next non-ok result surfaces the error.
 export async function requestWithRetry<T>(
   args: RequestWithRetryArgs<T>,
 ): Promise<PlatformResult<T>> {
@@ -31,7 +31,8 @@ export async function requestWithRetry<T>(
     if (result.ok) return { ok: true, value: result.data };
 
     const backoff = args.backoffMs[attempt];
-    const retryable = result.error.kind === "network";
+    const retryable =
+      result.error.kind === "network" || result.error.kind === "timeout";
     if (backoff === undefined || !retryable) {
       return { ok: false, error: args.describe(result.error) };
     }

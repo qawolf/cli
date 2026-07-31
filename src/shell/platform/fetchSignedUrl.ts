@@ -1,3 +1,4 @@
+import { isTimeoutError } from "~/core/errors.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import type { WireResult } from "./createTrpcClient.js";
 import { toError } from "./toError.js";
@@ -19,6 +20,9 @@ export async function fetchSignedUrl(
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (error: unknown) {
+    if (isTimeoutError(error)) {
+      return { ok: false, error: { kind: "timeout", timeoutMs } };
+    }
     return { ok: false, error: { cause: toError(error), kind: "network" } };
   }
 
@@ -37,10 +41,22 @@ export async function fetchSignedUrl(
     };
   }
 
+  // Read the body before writing it: the deadline covers the download, so a
+  // stall part-way through the body is a timeout, while a failed write is local.
+  let downloaded: ArrayBuffer;
+  try {
+    downloaded = await response.arrayBuffer();
+  } catch (error: unknown) {
+    if (isTimeoutError(error)) {
+      return { ok: false, error: { kind: "timeout", timeoutMs } };
+    }
+    return { ok: false, error: { cause: toError(error), kind: "network" } };
+  }
+
   try {
     await (deps.fs ?? makeDefaultFs()).writeFile(
       args.dest,
-      new Uint8Array(await response.arrayBuffer()),
+      new Uint8Array(downloaded),
     );
   } catch (error: unknown) {
     return { ok: false, error: { cause: toError(error), kind: "network" } };

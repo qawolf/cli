@@ -18,6 +18,10 @@ export function isNoEntError(err: unknown): boolean {
   return errorCode(err) === "ENOENT";
 }
 
+export function isTimeoutError(err: unknown): boolean {
+  return err instanceof Error && err.name === "TimeoutError";
+}
+
 const missingPackagePattern = /Cannot find (?:package|module) '([^']+)'/;
 const pathLikeSpecifierPattern = /^(?:\.|\/|[A-Za-z]:[\\/])/;
 

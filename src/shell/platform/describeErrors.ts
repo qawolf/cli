@@ -1,3 +1,4 @@
+import { formatSeconds } from "~/core/formatSeconds.js";
 import { authMessages } from "~/core/messages/index.js";
 import type { WireError } from "./createTrpcClient.js";
 
@@ -13,6 +14,7 @@ export function describeIdentityError(err: WireError): string {
   if (err.kind === "network") {
     return m.identity.couldNotVerifyNetwork(err.cause.message);
   }
+  if (err.kind === "timeout") return m.identity.timedOut(err.timeoutMs);
   return m.identity.unexpectedFormat;
 }
 
@@ -48,6 +50,7 @@ export function describeRequestError(
   if (err.kind === "network") {
     return m.request.networkUnreachable(baseUrl, noun);
   }
+  if (err.kind === "timeout") return m.request.timedOut(err.timeoutMs, noun);
   return m.request.unexpectedResponse(noun);
 }
 
@@ -57,6 +60,7 @@ export function describeBundleDownloadError(err: WireError): string {
     return m.bundle.failedWithStatus(err.status);
   }
   if (err.kind === "network") return m.bundle.networkUnreachable;
+  if (err.kind === "timeout") return m.bundle.timedOut(err.timeoutMs);
   return m.bundle.malformed;
 }
 
@@ -72,6 +76,9 @@ export function describeTeamStorageDownloadError(
   }
   if (err.kind === "network") {
     return `Could not reach team-storage while downloading ${path}. Check your network connection and try again.`;
+  }
+  if (err.kind === "timeout") {
+    return `Downloading the team-storage asset ${path} timed out after ${formatSeconds(err.timeoutMs)}. Please try again.`;
   }
   return `The team-storage download for ${path} was malformed. Please run \`qawolf flows pull\` again.`;
 }
