@@ -13,5 +13,8 @@ export function escapeArgument(arg: string): string {
     .replace(/(?=(\\+?)?)\1"/g, '$1$1\\"')
     .replace(/(?=(\\+?)?)\1$/, "$1$1");
   // Twice, because a .cmd shim forwards %* and cmd.exe parses the line again.
+  // cmd.exe ignores the backslash-escaped quote above, so with one layer an
+  // argument like `a"&echo pwned` closes the quoted run and executes. Halving
+  // this reds four cases in test/spawn/cmdEscapeSmoke.mjs.
   return `"${escaped}"`.replace(metaChars, "^$1").replace(metaChars, "^$1");
 }
