@@ -66,7 +66,7 @@ function unwrap(body: unknown): unknown {
   return data;
 }
 
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === "object" && v !== null;
-const isSuperJSONResult = (v: unknown): v is SuperJSONResult =>
-  isRecord(v) && "json" in v;
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+const isSuperJSONResult = (value: unknown): value is SuperJSONResult =>
+  isRecord(value) && "json" in value;

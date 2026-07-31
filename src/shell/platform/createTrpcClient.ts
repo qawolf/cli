@@ -16,12 +16,6 @@ export type WireResult<T> =
 
 /** Per-call overrides, for the calls that differ from the client's defaults. */
 export type RequestOptions = {
-  /**
-   * How long to wait for the whole request before aborting it. Left out by
-   * nearly every caller. Set it where the work behind the endpoint is known to
-   * outlast an ordinary read — starting a container, say — and declare the number
-   * beside that knowledge, in the domain making the call, rather than here.
-   */
   timeoutMs?: number;
 };
 
@@ -29,8 +23,6 @@ type Deps = {
   fetch: typeof globalThis.fetch;
   baseUrl: string;
   logger?: Logger;
-  // Baseline for calls that name no timeout of their own. Production callers
-  // omit it; tests set a small one so a deadline can be reached in a test.
   defaultTimeoutMs?: number;
 };
 
