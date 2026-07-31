@@ -5,6 +5,7 @@ import {
 import { resolveDepsRoot as resolveDepsRootHelper } from "~/commands/resolveDepsRoot.js";
 import { installMessages } from "~/core/messages/index.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
+import { androidSdkHome } from "~/shell/androidSdkHome.js";
 import { defaultSpawn } from "~/shell/spawn.js";
 import { installAndroid } from "~/domains/install/android/index.js";
 
@@ -13,8 +14,7 @@ export async function handleInstallAndroid(
   pattern: string | undefined,
   envDir?: string,
 ): Promise<CommandResult> {
-  const androidHome =
-    process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"];
+  const androidHome = androidSdkHome();
   if (!androidHome) {
     return { error: installMessages.androidSdkNotFound };
   }

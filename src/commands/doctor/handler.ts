@@ -9,6 +9,7 @@ import type { CheckResult } from "~/domains/doctor/types.js";
 import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
 import { expandPatterns, makePeekFlowMeta } from "~/domains/flows/expand.js";
 import { resolveDepsRootIfPresent } from "~/domains/runtimeEnv/index.js";
+import { androidSdkHome } from "~/shell/androidSdkHome.js";
 import {
   type CommandContext,
   type CommandResult,
@@ -73,7 +74,7 @@ export async function handleDoctor(
     readFile: (path) => ctx.fs.readFile(path),
     cwd,
     runAndroidChecks,
-    androidHome: process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"],
+    androidHome: androidSdkHome(),
     checkExists: (path: string) => ctx.fs.existsSync(path),
     envDir,
     requiredAvds,

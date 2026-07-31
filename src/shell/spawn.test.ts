@@ -1,13 +1,9 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
 import { buildSpawnCommand, defaultSpawn } from "./spawn.js";
+import { restoreComSpecAfterEach } from "./spawn.testUtils.js";
 
-const originalComSpec = process.env["ComSpec"];
-
-afterEach(() => {
-  if (originalComSpec === undefined) delete process.env["ComSpec"];
-  else process.env["ComSpec"] = originalComSpec;
-});
+restoreComSpecAfterEach();
 
 describe("buildSpawnCommand", () => {
   it("passes the command through untouched on linux/darwin", () => {

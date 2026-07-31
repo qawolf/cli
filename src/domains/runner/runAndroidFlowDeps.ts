@@ -2,6 +2,7 @@ import { createAppiumServer } from "~/shell/appium/createAppiumServer.js";
 import { createEmulatorPool } from "~/shell/appium/createEmulatorPool.js";
 import { defaultAdb } from "~/shell/appium/adb.js";
 import type { AppiumDriver } from "~/shell/appium/types.js";
+import { androidSdkHome } from "~/shell/androidSdkHome.js";
 import type { RunAndroidFlowDeps } from "./runAndroidFlow.js";
 import { createRunnerDeps } from "./runnerDeps.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
@@ -67,9 +68,7 @@ export function createAndroidDeps(
   };
 
   const boot = async (avdNames: string[]) => {
-    const androidHome =
-      process.env["ANDROID_HOME"] ?? process.env["ANDROID_SDK_ROOT"];
-    if (!androidHome) {
+    if (!androidSdkHome()) {
       throw new Error(
         "ANDROID_HOME is not set. Set it to the Android SDK path.\n" +
           "Install Android Studio and open Tools > SDK Manager.",

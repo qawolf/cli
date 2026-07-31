@@ -1,18 +1,14 @@
 import { EventEmitter } from "node:events";
-import { afterEach, describe, expect, it } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
+import { restoreComSpecAfterEach } from "~/shell/spawn.testUtils.js";
 import {
   buildNpmInstallSpawn,
   type NpmSpawnFn,
   spawnNpmInstall,
 } from "./npmInstall.js";
 
-const originalComSpec = process.env["ComSpec"];
-
-afterEach(() => {
-  if (originalComSpec === undefined) delete process.env["ComSpec"];
-  else process.env["ComSpec"] = originalComSpec;
-});
+restoreComSpecAfterEach();
 
 describe("buildNpmInstallSpawn", () => {
   it("routes npm.cmd through cmd.exe on win32 and keeps cwd", () => {

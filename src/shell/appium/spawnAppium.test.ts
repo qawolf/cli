@@ -1,13 +1,9 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
+import { restoreComSpecAfterEach } from "~/shell/spawn.testUtils.js";
 import { buildAppiumSpawn } from "./spawnAppium.js";
 
-const originalComSpec = process.env["ComSpec"];
-
-afterEach(() => {
-  if (originalComSpec === undefined) delete process.env["ComSpec"];
-  else process.env["ComSpec"] = originalComSpec;
-});
+restoreComSpecAfterEach();
 
 describe("buildAppiumSpawn", () => {
   const env = { APPIUM_HOME: "/data/appium" };

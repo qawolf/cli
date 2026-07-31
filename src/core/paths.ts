@@ -1,3 +1,5 @@
+import { join } from "node:path";
+
 import envPaths from "env-paths";
 
 /**
@@ -27,4 +29,13 @@ export function getConfigDir(): string {
 export function getDataDir(): string {
   _paths ??= envPaths("qawolf");
   return _paths.data;
+}
+
+/**
+ * `APPIUM_HOME` for every Appium invocation. The server, the driver installer,
+ * and doctor must all pass the same value. Otherwise doctor reads one driver
+ * registry while install writes another.
+ */
+export function getAppiumHome(): string {
+  return join(getDataDir(), "appium");
 }

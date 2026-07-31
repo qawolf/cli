@@ -1,9 +1,6 @@
-import { join } from "node:path";
-
-import envPaths from "env-paths";
-
 import { doctorMessages } from "~/core/messages/index.js";
 import { appiumCliCandidates } from "~/core/nodeModulesBins.js";
+import { getAppiumHome } from "~/core/paths.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 
@@ -13,10 +10,6 @@ function firstLine(result: SpawnResult): string {
     `exit code ${result.exitCode}`
   );
 }
-
-// Must match the APPIUM_HOME used by createAppiumServer and install android,
-// so the driver registry doctor inspects is the same one install populates.
-const appiumHome = join(envPaths("qawolf").data, "appium");
 
 export function checkAppium(
   envDir: string | undefined,
@@ -51,7 +44,7 @@ export async function checkUiautomator2(
     };
   }
   const result = await spawn(appiumBin, ["driver", "list", "--installed"], {
-    env: { APPIUM_HOME: appiumHome },
+    env: { APPIUM_HOME: getAppiumHome() },
     platform,
   });
   if (result.exitCode !== 0) {
