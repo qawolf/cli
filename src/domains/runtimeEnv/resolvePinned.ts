@@ -33,26 +33,62 @@ export function readInstalledVersion(
   }
 }
 
+export type PinnedFailure =
+  | {
+      kind: "package";
+      name: string;
+      pinned: string;
+      installed: string | undefined;
+    }
+  | { kind: "shim"; name: string };
+
+// The same candidate lists installBrowserList and createAppiumServer resolve
+// from, so this check and those two cannot disagree.
+const shims = [
+  { name: "playwright", candidates: playwrightCliCandidates },
+  { name: "appium", candidates: appiumCliCandidates },
+];
+
 /**
- * Returns true when every pinned package is installed at its exact pinned
- * version AND both CLI shims exist. A matching package version does not imply
- * a runnable shim, so checking versions alone can resolve a root that later
- * fails to spawn the binary.
+ * Returns one entry per pinned package that is absent or installed at a
+ * version other than the pinned one, plus one per missing CLI shim. An empty
+ * array means the directory resolves. A matching package version does not
+ * imply a runnable shim, so checking versions alone can resolve a root that
+ * later fails to spawn the binary.
  */
+export function pinnedResolutionFailures(
+  dir: string,
+  fs: Fs,
+  platform: NodeJS.Platform,
+): PinnedFailure[] {
+  const failures: PinnedFailure[] = [];
+  for (const { name, version } of pinnedPackages) {
+    const installed = readInstalledVersion(dir, name, fs);
+    if (installed !== version) {
+      failures.push({ kind: "package", name, pinned: version, installed });
+    }
+  }
+  for (const { name, candidates } of shims) {
+    if (!candidates(dir, platform).some((p) => fs.existsSync(p))) {
+      failures.push({ kind: "shim", name });
+    }
+  }
+  return failures;
+}
+
+export function describePinnedFailure(failure: PinnedFailure): string {
+  if (failure.kind === "shim") {
+    return `node_modules/.bin/${failure.name} (missing)`;
+  }
+  return failure.installed === undefined
+    ? `${failure.name} (missing, pinned ${failure.pinned})`
+    : `${failure.name} ${failure.installed} (pinned ${failure.pinned})`;
+}
+
 export function allPinnedResolved(
   dir: string,
   fs: Fs,
   platform: NodeJS.Platform,
 ): boolean {
-  // The same candidate lists installBrowserList and createAppiumServer resolve
-  // from, so this check and those two cannot disagree.
-  const shimsPresent = [playwrightCliCandidates, appiumCliCandidates].every(
-    (candidates) => candidates(dir, platform).some((p) => fs.existsSync(p)),
-  );
-  if (!shimsPresent) {
-    return false;
-  }
-  return pinnedPackages.every(
-    ({ name, version }) => readInstalledVersion(dir, name, fs) === version,
-  );
+  return pinnedResolutionFailures(dir, fs, platform).length === 0;
 }

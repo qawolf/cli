@@ -37,6 +37,12 @@ export const runnerMessages = {
     `Using managed runtime — override with --deps <dir> or QAWOLF_RUNTIME_DIR:\n${dir}`,
   installingProjectDeps: (count: number) =>
     `Installing ${pluralize(count, "project dependency", "project dependencies")}…`,
+  depsDirIncomplete: (dir: string, failures: string[]) =>
+    [
+      `--deps directory ${dir} is missing required pinned dependencies:`,
+      ...failures.map((failure) => `  - ${failure}`),
+      `Run 'npm install' in that directory or point to a valid managed env directory.`,
+    ].join("\n"),
   outerHopCandidateRejected: (dir: string, missing: string[]) =>
     `outer-hop candidate rejected: ${dir} missing ${missing.join(", ")}`,
   moduleNotFoundHint: (pkg: string, projectDir: string | undefined) =>

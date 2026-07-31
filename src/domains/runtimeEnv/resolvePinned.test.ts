@@ -4,7 +4,11 @@ import { join } from "node:path";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { pinnedPackages } from "./pinnedPackages.js";
-import { allPinnedResolved, readInstalledVersion } from "./resolvePinned.js";
+import {
+  allPinnedResolved,
+  pinnedResolutionFailures,
+  readInstalledVersion,
+} from "./resolvePinned.js";
 
 const dir = "/project";
 
@@ -75,6 +79,68 @@ function seedShim(
   fs.mkdirSync(join(dir, "node_modules", ".bin"), { recursive: true });
   fs.writeFileSync(join(dir, "node_modules", ".bin", name), contents);
 }
+
+describe("pinnedResolutionFailures", () => {
+  it("reports the installed version alongside the pinned one", () => {
+    const fs = makeMemoryFs();
+    seedAllPackages(fs);
+    seedPackage(fs, "@qawolf/flows", "0.0.0");
+
+    const pinned = pinnedPackages.find((p) => p.name === "@qawolf/flows");
+
+    expect(pinnedResolutionFailures(dir, fs, "linux")).toEqual([
+      {
+        kind: "package",
+        name: "@qawolf/flows",
+        pinned: pinned?.version ?? "",
+        installed: "0.0.0",
+      },
+    ]);
+  });
+
+  it("reports an absent package with no installed version", () => {
+    const fs = makeMemoryFs();
+    for (const { name, version } of pinnedPackages) {
+      if (name !== "appium") {
+        seedPackage(fs, name, version);
+      }
+    }
+    seedShim(fs, "playwright", "#!/bin/sh");
+    seedShim(fs, "appium", "#!/bin/sh");
+
+    const pinned = pinnedPackages.find((p) => p.name === "appium");
+
+    expect(pinnedResolutionFailures(dir, fs, "linux")).toEqual([
+      {
+        kind: "package",
+        name: "appium",
+        pinned: pinned?.version ?? "",
+        installed: undefined,
+      },
+    ]);
+  });
+
+  it("returns no failures when every package matches", () => {
+    const fs = makeMemoryFs();
+    seedAllPackages(fs);
+
+    expect(pinnedResolutionFailures(dir, fs, "linux")).toEqual([]);
+  });
+
+  // The state WIZ-11284 made rejectable: every package matches, but the
+  // directory has no runnable appium.
+  it("reports a missing shim even when every package matches", () => {
+    const fs = makeMemoryFs();
+    for (const { name, version } of pinnedPackages) {
+      seedPackage(fs, name, version);
+    }
+    seedShim(fs, "playwright", "#!/bin/sh");
+
+    expect(pinnedResolutionFailures(dir, fs, "linux")).toEqual([
+      { kind: "shim", name: "appium" },
+    ]);
+  });
+});
 
 describe("allPinnedResolved", () => {
   it("returns true when all packages match and both shims exist", () => {
