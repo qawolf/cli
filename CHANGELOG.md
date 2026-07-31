@@ -1,5 +1,17 @@
 # @qawolf/cli
 
+## 1.4.1
+
+### Patch Changes
+
+- 5d43046: A request that runs out of time now says it timed out and how long it waited, instead of reporting an unreachable host and sending you to check your network and `QAWOLF_HOST_URL`.
+
+  Behind that, a call can now carry its own deadline rather than sharing one fifteen-second limit with everything else. Nothing changes for calls the platform answers from its database, which is all of them today; the endpoints whose work genuinely takes longer can ask for the time they need.
+
+- ba45b94: Stage flow files correctly on Windows. Flow discovery returned forward-slash paths from the glob, while the rest of the CLI builds paths with `node:path` and gets backslashes. The staging step compared the two, never matched, and returned the original source path. `qawolf flows run` then executed flows from the project tree instead of the prepared run directory, so a flow resolved whatever Playwright the project had installed rather than the pinned executor, and a flow importing `#playwright` failed. Flow discovery now returns one canonical path form.
+- e7cf799: Find Playwright and Appium correctly on Windows. The CLI accepted two shim names: the `.cmd` wrapper npm writes, and the extension-less POSIX script. It missed the `.exe` shim `bun install` writes, so `qawolf doctor` reported Playwright as missing, and `qawolf flows run` and `qawolf install browsers` failed on a project installed with bun. It also counted the extension-less script as usable, which Windows cannot launch — `CreateProcess` reports `ENOENT` for a path with no executable extension, even when the file is present. `qawolf doctor` then reported Playwright as installed, and `qawolf flows run` failed with an error naming a file the user can see on disk. Both bugs also gated the pinned-dependency check, so the CLI either reinstalled its runtime on every run or read an unusable directory as fully installed. `appium` carried the same names and the same two bugs, which broke Android flows and `qawolf install android`. The CLI now looks only for the `.cmd` and `.exe` shims on Windows. A project whose `node_modules/.bin` holds only the extension-less shim is now rejected, and the CLI installs its managed runtime instead. That affects a tree installed on Linux or macOS and then used from Windows, through a bind mount, a copied directory, or WSL. A project installed on Windows by npm or bun is unaffected.
+- e7cf799: Fix `ENOENT` when the CLI spawns npm, Appium, or the Android SDK tools on Windows. `qawolf flows run` failed while preparing the environment. `qawolf doctor` reported npm and `appium` as not installed, even though both worked in the same shell. `qawolf install android` could not reach `sdkmanager` or `avdmanager`. Windows ships these tools as `.cmd` or `.bat` wrappers and ships no `.exe` alternative. Node's process spawn cannot execute a batch file directly. The CLI now names the wrapper file and runs it through `cmd.exe /d /s /c` with quoted arguments. The `adb` and `emulator` paths built from `ANDROID_HOME` now name the `.exe` suffix directly instead of relying on the spawn path search. Running the CLI inside WSL is unaffected, because it reports itself as Linux and carries POSIX tools.
+
 ## 1.4.0
 
 ### Minor Changes
