@@ -1,8 +1,13 @@
+import { runnerMessages } from "~/core/messages/runner.js";
 import { type Fs, makeDefaultFs } from "~/shell/fs.js";
 
 import { managedEnvDir as defaultManagedEnvDir } from "./managedEnvDir.js";
 import { installPinned, defaultSpawnInstall } from "./installPinned.js";
-import { allPinnedResolved } from "./resolvePinned.js";
+import {
+  allPinnedResolved,
+  describePinnedFailure,
+  pinnedResolutionFailures,
+} from "./resolvePinned.js";
 
 type RuntimeEnvSource = "override" | "project" | "managed";
 
@@ -45,7 +50,12 @@ export async function ensureRuntimeEnv(
       }));
 
   if (args.overrideDir !== undefined) {
-    if (allPinnedResolved(args.overrideDir, fs, args.platform)) {
+    const failures = pinnedResolutionFailures(
+      args.overrideDir,
+      fs,
+      args.platform,
+    );
+    if (failures.length === 0) {
       return {
         depsRoot: args.overrideDir,
         source: "override",
@@ -53,8 +63,10 @@ export async function ensureRuntimeEnv(
       };
     }
     throw new Error(
-      `--deps directory ${args.overrideDir} is missing required pinned dependencies. ` +
-        `Run 'npm install' in that directory or point to a valid managed env directory.`,
+      runnerMessages.depsDirIncomplete(
+        args.overrideDir,
+        failures.map(describePinnedFailure),
+      ),
     );
   }
 

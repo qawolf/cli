@@ -76,6 +76,15 @@ export function pinnedResolutionFailures(
   return failures;
 }
 
+export function describePinnedFailure(failure: PinnedFailure): string {
+  if (failure.kind === "shim") {
+    return `node_modules/.bin/${failure.name} (missing)`;
+  }
+  return failure.installed === undefined
+    ? `${failure.name} (missing, pinned ${failure.pinned})`
+    : `${failure.name} ${failure.installed} (pinned ${failure.pinned})`;
+}
+
 export function allPinnedResolved(
   dir: string,
   fs: Fs,

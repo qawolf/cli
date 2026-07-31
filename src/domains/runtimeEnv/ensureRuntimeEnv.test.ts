@@ -66,6 +66,54 @@ describe("ensureRuntimeEnv", () => {
     expect((caughtError as Error).message).toContain(overrideDir);
   });
 
+  it("names the failing package and shim in the rejection", async () => {
+    const fs = makeMemoryFs();
+    const overrideDir = "/override/stale";
+    seedFullEnv(fs, overrideDir);
+    const flowsPkg = join(overrideDir, "node_modules", "@qawolf", "flows");
+    fs.writeFileSync(
+      join(flowsPkg, "package.json"),
+      JSON.stringify({ version: "0.0.0" }),
+    );
+    const { install } = makeNoopInstall();
+
+    let caughtError: unknown;
+    try {
+      await ensureRuntimeEnv(
+        { overrideDir, platform: "linux" },
+        { fs, install, resolveManagedDir: () => managedDir },
+      );
+    } catch (e) {
+      caughtError = e;
+    }
+
+    const pinned = pinnedPackages.find((p) => p.name === "@qawolf/flows");
+    expect((caughtError as Error).message).toContain(
+      `@qawolf/flows 0.0.0 (pinned ${pinned?.version})`,
+    );
+  });
+
+  it("names a missing package as missing", async () => {
+    const fs = makeMemoryFs();
+    const overrideDir = "/override/partial";
+    const { install } = makeNoopInstall();
+
+    let caughtError: unknown;
+    try {
+      await ensureRuntimeEnv(
+        { overrideDir, platform: "linux" },
+        { fs, install, resolveManagedDir: () => managedDir },
+      );
+    } catch (e) {
+      caughtError = e;
+    }
+
+    const message = (caughtError as Error).message;
+    const pinned = pinnedPackages.find((p) => p.name === "appium");
+    expect(message).toContain(`appium (missing, pinned ${pinned?.version})`);
+    expect(message).toContain("node_modules/.bin/appium (missing)");
+  });
+
   it("returns project source when projectDir has all pinned deps", async () => {
     const fs = makeMemoryFs();
     const projectDir = "/user/project";
