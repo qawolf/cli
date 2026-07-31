@@ -1,10 +1,12 @@
 // Converts changeset release-note markdown into Slack mrkdwn.
 
-const groupTitles: Record<string, string> = {
-  "Major Changes": "💥 Major changes",
-  "Minor Changes": "✨ Minor changes",
-  "Patch Changes": "🩹 Patch changes",
-};
+// Map, not object literal: headings come from release notes, and an object
+// lookup would return inherited values for keys like "toString"
+const groupTitles = new Map([
+  ["Major Changes", "💥 Major changes"],
+  ["Minor Changes", "✨ Minor changes"],
+  ["Patch Changes", "🩹 Patch changes"],
+]);
 
 function escapeMrkdwn(text: string): string {
   return text
@@ -41,7 +43,7 @@ export function splitReleaseNotes(body: string): NoteGroup[] {
     if (heading) {
       if (current.text.trim()) groups.push(current);
       const title = heading[1] ?? "";
-      current = { title: groupTitles[title] ?? title, text: "" };
+      current = { title: groupTitles.get(title) ?? title, text: "" };
     } else {
       current.text += `${line}\n`;
     }

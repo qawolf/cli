@@ -46,6 +46,12 @@ describe("splitReleaseNotes", () => {
     ]);
   });
 
+  it("does not resolve prototype members for unknown headings", () => {
+    expect(splitReleaseNotes("### toString\n\ndetails")).toEqual([
+      { title: "toString", text: "details" },
+    ]);
+  });
+
   it("escapes mrkdwn control characters in unknown headings", () => {
     expect(splitReleaseNotes("### Fixes & <tweaks>\n\ndetails")).toEqual([
       { title: "Fixes &amp; &lt;tweaks&gt;", text: "details" },
