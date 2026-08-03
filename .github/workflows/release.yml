@@ -101,8 +101,7 @@ jobs:
     # failures too. Skips when nothing was published or the publish-time Slack
     # message did not post (no ts to update).
     if: always() && needs.release.outputs.published == 'true' && needs.release.outputs.slack_ts != ''
-    # the Slack secrets are scoped to the release environment
-    environment: release
+    environment: release-notify
     runs-on: ubuntu-latest
     permissions:
       contents: read
