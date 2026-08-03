@@ -1,0 +1,56 @@
+// Converts changeset release-note markdown into Slack mrkdwn.
+
+// Map, not object literal: headings come from release notes, and an object
+// lookup would return inherited values for keys like "toString"
+const groupTitles = new Map([
+  ["Major Changes", "💥 Major changes"],
+  ["Minor Changes", "✨ Minor changes"],
+  ["Patch Changes", "🩹 Patch changes"],
+]);
+
+function escapeMrkdwn(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// Pragmatic, not a full markdown parser: bold, links, and bullets are the
+// only constructs changesets emit.
+export function toMrkdwn(markdown: string): string {
+  return (
+    escapeMrkdwn(markdown)
+      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, "<$2|$1>")
+      .replace(/\*\*([^*\n]+)\*\*/g, "*$1*")
+      .replace(/^(\s*)[-*]\s+/gm, "$1• ")
+      // changeset bullets lead with a commit hash — noise for Slack readers
+      .replace(/^(\s*)• [0-9a-f]{7,40}: /gm, "$1• ")
+      // dedent continuation paragraphs; sub-bullets keep their indent
+      .replace(/^[ \t]+(?![ \t]*•)/gm, "")
+      .trim()
+  );
+}
+
+export type NoteGroup = { title: string | undefined; text: string };
+
+// Splits release notes on markdown headings so each change group ("Minor
+// Changes", "Patch Changes", …) can render as its own Slack block.
+export function splitReleaseNotes(body: string): NoteGroup[] {
+  const groups: NoteGroup[] = [];
+  let current: NoteGroup = { title: undefined, text: "" };
+  for (const line of body.split("\n")) {
+    const heading = /^#{1,6}\s+(.+?)\s*$/.exec(line);
+    if (heading) {
+      if (current.text.trim()) groups.push(current);
+      const title = heading[1] ?? "";
+      current = { title: groupTitles.get(title) ?? title, text: "" };
+    } else {
+      current.text += `${line}\n`;
+    }
+  }
+  if (current.text.trim()) groups.push(current);
+  return groups.map((group) => ({
+    title: group.title === undefined ? undefined : escapeMrkdwn(group.title),
+    text: toMrkdwn(group.text),
+  }));
+}
