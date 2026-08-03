@@ -1,5 +1,15 @@
 # @qawolf/cli
 
+## 1.5.0
+
+### Minor Changes
+
+- 3bc67bf: `flows pull` and `flows list --remote` no longer require `--env`. When the flag is omitted, the CLI reads `QAWOLF_ENVIRONMENT`, and in an interactive terminal it otherwise lists the team's environments and prompts for a pick — auto-selecting when only one exists. Teams with both static and preview (PR) environments first pick a kind, so ephemeral PR environments don't drown out the static ones. Non-interactive runs without a flag or env var still fail with a clear error, so CI and agent behavior stays deterministic.
+
+  The `@qawolf/api-contracts` bump to 0.14.0 also adds three generated commands: `environment find`, `environment setVariable`, and `flow addTag`.
+
+- 9e1a5c5: The CLI now checks the npm registry for a newer published version while a command runs. After the command completes, the CLI shows an update notice one time for each new version. Human mode shows a styled note. Agent mode writes plain text to stderr. JSON mode writes a note diagnostic to stderr and does not change stdout. Set QAWOLF_NO_UPDATE_CHECK=1 to disable the check.
+
 ## 1.4.2
 
 ### Patch Changes
