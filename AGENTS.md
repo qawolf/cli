@@ -44,7 +44,8 @@ src/
 │   ├── patternArgs.ts   # CLI pattern argument parsing
 │   ├── pluralize.ts     # pluralize
 │   ├── sleep.ts         # sleep
-│   └── types.ts         # BrowserName, VideoMode, TraceMode, HarMode, TestCounts
+│   ├── types.ts         # BrowserName, VideoMode, TraceMode, HarMode, TestCounts
+│   └── version.ts       # isNewerVersion
 ├── shell/               # I/O executors — process spawning, UI, API clients
 │   ├── appium/          # Android emulator + Appium server lifecycle
 │   ├── commandContext.ts # CommandContext, CommandResult types
@@ -53,6 +54,7 @@ src/
 │   ├── logger.ts        # pino-based structured logger
 │   ├── manifest/        # bundle manifest read/lookup
 │   ├── npm.ts           # resolveNpmCommand
+│   ├── npmRegistry.ts   # fetchLatestVersion (update-check registry lookup)
 │   ├── platform/        # tRPC client, getIdentity, signed-URL/bundle download, team storage
 │   ├── reporter/        # Reporter interface, console + JUnit + composite reporters
 │   ├── resolveExport.ts # ESM export resolution
@@ -69,7 +71,8 @@ src/
 │   ├── flows/           # expandPatterns, peekFlowMeta, flowsList, pull/
 │   ├── init/            # init handler + templates
 │   ├── install/         # installBrowsers, installBrowserList
-│   └── runner/          # flowsRun, runWebFlow, runAndroidFlow, worker dispatch + pool
+│   ├── runner/          # flowsRun, runWebFlow, runAndroidFlow, worker dispatch + pool
+│   └── updateCheck/     # startUpdateCheck: new-version notice after commands
 └── commands/            # Thin CLI glue — Commander registration + composite root
     ├── context.ts       # withContext() Commander action wrapper
     ├── program.ts       # createProgram() factory
