@@ -23,6 +23,7 @@ Commands:
   automate [options]           Request an automation that builds the selected
                                draft flows in an environment.
   environment                  QA Wolf public API environment commands
+  flow                         QA Wolf public API flow commands
   issue                        QA Wolf public API issue commands
   run                          Trigger and manage QA Wolf runs on the platform
   tag                          QA Wolf public API tag commands
