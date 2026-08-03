@@ -1,3 +1,4 @@
+import { flowsMessages } from "~/core/messages/index.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import {
@@ -113,8 +114,7 @@ export function createPlatformClient(
       if (!("team" in identity.value)) {
         return {
           ok: false,
-          error:
-            "Team storage requires a team API key; organization keys are not supported here.",
+          error: flowsMessages.pull.teamStorageRequiresTeamKey,
         };
       }
       return listTeamStorageFiles(
