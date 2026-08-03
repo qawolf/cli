@@ -1,0 +1,19 @@
+#!/usr/bin/env bun
+// Runs after `bun run build` to make dist/cli.js executable as a CLI.
+// Bun's bundler doesn't add a shebang, so we prepend one manually.
+// TypeScript rather than shell so the hook also runs on Windows, where
+// bun's script runner cannot execute .sh files (no shebang mechanism).
+import { chmodSync, readFileSync, statSync, writeFileSync } from "node:fs";
+
+const outfile = "dist/cli.js";
+
+// Prepend the Node.js shebang so the OS knows how to execute the file
+const bundle = readFileSync(outfile);
+writeFileSync(
+  outfile,
+  Buffer.concat([Buffer.from("#!/usr/bin/env node\n"), bundle]),
+);
+
+// Set the executable bit so it can run directly (required by npm link / bin);
+// mode | 0o111 mirrors `chmod +x`. No-op on Windows, same as in bash.
+chmodSync(outfile, statSync(outfile).mode | 0o111);

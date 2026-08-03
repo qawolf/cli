@@ -128,10 +128,11 @@ jobs:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
       - run: bun run test
-      # build:bundle skips the postbuild hook, which shells out to bash to
-      # prepend a shebang and chmod dist/cli.js. Windows needs neither to run
-      # `node dist/cli.js`.
-      - run: bun run build:bundle
+      # `build` (not build:bundle) so the postbuild hook runs here: only a
+      # Windows runner proves the hook stays executable by bun's script
+      # runner, which cannot shell out to .sh files (release v1.1.0–v1.4.2
+      # Windows binaries all failed on exactly that).
+      - run: bun run build
       # Bundling resolves the `~/` alias Node cannot. Only spawn.ts needs it;
       # the production-wiring check below runs the shipped bundle instead.
       - name: Bundle defaultSpawn for smoke

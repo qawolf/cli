@@ -47,7 +47,7 @@
     "knip": "knip",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
-    "postbuild": "./scripts/postbuild.sh",
+    "postbuild": "bun scripts/postbuild.ts",
     "prepare": "git config core.hooksPath .githooks || true",
     "test": "bun run generate && bun test",
     "test:watch": "bun test --watch",
