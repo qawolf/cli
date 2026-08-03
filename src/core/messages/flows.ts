@@ -16,12 +16,12 @@ export const flowsMessages = {
   flowCount: (count: number) => pluralize(count, "flow"),
   list: {
     remoteRequiresEnv:
-      "--remote requires --env <env> to pick the environment to list",
+      "--remote requires an environment. Pass --env <env> or set QAWOLF_ENVIRONMENT.",
     flagsRequireRemote: "--env and --include-drafts require --remote",
   },
   pull: {
     requiresEnv:
-      "--env is required. Pass --env <env> or set QAWOLF_ENVIRONMENT.",
+      "An environment is required. Pass --env <env> or set QAWOLF_ENVIRONMENT.",
     downloadingBundle: "Downloading flows bundle",
     fetchingEnvVars: "Fetching environment variables",
     downloadComplete: "Downloaded flows bundle and environment variables",

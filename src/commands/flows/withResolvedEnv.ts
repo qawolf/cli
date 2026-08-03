@@ -13,7 +13,7 @@ import { detectOutputMode, type OutputFlags } from "~/shell/ui/env.js";
 type Args = {
   // The --env flag value for this invocation.
   explicit: string | undefined;
-  // Command-specific "--env is required" text.
+  // Command-specific "an environment is required" text.
   requiredMessage: string;
 };
 

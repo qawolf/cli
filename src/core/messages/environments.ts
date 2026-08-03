@@ -13,4 +13,6 @@ export const environmentsMessages = {
     preview: "Preview (PR) environments",
   },
   aborted: "Aborted; no environment selected.",
+  tooManyPages: (pages: number) =>
+    `Stopped listing environments after ${pages} pages. Pass --env explicitly.`,
 };

@@ -144,6 +144,22 @@ describe("resolveEnvironment", () => {
     expect(outcome).toEqual({ kind: "cancelled" });
   });
 
+  it("stops with an error when pagination never terminates", async () => {
+    const { deps, callPublicApi } = makeDeps({ endlessCursor: true });
+
+    const outcome = await resolveEnvironment(deps, {
+      explicit: undefined,
+      requiredMessage: "req",
+    });
+
+    expect(outcome).toEqual({
+      kind: "error",
+      error:
+        "Stopped listing environments after 10 pages. Pass --env explicitly.",
+    });
+    expect(callPublicApi).toHaveBeenCalledTimes(10);
+  });
+
   it("surfaces a platform error", async () => {
     const { deps } = makeDeps({ findError: "HTTP 500" });
 

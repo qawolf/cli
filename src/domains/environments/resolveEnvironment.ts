@@ -32,8 +32,8 @@ export type ResolveEnvironmentDeps = {
 
 type ResolveEnvironmentOpts = {
   explicit: string | undefined;
-  // Command-specific "--env is required" text, shown when resolution is
-  // impossible without a prompt (JSON/agent mode).
+  // Command-specific "an environment is required" text, shown when
+  // resolution is impossible without a prompt (JSON/agent mode).
   requiredMessage: string;
 };
 
@@ -122,6 +122,12 @@ async function narrowByKind(
   return picked.value === "static" ? statics : previews;
 }
 
+// Termination depends on a server-controlled cursor, so the loop is
+// bounded: a pagination bug must produce an error, not a hung CLI. Ten
+// pages (1,000 environments) is an order of magnitude above any observed
+// team while keeping the pathological case to seconds, not minutes.
+const maxPages = 10;
+
 async function fetchAllEnvironments(platformClient: {
   callPublicApi: FindEnvironmentsApi;
 }): Promise<
@@ -129,7 +135,7 @@ async function fetchAllEnvironments(platformClient: {
 > {
   const environments: Environment[] = [];
   let cursor: string | undefined;
-  do {
+  for (let page = 0; page < maxPages; page += 1) {
     const result = await platformClient.callPublicApi(findContract, {
       limit: 100,
       cursor,
@@ -137,6 +143,7 @@ async function fetchAllEnvironments(platformClient: {
     if (!result.ok) return result;
     environments.push(...result.value.environments);
     cursor = result.value.nextCursor;
-  } while (cursor !== undefined);
-  return { ok: true, environments };
+    if (cursor === undefined) return { ok: true, environments };
+  }
+  return { ok: false, error: environmentsMessages.tooManyPages(maxPages) };
 }

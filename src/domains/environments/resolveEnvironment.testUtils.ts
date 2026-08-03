@@ -18,6 +18,9 @@ export function makeDeps(args: {
   envVar?: string;
   pages?: Page[];
   findError?: string;
+  // Every fetch returns a page with a nextCursor, so pagination never
+  // terminates on its own — for testing the page cap.
+  endlessCursor?: boolean;
   selectAnswers?: string[];
   selectCancelled?: boolean;
 }) {
@@ -26,6 +29,12 @@ export function makeDeps(args: {
   const callPublicApi = mock(async () => {
     if (args.findError !== undefined) {
       return { ok: false as const, error: args.findError };
+    }
+    if (args.endlessCursor) {
+      return {
+        ok: true as const,
+        value: { environments: [], nextCursor: "again" },
+      };
     }
     const page = pages[call];
     call += 1;
