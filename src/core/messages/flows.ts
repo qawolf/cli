@@ -20,6 +20,8 @@ export const flowsMessages = {
     flagsRequireRemote: "--env and --include-drafts require --remote",
   },
   pull: {
+    requiresEnv:
+      "--env is required. Pass --env <env> or set QAWOLF_ENVIRONMENT.",
     downloadingBundle: "Downloading flows bundle",
     fetchingEnvVars: "Fetching environment variables",
     downloadComplete: "Downloaded flows bundle and environment variables",

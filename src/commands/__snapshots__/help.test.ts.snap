@@ -213,7 +213,8 @@ environment with --remote
 Options:
   --remote          List flows from the QA Wolf platform instead of the local
                     project (default: false)
-  --env <env>       Environment to list flows from (required with --remote)
+  --env <env>       Environment to list flows from (with --remote; defaults to
+                    QAWOLF_ENVIRONMENT, or an interactive picker)
   --include-drafts  Include draft flows in the listing (requires --remote)
                     (default: false)
   -h, --help        display help for command
@@ -232,7 +233,8 @@ exports[`--help output qawolf flows pull 1`] = `
 Download an environment's flows into the local .qawolf/<env>/ cache
 
 Options:
-  --env <env>   Environment to pull from (UUID or kebab-case slug)
+  --env <env>   Environment to pull from (UUID or kebab-case slug); defaults to
+                QAWOLF_ENVIRONMENT, or an interactive picker
   --out <path>  Destination directory (defaults to .qawolf/<env>/)
   --yes         Overwrite locally-modified files without prompting (default:
                 false)
