@@ -9,7 +9,7 @@
         "@napi-rs/keyring": "1.3.0",
         "@oxc-node/core": "0.1.0",
         "@playwright/test": "1.60.0",
-        "@qawolf/api-contracts": "0.11.0",
+        "@qawolf/api-contracts": "0.14.0",
         "@qawolf/emails": "1.1.1",
         "@qawolf/flow-targets": "1.0.0",
         "@qawolf/flows": "0.1.4",
@@ -462,7 +462,7 @@
 
     "@puppeteer/browsers": ["@puppeteer/browsers@2.13.2", "", { "dependencies": { "debug": "^4.4.3", "extract-zip": "^2.0.1", "progress": "^2.0.3", "proxy-agent": "^6.5.0", "semver": "^7.7.4", "tar-fs": "^3.1.1", "yargs": "^17.7.2" }, "bin": { "browsers": "lib/cjs/main-cli.js" } }, "sha512-5EUZSUIc37H6aIXyWO0Z4y8NlF8NnjgmqeQgOGiswAU7pY0HOo16ho4+alIWmSfdZnjqBRawMsP3I5YqLSn6kw=="],
 
-    "@qawolf/api-contracts": ["@qawolf/api-contracts@0.11.0", "", { "dependencies": { "tslib": "^2.5.3" }, "peerDependencies": { "zod": "^4.1.11" } }, "sha512-yO9bImex06ph3No4iixqZLMFflSuzFciw4bHjitkeNaIs44IdTXlAih1yE1wiQMknEsjBxKZEO6YfdZxomFIEg=="],
+    "@qawolf/api-contracts": ["@qawolf/api-contracts@0.14.0", "", { "dependencies": { "tslib": "^2.5.3" }, "peerDependencies": { "zod": "^4.1.11" } }, "sha512-CEHYzyAtsGRsTdhEKZIXjcRi9Q7bFdWwUjvQxFhmJMrLUcJa12t2qTv6wAFRFxp7dqiCiZZqJbjCoBCZBN5b1w=="],
 
     "@qawolf/emailer-types": ["@qawolf/emailer-types@1.1.0", "", { "dependencies": { "email-addresses": "^5.0.0", "tslib": "^2.5.3", "zod": "^4.1.11", "zod-form-data": "^3.0.1" } }, "sha512-7cX+e31L9dpO8fntQ2cfSMt/1Lla/yUjaLUr/KLpXuscBSajy7CgNzjAGURa1KsCcxz7n+9PGQw6cM3RlC1bSg=="],
 

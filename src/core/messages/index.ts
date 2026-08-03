@@ -1,5 +1,6 @@
 export { authMessages } from "./auth.js";
 export { doctorMessages } from "./doctor.js";
+export { environmentsMessages } from "./environments.js";
 export { flowsMessages } from "./flows.js";
 export { initMessages } from "./init.js";
 export { installMessages } from "./install.js";

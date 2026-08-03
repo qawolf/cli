@@ -7,6 +7,7 @@ import {
   note,
   outro,
   password,
+  select,
   spinner,
   taskLog,
 } from "@clack/prompts";
@@ -30,6 +31,11 @@ export type StyledClack = {
     initialValue?: boolean;
   }): Promise<boolean | symbol>;
   password(opts: { message: string }): Promise<string | symbol>;
+  select(opts: {
+    message: string;
+    options: { value: string; label: string; hint?: string }[];
+    initialValue?: string;
+  }): Promise<string | symbol>;
   isCancel(value: unknown): value is symbol;
   spinner(): {
     start(message: string): void;
@@ -52,6 +58,7 @@ export function createStyledClack(): StyledClack {
     cancel,
     confirm,
     password,
+    select,
     isCancel,
     spinner,
     taskLog,

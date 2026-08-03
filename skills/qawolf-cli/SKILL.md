@@ -48,8 +48,11 @@ write on timeout: it may have reached the server the first time.
 | `qawolf automate`                      | write                      | Request an automation that builds the selected draft flows in an environment.                                              |
 | `qawolf doctor`                        | local                      | Diagnose problems running flows locally                                                                                    |
 | `qawolf environment create`            | write                      | Create an environment on the caller's team and return it in the environment.get shape.                                     |
+| `qawolf environment find`              | read                       | List the team's environments, newest first.                                                                                |
 | `qawolf environment get`               | read                       | Read a single environment's name, kind, health status, and termination state.                                              |
 | `qawolf environment listVariableNames` | read                       | List the names of an environment's variables, sorted. Names only — values never leave the server.                          |
+| `qawolf environment setVariable`       | write                      | Create or replace one environment variable by name and return its stored name. The value is never returned.                |
+| `qawolf flow addTag`                   | write                      | Assign an existing tag to the selected flows. Create tags with tag.create.                                                 |
 | `qawolf flows list`                    | local (read with --remote) | List flows matching [pattern] from the local project, or from a QA Wolf environment with --remote                          |
 | `qawolf flows pull`                    | read                       | Download an environment's flows into the local .qawolf/<env>/ cache                                                        |
 | `qawolf flows run`                     | local (read with --env)    | Run flows matching [pattern], or every flow when omitted; with --env, pull missing flows from that QA Wolf environment     |

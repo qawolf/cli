@@ -5,6 +5,7 @@ import { createConfirm } from "./renderers/confirm.js";
 import { createJson } from "./renderers/json.js";
 import { pickRenderers } from "./renderers/modes/index.js";
 import { createPassword } from "./renderers/password.js";
+import { createSelect } from "./renderers/select.js";
 import type { UI } from "./types.js";
 
 export function createUI(
@@ -21,6 +22,7 @@ export function createUI(
     ...pickRenderers(mode, clack, opts.verboseTarget),
     confirm: createConfirm({ mode, clack }),
     password: createPassword({ mode, clack }),
+    select: createSelect({ mode, clack }),
     json: createJson(),
   };
 }

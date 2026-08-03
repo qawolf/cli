@@ -1,18 +1,16 @@
 import type { Command } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
-import { withAuthContext, withContext } from "~/commands/context.js";
+import { withContext } from "~/commands/context.js";
 import { flowsMessages } from "~/core/messages/index.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { handleFlowsList } from "~/domains/flows/list.js";
 import { flowsListRemote } from "~/domains/flows/listRemote.js";
-import {
-  type FlowsPullOptions,
-  handleFlowsPull,
-} from "~/domains/flows/pull/handler.js";
+import { registerFlowsPullCommand } from "./pull.register.js";
 import { registerFlowsRunCommand } from "./run.register.js";
 import { registerRunWorkerCommand } from "./runWorker.register.js";
+import { withResolvedEnv } from "./withResolvedEnv.js";
 
 const listExamples = `
 Examples:
@@ -26,12 +24,6 @@ type FlowsListOptions = {
   readonly env: string | undefined;
   readonly includeDrafts: boolean;
 };
-
-const pullExamples = `
-Examples:
-  $ qawolf flows pull --env staging
-  $ qawolf flows pull --env 4e9c... --out ./snapshot
-  $ qawolf flows pull --env staging --yes`;
 
 export function registerFlowsCommand(
   program: Command,
@@ -57,7 +49,7 @@ export function registerFlowsCommand(
     )
     .option(
       "--env <env>",
-      "Environment to list flows from (required with --remote)",
+      "Environment to list flows from (with --remote; defaults to QAWOLF_ENVIRONMENT, or an interactive picker)",
     )
     .option(
       "--include-drafts",
@@ -72,17 +64,17 @@ export function registerFlowsCommand(
         command: Command,
       ) => {
         if (opts.remote) {
-          const env = opts.env;
-          if (env === undefined) {
-            return withContext(signals, async () => ({
-              error: flowsMessages.list.remoteRequiresEnv,
-            }))(opts, command);
-          }
-          return withAuthContext(signals, (ctx) =>
-            flowsListRemote(ctx, pattern, {
-              env,
-              includeDrafts: opts.includeDrafts,
-            }),
+          return withResolvedEnv(
+            signals,
+            {
+              explicit: opts.env,
+              requiredMessage: flowsMessages.list.remoteRequiresEnv,
+            },
+            (ctx, env) =>
+              flowsListRemote(ctx, pattern, {
+                env,
+                includeDrafts: opts.includeDrafts,
+              }),
           )(opts, command);
         }
         if (opts.env !== undefined || opts.includeDrafts) {
@@ -97,28 +89,5 @@ export function registerFlowsCommand(
       },
     );
 
-  declareCommandKind(flows.command("pull"), "read")
-    .description(
-      "Download an environment's flows into the local .qawolf/<env>/ cache",
-    )
-    .requiredOption(
-      "--env <env>",
-      "Environment to pull from (UUID or kebab-case slug)",
-    )
-    .option(
-      "--out <path>",
-      "Destination directory (defaults to .qawolf/<env>/)",
-    )
-    .option(
-      "--yes",
-      "Overwrite locally-modified files without prompting",
-      false,
-    )
-    .addHelpText("after", pullExamples)
-    .action((opts: FlowsPullOptions, command: Command) => {
-      return withAuthContext(signals, (ctx) => handleFlowsPull(ctx, opts))(
-        opts,
-        command,
-      );
-    });
+  registerFlowsPullCommand(flows, signals);
 }
