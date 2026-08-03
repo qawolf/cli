@@ -48,6 +48,7 @@ write on timeout: it may have reached the server the first time.
 | `qawolf automate`                      | write                      | Request an automation that builds the selected draft flows in an environment.                                              |
 | `qawolf doctor`                        | local                      | Diagnose problems running flows locally                                                                                    |
 | `qawolf environment create`            | write                      | Create an environment on the caller's team and return it in the environment.get shape.                                     |
+| `qawolf environment deleteVariable`    | write                      | Remove one environment variable by name. Succeeds whether or not the variable existed.                                     |
 | `qawolf environment find`              | read                       | List the team's environments, newest first.                                                                                |
 | `qawolf environment get`               | read                       | Read a single environment's name, kind, health status, and termination state.                                              |
 | `qawolf environment listVariableNames` | read                       | List the names of an environment's variables, sorted. Names only — values never leave the server.                          |

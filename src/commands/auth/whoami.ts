@@ -68,6 +68,32 @@ export async function handleWhoami(
 
   const { value } = identity;
 
+  if ("user" in value) {
+    const { organization, user } = value;
+    if (ctx.ui.mode === "human") {
+      ctx.ui.note(
+        authMessages.whoami.userNote({
+          organization,
+          source: resolved.source,
+          user,
+        }),
+        authMessages.whoamiAuthenticated,
+      );
+      ctx.ui.outro(authMessages.outroReady);
+    } else {
+      ctx.ui.output(
+        {
+          authenticated: true,
+          organization,
+          source: resolved.source,
+          user,
+        },
+        authMessages.whoami.authenticatedAs(user.email, resolved.source),
+      );
+    }
+    return;
+  }
+
   if ("organization" in value) {
     const { organization } = value;
     if (ctx.ui.mode === "human") {
