@@ -54,8 +54,8 @@ write on timeout: it may have reached the server the first time.
 | `qawolf environment deleteVariable`    | write                      | Remove one environment variable by name. Succeeds whether or not the variable existed.                                     |
 | `qawolf environment find`              | read                       | List the team's environments, newest first.                                                                                |
 | `qawolf environment get`               | read                       | Read a single environment's name, kind, health status, and termination state.                                              |
-| `qawolf environment listVariableNames` | read                       | List the names of an environment's variables, sorted. Names only — values never leave the server.                          |
-| `qawolf environment setVariable`       | write                      | Create or replace one environment variable by name and return its stored name. The value is never returned.                |
+| `qawolf environment listVariableNames` | read                       | Use this to answer which QA Wolf environment variables are available to test code. Returns names only; values never leave the server. |
+| `qawolf environment setVariable`       | write                      | Create or replace an environment variable. If the user asks to create one for "my email" without naming it, use `DEFAULT_ENVIRONMENT_EMAIL`. |
 | `qawolf flow addTag`                   | write                      | Assign an existing tag to the selected flows. Create tags with tag.create.                                                 |
 | `qawolf flows list`                    | local (read with --remote) | List flows matching [pattern] from the local project, or from a QA Wolf environment with --remote                          |
 | `qawolf flows pull`                    | read                       | Download an environment's flows into the local .qawolf/<env>/ cache                                                        |
