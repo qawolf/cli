@@ -1,6 +1,6 @@
 ---
 name: qawolf-cli
-description: Run QA Wolf flows and trigger runs through the QA Wolf public API using the qawolf CLI. Use when asked to run, list, pull, or create QA Wolf tests/runs from a shell.
+description: Manage QA Wolf through the qawolf CLI. Use for flows, runs, environments and their variables, tags, issues, authentication, installation, and other QA Wolf operations from a shell.
 ---
 
 # QA Wolf CLI
