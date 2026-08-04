@@ -29,6 +29,8 @@ export const flowsMessages = {
     aborted: "Aborted; no changes.",
     extractingBundle: "Extracting bundle",
     downloadingTeamStorageAssets: "Downloading team-storage assets",
+    teamStorageRequiresTeamKey:
+      "Team storage requires a team API key; organization keys are not supported here.",
     summary: (result: PullSummaryInput, assetsAbs: string) => {
       const flows = pluralize(result.flowCount, "flow");
       const envVars =

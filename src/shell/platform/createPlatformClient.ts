@@ -1,3 +1,4 @@
+import { flowsMessages } from "~/core/messages/index.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import {
@@ -110,6 +111,12 @@ export function createPlatformClient(
     async listTeamStorageFiles() {
       const identity = await this.getIdentity();
       if (!identity.ok) return identity;
+      if (!("team" in identity.value)) {
+        return {
+          ok: false,
+          error: flowsMessages.pull.teamStorageRequiresTeamKey,
+        };
+      }
       return listTeamStorageFiles(
         trpc,
         { teamId: identity.value.team.id },

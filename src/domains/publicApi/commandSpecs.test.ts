@@ -6,7 +6,9 @@ import { buildCommandSpecs } from "./commandSpecs.js";
 
 describe("buildCommandSpecs", () => {
   it("flattens the published contract tree into command specs", () => {
-    const specs = buildCommandSpecs(publicContractsV1);
+    const specs = buildCommandSpecs(publicContractsV1, {
+      skipContractNames: new Set(["issue.update"]),
+    });
 
     const runCreate = specs.find(
       (spec) => spec.trpcPath === "public.run.create",

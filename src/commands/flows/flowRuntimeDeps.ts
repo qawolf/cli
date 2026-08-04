@@ -27,7 +27,8 @@ async function maybeGetIdentityTeamId(
   platformClient: PlatformClient,
 ): Promise<string | undefined> {
   const identity = await platformClient.getIdentity();
-  return identity.ok ? identity.value.team.id : undefined;
+  if (!identity.ok || !("team" in identity.value)) return undefined;
+  return identity.value.team.id;
 }
 
 function lazyGetInbox({

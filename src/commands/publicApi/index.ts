@@ -30,6 +30,14 @@ const groupDescriptions: Record<string, string> = {
 // mint duplicates (flow.list is served by `qawolf flows list --remote`).
 const handWrittenContractNames: ReadonlySet<string> = new Set(["flow.list"]);
 
+// Kept out of generated commands: the hand-written ones above, plus contracts
+// whose input can't be expressed as CLI flags (issue.update is a
+// discriminator-less union).
+const skippedContractNames: ReadonlySet<string> = new Set([
+  ...handWrittenContractNames,
+  "issue.update",
+]);
+
 function resolveGroup(parent: Command, segment: string): Command {
   const existing = parent.commands.find(
     (command) => command.name() === segment,
@@ -95,7 +103,7 @@ export function registerPublicApiCommands(
   options: Options = {},
 ): void {
   const specs = buildCommandSpecs(options.contracts ?? publicContractsV1, {
-    skipContractNames: handWrittenContractNames,
+    skipContractNames: skippedContractNames,
   });
   for (const spec of specs) {
     registerSpec(program, signals, spec, options.authDeps);

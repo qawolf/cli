@@ -15,8 +15,5 @@ export async function validateApiKey(
     return { valid: false, error: result.error };
   }
 
-  return {
-    valid: true,
-    team: result.value.team,
-  };
+  return { valid: true };
 }

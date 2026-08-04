@@ -1,45 +1,11 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
-import type { ApiKeyResult } from "~/domains/auth/types.js";
-import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
-import type { IdentityResponse } from "~/shell/platform/getIdentity.js";
-import type { PlatformResult } from "~/shell/platform/requestWithRetry.js";
 import { makeCtx } from "~/shell/commandContext.testUtils.js";
 import { handleWhoami } from "./whoami.js";
+import { makeDeps } from "./whoami.testUtils.js";
 
 afterEach(() => {
   mock.restore();
 });
-
-function makeTeam(): IdentityResponse["team"] {
-  return {
-    id: "t1",
-    name: "Acme Corp",
-    slug: "acme",
-    createdAt: "2024-01-01T00:00:00.000Z",
-  };
-}
-
-function makeDeps(
-  overrides: {
-    requireApiKey?: () => Promise<ApiKeyResult>;
-    getIdentity?: () => Promise<PlatformResult<IdentityResponse>>;
-  } = {},
-) {
-  const getIdentity =
-    overrides.getIdentity ??
-    mock(() =>
-      Promise.resolve({
-        ok: true as const,
-        value: { team: makeTeam() },
-      }),
-    );
-  return {
-    requireApiKey:
-      overrides.requireApiKey ??
-      mock(() => Promise.resolve({ key: "test-key", source: "env" as const })),
-    createPlatform: mock(() => ({ getIdentity }) as unknown as PlatformClient),
-  };
-}
 
 describe("handleWhoami", () => {
   describe("human mode — authenticated", () => {
@@ -117,6 +83,84 @@ describe("handleWhoami", () => {
           authenticated: true,
           source: "env",
         }),
+        expect.any(String),
+      );
+    });
+  });
+
+  describe("organization identity", () => {
+    function makeOrgDeps() {
+      return makeDeps({
+        getIdentity: mock(() =>
+          Promise.resolve({
+            ok: true as const,
+            value: { organization: { id: "org_1", name: "Acme Org" } },
+          }),
+        ),
+      });
+    }
+
+    it("outputs the organization in JSON output", async () => {
+      const ctx = makeCtx("json", { apiBaseUrl: "https://app.qawolf.com" });
+      await handleWhoami(ctx, makeOrgDeps());
+
+      expect(ctx.ui.output).toHaveBeenCalledWith(
+        expect.objectContaining({
+          authenticated: true,
+          organization: { id: "org_1", name: "Acme Org" },
+          source: "env",
+        }),
+        expect.any(String),
+      );
+    });
+
+    it("includes the organization name in the human note", async () => {
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
+      await handleWhoami(ctx, makeOrgDeps());
+
+      expect(ctx.ui.note).toHaveBeenCalledWith(
+        expect.stringContaining("Acme Org"),
+        expect.any(String),
+      );
+    });
+  });
+
+  describe("user identity", () => {
+    function makeUserDeps() {
+      return makeDeps({
+        getIdentity: mock(() =>
+          Promise.resolve({
+            ok: true as const,
+            value: {
+              organization: { id: "org_1", name: "Acme Org" },
+              user: { email: "user@example.com", id: "user_1" },
+            },
+          }),
+        ),
+      });
+    }
+
+    it("outputs the user and organization in JSON output", async () => {
+      const ctx = makeCtx("json", { apiBaseUrl: "https://app.qawolf.com" });
+      await handleWhoami(ctx, makeUserDeps());
+
+      expect(ctx.ui.output).toHaveBeenCalledWith(
+        expect.objectContaining({
+          authenticated: true,
+          organization: { id: "org_1", name: "Acme Org" },
+          source: "env",
+          user: { email: "user@example.com", id: "user_1" },
+        }),
+        expect.any(String),
+      );
+    });
+
+    it("includes the user email in the human note", async () => {
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
+      await handleWhoami(ctx, makeUserDeps());
+
+      expect(ctx.ui.note).toHaveBeenCalledWith(
+        expect.stringContaining("user@example.com"),
         expect.any(String),
       );
     });

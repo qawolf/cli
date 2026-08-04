@@ -1,18 +1,10 @@
-import { z } from "zod";
+import { type IdentityResponse, identityResponse } from "@qawolf/api-contracts";
 import { isTimeoutError } from "~/core/errors.js";
 import type { WireResult } from "./createTrpcClient.js";
 import { toError } from "./toError.js";
 
-const identityResponseSchema = z.object({
-  team: z.object({
-    createdAt: z.string(),
-    id: z.string(),
-    name: z.string(),
-    slug: z.string().optional(),
-  }),
-});
-
-export type IdentityResponse = z.infer<typeof identityResponseSchema>;
+export type { IdentityResponse };
+export type TeamIdentity = Extract<IdentityResponse, { team: unknown }>["team"];
 
 type GetIdentityDeps = {
   fetch: typeof globalThis.fetch;
@@ -61,7 +53,7 @@ export async function getIdentity(
     json = undefined;
   }
 
-  const parsed = identityResponseSchema.safeParse(json);
+  const parsed = identityResponse.safeParse(json);
   if (!parsed.success) {
     return { ok: false, error: { kind: "parse", cause: parsed.error } };
   }

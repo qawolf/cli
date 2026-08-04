@@ -90,5 +90,25 @@ export const authMessages = {
       ]
         .filter((line): line is string => Boolean(line))
         .join("\n"),
+    organizationNote: (input: {
+      organization: { id: string; name: string };
+      source: string;
+    }) =>
+      [
+        `Organization: ${input.organization.name}`,
+        `ID:           ${input.organization.id}`,
+        `Source:       ${input.source}`,
+      ].join("\n"),
+    userNote: (input: {
+      user: { email: string; id: string };
+      organization: { id: string; name: string };
+      source: string;
+    }) =>
+      [
+        `User:         ${input.user.email}`,
+        `ID:           ${input.user.id}`,
+        `Organization: ${input.organization.name}`,
+        `Source:       ${input.source}`,
+      ].join("\n"),
   },
 } as const;
