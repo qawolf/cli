@@ -26,11 +26,15 @@ const groupDescriptions: Record<string, string> = {
   run: "Trigger and manage QA Wolf runs on the platform",
 };
 
-// Contracts excluded from generated commands: either served by a hand-written
-// command (flow.list → `qawolf flows list --remote`) or not expressible as CLI
-// flags (issue.update's input is a discriminator-less union).
+// Contracts already served by hand-written commands; the generator must not
+// mint duplicates (flow.list is served by `qawolf flows list --remote`).
+const handWrittenContractNames: ReadonlySet<string> = new Set(["flow.list"]);
+
+// Kept out of generated commands: the hand-written ones above, plus contracts
+// whose input can't be expressed as CLI flags (issue.update is a
+// discriminator-less union).
 const skippedContractNames: ReadonlySet<string> = new Set([
-  "flow.list",
+  ...handWrittenContractNames,
   "issue.update",
 ]);
 
