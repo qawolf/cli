@@ -24,6 +24,9 @@ target another deployment host, for example
 `https://app.staging.example.com`. `QAWOLF_API_URL` is a separate API endpoint
 and does not select the deployment host used by CLI commands.
 
+When `QAWOLF_ENVIRONMENT_ID` is set, pass it as `--environment-id` to commands
+that act on the current environment.
+
 ## Output
 
 When consuming output programmatically, always pass `--json` (or `--agent`).
@@ -76,19 +79,3 @@ Kinds: `read` calls the QA Wolf API without changing anything; `write`
 changes team state; `local` only affects this machine. A parenthesized
 note like `local (read with --remote)` means that flag makes the command
 call the QA Wolf API and require auth.
-
-## Typical tasks
-
-- Trigger a run of flows on QA Wolf: `qawolf run create --help` for the
-  required flags, then run it once and report the returned run id.
-- Run flows locally during development: `qawolf flows run` (use
-  `qawolf install` first if dependencies are missing; `qawolf doctor` when
-  something is broken).
-- Get flows for an environment: `qawolf flows pull`.
-- List variable names for the current environment:
-  `qawolf --json environment listVariableNames --environment-id "$QAWOLF_ENVIRONMENT_ID"`.
-  If `QAWOLF_ENVIRONMENT_ID` is unset, use `qawolf --json environment find`
-  to select the environment first.
-- Set a variable for the current environment: run
-  `qawolf environment setVariable --help`, then pass
-  `--environment-id "$QAWOLF_ENVIRONMENT_ID"`, `--name`, and `--value` once.
