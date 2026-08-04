@@ -1,6 +1,6 @@
 ---
 name: qawolf-cli
-description: Manage QA Wolf through the qawolf CLI. Use for flows, runs, environments and their variables, tags, issues, authentication, installation, and other QA Wolf operations from a shell.
+description: Manage QA Wolf through the qawolf CLI. Use when asked which QA Wolf environment variables are available or to list, set, or delete them; manage environments, flows, runs, tags, or issues; authenticate; install; or perform other QA Wolf operations from a shell.
 ---
 
 # QA Wolf CLI
