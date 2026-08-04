@@ -10,6 +10,10 @@ const skillMdPath = join(
   import.meta.dirname,
   "../../skills/qawolf-cli/SKILL.md",
 );
+const skillTemplatePath = join(
+  import.meta.dirname,
+  "qawolfCliSkill.template.md",
+);
 
 describe("renderCommandsTable", () => {
   it("lists every visible command with its kind", () => {
@@ -41,16 +45,14 @@ describe("renderCommandsTable", () => {
   });
 });
 
-// The table is generated; this guards the one real drift risk: changing
-// commands and forgetting `bun run generate`. Flags are intentionally not in
-// the skill — `qawolf <command> --help` is the authoritative reference.
 describe("qawolf-cli skill", () => {
-  it("contains the up-to-date generated commands table", async () => {
+  it("matches its template and generated commands table", async () => {
     const skillMd = await Bun.file(skillMdPath).text();
+    const skillTemplate = await Bun.file(skillTemplatePath).text();
     const table = renderCommandsTable(
       createProgram({ signals: makeNoopSignals() }),
     );
-    expect(skillMd).toBe(spliceCommandsTable(skillMd, table));
+    expect(skillMd).toBe(spliceCommandsTable(skillTemplate, table));
   });
 
   it("has frontmatter naming the skill", async () => {
