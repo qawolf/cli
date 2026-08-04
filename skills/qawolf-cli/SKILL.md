@@ -24,8 +24,10 @@ target another deployment host, for example
 `https://app.staging.example.com`. `QAWOLF_API_URL` is a separate API endpoint
 and does not select the deployment host used by CLI commands.
 
-When `QAWOLF_ENVIRONMENT_ID` is set, pass it as `--environment-id` to commands
-that act on the current environment.
+For tasks that need the current environment, use `QAWOLF_ENVIRONMENT_ID`. If it
+is unset, select an id from `qawolf --json environment find` and export it.
+Check the command's help for its environment flag: variable commands use
+`--environment-id`; `qawolf flows run` uses `--env`.
 
 ## Output
 
