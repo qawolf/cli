@@ -2,7 +2,9 @@ import type { Mock } from "bun:test";
 import type { RunFiles } from "@qawolf/api-contracts/v1";
 
 import { makeCtx } from "~/shell/commandContext.testUtils.js";
+import type { Fs } from "~/shell/fs.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
+import { writeScreenshot } from "~/shell/interactiveRunner/writeScreenshot.js";
 import {
   makeCallPublicApiMock,
   makeMockPlatformClient,
@@ -53,7 +55,7 @@ function streamCalls(base: CommandContext): [unknown, string][] {
     .calls;
 }
 
-/** What `writeScreenshot` was handed, so a test can assert on decoded bytes. */
+/** What reached the filesystem, so a test can assert on the bytes themselves. */
 export type WrittenScreenshot = { bytes: Uint8Array; path: string };
 
 export function makeTestDeps(
@@ -64,6 +66,18 @@ export function makeTestDeps(
     "package.json": "{}",
   };
   const written: WrittenScreenshot[] = [];
+  // The real writer over a memory filesystem, rather than a stand-in that
+  // decodes for itself: a double with its own `Buffer.from` would keep passing
+  // if the real one were changed to write the base64 string, which is the whole
+  // thing it exists to prevent.
+  const fs = makeMemoryFs();
+  const recordingFs: Fs = {
+    ...fs,
+    async writeFile(path, data, options) {
+      await fs.writeFile(path, data, options);
+      written.push({ bytes: Uint8Array.from(data as Uint8Array), path });
+    },
+  };
   return {
     collectRunFiles: async () => files,
     cwd: testCwd,
@@ -77,11 +91,8 @@ export function makeTestDeps(
     readStdin: async () => "",
     sleep: async () => {},
     store: makeRunnerStore({ cwd: testCwd, fs: makeMemoryFs() }),
-    // The real one decodes base64 before writing; this keeps the decode in the
-    // test's view so an assertion can catch a caller that wrote the string.
-    writeScreenshot: async ({ imageJpegBase64, path }) => {
-      written.push({ bytes: Buffer.from(imageJpegBase64, "base64"), path });
-    },
+    writeScreenshot: (screenshot) =>
+      writeScreenshot({ ...screenshot, fs: recordingFs }),
     written,
     ...overrides,
   };

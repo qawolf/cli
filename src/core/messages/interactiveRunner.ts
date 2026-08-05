@@ -2,12 +2,16 @@ import { formatSeconds } from "~/core/formatSeconds.js";
 import { pluralize } from "~/core/pluralize.js";
 
 export const interactiveRunnerMessages = {
-  alreadyRunning: (id: string) => `Runner ${id} was already running.`,
   actionFailed: (errorMessage: string) =>
     `The action reached the runner and did not take effect: ${errorMessage}`,
+  actionFlagsWithStdin:
+    '"-" reads the whole action from stdin, so an action flag passed alongside it would be ignored. Pipe the action in on its own, or name the action type and use flags.',
   actionMayHaveHappened:
     "The runner could not be reached, which does not mean the action was not performed: it may have stopped answering mid-action. Take a screenshot before repeating it.",
+  actionNotJson:
+    'Stdin did not hold a JSON action. Pipe one object, for example \'{"type":"click","button":"left","x":480,"y":260}\'.',
   actionPerformed: (type: string) => `Performed ${type}.`,
+  alreadyRunning: (id: string) => `Runner ${id} was already running.`,
   defaultNotRemembered: (id: string) =>
     `Runner ${id} could not be written to .qawolf as this directory's default, so later commands will not find it on their own. Pass --runner ${id}, or set QAWOLF_RUNNER_ID=${id}.`,
   defaultNotForgotten: (id: string) =>
@@ -60,26 +64,32 @@ export const interactiveRunnerMessages = {
     "This runner does not run a browser on a virtual desktop, so there is nothing about it to see or drive. Retrying will never help: launch a node20WithPlaywright runner instead.",
   runnerHasNoScreenToEvaluate:
     "The runner could not evaluate the snippet. As well as a runner that is still starting or busy, this covers one with no live page to evaluate against, which will never clear: check that the runner you launched runs a browser.",
+  runnerUnreachable:
+    "The runner could not be reached. It may still be starting, or it may have terminated after inactivity. Retry, or launch it again.",
   screenNotReady:
     "The runner has a screen and cannot serve this yet. Its virtual desktop starts with the runner's first run, it restarts when a run changes the display size, and it serves one request at a time. Retry in a second or two, or run something on the runner if it has not run anything yet.",
+  screenshotNotAnImage:
+    "The screen was captured but did not arrive as a JPEG, so nothing was written. Nothing about the command needs changing: try it again, and report it if it keeps happening.",
+  screenshotUnwritable: (path: string, detail: string) =>
+    `The screen was captured but could not be written to "${path}": ${detail}. Give --out a path this process can write to.`,
   screenshotWritten: (path: string) => `Wrote the runner's screen to ${path}.`,
+  skippedEntries: (stream: string, count: number) =>
+    `${pluralize(count, "entry", "entries")} of ${stream} were dropped before this read: the runner keeps a bounded history and this follow has been overtaken.`,
+  snippetEmpty: (path: string) => `"${path}" holds no code to evaluate.`,
   snippetErrored: (errorMessage: string | undefined) =>
     errorMessage === undefined
       ? "The snippet threw and reported no message."
       : `The snippet threw: ${errorMessage}`,
-  snippetEmpty: (path: string) => `"${path}" holds no code to evaluate.`,
   snippetFileUnreadable: (path: string) =>
     `Could not read "${path}". Name a readable file, or "-" to read the snippet from stdin.`,
   snippetRan:
     "The snippet ran. Its value is not returned: read anything it printed with qawolf runner events console.",
   snippetStopped:
     "The snippet was interrupted before it finished. Anything it printed first is in qawolf runner events console.",
-  stdinEmpty: (what: string) =>
-    `Nothing arrived on stdin. Pipe the ${what} in, or name a file instead of "-".`,
-  runnerUnreachable:
-    "The runner could not be reached. It may still be starting, or it may have terminated after inactivity. Retry, or launch it again.",
-  skippedEntries: (stream: string, count: number) =>
-    `${pluralize(count, "entry", "entries")} of ${stream} were dropped before this read: the runner keeps a bounded history and this follow has been overtaken.`,
+  stdinEmptyAction:
+    'Nothing arrived on stdin. Pipe the action in, or name the action type instead of "-".',
+  stdinEmptySnippet:
+    'Nothing arrived on stdin. Pipe the snippet in, or name a file instead of "-".',
   stopped: (id: string) => `Stopped runner ${id}.`,
   requestTooLarge: (byteLength: number, maxByteLength: number) =>
     `The run request encodes to ${String(byteLength)} bytes, over the ${String(maxByteLength)} a runner accepts. Escaping inflates file content, so a set of files inside the content cap can still encode to more than this. Run from a directory holding only the flow and what it imports.`,

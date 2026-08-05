@@ -97,6 +97,40 @@ describe("buildBrowserAction", () => {
     if (built.ok) return;
     expect(built.error).toContain("NaN");
   });
+
+  // Number("") is 0, so an unset shell variable would otherwise click the
+  // top-left pixel instead of being answered.
+  it.each([
+    ["empty", ""],
+    ["whitespace", "   "],
+  ])("refuses an %s coordinate rather than reading it as 0", (_name, value) => {
+    const built = build("click", { button: "left", x: value, y: "2" });
+
+    expect(built.ok).toBe(false);
+    if (built.ok) return;
+    expect(built.error).toContain("NaN");
+  });
+
+  it("refuses a blank scroll delta rather than reading it as 0", () => {
+    const built = build("scroll", {
+      scrollX: "0",
+      scrollY: "",
+      x: "1",
+      y: "2",
+    });
+
+    expect(built.ok).toBe(false);
+  });
+
+  // The schema is strict, so a scroll carries both deltas or neither. Nothing in
+  // the help says so, which is exactly why the refusal has to.
+  it("refuses a scroll missing one of its two deltas", () => {
+    const built = build("scroll", { scrollY: "300", x: "1", y: "2" });
+
+    expect(built.ok).toBe(false);
+    if (built.ok) return;
+    expect(built.error).toContain("scroll_x");
+  });
 });
 
 describe("parseBrowserAction", () => {

@@ -8,7 +8,10 @@ import {
   type RunnerStore,
   makeRunnerStore,
 } from "~/shell/interactiveRunner/runnerStore.js";
-import { writeScreenshot } from "~/shell/interactiveRunner/writeScreenshot.js";
+import {
+  type ScreenshotWrite,
+  writeScreenshot,
+} from "~/shell/interactiveRunner/writeScreenshot.js";
 import { readStdin } from "~/shell/stdin.js";
 
 /**
@@ -28,7 +31,7 @@ export type InteractiveRunnerDeps = {
   writeScreenshot: (options: {
     imageJpegBase64: string;
     path: string;
-  }) => Promise<void>;
+  }) => Promise<ScreenshotWrite>;
 };
 
 export function makeInteractiveRunnerDeps(options: {

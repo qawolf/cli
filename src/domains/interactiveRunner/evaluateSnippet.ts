@@ -59,7 +59,7 @@ async function readCode(
   }
   if (code.trim() === "") {
     return source === stdinArgument
-      ? { error: interactiveRunnerMessages.stdinEmpty("snippet"), ok: false }
+      ? { error: interactiveRunnerMessages.stdinEmptySnippet, ok: false }
       : { error: interactiveRunnerMessages.snippetEmpty(source), ok: false };
   }
   return { code, ok: true };

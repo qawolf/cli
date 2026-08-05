@@ -96,6 +96,36 @@ describe("handleRunnerExec", () => {
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 
+  it("refuses a file that holds no code, naming it", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+
+    const result = await handleRunnerExec(
+      ctx,
+      { contextFile: undefined, runner: "ci", source: "blank.ts" },
+      makeTestDeps({ readFile: async () => "  \n" }),
+    );
+
+    expect(result?.error).toContain("blank.ts");
+    expect(result?.error).toContain("no code to evaluate");
+    expect(result?.exitCode).toBe(2);
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
+  it("refuses an empty stdin, pointing at a file instead", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+
+    const result = await handleRunnerExec(
+      ctx,
+      { contextFile: undefined, runner: "ci", source: "-" },
+      makeTestDeps({ readStdin: async () => "" }),
+    );
+
+    expect(result?.error).toContain("Nothing arrived on stdin");
+    expect(result?.error).toContain("name a file");
+    expect(result?.exitCode).toBe(2);
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
   it("says so when the snippet file cannot be read", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
 

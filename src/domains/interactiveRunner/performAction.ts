@@ -25,17 +25,21 @@ async function readAction(
 ): Promise<ReturnType<typeof buildBrowserAction>> {
   if (type !== stdinArgument) return buildBrowserAction(type, flags);
 
+  // Refused rather than ignored, for the same reason `act click --text hi` is:
+  // a flag that does not reach the runner has to be answered, because dropping
+  // it performs a different action than the one that was asked for.
+  if (Object.values(flags).some((value) => value !== undefined)) {
+    return { error: interactiveRunnerMessages.actionFlagsWithStdin, ok: false };
+  }
+
   const piped = (await deps.readStdin()).trim();
   if (piped === "") {
-    return { error: interactiveRunnerMessages.stdinEmpty("action"), ok: false };
+    return { error: interactiveRunnerMessages.stdinEmptyAction, ok: false };
   }
   try {
     return parseBrowserAction(JSON.parse(piped));
   } catch {
-    return {
-      error: "Stdin did not hold a JSON action.",
-      ok: false,
-    };
+    return { error: interactiveRunnerMessages.actionNotJson, ok: false };
   }
 }
 

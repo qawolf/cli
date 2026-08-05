@@ -108,4 +108,51 @@ describe("handleRunnerScreenshot", () => {
     expect(result?.exitCode).toBe(4);
     expect(deps.written).toEqual([]);
   });
+
+  // The caller's to fix, so exit 2 rather than the 1 a raw filesystem throw
+  // would have produced.
+  it("reports a path it cannot write to, rather than throwing", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { imageJpegBase64, outcome: "captured" },
+    });
+
+    const result = await handleRunnerScreenshot(
+      ctx,
+      { out: "shot.jpg", runner: "ci" },
+      makeTestDeps({
+        writeScreenshot: async () => ({
+          detail: "EACCES: permission denied",
+          ok: false,
+          reason: "unwritable",
+        }),
+      }),
+    );
+
+    expect(result?.error).toContain("shot.jpg");
+    expect(result?.error).toContain("EACCES");
+    expect(result?.exitCode).toBe(2);
+  });
+
+  // Ours to fix, not the caller's, so it is a 4 and the message says as much.
+  it("reports a payload that did not arrive as an image", async () => {
+    const { callPublicApi, ctx, outputs } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { imageJpegBase64: "", outcome: "captured" },
+    });
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerScreenshot(
+      ctx,
+      { out: "shot.jpg", runner: "ci" },
+      deps,
+    );
+
+    expect(result?.error).toContain("did not arrive as a JPEG");
+    expect(result?.exitCode).toBe(4);
+    expect(deps.written).toEqual([]);
+    expect(outputs()).toEqual([]);
+  });
 });

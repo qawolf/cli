@@ -44,16 +44,33 @@ export async function handleRunnerScreenshot(
   if (!result.ok) return { error: result.error, exitCode: exitCodes.network };
 
   switch (result.value.outcome) {
-    case "captured":
-      await deps.writeScreenshot({
+    case "captured": {
+      const written = await deps.writeScreenshot({
         imageJpegBase64: result.value.imageJpegBase64,
         path: options.out,
       });
+      // A payload that is not an image is the API's to fix, not the caller's;
+      // a path that cannot be written is the other way round.
+      if (!written.ok) {
+        return written.reason === "not-a-jpeg"
+          ? {
+              error: interactiveRunnerMessages.screenshotNotAnImage,
+              exitCode: exitCodes.network,
+            }
+          : {
+              error: interactiveRunnerMessages.screenshotUnwritable(
+                options.out,
+                written.detail,
+              ),
+              exitCode: exitCodes.invalidArgs,
+            };
+      }
       ctx.ui.output(
         { outcome: "captured", path: options.out },
         interactiveRunnerMessages.screenshotWritten(options.out),
       );
       return undefined;
+    }
     // Transient: the desktop starts with the runner's first run, and it serves
     // one see-or-act request at a time.
     case "screen-not-ready":

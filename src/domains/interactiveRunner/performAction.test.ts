@@ -182,7 +182,7 @@ describe("handleRunnerAct", () => {
     });
   });
 
-  it("says so when nothing was piped in", async () => {
+  it("says so when nothing was piped in, without offering a file", async () => {
     const { ctx } = makeAuthCtx();
 
     const result = await handleRunnerAct(
@@ -192,5 +192,39 @@ describe("handleRunnerAct", () => {
     );
 
     expect(result?.error).toContain("Nothing arrived on stdin");
+    expect(result?.error).toContain("name the action type");
+    expect(result?.error).not.toContain("name a file");
+  });
+
+  it("says what it wanted when stdin did not hold JSON", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+
+    const result = await handleRunnerAct(
+      ctx,
+      { flags: noFlags, runner: "ci", type: "-" },
+      makeTestDeps({ readStdin: async () => "click 480 260" }),
+    );
+
+    expect(result?.error).toContain('{"type":"click"');
+    expect(result?.exitCode).toBe(2);
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
+  // Same rule as `act click --text hi`: a flag that cannot reach the runner is
+  // answered rather than dropped.
+  it("refuses an action flag passed alongside -", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+
+    const result = await handleRunnerAct(
+      ctx,
+      { flags: { ...noFlags, x: "5" }, runner: "ci", type: "-" },
+      makeTestDeps({
+        readStdin: async () => '{"type":"click","button":"left","x":1,"y":2}',
+      }),
+    );
+
+    expect(result?.error).toContain("would be ignored");
+    expect(result?.exitCode).toBe(2);
+    expect(callPublicApi).not.toHaveBeenCalled();
   });
 });
