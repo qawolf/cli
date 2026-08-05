@@ -23,5 +23,7 @@ export type AuthCommandContext = CommandContext & {
 
 export type CommandResult = {
   readonly error: string;
+  /** Multi-line detail rendered under the error (json mode emits it as `body`). */
+  readonly errorBody?: string;
   readonly exitCode?: number;
 } | void;
