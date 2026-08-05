@@ -1,6 +1,9 @@
 import { formatSeconds } from "~/core/formatSeconds.js";
 import { pluralize } from "~/core/pluralize.js";
 
+const noRunnerId =
+  "No runner id. Pass --runner, set QAWOLF_RUNNER_ID, or run qawolf runner launch first.";
+
 export const interactiveRunnerMessages = {
   actionFailed: (errorMessage: string) =>
     `The action reached the runner and did not take effect: ${errorMessage}`,
@@ -47,10 +50,8 @@ export const interactiveRunnerMessages = {
     `Stopped following run ${runId} after ${formatSeconds(seconds * 1000)}. The run may still be going: read it with qawolf runner events run-status --run ${runId}, and stop the runner with qawolf runner stop --runner ${runnerId} when you are done. Pass --timeout to wait longer.`,
   missingPackageJson:
     "No package.json in the current directory. A run reads its npm dependencies from one, so it has to travel with the flow.",
-  noRunnerIdForScreenshot:
-    "No runner id. Pass --runner, set QAWOLF_RUNNER_ID, or launch one with qawolf runner launch. A screenshot needs a page as well as a runner: a freshly launched runner has no screen until something opens one, so navigate it or run a flow on it first.",
-  noRunnerId:
-    "No runner id. Pass --runner, set QAWOLF_RUNNER_ID, or run qawolf runner launch first.",
+  noRunnerIdForScreenshot: `${noRunnerId} A screenshot also needs a screen, which a runner gets from its first run: run a flow on it with qawolf runner run.`,
+  noRunnerId,
   notRunning: (id: string) => `Runner ${id} was not running.`,
   runFailed: (errorMessage: string | undefined) =>
     errorMessage === undefined
@@ -65,7 +66,7 @@ export const interactiveRunnerMessages = {
   runnerHasNoScreen:
     "This runner does not run a browser on a virtual desktop, so there is nothing about it to see or drive. Retrying will never help: launch a node20WithPlaywright runner instead.",
   runnerHasNoScreenToEvaluate:
-    "The runner could not evaluate the snippet. This covers a runner that is still starting or busy, and also one with no live page to evaluate against: a freshly launched runner has no page until something opens one, so run a flow on it or navigate it first. If it is not a runner that runs a browser at all, this will never clear. It is not proof the snippet did not run, so do not resubmit one that mutates the page without reading qawolf runner events console first.",
+    "The runner could not evaluate the snippet. This covers a runner that is still starting or busy, and also one with no live page to evaluate against: a freshly launched runner has no page until a run opens one, so run a flow on it with qawolf runner run first. If it is not a runner that runs a browser at all, this will never clear. It is not proof the snippet did not run, so do not resubmit one that mutates the page without reading qawolf runner events console first.",
   runnerUnreachable:
     "The runner could not be reached. It may still be starting, or it may have terminated after inactivity. Retry, or launch it again.",
   screenNeedsARun:

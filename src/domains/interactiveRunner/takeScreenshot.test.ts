@@ -111,9 +111,7 @@ describe("handleRunnerScreenshot", () => {
     expect(result?.exitCode).toBe(2);
   });
 
-  // A runner started for this command would have no screen yet, so auto-launching
-  // one would bill a pod in order to answer screen-not-ready every time.
-  it("never launches a runner, and names both things the caller needs", async () => {
+  it("never launches a runner, and names the screen as well as the runner", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     const deps = makeTestDeps();
 
@@ -125,7 +123,9 @@ describe("handleRunnerScreenshot", () => {
 
     expect(result?.exitCode).toBe(2);
     expect(result?.error).toContain("qawolf runner launch");
-    expect(result?.error).toContain("navigate it or run a flow on it first");
+    // A run is the only thing that starts the virtual desktop, so it is the only
+    // next step worth naming: navigating needs a page a fresh runner has not got.
+    expect(result?.error).toContain("run a flow on it with qawolf runner run");
     expect(callPublicApi).not.toHaveBeenCalled();
     expect(deps.written).toEqual([]);
   });

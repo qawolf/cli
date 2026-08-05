@@ -29,11 +29,8 @@ export async function handleRunnerScreenshot(
   options: { out: string; runner: string | undefined },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
-  // Never launches. A runner started for this command has no screen yet, because
-  // the virtual desktop starts with the runner's first run, so auto-launching
-  // would bill a pod in order to answer `screen-not-ready` every time. Saying
-  // what to do instead costs nothing, and it keeps one rule true across the
-  // group: no read command starts a runner.
+  // Never launches: the virtual desktop starts with the runner's first run, so a
+  // runner started for this command could only answer `screen-not-ready`.
   const resolved = await resolveRunner(
     ctx,
     {
