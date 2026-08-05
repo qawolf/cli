@@ -22,14 +22,27 @@ function seedPackage(
   fs.writeFileSync(join(pkgDir, "package.json"), JSON.stringify({ version }));
 }
 
+function seedPlaywrightCliJs(fs: ReturnType<typeof makeMemoryFs>): void {
+  const pkgDir = join(dir, "node_modules", "playwright");
+  fs.mkdirSync(pkgDir, { recursive: true });
+  fs.writeFileSync(join(pkgDir, "cli.js"), "#!/usr/bin/env node");
+}
+
+function seedShim(
+  fs: ReturnType<typeof makeMemoryFs>,
+  name: string,
+  contents: string,
+): void {
+  fs.mkdirSync(join(dir, "node_modules", ".bin"), { recursive: true });
+  fs.writeFileSync(join(dir, "node_modules", ".bin", name), contents);
+}
+
 function seedAllPackages(fs: ReturnType<typeof makeMemoryFs>): void {
   for (const { name, version } of pinnedPackages) {
     seedPackage(fs, name, version);
   }
-  fs.mkdirSync(join(dir, "node_modules", ".bin"), { recursive: true });
-  for (const name of ["playwright", "appium"]) {
-    fs.writeFileSync(join(dir, "node_modules", ".bin", name), "#!/bin/sh");
-  }
+  seedPlaywrightCliJs(fs);
+  seedShim(fs, "appium", "#!/bin/sh");
 }
 
 describe("readInstalledVersion", () => {
@@ -71,15 +84,6 @@ describe("readInstalledVersion", () => {
   });
 });
 
-function seedShim(
-  fs: ReturnType<typeof makeMemoryFs>,
-  name: string,
-  contents: string,
-): void {
-  fs.mkdirSync(join(dir, "node_modules", ".bin"), { recursive: true });
-  fs.writeFileSync(join(dir, "node_modules", ".bin", name), contents);
-}
-
 describe("pinnedResolutionFailures", () => {
   it("reports the installed version alongside the pinned one", () => {
     const fs = makeMemoryFs();
@@ -105,7 +109,7 @@ describe("pinnedResolutionFailures", () => {
         seedPackage(fs, name, version);
       }
     }
-    seedShim(fs, "playwright", "#!/bin/sh");
+    seedPlaywrightCliJs(fs);
     seedShim(fs, "appium", "#!/bin/sh");
 
     const pinned = pinnedPackages.find((p) => p.name === "appium");
@@ -129,21 +133,37 @@ describe("pinnedResolutionFailures", () => {
 
   // The state WIZ-11284 made rejectable: every package matches, but the
   // directory has no runnable appium.
-  it("reports a missing shim even when every package matches", () => {
+  it("reports a missing appium shim even when every package matches", () => {
     const fs = makeMemoryFs();
     for (const { name, version } of pinnedPackages) {
       seedPackage(fs, name, version);
     }
-    seedShim(fs, "playwright", "#!/bin/sh");
+    seedPlaywrightCliJs(fs);
 
     expect(pinnedResolutionFailures(dir, fs, "linux")).toEqual([
-      { kind: "shim", name: "appium" },
+      { kind: "shim", name: "appium", display: "node_modules/.bin/appium" },
+    ]);
+  });
+
+  it("reports a missing playwright cli.js even when every package matches", () => {
+    const fs = makeMemoryFs();
+    for (const { name, version } of pinnedPackages) {
+      seedPackage(fs, name, version);
+    }
+    seedShim(fs, "appium", "#!/bin/sh");
+
+    expect(pinnedResolutionFailures(dir, fs, "linux")).toEqual([
+      {
+        kind: "shim",
+        name: "playwright",
+        display: "node_modules/playwright/cli.js",
+      },
     ]);
   });
 });
 
 describe("allPinnedResolved", () => {
-  it("returns true when all packages match and both shims exist", () => {
+  it("returns true when all packages match, cli.js and the appium shim exist", () => {
     const fs = makeMemoryFs();
     seedAllPackages(fs);
 
@@ -163,7 +183,7 @@ describe("allPinnedResolved", () => {
     expect(allPinnedResolved(dir, fs, "linux")).toBe(false);
   });
 
-  it("returns false when the .bin/playwright shim is absent", () => {
+  it("returns false when playwright's cli.js is absent", () => {
     const fs = makeMemoryFs();
     for (const { name, version } of pinnedPackages) {
       seedPackage(fs, name, version);
@@ -178,53 +198,49 @@ describe("allPinnedResolved", () => {
     for (const { name, version } of pinnedPackages) {
       seedPackage(fs, name, version);
     }
-    seedShim(fs, "playwright", "#!/bin/sh");
+    seedPlaywrightCliJs(fs);
     // No .bin/appium — the state that used to leave a resolved root with no
     // runnable Appium, so `flows run` failed after install reported success.
 
     expect(allPinnedResolved(dir, fs, "linux")).toBe(false);
   });
 
-  it("returns true when only the Windows .cmd shims exist", () => {
+  // playwright's cli.js is a plain script run through the CLI's own runtime,
+  // so it is platform-independent; only appium still needs Windows shims.
+  it.each([
+    ["appium.cmd", "@echo off"],
+    ["appium.exe", "MZ"],
+  ] as const)("returns true on win32 with cli.js and only %s", (shim, body) => {
     const fs = makeMemoryFs();
     for (const { name, version } of pinnedPackages) {
       seedPackage(fs, name, version);
     }
-    seedShim(fs, "playwright.cmd", "@echo off");
-    seedShim(fs, "appium.cmd", "@echo off");
-
-    expect(allPinnedResolved(dir, fs, "win32")).toBe(true);
-  });
-
-  it("returns true when only the Windows .exe shims exist", () => {
-    const fs = makeMemoryFs();
-    for (const { name, version } of pinnedPackages) {
-      seedPackage(fs, name, version);
-    }
-    seedShim(fs, "playwright.exe", "MZ");
-    seedShim(fs, "appium.exe", "MZ");
+    seedPlaywrightCliJs(fs);
+    seedShim(fs, shim, body);
 
     expect(allPinnedResolved(dir, fs, "win32")).toBe(true);
   });
 
   // CreateProcess reports ENOENT for the extension-less shim, measured on
   // windows-latest in WIZ-11286.
-  it("returns false on win32 when only the extension-less POSIX shim exists", () => {
+  it("returns false on win32 when only the extension-less appium shim exists", () => {
     const fs = makeMemoryFs();
     for (const { name, version } of pinnedPackages) {
       seedPackage(fs, name, version);
     }
-    seedShim(fs, "playwright", "#!/bin/sh");
+    seedPlaywrightCliJs(fs);
+    seedShim(fs, "appium", "#!/bin/sh");
 
     expect(allPinnedResolved(dir, fs, "win32")).toBe(false);
   });
 
-  it("ignores a .cmd shim off win32", () => {
+  it("ignores an appium .cmd shim off win32", () => {
     const fs = makeMemoryFs();
     for (const { name, version } of pinnedPackages) {
       seedPackage(fs, name, version);
     }
-    seedShim(fs, "playwright.cmd", "@echo off");
+    seedPlaywrightCliJs(fs);
+    seedShim(fs, "appium.cmd", "@echo off");
 
     expect(allPinnedResolved(dir, fs, "linux")).toBe(false);
   });

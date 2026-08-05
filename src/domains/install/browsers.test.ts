@@ -7,7 +7,7 @@ import type { SpawnFn } from "~/shell/spawn.js";
 import { installBrowserList } from "./browsers.js";
 
 const envDir = "/fake/env";
-const playwrightBin = join(envDir, "node_modules", ".bin", "playwright");
+const playwrightCliJs = join(envDir, "node_modules", "playwright", "cli.js");
 
 const ctx = {
   ui: { withProgress: () => Promise.resolve() },
@@ -17,11 +17,12 @@ const spawn: SpawnFn = () =>
   Promise.resolve({ exitCode: 0, stdout: "", stderr: "" });
 
 describe("installBrowserList", () => {
-  it("blames the resolved deps root when the Playwright shim is missing", async () => {
+  it("blames the resolved deps root when playwright's cli.js is missing", async () => {
     let caught: unknown;
     try {
       await installBrowserList(ctx, ["chromium"], {
         spawn,
+        execPath: "/fake/bin/node",
         platform: "linux",
         browserDeps: false,
         envDir,
@@ -33,7 +34,7 @@ describe("installBrowserList", () => {
 
     expect(caught).toBeInstanceOf(Error);
     expect((caught as Error).message).toBe(
-      `Playwright not found at ${playwrightBin}.\n` +
+      `Playwright not found at ${playwrightCliJs}.\n` +
         "Run `qawolf install` to install the runtime dependencies.",
     );
   });

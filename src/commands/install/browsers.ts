@@ -19,6 +19,7 @@ export async function handleInstallBrowsers(
   return installBrowsers(ctx, pattern, {
     cwd,
     spawn: defaultSpawn,
+    execPath: process.execPath,
     platform: process.platform,
     browserDeps,
     expandPatterns: (patterns, dir) =>

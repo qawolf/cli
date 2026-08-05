@@ -7,7 +7,8 @@ import { makeCtx, makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import type { InstallBrowsersDeps } from "~/domains/install/browsers.js";
 
 export const envDir = "/fake";
-export const fakeCli = join(envDir, "node_modules", ".bin", "playwright");
+export const fakeExecPath = "/fake/bin/node";
+export const fakeCli = join(envDir, "node_modules", "playwright", "cli.js");
 
 export const ok: SpawnResult = { exitCode: 0, stdout: "", stderr: "" };
 
@@ -38,6 +39,7 @@ export function makeDeps(overrides: DepsOverrides): InstallBrowsersDeps {
   return {
     cwd: "/proj",
     spawn: overrides.spawn ?? spawnSequence(ok),
+    execPath: fakeExecPath,
     platform: overrides.platform ?? "darwin",
     browserDeps: overrides.browserDeps ?? true,
     expandPatterns: mock<InstallBrowsersDeps["expandPatterns"]>(() =>
