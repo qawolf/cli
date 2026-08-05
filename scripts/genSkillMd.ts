@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
-// Regenerates the commands table in skills/qawolf-cli/SKILL.md from the
-// Commander program tree. Runs as part of `bun run generate`; the prose
-// around the table is hand-written and stays untouched.
+// Generates skills/qawolf-cli/SKILL.md from its source template and the
+// Commander program tree.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -10,13 +9,18 @@ import { renderCommandsTable, spliceCommandsTable } from "~/commands/skill.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 
 const skillMdPath = join(import.meta.dirname, "../skills/qawolf-cli/SKILL.md");
+const skillTemplatePath = join(
+  import.meta.dirname,
+  "../src/commands/qawolfCliSkill.template.md",
+);
 
-const skillMd = readFileSync(skillMdPath, "utf8");
+const skillTemplate = readFileSync(skillTemplatePath, "utf8");
 const table = renderCommandsTable(
   createProgram({ signals: makeNoopSignals() }),
 );
-const updated = spliceCommandsTable(skillMd, table);
-if (updated !== skillMd) {
-  writeFileSync(skillMdPath, updated);
-  console.log("Updated skills/qawolf-cli/SKILL.md commands table");
+const skillMd = spliceCommandsTable(skillTemplate, table);
+const currentSkillMd = readFileSync(skillMdPath, "utf8");
+if (skillMd !== currentSkillMd) {
+  writeFileSync(skillMdPath, skillMd);
+  console.log("Updated skills/qawolf-cli/SKILL.md");
 }

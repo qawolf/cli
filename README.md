@@ -69,7 +69,7 @@ Run any command with `--help` for its flags and options.
 
 ## Agent integration
 
-The npm package ships [`skills/qawolf-cli/SKILL.md`](skills/qawolf-cli/SKILL.md), a Claude Code agent skill that describes the CLI's command surface for AI agents. It is auto-generated from the command tree (`bun run generate`) and kept in sync by the test suite.
+The npm package ships [`skills/qawolf-cli/SKILL.md`](skills/qawolf-cli/SKILL.md), a Claude Code agent skill that describes the CLI's command surface for AI agents. It is generated from its [source template](src/commands/qawolfCliSkill.template.md) and the command tree (`bun run generate`), and kept in sync by the test suite.
 
 ## Reference
 
