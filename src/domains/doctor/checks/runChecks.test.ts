@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
+import { playwrightVersion } from "~/generated/dependencyVersions.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 
 import { runChecks } from "./index.js";
@@ -9,6 +10,7 @@ afterEach(() => {
 });
 
 const androidDeps = {
+  execPath: "/fake/bin/node",
   runAndroidChecks: false,
   androidHome: undefined,
   checkExists: () => true,
@@ -22,7 +24,7 @@ describe("runChecks", () => {
     const spawn = mock<SpawnFn>(() =>
       Promise.resolve<SpawnResult>({
         exitCode: 0,
-        stdout: "Version 1.49.1",
+        stdout: `Version ${playwrightVersion}`,
         stderr: "",
       }),
     );
@@ -57,7 +59,7 @@ describe("runChecks", () => {
     const spawn = mock<SpawnFn>(() =>
       Promise.resolve<SpawnResult>({
         exitCode: 0,
-        stdout: "Version 1.49.1\n- uiautomator2@3.7.0 [installed]\n",
+        stdout: `Version ${playwrightVersion}\n- uiautomator2@3.7.0 [installed]\n`,
         stderr: "",
       }),
     );
@@ -98,7 +100,7 @@ describe("runChecks", () => {
     const spawn = mock<SpawnFn>(() =>
       Promise.resolve<SpawnResult>({
         exitCode: 0,
-        stdout: "Version 1.49.1",
+        stdout: `Version ${playwrightVersion}`,
         stderr: "",
       }),
     );

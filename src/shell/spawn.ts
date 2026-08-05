@@ -31,7 +31,7 @@ export type SpawnFn = (
 //   ~/core/cmdEscape.js escapes them, so a meta character in a value cannot
 //   inject a command. The target must forward its arguments with %*, which
 //   the npm shims and the Android .bat launchers both do. Call sites today:
-//   playwright.cmd, npm.cmd and appium.cmd with literal args. sdkmanager.bat
+//   npm.cmd and appium.cmd with literal args. sdkmanager.bat
 //   and avdmanager.bat take AVD names and system images from flow metadata in
 //   the user's own repo. Audit any new .cmd/.bat caller before merging.
 export function buildSpawnCommand(
