@@ -1,6 +1,8 @@
 import { classifyTarget, flowBasename } from "~/core/flowMeta.js";
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
+import { createCompositeReporter } from "~/shell/reporter/createCompositeReporter.js";
+import { formatErrorWithCause } from "~/shell/reporter/formatErrorWithCause.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
 import { runnerMessages } from "~/core/messages/index.js";
@@ -91,9 +93,17 @@ export async function flowsRun(
 
   const { webOptions, androidOptions } = buildRunOptions(flags);
 
+  // In json mode the reporter's streamed output is discarded (ui.write is a
+  // no-op), so collect each failure's detail to attach to the final error.
+  const failureDetails: string[] = [];
+  const reporter = createCompositeReporter([
+    deps.reporter,
+    { onFlowFail: ({ err }) => failureDetails.push(formatErrorWithCause(err)) },
+  ]);
+
   const result = await executeFlows({
     ctx,
-    deps,
+    deps: { ...deps, reporter },
     flags,
     flows,
     webFlows,
@@ -123,6 +133,12 @@ export async function flowsRun(
   ctx.ui.gap();
 
   if (counts.flowsFailed > 0) {
-    return { error: runnerMessages.flowsFailed(counts.flowsFailed) };
+    const error = runnerMessages.flowsFailed(counts.flowsFailed);
+    // Human and agent modes already streamed the detail via the reporter;
+    // attaching it here too would print every failure twice.
+    if (ctx.outputMode === "json" && failureDetails.length > 0) {
+      return { error, errorBody: failureDetails.join("\n\n") };
+    }
+    return { error };
   }
 }
