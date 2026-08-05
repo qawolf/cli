@@ -9,6 +9,7 @@ import {
 } from "~/domains/publicApi/commandSpecs.js";
 import { handlePublicApiCommand } from "~/domains/publicApi/handle.js";
 import { declareCommandKind } from "~/commands/commandKind.js";
+import type { FlagSpec } from "~/core/publicApi/flagSpecs.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 type AuthDeps = Parameters<typeof withAuthContext>[2];
@@ -37,6 +38,9 @@ const skippedContractNames: ReadonlySet<string> = new Set([
   ...handWrittenContractNames,
   "issue.update",
 ]);
+
+const commanderFlags = (flag: FlagSpec): string =>
+  flag.alias === undefined ? flag.flag : `${flag.alias}, ${flag.flag}`;
 
 function resolveGroup(parent: Command, segment: string): Command {
   const existing = parent.commands.find(
@@ -79,9 +83,9 @@ function registerSpec(
   ).description(spec.description);
   for (const flag of spec.flags) {
     if (flag.required) {
-      command.requiredOption(flag.flag, flag.description);
+      command.requiredOption(commanderFlags(flag), flag.description);
     } else {
-      command.option(flag.flag, flag.description);
+      command.option(commanderFlags(flag), flag.description);
     }
   }
 

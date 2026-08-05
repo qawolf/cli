@@ -37,7 +37,7 @@ describe("registerPublicApiCommands", () => {
       publicContractsV1.run.create.description,
     );
     expect(create?.options.map((option) => option.flags)).toEqual([
-      "--environment-id <value>",
+      "--env, --environment-id <value>",
       "--environment-variables <KEY=VALUE...>",
       "--ignore-rules",
       "--pull-request-number <value>",
@@ -86,6 +86,33 @@ describe("registerPublicApiCommands", () => {
     expect(callPublicApi).toHaveBeenCalledWith(publicContractsV1.run.create, {
       environmentId,
       flowIds: [flowId],
+      ignoreRules: false,
+      tagNames: [],
+    });
+  });
+
+  it("fills the environmentId contract field from --env", async () => {
+    const environmentId = "environment-id";
+    const callPublicApi = makeCallPublicApiMock().mockResolvedValue({
+      ok: true,
+      value: { runId: "run-id" },
+    });
+    const program = makeProgram();
+    registerPublicApiCommands(program, createSignalRegistry(), {
+      authDeps: {
+        requireApiKey: async () => ({ key: "qawolf_key", source: "env" }),
+        createPlatform: () => makeMockPlatformClient({ callPublicApi }),
+      },
+    });
+
+    await program.parseAsync(
+      ["run", "create", "--env", environmentId, "--flow-ids", "flow-id"],
+      { from: "user" },
+    );
+
+    expect(callPublicApi).toHaveBeenCalledWith(publicContractsV1.run.create, {
+      environmentId,
+      flowIds: ["flow-id"],
       ignoreRules: false,
       tagNames: [],
     });

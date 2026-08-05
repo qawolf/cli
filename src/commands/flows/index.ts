@@ -2,6 +2,7 @@ import type { Command } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
 import { withContext } from "~/commands/context.js";
+import { environmentFlagUsage } from "~/core/environmentFlag.js";
 import { flowsMessages } from "~/core/messages/index.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
@@ -21,7 +22,7 @@ Examples:
 
 type FlowsListOptions = {
   readonly remote: boolean;
-  readonly env: string | undefined;
+  readonly environmentId: string | undefined;
   readonly includeDrafts: boolean;
 };
 
@@ -48,7 +49,7 @@ export function registerFlowsCommand(
       false,
     )
     .option(
-      "--env <env>",
+      environmentFlagUsage,
       "Environment to list flows from (with --remote; defaults to QAWOLF_ENVIRONMENT, or an interactive picker)",
     )
     .option(
@@ -67,7 +68,7 @@ export function registerFlowsCommand(
           return withResolvedEnv(
             signals,
             {
-              explicit: opts.env,
+              explicit: opts.environmentId,
               requiredMessage: flowsMessages.list.remoteRequiresEnv,
             },
             (ctx, env) =>
@@ -77,7 +78,7 @@ export function registerFlowsCommand(
               }),
           )(opts, command);
         }
-        if (opts.env !== undefined || opts.includeDrafts) {
+        if (opts.environmentId !== undefined || opts.includeDrafts) {
           return withContext(signals, async () => ({
             error: flowsMessages.list.flagsRequireRemote,
           }))(opts, command);

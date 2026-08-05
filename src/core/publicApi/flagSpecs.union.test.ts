@@ -50,6 +50,7 @@ describe("buildFlagSpecs union inputs", () => {
         {
           field: "type",
           flag: "--type <value>",
+          alias: undefined,
           description: "One of: bug, coverageRequest",
           required: true,
           kind: "string",
@@ -57,6 +58,7 @@ describe("buildFlagSpecs union inputs", () => {
         {
           field: "name",
           flag: "--name <value>",
+          alias: undefined,
           description: "",
           required: true,
           kind: "string",
@@ -64,6 +66,7 @@ describe("buildFlagSpecs union inputs", () => {
         {
           field: "priority",
           flag: "--priority <value>",
+          alias: undefined,
           description: "",
           required: false,
           kind: "string",
@@ -71,6 +74,7 @@ describe("buildFlagSpecs union inputs", () => {
         {
           field: "estimatedDueDate",
           flag: "--estimated-due-date <value>",
+          alias: undefined,
           description: "Due date",
           required: false,
           kind: "string",

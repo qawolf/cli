@@ -166,35 +166,38 @@ Run flows matching [pattern], or every flow when omitted; with --env, pull
 missing flows from that QA Wolf environment
 
 Options:
-  --retries <n>         Retry each failing flow up to this many times (default:
-                        0)
-  --bail                Stop the run after the first failure (default: false)
-  --workers <n>         Parallel worker count for web flows (default: 1)
-  --timeout <ms>        Default timeout for actions and assertions, in
-                        milliseconds (default: 30000)
-  --video <mode>        Record video: on | off | retain-on-failure (default:
-                        "off")
-  --trace <mode>        Record Playwright trace: on | off | retain-on-failure
-                        (default: "off")
-  --har <mode>          Record HAR network log: on | off | retain-on-failure
-                        (default: "off")
-  --har-content <mode>  HAR response bodies: omit | full (full uses more memory)
-                        (default: "omit")
-  --output-dir <path>   Directory for run artifacts (videos, traces, HAR)
-                        (default: ".qawolf/output")
-  --junit [path]        Write a JUnit XML report (default:
-                        <output-dir>/junit-report.xml)
-  --headed              Show the browser window instead of headless (default:
-                        false)
-  --env <env>           Pull and run a flow from this environment (UUID or slug)
-                        if not cached locally
-  --deps <dir>          Use this prepared dependency directory instead of
-                        auto-installing the runtime; or set QAWOLF_RUNTIME_DIR
-                        to relocate the managed runtime
-  --no-browser-deps     Skip installing OS-level browser dependencies (Linux
-                        --with-deps, which needs root); requires the system
-                        libraries to already be present
-  -h, --help            display help for command
+  --retries <n>                  Retry each failing flow up to this many times
+                                 (default: 0)
+  --bail                         Stop the run after the first failure (default:
+                                 false)
+  --workers <n>                  Parallel worker count for web flows (default:
+                                 1)
+  --timeout <ms>                 Default timeout for actions and assertions, in
+                                 milliseconds (default: 30000)
+  --video <mode>                 Record video: on | off | retain-on-failure
+                                 (default: "off")
+  --trace <mode>                 Record Playwright trace: on | off |
+                                 retain-on-failure (default: "off")
+  --har <mode>                   Record HAR network log: on | off |
+                                 retain-on-failure (default: "off")
+  --har-content <mode>           HAR response bodies: omit | full (full uses
+                                 more memory) (default: "omit")
+  --output-dir <path>            Directory for run artifacts (videos, traces,
+                                 HAR) (default: ".qawolf/output")
+  --junit [path]                 Write a JUnit XML report (default:
+                                 <output-dir>/junit-report.xml)
+  --headed                       Show the browser window instead of headless
+                                 (default: false)
+  --env, --environment-id <env>  Pull and run a flow from this environment (UUID
+                                 or slug) if not cached locally
+  --deps <dir>                   Use this prepared dependency directory instead
+                                 of auto-installing the runtime; or set
+                                 QAWOLF_RUNTIME_DIR to relocate the managed
+                                 runtime
+  --no-browser-deps              Skip installing OS-level browser dependencies
+                                 (Linux --with-deps, which needs root); requires
+                                 the system libraries to already be present
+  -h, --help                     display help for command
 
 Examples:
   $ qawolf flows run
@@ -211,13 +214,14 @@ List flows matching [pattern] from the local project, or from a QA Wolf
 environment with --remote
 
 Options:
-  --remote          List flows from the QA Wolf platform instead of the local
-                    project (default: false)
-  --env <env>       Environment to list flows from (with --remote; defaults to
-                    QAWOLF_ENVIRONMENT, or an interactive picker)
-  --include-drafts  Include draft flows in the listing (requires --remote)
-                    (default: false)
-  -h, --help        display help for command
+  --remote                       List flows from the QA Wolf platform instead of
+                                 the local project (default: false)
+  --env, --environment-id <env>  Environment to list flows from (with --remote;
+                                 defaults to QAWOLF_ENVIRONMENT, or an
+                                 interactive picker)
+  --include-drafts               Include draft flows in the listing (requires
+                                 --remote) (default: false)
+  -h, --help                     display help for command
 
 Examples:
   $ qawolf flows list
@@ -233,12 +237,14 @@ exports[`--help output qawolf flows pull 1`] = `
 Download an environment's flows into the local .qawolf/<env>/ cache
 
 Options:
-  --env <env>   Environment to pull from (UUID or kebab-case slug); defaults to
-                QAWOLF_ENVIRONMENT, or an interactive picker
-  --out <path>  Destination directory (defaults to .qawolf/<env>/)
-  --yes         Overwrite locally-modified files without prompting (default:
-                false)
-  -h, --help    display help for command
+  --env, --environment-id <env>  Environment to pull from (UUID or kebab-case
+                                 slug); defaults to QAWOLF_ENVIRONMENT, or an
+                                 interactive picker
+  --out <path>                   Destination directory (defaults to
+                                 .qawolf/<env>/)
+  --yes                          Overwrite locally-modified files without
+                                 prompting (default: false)
+  -h, --help                     display help for command
 
 Examples:
   $ qawolf flows pull --env staging

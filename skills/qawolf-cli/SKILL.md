@@ -26,8 +26,8 @@ and does not select the deployment host used by CLI commands.
 
 For tasks that need the current environment, use `QAWOLF_ENVIRONMENT_ID`. If it
 is unset, select an id from `qawolf --json environment find` and export it.
-Check the command's help for its environment flag: variable commands use
-`--environment-id`; `qawolf flows run` uses `--env`.
+Every command that takes an environment accepts `--env <env>`, and
+`--environment-id <env>` is an equivalent alias.
 
 ## Output
 

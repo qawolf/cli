@@ -22,6 +22,7 @@ describe("buildFlagSpecs", () => {
         {
           field: "environmentId",
           flag: "--environment-id <value>",
+          alias: "--env",
           description: "Environment to run in",
           required: true,
           kind: "string",
@@ -29,6 +30,7 @@ describe("buildFlagSpecs", () => {
         {
           field: "environmentVariables",
           flag: "--environment-variables <KEY=VALUE...>",
+          alias: undefined,
           description: "",
           required: false,
           kind: "key-value-record",
@@ -36,6 +38,7 @@ describe("buildFlagSpecs", () => {
         {
           field: "flowIds",
           flag: "--flow-ids <values...>",
+          alias: undefined,
           description: "",
           required: true,
           kind: "string-array",
@@ -43,6 +46,7 @@ describe("buildFlagSpecs", () => {
         {
           field: "ignoreRules",
           flag: "--ignore-rules",
+          alias: undefined,
           description: "",
           required: false,
           kind: "boolean",
@@ -50,6 +54,7 @@ describe("buildFlagSpecs", () => {
         {
           field: "maxRetries",
           flag: "--max-retries <value>",
+          alias: undefined,
           description: "",
           required: false,
           kind: "number",
@@ -79,6 +84,24 @@ describe("buildFlagSpecs", () => {
     ]);
   });
 
+  it("drops the environmentId alias when the schema owns an env field", () => {
+    const schema = z.object({
+      env: z.string(),
+      environmentId: z.string(),
+    });
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(
+      result.flags.map((spec) => ({ field: spec.field, alias: spec.alias })),
+    ).toEqual([
+      { field: "env", alias: undefined },
+      { field: "environmentId", alias: undefined },
+    ]);
+  });
+
   it("merges an intersection of object schemas into one flag set", () => {
     const schema = z
       .object({ environmentId: z.string().describe("Environment id") })
@@ -99,6 +122,7 @@ describe("buildFlagSpecs", () => {
         {
           field: "environmentId",
           flag: "--environment-id <value>",
+          alias: "--env",
           description: "Environment id",
           required: true,
           kind: "string",
@@ -106,6 +130,7 @@ describe("buildFlagSpecs", () => {
         {
           field: "flowIds",
           flag: "--flow-ids <values...>",
+          alias: undefined,
           description: "",
           required: false,
           kind: "string-array",
@@ -113,6 +138,7 @@ describe("buildFlagSpecs", () => {
         {
           field: "tagNames",
           flag: "--tag-names <values...>",
+          alias: undefined,
           description: "",
           required: false,
           kind: "string-array",

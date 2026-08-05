@@ -60,6 +60,13 @@ describe("flows list flag combinations", () => {
     expect(output).toContain(flowsMessages.list.flagsRequireRemote);
   });
 
+  it("rejects --environment-id without --remote", async () => {
+    const output = await runList(["--environment-id", "staging"]);
+
+    expect(process.exitCode).toBe(1);
+    expect(output).toContain(flowsMessages.list.flagsRequireRemote);
+  });
+
   it("rejects --include-drafts without --remote", async () => {
     const output = await runList(["--include-drafts"]);
 

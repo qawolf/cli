@@ -9,6 +9,7 @@ import type {
   TraceMode,
   VideoMode,
 } from "~/core/types.js";
+import { environmentFlagUsage } from "~/core/environmentFlag.js";
 import { defaultOutputDir } from "~/core/paths.js";
 import { parseEnum, parseInteger } from "~/domains/runner/runFlagParsers.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
@@ -96,7 +97,7 @@ export function registerFlowsRunCommand(
     )
     .option("--headed", "Show the browser window instead of headless", false)
     .option(
-      "--env <env>",
+      environmentFlagUsage,
       "Pull and run a flow from this environment (UUID or slug) if not cached locally",
     )
     .option(
@@ -111,11 +112,11 @@ export function registerFlowsRunCommand(
     .action(
       (
         pattern: string | undefined,
-        opts: FlowsRunFlags & { env?: string },
+        opts: FlowsRunFlags & { environmentId?: string },
         command: Command,
       ) => {
-        if (opts.env !== undefined) {
-          const hybridFlags = { ...opts, env: opts.env };
+        if (opts.environmentId !== undefined) {
+          const hybridFlags = { ...opts, env: opts.environmentId };
           return withAuthContext(signals, (ctx) =>
             handleHybridFlowsRun(ctx, pattern, hybridFlags),
           )(opts, command);
