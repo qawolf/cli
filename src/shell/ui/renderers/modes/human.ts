@@ -1,4 +1,5 @@
 import type { StyledClack } from "~/shell/ui/clack/index.js";
+import { linkifyUrls } from "~/shell/ui/hyperlinks.js";
 import { writeStdoutRaw } from "~/shell/ui/renderers/write.js";
 import { finalizeResults } from "./progress.js";
 import type { RendererSet } from "./types.js";
@@ -6,7 +7,11 @@ import type { RendererSet } from "./types.js";
 export function createHumanRenderers(
   clack: StyledClack,
   verboseTarget?: { write: ((msg: string) => void) | undefined },
+  options: { hyperlinks: boolean } = { hyperlinks: false },
 ): RendererSet {
+  const linkify = (text: string): string =>
+    options.hyperlinks ? linkifyUrls(text) : text;
+
   return {
     intro: (title) => clack.intro(title),
     note: (message, title) => clack.note(message, title),
@@ -14,18 +19,20 @@ export function createHumanRenderers(
     cancel: (message) => clack.cancel(message),
     step: (message, progress) => {
       clack.log.step(
-        progress
-          ? `[${String(progress.current)}/${String(progress.total)}] ${message}`
-          : message,
+        linkify(
+          progress
+            ? `[${String(progress.current)}/${String(progress.total)}] ${message}`
+            : message,
+        ),
       );
     },
-    success: (message) => clack.log.success(message),
-    warn: (message) => clack.log.warn(message),
-    info: (message) => clack.log.info(message),
+    success: (message) => clack.log.success(linkify(message)),
+    warn: (message) => clack.log.warn(linkify(message)),
+    info: (message) => clack.log.info(linkify(message)),
     error: (title, body) => {
-      clack.log.error(title + (body ? `\n${body}` : ""));
+      clack.log.error(linkify(title + (body ? `\n${body}` : "")));
     },
-    output: (_data, humanMessage) => clack.log.info(humanMessage),
+    output: (_data, humanMessage) => clack.log.info(linkify(humanMessage)),
     gap: () => process.stderr.write("\n"),
     write: (text) => writeStdoutRaw(text),
     withProgress: async (steps, done) => {

@@ -115,6 +115,28 @@ describe("human renderers", () => {
       createHumanRenderers(clack).output({ id: 1 }, "Operation succeeded");
       expect(clack.log.info).toHaveBeenCalledWith("Operation succeeded");
     });
+
+    it("leaves urls plain when hyperlinks are unsupported", () => {
+      const clack = makeClack();
+      createHumanRenderers(clack, undefined, { hyperlinks: false }).output(
+        { url: "https://app.qawolf.com/runs/rn1" },
+        "url: https://app.qawolf.com/runs/rn1",
+      );
+      expect(clack.log.info).toHaveBeenCalledWith(
+        "url: https://app.qawolf.com/runs/rn1",
+      );
+    });
+
+    it("wraps urls in OSC 8 hyperlinks when supported", () => {
+      const clack = makeClack();
+      createHumanRenderers(clack, undefined, { hyperlinks: true }).output(
+        { url: "https://app.qawolf.com/runs/rn1" },
+        "url: https://app.qawolf.com/runs/rn1",
+      );
+      expect(clack.log.info).toHaveBeenCalledWith(
+        "url: \x1b]8;;https://app.qawolf.com/runs/rn1\x07https://app.qawolf.com/runs/rn1\x1b]8;;\x07",
+      );
+    });
   });
 
   describe("gap", () => {

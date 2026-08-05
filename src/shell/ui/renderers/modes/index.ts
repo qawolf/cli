@@ -7,14 +7,20 @@ import type { RendererSet } from "./types.js";
 
 export type { RendererSet } from "./types.js";
 
-export function pickRenderers(
-  mode: OutputMode,
-  clack: StyledClack,
-  verboseTarget?: { write: ((msg: string) => void) | undefined },
-): RendererSet {
+export function pickRenderers({
+  mode,
+  clack,
+  verboseTarget,
+  hyperlinks,
+}: {
+  mode: OutputMode;
+  clack: StyledClack;
+  verboseTarget: { write: ((msg: string) => void) | undefined } | undefined;
+  hyperlinks: boolean;
+}): RendererSet {
   switch (mode) {
     case "human":
-      return createHumanRenderers(clack, verboseTarget);
+      return createHumanRenderers(clack, verboseTarget, { hyperlinks });
     case "agent":
       return createAgentRenderers();
     case "json":

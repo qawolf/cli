@@ -12,6 +12,7 @@ export function createUI(
   mode: OutputMode,
   opts: {
     clack?: StyledClack;
+    hyperlinks?: boolean;
     verboseTarget?: { write: ((msg: string) => void) | undefined };
   } = {},
 ): UI {
@@ -19,7 +20,12 @@ export function createUI(
 
   return {
     mode,
-    ...pickRenderers(mode, clack, opts.verboseTarget),
+    ...pickRenderers({
+      mode,
+      clack,
+      verboseTarget: opts.verboseTarget,
+      hyperlinks: opts.hyperlinks ?? false,
+    }),
     confirm: createConfirm({ mode, clack }),
     password: createPassword({ mode, clack }),
     select: createSelect({ mode, clack }),

@@ -20,6 +20,7 @@ import {
   detectOutputMode,
   isInteractive,
 } from "~/shell/ui/env.js";
+import { supportsHyperlinks } from "~/shell/ui/hyperlinks.js";
 import { createUI } from "~/shell/ui/index.js";
 import { createVerboseContext } from "~/shell/ui/createVerboseContext.js";
 import type {
@@ -71,6 +72,10 @@ export function buildBaseContext(
   const fs = makeDefaultFs();
   const ui = createUI(outputMode, {
     clack,
+    hyperlinks: supportsHyperlinks({
+      env,
+      stdoutIsTTY: Boolean(process.stdout.isTTY),
+    }),
     ...(verboseTarget ? { verboseTarget } : {}),
   });
   const updateNotifier = startUpdateCheck({
