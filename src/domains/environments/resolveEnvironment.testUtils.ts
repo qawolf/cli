@@ -1,6 +1,15 @@
+import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { mock } from "bun:test";
+import type { z } from "zod";
 
+import type { PlatformResult } from "~/shell/platform/requestWithRetry.js";
 import type { ResolveEnvironmentDeps } from "./resolveEnvironment.js";
+
+const findContract = publicContractsV1.environment.find;
+const getContract = publicContractsV1.environment.get;
+
+type FindOutput = z.output<typeof findContract.output>;
+type GetOutput = z.output<typeof getContract.output>;
 
 export type Page = {
   environments: {
@@ -21,26 +30,54 @@ export function makeDeps(args: {
   // Every fetch returns a page with a nextCursor, so pagination never
   // terminates on its own — for testing the page cap.
   endlessCursor?: boolean;
+  // environment.get result for an explicit/env-var ref. Tests that never
+  // trigger ref resolution omit both getEnv and getError.
+  getEnv?: Page["environments"][number];
+  getError?: string;
   selectAnswers?: string[];
   selectCancelled?: boolean;
 }) {
   const pages = args.pages ?? [];
   let call = 0;
-  const callPublicApi = mock(async () => {
-    if (args.findError !== undefined) {
-      return { ok: false as const, error: args.findError };
-    }
-    if (args.endlessCursor) {
-      return {
-        ok: true as const,
-        value: { environments: [], nextCursor: "again" },
-      };
-    }
-    const page = pages[call];
-    call += 1;
-    if (page === undefined) throw new Error("unexpected extra page fetch");
-    return { ok: true as const, value: page };
-  });
+  const findEnvironments = mock(
+    async (): Promise<PlatformResult<FindOutput>> => {
+      if (args.findError !== undefined) {
+        return { ok: false, error: args.findError };
+      }
+      if (args.endlessCursor) {
+        return { ok: true, value: { environments: [], nextCursor: "again" } };
+      }
+      const page = pages[call];
+      call += 1;
+      if (page === undefined) throw new Error("unexpected extra page fetch");
+      return { ok: true, value: page };
+    },
+  );
+  const getEnvironment = mock(
+    async (_input: unknown): Promise<PlatformResult<GetOutput>> => {
+      if (args.getError !== undefined) {
+        return { ok: false, error: args.getError };
+      }
+      const value = args.getEnv;
+      if (value === undefined)
+        throw new Error("unexpected environment.get call");
+      return { ok: true, value };
+    },
+  );
+
+  function callPublicApi(
+    contract: typeof findContract,
+    input: z.input<typeof findContract.input>,
+  ): Promise<PlatformResult<FindOutput>>;
+  function callPublicApi(
+    contract: typeof getContract,
+    input: z.input<typeof getContract.input>,
+  ): Promise<PlatformResult<GetOutput>>;
+  function callPublicApi(contract: { name: string }, input: unknown) {
+    if (contract.name === getContract.name) return getEnvironment(input);
+    return findEnvironments();
+  }
+
   // One queued answer per expected prompt, in order (kind pick, then env
   // pick). A test that expects a single prompt queues a single answer.
   const answers = [...(args.selectAnswers ?? [])];
@@ -56,7 +93,7 @@ export function makeDeps(args: {
     ui: { mode: args.mode ?? "human", info, select },
     env: { QAWOLF_ENVIRONMENT: args.envVar },
   };
-  return { deps, callPublicApi, select, info };
+  return { deps, findEnvironments, getEnvironment, select, info };
 }
 
 export function env(
