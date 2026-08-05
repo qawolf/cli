@@ -1,5 +1,15 @@
 # @qawolf/cli
 
+## 1.6.0
+
+### Minor Changes
+
+- e8acd95: `qawolf auth whoami` now works with organization and user API keys, not just team keys. With an organization key it shows the organization; with a user key it shows the signed-in user (email) and their organization. Previously any non-team key failed with "Could not verify API key: unexpected response format".
+
+### Patch Changes
+
+- cb561d7: Teach agents to load the QA Wolf CLI skill for environment-variable and other public API tasks, and document how to use the current environment id.
+
 ## 1.5.0
 
 ### Minor Changes
