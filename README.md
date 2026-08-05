@@ -69,7 +69,29 @@ Run any command with `--help` for its flags and options.
 
 ## Agent integration
 
-The npm package ships [`skills/qawolf-cli/SKILL.md`](skills/qawolf-cli/SKILL.md), a Claude Code agent skill that describes the CLI's command surface for AI agents. It is generated from its [source template](src/commands/qawolfCliSkill.template.md) and the command tree (`bun run generate`), and kept in sync by the test suite.
+This repository ships a [`qawolf-cli` Agent Skill](skills/qawolf-cli/SKILL.md) that follows the open [Agent Skills specification](https://agentskills.io/specification). It works with compatible harnesses such as Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, and OpenCode.
+
+Install the CLI first, then use the cross-harness [`skills`](https://github.com/vercel-labs/skills) installer to install the skill globally:
+
+```bash
+npm install -g @qawolf/cli
+npx skills add qawolf/cli --skill qawolf-cli --global
+```
+
+The installer detects supported harnesses and prompts you to select where to install the skill. To target specific harnesses non-interactively:
+
+```bash
+npx skills add qawolf/cli \
+  --skill qawolf-cli \
+  --global \
+  --agent claude-code \
+  --agent codex \
+  --yes
+```
+
+Omit `--global` to install the skill only for the current project. The skill also ships in the npm package for consumers that manage skill files directly.
+
+The skill is generated from its [source template](src/commands/qawolfCliSkill.template.md) and the command tree (`bun run generate`), and kept in sync by the test suite.
 
 ## Reference
 
