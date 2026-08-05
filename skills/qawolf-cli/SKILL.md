@@ -72,11 +72,20 @@ each printed line from the payload alone to the whole envelope (`sequence`,
 `recordedAt`, `payload`). Both are JSON. Pass it when you want to page by
 sequence, omit it when you want the payloads themselves.
 
-Exit codes are stable and worth branching on: `1` means the thing you asked for
-was attempted and did not succeed (a run that failed, an action that did not
-take effect); `2` means you asked for something impossible (bad arguments, or a
-runner that can never do it); `4` means it could not be served right now and is
-worth retrying. `qawolf runner --help` and `docs/exit-codes.md` carry the rest.
+Exit codes are stable and worth branching on. They are the only machine-readable
+signal on a failure: error text is prose and not stable across versions.
+
+- `0` succeeded
+- `1` attempted and did not succeed: a run that failed, an action that did not
+  take effect, a snippet that threw
+- `2` impossible as asked: bad arguments, or a runner that can never do it
+- `3` missing or invalid `QAWOLF_API_KEY`
+- `4` could not be served right now, and usually worth retrying
+- `5` bad `qawolf.config.ts`, or a file collision during `init`
+
+`4` is the only one that is not self-explanatory: it covers a genuinely
+transient condition and, on `exec`, a permanent one as well, so read the message
+before deciding to retry.
 
 ## Safety: reads vs writes
 
@@ -89,8 +98,10 @@ verify it. Never blind-retry a write on timeout: it may have reached the server
 the first time.
 
 Two runner-specific costs to keep in mind. Launching a runner starts a billed
-pod, so reuse one id rather than minting new ones per step. And `qawolf runner
-run` is the one command where a lost answer is expensive; see below.
+pod, so reuse one id rather than minting new ones per step, and stop a runner
+when you are done. And `run`, `act` and `exec` may all have taken effect even
+when their answer never arrives, so none of them is safe to blind-retry; `run`
+is the expensive one, because a second submission bills a second run.
 
 ## Git-backed workflows
 
@@ -169,10 +180,23 @@ rather than silently ignored.
 Commands that target a runner find one in this order: `--runner`, then
 `QAWOLF_RUNNER_ID`, then the runner stored for the current directory (which
 `qawolf runner launch` sets). Setting the environment variable once is the most
-robust for a harness whose working directory may not be stable.
+robust for a harness whose working directory may not be stable, but it comes
+with two catches worth knowing before you rely on it.
 
-If none of those finds a runner, the commands that change something will launch
-one and say so on stderr, naming it: `run`, `act` and `exec`. **Read that
+`qawolf runner launch` is not in that order: it takes its id from `--id` and
+never reads `QAWOLF_RUNNER_ID`. Bare `qawolf runner launch` invents a random id,
+bills a pod under it and stores it, so a harness that exported the variable and
+then launched without `--id` ends up with a pod it is not addressing. Pass
+`--id` whenever you have an id in mind.
+
+And a runner id that is set is treated as found, whether or not anything is
+running under it. So exporting `QAWOLF_RUNNER_ID=agent-1` turns off the
+auto-launch described next: instead of starting `agent-1`, commands try to reach
+it and fail with exit code `4`, which reads as "retry" and never succeeds.
+Launch that id once yourself and the rest follows.
+
+If nothing names a runner, the commands that change something will launch one
+and say so on stderr, naming it: `run`, `act` and `exec`. **Read that
 announcement.** The browser it just started is fresh: nothing has been run on it,
 nothing is signed in, and no page is open. Acting as though your earlier setup
 survived is the single most likely way to drive the wrong page.
@@ -183,23 +207,35 @@ since starting a pod in order to stop it would be absurd.
 
 ### The order that matters
 
-A freshly launched runner has no page and no screen yet. Its virtual desktop
-starts with the runner's first run, so until something opens a page:
+A freshly launched runner has no screen. The virtual desktop starts with the
+runner's **first run** and nothing else starts it, so until you have run
+something:
 
-- `screenshot` and `act` (other than `navigate`) answer `screen-not-ready`
-- `exec` reports that there is no live page to evaluate against
+- `screenshot` and `act` (other than `navigate`) fail with exit code `4`
+- `exec` fails with exit code `4`
 - `events recorder` reads as empty
 
-None of that is a fault. Open a page first, with either
-`qawolf runner act navigate --url <url>` (which goes through the page rather
-than the screen, so it is the one action that works before the screen starts) or
-`qawolf runner run <flow>`. Either will also launch a runner if you have none, so
-that first call is all you need. After it, the loop below works.
+None of that is a fault, and none of it clears on its own. **Only
+`qawolf runner run <flow>` starts the screen.** `qawolf runner act navigate --url
+<url>` is the one action that works beforehand, because it goes through the page
+rather than the screen, but it opens a page without starting the screen: a
+screenshot after a bare navigate still fails, however long you wait.
 
-Tell `screen-not-ready` and `runner-has-no-screen` apart before retrying. The
-first is transient and clears in a second or two. The second means you launched
-a runner with no browser at all, which no amount of retrying fixes: launch a
-`node20WithPlaywright` runner instead.
+So the first call on a new runner has to be a run. That means a flow file and a
+`package.json` on disk, even if all you want is to drive the browser by hand;
+there is no "just give me a screen" call. Once one run has happened, the
+screenshot-and-act loop below works for the rest of the runner's life.
+
+Retry on the exit code, not on the message text. The outcome names below are
+wire values and never appear in the output:
+
+- `4` is transient. The screen is starting, restarting after a display-size
+  change, or busy serving another request. Retry in a second or two.
+- `2` is permanent. This runner has no browser at all, and no amount of retrying
+  fixes it: launch with `--name node20WithPlaywright` instead.
+
+The one exception is `exec`, which reports both cases as `4`; read its message
+to tell them apart.
 
 ### Seeing and acting: the loop is yours
 
@@ -226,60 +262,109 @@ rather than firing several. Bounds are checked before anything is sent, so an
 over-long `--text` or an out-of-range coordinate comes back immediately naming
 the limit instead of occupying the runner and then failing.
 
-`act` and `run` are the two commands whose lost answer may still have taken
-effect. On a `4` from `act`, take a screenshot before repeating a click.
+`act`, `run` and `exec` are the three commands whose lost answer may still have
+taken effect. On a `4` from `act`, take a screenshot before repeating a click.
+`exec`'s message says the snippet could not be evaluated, but a lost answer
+looks the same from outside, so treat a `4` from a snippet that changes something
+as "may have run" rather than "did not run".
 
 ### The recorder: what you cannot get from pixels
 
 `qawolf runner events recorder` is the capability that has no equivalent in a
 screenshot. As you drive the browser, the runner records each interaction and
-publishes the real Playwright locator it resolved, the alternates that also
-matched the element, and the generated Playwright call:
+publishes `locator` (the real Playwright locator it resolved), `alternates` (the
+others that matched the same element) and `code` (the generated Playwright call),
+alongside `type`, `sourceUrl` and `timestamp`.
 
 ```sh
-qawolf runner events recorder --tail 5 | jq -r '.code // .type'
+qawolf runner events recorder --tail 5 | jq -r '.code // .type'          # what happened
+qawolf runner events recorder --tail 5 | jq -r '[.locator] + (.alternates // []) | @tsv'
 ```
 
-Use it to turn a session you drove by pixel coordinates into durable selectors,
-and to check that a click landed on the element you meant rather than near it.
-The stream is empty until the session has a browser context, so an early empty
-answer means "not yet", not "broken".
+`code` is absent on events with no call of their own, such as a navigation, which
+is why the first line falls back to `type`. Use these to turn a session you drove
+by pixel coordinates into durable selectors, and to check that a click landed on
+the element you meant rather than near it. The stream is empty until the session
+has a browser context, so an early empty answer means "not yet", not "broken".
+Do not add `--json` here: it wraps each line in an envelope and these field paths
+stop matching.
+
+### Reading the page: `exec`
+
+`qawolf runner exec <file>` evaluates a snippet against whatever the runner's
+browser is showing, which is how you read a value out of the page rather than
+looking at it. Two things to know, because neither is guessable:
+
+It does not return what the snippet evaluated to, only whether it ran. To get a
+value back, print it and read the `console` stream:
+
+```sh
+echo 'console.log(await page.title())' | qawolf runner exec -
+qawolf runner events console --tail 1 | jq -r '.message'
+```
+
+And the snippet imports nothing of yours by default. Pass `--file <path>` to
+evaluate it in that file's scope, which also ships the directory's other files,
+so the snippet can use your own page objects and helpers.
 
 ### Running a flow
 
 `qawolf runner run <file>` ships the current directory's runnable files with the
 request. The runner holds no copy of your project, so what runs is exactly what
 is on disk at that moment, uncommitted edits included. A `package.json` has to
-be there, since the run reads its npm dependencies from it, and the payload is
-capped: run from a directory holding the flow and what it imports rather than
-from the root of a large monorepo.
+be there, since the run reads its npm dependencies from it, and the files may
+carry at most 4 MiB in total: run from a directory holding the flow and what it
+imports rather than from the root of a large monorepo. Check the path before you
+call, because a missing file or a missing `package.json` is caught only after a
+runner has been launched, so a typo can bill a pod and then exit `2`.
 
 The call answers with a run id as soon as the run is accepted. **The outcome is
-not in that answer**, it is in the `run-status` stream:
+not in that answer**, it is in the `run-status` stream, whose entries carry
+`runId`, `status` and an `errorMessage` when there is one.
+
+**Pass `--follow` to `run` and let it wait for you.** It streams the run's logs
+and ends on the settled status, never on the logs, so a run that prints nothing
+still terminates the follow and a run that dies mid-sentence still reports how.
+Exit code `1` means the run did not pass.
+
+```sh
+qawolf runner run flows/checkout.flow.ts --follow
+```
+
+If you would rather submit and come back later, note that `--follow` on `events`
+is `tail -f` and never returns on its own, so it cannot be used to wait for a
+run. Poll instead, and decide with the same rule the CLI uses: `status` is
+`in-progress` while the run is going, and any other value means it has settled.
 
 ```sh
 qawolf runner run flows/checkout.flow.ts --json     # -> {"runId":"...","runnerId":"..."}
-qawolf runner events run-status --run <runId> --tail 1
+qawolf runner events run-status --run <runId> --tail 1 | jq -r '.status'
 ```
-
-`--follow` does both: it streams the run's logs and ends on the settled status,
-never on the logs, so a run that prints nothing still terminates the follow and
-a run that dies mid-sentence still reports how. Exit code `1` means the run did
-not pass.
 
 The one expensive mistake on this surface: **if `run` reports that the runner
 could not be reached, that does not mean the run did not start.** The runner may
-have accepted it and been too slow to answer. Resubmitting bills and journals a
-second run. Read `qawolf runner events run-status` first and use the newest run
-id there if one appeared.
+have accepted it and been too slow to answer, and resubmitting bills and journals
+a second run.
+
+There is no clean recovery here, so it is worth being plain about it. The journal
+lives on the same pod, so while the runner stays unreachable a `run-status` read
+fails the same way and cannot tell you whether a run is going. Wait for the
+runner to answer again, then read `run-status` without `--run` and look at the
+newest `runId`: if one appeared, that is your run and you should follow it rather
+than submit again. Only resubmit once a read has succeeded and shown you nothing.
 
 ### Reading history
 
 Everything observable is an append-only stream on the pod, read by cursor or
-tail rather than subscribed to, so nothing is missed by attaching late. QA Wolf
-writes `recorder`, `console`, `run-events`, `run-logs` and `run-status`; a stream
-nobody has written reads as empty rather than as an error, and a stream this CLI
-version does not know about is still readable by name.
+tail rather than subscribed to, so attaching late still gets you the history that
+is still there. It is not unbounded: a size cap drops the oldest entries on a
+long-lived runner, and a `--tail N` read can stop early and hand back fewer than
+N even when more matched. Neither is reported, so treat a short answer as "at
+least this" rather than "all there was", and read what you care about as you go
+rather than at the end. QA Wolf writes `recorder`, `console`, `run-events`,
+`run-logs` and `run-status`; a stream nobody has written reads as empty rather
+than as an error, and a stream this CLI version does not know about is still
+readable by name.
 
 One payload per line, so shell tools compose:
 
@@ -289,11 +374,19 @@ qawolf runner events run-logs --run <runId> --follow > run.log
 ```
 
 `--tail N` takes the newest N, `--since <sequence>` reads everything after a
-cursor, and `--run <id>` narrows the run-scoped streams. To page forward by
-hand, pass `--json` and use the highest `sequence` you saw as the next
-`--since`. Prefer `--follow` where you can: it carries the cursor for you, and it
-advances correctly on a filtered read that matched nothing, which hand-paging
-cannot yet do (NOVA-1397).
+cursor, and `--run <id>` narrows the run-scoped streams.
+
+`--follow` polls and prints as entries arrive. It is `tail -f`: it never returns
+on its own, so redirect it to a file and stop it yourself, or use repeated
+`--since` reads when you need the command to end.
+
+Where it does win is the cursor. The pod reports how far a read scanned rather
+than how far it matched, and `--follow` carries that number, so a filtered read
+that matched nothing still moves forward. A caller paging by hand cannot see it,
+because the CLI does not print it, and the best available substitute is the
+highest `sequence` you actually saw. So a narrow `--run` filter over a busy
+stream stalls: with nothing matching, there is no new `sequence` to move on to,
+and you re-read the same window until something matches (NOVA-1397).
 
 ### Staying alive
 
@@ -301,21 +394,31 @@ A runner is reaped after a period of inactivity, and every command that talks to
 the runner counts as activity, including a journal read.
 `qawolf runner keepalive` exists for the gap that creates: a harness that thinks,
 or waits on a human, for minutes between actions would otherwise come back to a
-pod that is gone. It is a cheap read that resets the clock and
-tells you the runner is still there. Call it while you think, and
-`qawolf runner stop` when you are done rather than leaving a pod to time out.
+pod that is gone. It resets the clock and tells you the runner is still there.
+
+It is listed as a `read`, but it is the one read with a cost: keeping the clock
+reset keeps a billed pod alive. Call it while you are genuinely still working, not
+on a timer you forget, and call `qawolf runner stop` when you are done rather
+than leaving a pod to time out. A loop that keeps a runner alive and never stops
+it bills until someone notices.
 
 ### End to end
+
+Run from a directory holding a flow and a `package.json`. The run is what starts
+the screen, so it is not optional even though the goal here is to drive by hand.
 
 ```sh
 export QAWOLF_API_KEY=...          # the only credential
 export QAWOLF_RUNNER_ID=agent-1    # so no command below needs --runner
 
-qawolf runner launch --id agent-1 --json          # read .outcome
+qawolf runner launch --id agent-1 --json          # --id, not the variable; read .outcome
+qawolf runner run flows/smoke.flow.ts --follow    # starts the screen; exit 1 if it failed
+
 qawolf runner act navigate --url https://example.com/login
 qawolf runner screenshot --out page.jpg           # then read page.jpg yourself
 qawolf runner act click --button left --x 480 --y 260
 qawolf runner act type --text "someone@example.com"
-qawolf runner events recorder --tail 5 | jq -r '.code // .type'
+
+qawolf runner events recorder --tail 5 | jq -r '[.locator] + (.alternates // []) | @tsv'
 qawolf runner stop
 ```
