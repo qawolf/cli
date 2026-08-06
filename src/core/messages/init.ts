@@ -4,12 +4,22 @@ export const initMessages = {
     "Run `qawolf auth login`, then `qawolf flows pull`, then `qawolf flows run`.",
   createPackageJsonPrompt: "Create package.json (required to run flows)?",
   skippedCreatingPackageJson: "Skipped package.json",
-  skippedAddingTestE2e: "Skipped adding test:e2e to package.json",
+  skippedUpdatingPackageJson: "Skipped updating package.json",
   createdPackageJson: "Created package.json",
   packageJsonInvalidJson:
-    "package.json is not valid JSON — skipped adding `test:e2e`",
-  packageJsonHasTestE2e: "package.json already has `test:e2e` — skipped",
-  addTestE2ePrompt: "Add `test:e2e: qawolf flows run` to package.json?",
+    "package.json is not valid JSON — skipped updating it",
+  packageJsonHasTestE2e:
+    "package.json already has `test:e2e` — leaving it as is",
+  packageJsonUpToDate: "package.json already configured — nothing to update",
+  typeChanged: (from: string) =>
+    `Changed "type" from "${from}" to "module" — .js files in this package now load as ES modules.`,
+  pkgChanges: {
+    script: "add `test:e2e` script",
+    type: 'set "type": "module"',
+    flowsDep: "add @qawolf/flows dependency",
+  },
+  updatePackageJsonPrompt: (changes: readonly string[]) =>
+    `Update package.json (${changes.join(", ")})?`,
   updatedPackageJson: "Updated package.json",
   overwritePrompt: (relPath: string) => `Overwrite ${relPath}?`,
   skippedFile: (relPath: string) => `Skipped ${relPath}`,
