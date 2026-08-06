@@ -1,5 +1,15 @@
 # @qawolf/cli
 
+## 1.7.0
+
+### Minor Changes
+
+- cb5d34e: Upgrade Playwright from 1.58.2 to 1.62.0
+
+### Patch Changes
+
+- 1b2234d: Document cross-harness Agent Skill installation and declare the CLI runtime requirement in the portable skill metadata.
+
 ## 1.6.0
 
 ### Minor Changes
