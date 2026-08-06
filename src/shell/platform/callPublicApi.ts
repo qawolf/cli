@@ -1,6 +1,8 @@
 import { type PublicApiContractKind } from "@qawolf/api-contracts/v1";
 import type { z } from "zod";
 
+import type { NotFoundHint } from "~/core/publicApi/notFoundHint.js";
+
 import { describeRequestError } from "./describeErrors.js";
 import type {
   RequestOptions,
@@ -37,10 +39,16 @@ export function callPublicApi<Input, Output>(
   return trpc.mutation(path, input, contract.output, options);
 }
 
+// Per-call options: the wire-level RequestOptions plus a presentation-only
+// not-found hint the command layer supplies (it knows the CLI flag names).
+export type CallPublicApiOptions = RequestOptions & {
+  notFound?: NotFoundHint | undefined;
+};
+
 export type CallPublicApiMethod = <Input, Output>(
   contract: PublicApiContractOf<Input, Output>,
   input: Input,
-  options?: RequestOptions,
+  options?: CallPublicApiOptions,
 ) => Promise<PlatformResult<Output>>;
 
 type MethodDeps = {
@@ -60,7 +68,11 @@ export function makeCallPublicApiMethod(
     requestWithRetry({
       call: () => callPublicApi(trpc, contract, input, options),
       backoffMs: contract.kind === "read" ? readBackoffMs : [],
-      describe: (err) => describeRequestError(err, deps.baseUrl, contract.name),
+      describe: (err) =>
+        describeRequestError(err, deps.baseUrl, {
+          noun: contract.name,
+          notFound: options?.notFound,
+        }),
       sleep: deps.sleep,
     });
 }

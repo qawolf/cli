@@ -236,7 +236,7 @@ describe("getEnvVars", () => {
     expect(parsed.json).toEqual({ id: envId });
   });
 
-  it("returns ok:false with env-vars named message on HTTP 404", async () => {
+  it("points at the --env value when the environment is not found (HTTP 404)", async () => {
     const result = await createPlatformClient(apiKey, {
       fetch: mockFetch(new Response("not found", { status: 404 })),
       baseUrl,
@@ -244,6 +244,6 @@ describe("getEnvVars", () => {
     }).getEnvVars(envId);
 
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toMatch(/env-vars/i);
+    if (!result.ok) expect(result.error).toContain("--env");
   });
 });

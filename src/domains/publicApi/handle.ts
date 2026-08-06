@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { FlagSpec } from "~/core/publicApi/flagSpecs.js";
+import { buildNotFoundHint } from "~/core/publicApi/notFoundHint.js";
 import type {
   AuthCommandContext,
   CommandResult,
@@ -97,6 +98,7 @@ export async function handlePublicApiCommand(
   const result = await ctx.platformClient.callPublicApi(
     spec.contract,
     parsed.data,
+    { notFound: buildNotFoundHint(spec.flags, options) },
   );
   if (!result.ok) return { error: result.error };
 

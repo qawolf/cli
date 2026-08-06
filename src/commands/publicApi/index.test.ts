@@ -83,12 +83,22 @@ describe("registerPublicApiCommands", () => {
       { from: "user" },
     );
 
-    expect(callPublicApi).toHaveBeenCalledWith(publicContractsV1.run.create, {
-      environmentId,
-      flowIds: [flowId],
-      ignoreRules: false,
-      tagNames: [],
-    });
+    expect(callPublicApi).toHaveBeenCalledWith(
+      publicContractsV1.run.create,
+      {
+        environmentId,
+        flowIds: [flowId],
+        ignoreRules: false,
+        tagNames: [],
+      },
+      {
+        notFound: {
+          resource: "environment",
+          idFlag: "--environment-id",
+          idValue: environmentId,
+        },
+      },
+    );
   });
 
   it("emits the structured response as a JSON line on stdout in agent mode", async () => {

@@ -71,13 +71,23 @@ describe("handlePublicApiCommand", () => {
     });
 
     expect(result).toBeUndefined();
-    expect(callPublicApi).toHaveBeenCalledWith(publicContractsV1.run.create, {
-      environmentId,
-      environmentVariables: { BAZ: "qux=quux", FOO: "bar" },
-      flowIds: [flowId],
-      ignoreRules: false,
-      tagNames: [],
-    });
+    expect(callPublicApi).toHaveBeenCalledWith(
+      publicContractsV1.run.create,
+      {
+        environmentId,
+        environmentVariables: { BAZ: "qux=quux", FOO: "bar" },
+        flowIds: [flowId],
+        ignoreRules: false,
+        tagNames: [],
+      },
+      {
+        notFound: {
+          resource: "environment",
+          idFlag: "--environment-id",
+          idValue: environmentId,
+        },
+      },
+    );
     expect(ui.output).toHaveBeenCalledTimes(1);
     const [data, humanMessage] = (ui.output as ReturnType<typeof mock>).mock
       .calls[0] as [unknown, string];
@@ -138,7 +148,11 @@ describe("handlePublicApiCommand", () => {
     const result = await handlePublicApiCommand(ctx, spec, { count: "5" });
 
     expect(result).toBeUndefined();
-    expect(callPublicApi).toHaveBeenCalledWith(spec.contract, { count: 5 });
+    expect(callPublicApi).toHaveBeenCalledWith(
+      spec.contract,
+      { count: 5 },
+      { notFound: undefined },
+    );
   });
 
   it("passes an empty number flag value through as 0 (Number('') coercion)", async () => {
@@ -155,7 +169,11 @@ describe("handlePublicApiCommand", () => {
     const result = await handlePublicApiCommand(ctx, spec, { count: "" });
 
     expect(result).toBeUndefined();
-    expect(callPublicApi).toHaveBeenCalledWith(spec.contract, { count: 0 });
+    expect(callPublicApi).toHaveBeenCalledWith(
+      spec.contract,
+      { count: 0 },
+      { notFound: undefined },
+    );
   });
 
   it("rejects a non-numeric number flag value before calling the platform", async () => {

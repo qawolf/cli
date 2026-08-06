@@ -45,11 +45,32 @@ export const authMessages = {
       rejected401: (noun: string | undefined) =>
         `QA Wolf API rejected the${noun ? ` ${noun}` : ""} request (HTTP 401). Check your API key.`,
       rejected403: (noun: string | undefined) =>
-        `QA Wolf API rejected the${noun ? ` ${noun}` : ""} request (HTTP 403). Check that your API key has access to this environment.`,
-      notFound404: (noun: string | undefined) =>
-        `QA Wolf API could not find ${noun ? `${noun} for that environment` : "that environment"} (HTTP 404). Check the --env value.`,
-      failedWithStatus: (status: number, noun: string | undefined) =>
-        `QA Wolf API${noun ? ` ${noun}` : ""} request failed (HTTP ${status}).`,
+        `QA Wolf API rejected the${noun ? ` ${noun}` : ""} request (HTTP 403). Check that your API key has access to it.`,
+      // A 404 where the command identified one resource by id: name the
+      // resource, the id, and the flag the user actually passed.
+      notFoundResource: (input: {
+        resource: string;
+        idFlag: string;
+        idValue: string;
+      }) =>
+        `No ${input.resource} found with id "${input.idValue}" (HTTP 404). Check the ${input.idFlag} value.`,
+      // A 404 whose missing resource is ambiguous, but the server explained it.
+      notFoundWithMessage: (serverMessage: string) =>
+        `QA Wolf API returned not found (HTTP 404): ${serverMessage}`,
+      // A 404 on a command that resolves its environment via the --env flag.
+      notFoundEnvironment: () =>
+        `QA Wolf API could not find that environment (HTTP 404). Check the --env value.`,
+      // A 404 with no resource context and no server explanation.
+      notFound404: () =>
+        `QA Wolf API could not find the requested resource (HTTP 404).`,
+      failedWithStatus: (input: {
+        status: number;
+        noun: string | undefined;
+        serverMessage: string | undefined;
+      }) =>
+        input.serverMessage
+          ? `QA Wolf API${input.noun ? ` ${input.noun}` : ""} request failed (HTTP ${input.status}): ${input.serverMessage}`
+          : `QA Wolf API${input.noun ? ` ${input.noun}` : ""} request failed (HTTP ${input.status}).`,
       networkUnreachable: (baseUrl: string, noun: string | undefined) =>
         `Could not reach the QA Wolf API at ${baseUrl}${noun ? ` to fetch ${noun}` : ""}. Check your network connection and QAWOLF_HOST_URL.`,
       timedOut: (timeoutMs: number, noun: string | undefined) =>

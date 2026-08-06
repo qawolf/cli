@@ -71,7 +71,8 @@ export function createPlatformClient(
           flowsBundleResponseSchema,
         ),
       backoffMs: requestBackoffMs,
-      describe: (err) => describeRequestError(err, deps.baseUrl),
+      describe: (err) =>
+        describeRequestError(err, deps.baseUrl, { environmentLookup: true }),
       sleep: deps.sleep,
     });
     if (!result.ok) return result;
@@ -101,7 +102,11 @@ export function createPlatformClient(
             environmentWithVariablesResponseSchema,
           ),
         backoffMs: requestBackoffMs,
-        describe: (err) => describeRequestError(err, deps.baseUrl, "env-vars"),
+        describe: (err) =>
+          describeRequestError(err, deps.baseUrl, {
+            noun: "env-vars",
+            environmentLookup: true,
+          }),
         sleep: deps.sleep,
       });
       if (!result.ok) return result;

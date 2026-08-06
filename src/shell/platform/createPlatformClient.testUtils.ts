@@ -1,14 +1,14 @@
 import { mock, type Mock } from "bun:test";
 import type { AnyPublicApiContract } from "@qawolf/api-contracts/v1";
 
+import type { CallPublicApiOptions } from "./callPublicApi.js";
 import type { PlatformClient } from "./createPlatformClient.js";
-import type { RequestOptions } from "./createTrpcClient.js";
 import type { PlatformResult } from "./requestWithRetry.js";
 
 type CallPublicApiFn = (
   contract: AnyPublicApiContract,
   input: unknown,
-  options?: RequestOptions,
+  options?: CallPublicApiOptions,
 ) => Promise<PlatformResult<unknown>>;
 
 // callPublicApi is a generic method, which bun's mock() cannot express;

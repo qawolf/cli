@@ -35,7 +35,9 @@ export async function listTeamStorageFiles(
         ),
       backoffMs: requestBackoffMs,
       describe: (err) =>
-        describeRequestError(err, deps.baseUrl, "team-storage assets"),
+        describeRequestError(err, deps.baseUrl, {
+          noun: "team-storage assets",
+        }),
       sleep: deps.sleep,
     });
     if (!result.ok) return result;
