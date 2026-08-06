@@ -1,7 +1,14 @@
-import { journalStreamSchema } from "@qawolf/api-contracts/v1";
+import {
+  journalStreamSchema,
+  readJournalRequestSchema,
+} from "@qawolf/api-contracts/v1";
 import { z } from "zod";
 
-import { formatJournalLine } from "~/core/interactiveRunner/journal.js";
+import {
+  countSkippedEntries,
+  formatJournalLine,
+} from "~/core/interactiveRunner/journal.js";
+import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
   AuthCommandContext,
   CommandResult,
@@ -39,12 +46,16 @@ function parseOptions(
 ): { ok: true; value: ParsedOptions } | { ok: false; error: string } {
   const parsed = z
     .object({
+      // A run id is a path segment on the runner just as a stream name is, so it
+      // is held to the published bound rather than passed through unchecked.
+      run: readJournalRequestSchema.shape.runId,
       since: sequenceSchema.optional(),
       stream: journalStreamSchema,
       tail: countSchema.optional(),
     })
     .safeParse({
       stream: options.stream,
+      ...(options.run === undefined ? {} : { run: options.run }),
       ...(options.since === undefined ? {} : { since: options.since }),
       ...(options.tail === undefined ? {} : { tail: options.tail }),
     });
@@ -53,7 +64,7 @@ function parseOptions(
   return {
     ok: true,
     value: {
-      runId: options.run,
+      runId: parsed.data.run,
       sinceSequence: parsed.data.since,
       stream: parsed.data.stream,
       tail: parsed.data.tail,
@@ -95,13 +106,36 @@ export async function handleRunnerEvents(
   for (;;) {
     const window = await readJournal(ctx, resolved.runnerId, request);
     if (!window.ok) return { error: window.error, exitCode: window.exitCode };
+
+    // Only against a cursor: with no `sinceSequence` the read starts at the
+    // oldest available entry by definition, so there is nothing to have missed.
+    if (request.sinceSequence !== undefined) {
+      const skipped = countSkippedEntries(
+        request.sinceSequence,
+        window.value.oldestAvailableSequence,
+      );
+      if (skipped > 0) {
+        ctx.ui.warn(
+          interactiveRunnerMessages.skippedEntries(request.stream, skipped),
+        );
+      }
+    }
+
     for (const entry of window.value.entries) {
-      ctx.ui.stream(formatJournalLine(entry, { envelope: options.envelope }));
+      const { data, line } = formatJournalLine(entry, {
+        envelope: options.envelope,
+      });
+      ctx.ui.stream(data, line);
     }
     if (!options.follow) return undefined;
     request = {
       ...request,
-      sinceSequence: window.value.nextSequence,
+      // Never backwards: a cursor that moved back would reprint the window it
+      // already printed, once a second, for as long as the follow ran.
+      sinceSequence: Math.max(
+        request.sinceSequence ?? 0,
+        window.value.nextSequence,
+      ),
       tail: undefined,
     };
     await deps.sleep(pollIntervalMs);

@@ -41,6 +41,18 @@ the target, ask instead of guessing. Do not default to the newest environment.
 listed name is enough to reference `process.env.NAME` in flow code; do not ask
 for its value merely because the CLI does not return it.
 
+## Interactive runners cost money
+
+An interactive runner is a live pod holding a browser, and it is billed while it
+runs. `qawolf runner launch` starts one; `qawolf runner run` starts one too when
+no runner is already available, and says so when it does. `qawolf runner stop`
+is what ends it, so stop a runner you launched rather than leaving it to time
+out.
+
+`qawolf runner launch` remembers its runner as this directory's default, so the
+commands that follow need no `--runner`. Override that default for one command
+with `--runner <id>`, or for a whole session with `QAWOLF_RUNNER_ID`.
+
 ## Output
 
 When consuming output programmatically, always pass `--json` (or `--agent`).

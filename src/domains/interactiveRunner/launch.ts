@@ -22,7 +22,7 @@ type LaunchedRunner = {
   runnerName: RunnerNameForPublicApi;
 };
 
-export type LaunchResult =
+type LaunchResult =
   | { ok: true; value: LaunchedRunner }
   | { ok: false; error: string; exitCode: number };
 
@@ -31,7 +31,7 @@ export type LaunchResult =
  * The distinction is in `outcome`, and every caller passes it on: an agent about
  * to drive a browser needs to know whether it is looking at a fresh one.
  */
-export async function launchRunner(
+async function launchRunner(
   ctx: AuthCommandContext,
   options: { id: string; runnerName: RunnerNameForPublicApi | undefined },
 ): Promise<LaunchResult> {
@@ -46,6 +46,39 @@ export async function launchRunner(
     return { error: result.error, exitCode: exitCodes.network, ok: false };
   }
   return { ok: true, value: result.value };
+}
+
+/**
+ * Launches `id` and makes it this directory's default.
+ *
+ * The id is recorded before the request rather than after it. `runner.launch` is
+ * a write, so it gets one attempt and a deadline; a pod that takes longer than
+ * the deadline to come up is created and billed even though the answer never
+ * arrived. An id recorded only on success would be lost in exactly that case,
+ * and the next command would mint a fresh one and pay for a second pod. Recorded
+ * first, a retry addresses the same id and the contract attaches to the runner
+ * already running under it.
+ *
+ * Recording is best effort. The pod is the thing that costs money, so a working
+ * directory the CLI cannot write to must not turn a launch that worked into a
+ * failed command with an unnamed runner left behind.
+ */
+export async function launchAndRemember(
+  ctx: AuthCommandContext,
+  options: { id: string; runnerName: RunnerNameForPublicApi | undefined },
+  deps: InteractiveRunnerDeps,
+): Promise<LaunchResult> {
+  await deps.store.writeDefaultRunnerId(options.id).catch(() => {
+    ctx.ui.warn(interactiveRunnerMessages.defaultNotRemembered(options.id));
+  });
+
+  const launched = await launchRunner(ctx, options);
+  if (launched.ok) return launched;
+  return {
+    error: interactiveRunnerMessages.launchFailed(options.id, launched.error),
+    exitCode: launched.exitCode,
+    ok: false,
+  };
 }
 
 /**
@@ -88,18 +121,17 @@ export async function handleRunnerLaunch(
     return { error: runnerName.error, exitCode: exitCodes.invalidArgs };
   }
 
-  const launched = await launchRunner(ctx, {
-    id: id.id,
-    runnerName: runnerName?.runnerName,
-  });
+  // Also this directory's default, so the commands that follow need no
+  // --runner. Set even when the runner turns out to have been running already:
+  // the caller has just named which runner this directory means.
+  const launched = await launchAndRemember(
+    ctx,
+    { id: id.id, runnerName: runnerName?.runnerName },
+    deps,
+  );
   if (!launched.ok) {
     return { error: launched.error, exitCode: launched.exitCode };
   }
-
-  // The workspace's default, so the commands that follow need no --runner. Set
-  // even when the runner was already running: the caller has just named which
-  // runner this directory means.
-  await deps.store.writeDefaultRunnerId(launched.value.id);
 
   ctx.ui.output(
     launched.value,

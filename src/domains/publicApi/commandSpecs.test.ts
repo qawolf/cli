@@ -2,9 +2,8 @@ import { describe, expect, it } from "bun:test";
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { z } from "zod";
 
-import { skippedContractNames } from "~/commands/publicApi/index.js";
-
 import { buildCommandSpecs } from "./commandSpecs.js";
+import { skippedContractNames } from "./skippedContracts.js";
 
 describe("buildCommandSpecs", () => {
   it("flattens the published contract tree into command specs", () => {

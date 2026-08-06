@@ -13,21 +13,36 @@ describe("stream", () => {
     mock.restore();
   });
 
-  const renderers = {
+  const stdoutSpy = () =>
+    spyOn(process.stdout, "write").mockImplementation(() => true);
+
+  for (const [mode, make] of Object.entries({
     agent: () => createAgentRenderers(),
     human: () => createHumanRenderers(makeClack()),
-    json: () => createJsonRenderers(),
-  };
+  })) {
+    it(`writes the rendered line to stdout in ${mode} mode`, () => {
+      const stdout = stdoutSpy();
 
-  for (const [mode, make] of Object.entries(renderers)) {
-    it(`writes the line to stdout in ${mode} mode`, () => {
-      const stdout = spyOn(process.stdout, "write").mockImplementation(
-        () => true,
-      );
+      make().stream({ message: "clicked Sign in" }, "clicked Sign in");
 
-      make().stream('{"code":"click"}');
-
-      expect(stdout).toHaveBeenCalledWith('{"code":"click"}\n');
+      expect(stdout).toHaveBeenCalledWith("clicked Sign in\n");
     });
   }
+
+  // Redirecting stdout is enough to select json mode, so `qawolf runner run
+  // --follow > run.log` lands here. A run's log message is prose, and putting
+  // prose on the same stream as the command's JSON would leave neither
+  // parseable.
+  it("writes the data as JSON in json mode rather than the rendered line", () => {
+    const stdout = stdoutSpy();
+
+    createJsonRenderers().stream(
+      { message: "clicked Sign in", sequence: 3 },
+      "clicked Sign in",
+    );
+
+    expect(stdout).toHaveBeenCalledWith(
+      '{"message":"clicked Sign in","sequence":3}\n',
+    );
+  });
 });

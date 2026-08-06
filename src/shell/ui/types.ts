@@ -38,8 +38,9 @@ export type UI = {
   error(title: string, body?: string): void;
   info(message: string): void;
 
-  // one line of primary command data to stdout, in every mode
-  stream(line: string): void;
+  // one line of primary command data to stdout, in every mode: `line` verbatim
+  // for a human or an agent, `data` as JSON in json mode
+  stream(data: unknown, line: string): void;
 
   // raw output — stdout in human mode, stderr in agent mode, no-op in json mode
   write(text: string): void;

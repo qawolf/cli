@@ -36,4 +36,24 @@ describe("checkRunFiles", () => {
     expect(check.maxByteLength).toBe(maxRunFilesByteLength);
     expect(check.byteLength).toBeGreaterThan(maxRunFilesByteLength);
   });
+
+  // One generated bundle is usually the whole overage, and a caller cannot act on
+  // "your files are too big" without being told which of 500 files to look at.
+  it("names the biggest files, biggest first, when it refuses for size", () => {
+    const bundle = {
+      content: "a".repeat(maxRunFilesByteLength),
+      path: "dist/bundle.js",
+    };
+    const map = { content: "b".repeat(1024), path: "dist/bundle.js.map" };
+
+    const check = checkRunFiles([packageJson, flow, bundle, map], flow.path);
+
+    expect(check.type).toBe("too-large");
+    if (check.type !== "too-large") return;
+    expect(check.largest.map((file) => file.path)).toEqual([
+      "dist/bundle.js",
+      "dist/bundle.js.map",
+      "flows/checkout.flow.ts",
+    ]);
+  });
 });

@@ -1,4 +1,5 @@
 import {
+  countSkippedEntries,
   formatRunLogLine,
   readRunSettlement,
 } from "~/core/interactiveRunner/journal.js";
@@ -80,10 +81,23 @@ export async function followRun(
       stream: "run-logs",
     });
     if (!logs.ok) return logs;
-    for (const entry of logs.value.entries) {
-      ctx.ui.stream(formatRunLogLine(entry.payload));
+
+    const skipped = countSkippedEntries(
+      logsSequence,
+      logs.value.oldestAvailableSequence,
+    );
+    if (skipped > 0) {
+      ctx.ui.warn(
+        interactiveRunnerMessages.skippedEntries("run-logs", skipped),
+      );
     }
-    logsSequence = logs.value.nextSequence;
+
+    for (const entry of logs.value.entries) {
+      ctx.ui.stream(entry, formatRunLogLine(entry.payload));
+    }
+    // Never backwards, so a cursor that moved back cannot make the follow
+    // reprint the same lines once a second for as long as the run lasts.
+    logsSequence = Math.max(logsSequence, logs.value.nextSequence);
     return { ok: true };
   };
 
@@ -98,7 +112,7 @@ export async function followRun(
       stream: "run-status",
     });
     if (!status.ok) return { error: status.error, exitCode: status.exitCode };
-    statusSequence = status.value.nextSequence;
+    statusSequence = Math.max(statusSequence, status.value.nextSequence);
 
     const settlement = findSettlement(status.value.entries);
     if (settlement !== undefined) {

@@ -2,16 +2,36 @@ import type { JournalEntry } from "@qawolf/api-contracts/v1";
 import { z } from "zod";
 
 /**
- * One line of journal output. The payload alone by default, so that
+ * What one journal entry prints as. The payload alone by default, so that
  * `qawolf runner events recorder --tail 5` composes with `grep` and `jq` on the
  * thing a reader came for; the whole envelope when a caller asked for the
  * sequence and timestamp it needs to page or correlate.
+ *
+ * Returned as both the value and its rendering because json mode serializes the
+ * value itself rather than printing the string.
  */
 export function formatJournalLine(
   entry: JournalEntry<unknown>,
   options: { envelope: boolean },
-): string {
-  return JSON.stringify(options.envelope ? entry : entry.payload);
+): { data: unknown; line: string } {
+  const data = options.envelope ? entry : entry.payload;
+  return { data, line: JSON.stringify(data) };
+}
+
+/**
+ * How far a stream's history has been truncated out from under a cursor.
+ *
+ * The journal is size-capped and drops its oldest entries, so a follow that
+ * falls behind can be handed a window that begins after where it asked to
+ * continue from. Those entries are gone, and a follow that printed the rest
+ * without saying so would hand back a log with a hole in it and no marker.
+ */
+export function countSkippedEntries(
+  cursor: number,
+  oldestAvailableSequence: number,
+): number {
+  if (oldestAvailableSequence <= cursor + 1) return 0;
+  return oldestAvailableSequence - cursor - 1;
 }
 
 /**

@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { z } from "zod";
 
+import { qawolfDir } from "~/core/paths.js";
 import type { Fs } from "~/shell/fs.js";
 
 /**
@@ -12,7 +13,6 @@ import type { Fs } from "~/shell/fs.js";
  * side by side must not silently share one browser.
  */
 const storeFileName = "runner.json";
-const storeDirectoryName = ".qawolf";
 
 const storeSchema = z.object({ defaultRunnerId: z.string().optional() });
 
@@ -31,8 +31,9 @@ export type RunnerStore = {
 };
 
 export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
-  const directory = join(options.cwd, storeDirectoryName);
+  const directory = join(options.cwd, qawolfDir);
   const path = join(directory, storeFileName);
+  const pendingPath = `${path}.tmp`;
 
   return {
     async clearDefaultRunnerId() {
@@ -49,12 +50,18 @@ export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
       return parsed.success ? parsed.data.defaultRunnerId : undefined;
     },
 
+    // Written beside the file and renamed over it, so a second invocation
+    // reading in the middle of this one sees the old id or the new one and never
+    // a half-written file. A file that read as unparseable would read as "no
+    // default", and the command that met it would launch and bill a second
+    // runner.
     async writeDefaultRunnerId(runnerId) {
       await options.fs.mkdir(directory, { recursive: true });
       await options.fs.writeFile(
-        path,
+        pendingPath,
         `${JSON.stringify({ defaultRunnerId: runnerId }, undefined, 2)}\n`,
       );
+      await options.fs.rename(pendingPath, path);
     },
   };
 }

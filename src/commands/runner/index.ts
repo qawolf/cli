@@ -23,7 +23,7 @@ Examples:
 const runExamples = `
 Examples:
   $ qawolf runner run flows/checkout.flow.ts
-  $ qawolf runner run flows/checkout.flow.ts --follow > run.log`;
+  $ qawolf runner run flows/checkout.flow.ts --follow`;
 
 const eventsExamples = `
 Examples:

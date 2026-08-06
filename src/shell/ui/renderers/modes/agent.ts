@@ -33,7 +33,7 @@ export function createAgentRenderers(): RendererSet {
       writeStderrLine(humanMessage);
     },
     gap: () => writeStderrLine(""),
-    stream: (line) => writeStdoutRaw(`${line}\n`),
+    stream: (_data, line) => writeStdoutRaw(`${line}\n`),
     write: (text) => writeStderrRaw(text),
     withProgress: async (steps, done) => {
       const results: unknown[] = [];

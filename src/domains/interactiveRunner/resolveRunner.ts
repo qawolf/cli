@@ -3,7 +3,7 @@ import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
-import { launchRunner, parseRunnerId } from "./launch.js";
+import { launchAndRemember, parseRunnerId } from "./launch.js";
 
 /**
  * Which runner a runner-targeting command means.
@@ -59,11 +59,11 @@ export async function resolveRunner(
     };
   }
 
-  const runnerId = deps.makeRunnerId();
-  const launched = await launchRunner(ctx, {
-    id: runnerId,
-    runnerName: undefined,
-  });
+  const launched = await launchAndRemember(
+    ctx,
+    { id: deps.makeRunnerId(), runnerName: undefined },
+    deps,
+  );
   if (!launched.ok) {
     return {
       error: launched.error,
@@ -71,7 +71,6 @@ export async function resolveRunner(
       type: "failed",
     };
   }
-  await deps.store.writeDefaultRunnerId(launched.value.id);
   return { runnerId: launched.value.id, type: "launched" };
 }
 

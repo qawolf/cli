@@ -18,7 +18,34 @@ export type RunFilesCheck =
   | { type: "ok" }
   | { type: "missing-package-json" }
   | { type: "missing-entry-point"; entryPointPath: string }
-  | { type: "too-large"; byteLength: number; maxByteLength: number };
+  | {
+      type: "too-large";
+      byteLength: number;
+      largest: { byteLength: number; path: string }[];
+      maxByteLength: number;
+    };
+
+/**
+ * The few files worth naming when a payload is refused for its size.
+ *
+ * Named because every source and configuration file under the working directory
+ * travels, build output included, and one generated bundle is usually the whole
+ * overage. "Your files are too big" leaves a caller guessing at which; naming
+ * the largest turns it into a directory to run from or a file to move.
+ */
+const namedLargestFileCount = 3;
+
+function largestFiles(
+  files: readonly RunFile[],
+): { byteLength: number; path: string }[] {
+  return files
+    .map((file) => ({
+      byteLength: runFilesByteLength([file]),
+      path: file.path,
+    }))
+    .sort((a, b) => b.byteLength - a.byteLength)
+    .slice(0, namedLargestFileCount);
+}
 
 export function checkRunFiles(
   files: readonly RunFile[],
@@ -34,6 +61,7 @@ export function checkRunFiles(
   if (byteLength > maxRunFilesByteLength) {
     return {
       byteLength,
+      largest: largestFiles(files),
       maxByteLength: maxRunFilesByteLength,
       type: "too-large",
     };

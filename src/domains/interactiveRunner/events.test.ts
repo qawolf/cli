@@ -108,12 +108,58 @@ describe("handleRunnerEvents", () => {
     expect(callPublicApi.mock.calls[1]?.[1]).not.toHaveProperty("tail");
   });
 
+  // Follow-up polls read against a cursor, and the journal's history is bounded:
+  // a follow that falls behind is handed a window starting after where it asked
+  // to continue from, and the entries in between are gone.
+  it("says so when entries were dropped before the read it asked for", async () => {
+    const { callPublicApi, ctx, warnings } = makeAuthCtx();
+    callPublicApi.mockImplementation(
+      makeJournal({ recorder: [[{ code: "a" }]] }, { recorder: 91 }),
+    );
+
+    await handleRunnerEvents(
+      ctx,
+      { ...baseOptions, since: "10" },
+      makeTestDeps(),
+    );
+
+    expect(warnings().join(" ")).toContain("80 entries of recorder");
+  });
+
+  // A first read with no cursor starts at the oldest available entry by
+  // definition, so there is nothing to have missed and nothing to warn about.
+  it("says nothing about dropped entries when no cursor was given", async () => {
+    const { callPublicApi, ctx, warnings } = makeAuthCtx();
+    callPublicApi.mockImplementation(
+      makeJournal({ recorder: [[{ code: "a" }]] }, { recorder: 91 }),
+    );
+
+    await handleRunnerEvents(ctx, baseOptions, makeTestDeps());
+
+    expect(warnings()).toEqual([]);
+  });
+
   it("refuses a stream name that could address a path outside the journal", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
 
     const result = await handleRunnerEvents(
       ctx,
       { ...baseOptions, stream: "../secrets" },
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(2);
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
+  // A run id addresses a directory on the runner just as a stream name does, so
+  // it is held to the published bound rather than passed through unchecked.
+  it("refuses a run id the published schema does not admit", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+
+    const result = await handleRunnerEvents(
+      ctx,
+      { ...baseOptions, run: "r".repeat(200), stream: "run-logs" },
       makeTestDeps(),
     );
 

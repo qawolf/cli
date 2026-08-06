@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
 import {
+  countSkippedEntries,
   formatJournalLine,
   formatRunLogLine,
   readRunSettlement,
@@ -14,15 +15,33 @@ const entry = {
 
 describe("formatJournalLine", () => {
   it("prints the payload alone by default", () => {
-    expect(formatJournalLine(entry, { envelope: false })).toBe(
-      '{"message":"clicked Sign in"}',
-    );
+    expect(formatJournalLine(entry, { envelope: false })).toEqual({
+      data: entry.payload,
+      line: '{"message":"clicked Sign in"}',
+    });
   });
 
   it("prints the whole envelope when asked", () => {
-    expect(JSON.parse(formatJournalLine(entry, { envelope: true }))).toEqual(
-      entry,
-    );
+    const formatted = formatJournalLine(entry, { envelope: true });
+
+    expect(formatted.data).toEqual(entry);
+    expect(JSON.parse(formatted.line)).toEqual(entry);
+  });
+});
+
+describe("countSkippedEntries", () => {
+  // Sequences start at 1 and a cursor means "after this one", so a cursor of 10
+  // with 11 still on disk has missed nothing.
+  it("counts nothing when the next entry is still on disk", () => {
+    expect(countSkippedEntries(10, 11)).toBe(0);
+  });
+
+  it("counts the entries dropped between the cursor and the oldest kept", () => {
+    expect(countSkippedEntries(1000, 5001)).toBe(4000);
+  });
+
+  it("counts nothing for a stream holding nothing", () => {
+    expect(countSkippedEntries(0, 0)).toBe(0);
   });
 });
 

@@ -23,6 +23,8 @@ export function makeAuthCtx(mode: OutputMode = "human"): {
   ctx: AuthCommandContext;
   outputs: () => { data: unknown; humanMessage: string }[];
   streamed: () => string[];
+  streamedData: () => unknown[];
+  warnings: () => string[];
 } {
   const callPublicApi = makeCallPublicApiMock();
   const base: CommandContext = makeCtx(mode);
@@ -37,11 +39,18 @@ export function makeAuthCtx(mode: OutputMode = "human"): {
       (
         base.ui.output as Mock<(data: unknown, humanMessage: string) => void>
       ).mock.calls.map(([data, humanMessage]) => ({ data, humanMessage })),
-    streamed: () =>
-      (base.ui.stream as Mock<(line: string) => void>).mock.calls.map(
-        ([line]) => line,
+    streamed: () => streamCalls(base).map(([, line]) => line),
+    streamedData: () => streamCalls(base).map(([data]) => data),
+    warnings: () =>
+      (base.ui.warn as Mock<(message: string) => void>).mock.calls.map(
+        ([message]) => message,
       ),
   };
+}
+
+function streamCalls(base: CommandContext): [unknown, string][] {
+  return (base.ui.stream as Mock<(data: unknown, line: string) => void>).mock
+    .calls;
 }
 
 export function makeTestDeps(

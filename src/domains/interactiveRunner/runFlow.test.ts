@@ -108,6 +108,46 @@ describe("handleRunnerRun", () => {
     expect(result?.exitCode).toBe(4);
   });
 
+  // Checking the files costs nothing and resolving a runner may launch and bill
+  // one, so a misspelled flow name must be answered before any of that.
+  it("refuses a misspelled flow without launching a runner", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerRun(
+      ctx,
+      {
+        entryPoint: "flows/chekcout.flow.ts",
+        follow: false,
+        runner: undefined,
+      },
+      deps,
+    );
+
+    expect(result?.exitCode).toBe(2);
+    expect(callPublicApi).not.toHaveBeenCalled();
+    expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
+  });
+
+  it("names the largest files when the payload is over the cap", async () => {
+    const { ctx } = makeAuthCtx();
+
+    const result = await handleRunnerRun(
+      ctx,
+      { entryPoint: "flow.ts", follow: false, runner: "ci" },
+      makeTestDeps({
+        collectRunFiles: async () => [
+          { content: "{}", path: "package.json" },
+          { content: "export default {};", path: "flow.ts" },
+          { content: "x".repeat(5 * 1024 * 1024), path: "dist/bundle.js" },
+        ],
+      }),
+    );
+
+    expect(result?.exitCode).toBe(2);
+    expect(result?.error).toContain("dist/bundle.js");
+  });
+
   it("announces the runner it had to launch, naming it", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi

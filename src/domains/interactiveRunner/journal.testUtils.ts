@@ -12,6 +12,9 @@ import type { PlatformResult } from "~/shell/platform/requestWithRetry.js";
  */
 export function makeJournal(
   scripts: Record<string, unknown[][]>,
+  // What the runner still holds, for the reads where history having been
+  // truncated out from under the cursor is the thing under test.
+  oldestAvailableSequence: Record<string, number> = {},
 ): (
   contract: AnyPublicApiContract,
   input: unknown,
@@ -38,7 +41,7 @@ export function makeJournal(
         entries,
         hasUnsearchedHistory: false,
         nextSequence: sequence,
-        oldestAvailableSequence: 1,
+        oldestAvailableSequence: oldestAvailableSequence[stream] ?? 1,
         outcome: "read",
       },
     });

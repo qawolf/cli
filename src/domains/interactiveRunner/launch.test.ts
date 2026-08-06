@@ -97,7 +97,11 @@ describe("handleRunnerLaunch", () => {
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 
-  it("reports a failed request as a network failure and stores no default", async () => {
+  // A launch is one attempt with a deadline, and a pod slower than the deadline
+  // is created and billed anyway. Forgetting the id here is what would make the
+  // retry mint a new one and pay for a second pod, so the id survives the
+  // failure and the message says what to do with it.
+  it("keeps the id and names it when the request fails", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({ ok: false, error: "apex unreachable" });
     const deps = makeTestDeps();
@@ -108,7 +112,36 @@ describe("handleRunnerLaunch", () => {
       deps,
     );
 
-    expect(result).toEqual({ error: "apex unreachable", exitCode: 4 });
-    expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
+    expect(result?.exitCode).toBe(4);
+    expect(result?.error).toContain("apex unreachable");
+    expect(result?.error).toContain("qawolf runner launch --id ci");
+    expect(await deps.store.readDefaultRunnerId()).toBe("ci");
+  });
+
+  // The pod is what costs money, so a directory the CLI cannot write to must not
+  // turn a launch that worked into a failure with an unnamed runner behind it.
+  it("still reports the runner when the default cannot be written", async () => {
+    const { callPublicApi, ctx, outputs } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({ ok: true, value: launched });
+
+    const result = await handleRunnerLaunch(
+      ctx,
+      { id: undefined, name: undefined },
+      makeTestDeps({
+        store: {
+          clearDefaultRunnerId: async () => {},
+          readDefaultRunnerId: async () => undefined,
+          writeDefaultRunnerId: async () => {
+            throw new Error("EACCES: permission denied, mkdir '/app/.qawolf'");
+          },
+        },
+      }),
+    );
+
+    expect(result).toBeUndefined();
+    expect(outputs()[0]?.humanMessage).toContain("cli-minted");
+    expect(ctx.ui.warn).toHaveBeenCalledWith(
+      expect.stringContaining("--runner cli-minted"),
+    );
   });
 });

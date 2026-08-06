@@ -88,6 +88,59 @@ describe("followRun", () => {
     expect(result?.error).toContain("could not be reached");
   });
 
+  // The journal keeps a bounded history and drops its oldest entries, so a
+  // follow can be handed a window that starts after where it asked to continue
+  // from. Printing the rest without saying so hands back a log with a hole in it.
+  it("says so when the runner dropped log lines it had not read yet", async () => {
+    const { callPublicApi, ctx, warnings } = makeAuthCtx();
+    callPublicApi.mockImplementation(
+      makeJournal(
+        {
+          "run-logs": [[logLine("the tail of a busy run")]],
+          "run-status": [[passed]],
+        },
+        { "run-logs": 4001 },
+      ),
+    );
+
+    await follow(ctx);
+
+    expect(warnings().join(" ")).toContain("4000 entries of run-logs");
+  });
+
+  it("says nothing about dropped lines when nothing was dropped", async () => {
+    const { callPublicApi, ctx, warnings } = makeAuthCtx();
+    callPublicApi.mockImplementation(
+      makeJournal({
+        "run-logs": [[logLine("starting")]],
+        "run-status": [[passed]],
+      }),
+    );
+
+    await follow(ctx);
+
+    expect(warnings()).toEqual([]);
+  });
+
+  // Under --json a log message is prose on a stream that owes its reader JSON, so
+  // the entry travels beside the rendered line and json mode prints the entry.
+  it("hands the whole entry to the renderer alongside the rendered line", async () => {
+    const { callPublicApi, ctx, streamedData } = makeAuthCtx();
+    callPublicApi.mockImplementation(
+      makeJournal({
+        "run-logs": [[logLine("starting")]],
+        "run-status": [[passed]],
+      }),
+    );
+
+    await follow(ctx);
+
+    expect(streamedData()[0]).toMatchObject({
+      payload: { message: "starting" },
+      sequence: 1,
+    });
+  });
+
   it("reports a terminal status it does not recognise rather than polling for ever", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockImplementation(

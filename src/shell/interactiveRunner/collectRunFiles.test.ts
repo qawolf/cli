@@ -79,6 +79,19 @@ describe("collectRunFiles", () => {
     ).toEqual(["a.cjs", "b.js", "c.json", "d.mjs", "e.ts", "f.tsx"]);
   });
 
+  // Everything else the travel rule refuses is refused by the glob first, so this
+  // is the case that proves the predicate is what decides. A control character in
+  // a name is matched by `**/*.ts` and rejected only by `isShippableRunFilePath`.
+  it("leaves behind a path only the predicate refuses", async () => {
+    expect(
+      await collect({
+        [`bad${String.fromCharCode(1)}name.ts`]: "export default {};",
+        "flow.ts": "export default {};",
+        "package.json": "{}",
+      }),
+    ).toEqual(["flow.ts", "package.json"]);
+  });
+
   it("collects nothing from an empty directory", async () => {
     expect(await collect({})).toEqual([]);
   });

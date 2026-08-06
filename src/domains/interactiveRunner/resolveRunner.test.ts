@@ -98,16 +98,39 @@ describe("resolveRunner", () => {
     expect(resolved.type).toBe("failed");
   });
 
-  it("passes on a launch failure rather than carrying on without a runner", async () => {
+  // The id is written before the request, not after: a launch that times out may
+  // still have created and billed a pod, and an id kept only on success would be
+  // lost exactly then, so the retry would mint a new one and pay twice.
+  it("remembers the minted id before it launches, so a failure cannot lose it", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: false,
+      error: "request timed out after 15000ms",
+    });
+    const deps = makeTestDeps();
+
+    const resolved = await resolveRunner(
+      ctx,
+      { autoLaunch: true, runner: undefined },
+      deps,
+    );
+
+    expect(resolved).toMatchObject({ exitCode: 4, type: "failed" });
+    expect(await deps.store.readDefaultRunnerId()).toBe("cli-minted");
+  });
+
+  it("names the runner it was launching when the launch fails", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({ ok: false, error: "apex unreachable" });
 
-    expect(
-      await resolveRunner(
-        ctx,
-        { autoLaunch: true, runner: undefined },
-        makeTestDeps(),
-      ),
-    ).toEqual({ error: "apex unreachable", exitCode: 4, type: "failed" });
+    const resolved = await resolveRunner(
+      ctx,
+      { autoLaunch: true, runner: undefined },
+      makeTestDeps(),
+    );
+
+    expect(resolved.type === "failed" && resolved.error).toContain(
+      "cli-minted",
+    );
   });
 });

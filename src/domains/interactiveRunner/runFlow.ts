@@ -39,6 +39,7 @@ function describeCheck(
       return interactiveRunnerMessages.filesTooLarge(
         check.byteLength,
         check.maxByteLength,
+        check.largest,
       );
   }
 }
@@ -48,6 +49,16 @@ export async function handleRunnerRun(
   options: { entryPoint: string; follow: boolean; runner: string | undefined },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
+  // Before the runner, not after: collecting and checking the files costs
+  // nothing and resolving a runner may launch and bill one. A misspelled flow
+  // name should not be answered with a pod.
+  const entryPointPath = toCollectedPath(deps.cwd, options.entryPoint);
+  const files = await deps.collectRunFiles();
+  const check = checkRunFiles(files, entryPointPath);
+  if (check.type !== "ok") {
+    return { error: describeCheck(check), exitCode: exitCodes.invalidArgs };
+  }
+
   const resolved = await resolveRunner(
     ctx,
     { autoLaunch: true, runner: options.runner },
@@ -57,13 +68,6 @@ export async function handleRunnerRun(
     return { error: resolved.error, exitCode: resolved.exitCode };
   }
   announceRunner(ctx, resolved);
-
-  const entryPointPath = toCollectedPath(deps.cwd, options.entryPoint);
-  const files = await deps.collectRunFiles();
-  const check = checkRunFiles(files, entryPointPath);
-  if (check.type !== "ok") {
-    return { error: describeCheck(check), exitCode: exitCodes.invalidArgs };
-  }
 
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.runner.runFlow,
