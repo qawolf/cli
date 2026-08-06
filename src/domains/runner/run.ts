@@ -96,10 +96,16 @@ export async function flowsRun(
   // In json mode the reporter's streamed output is discarded (ui.write is a
   // no-op), so collect each failure's detail to attach to the final error.
   const failureDetails: string[] = [];
-  const reporter = createCompositeReporter([
-    deps.reporter,
-    { onFlowFail: ({ err }) => failureDetails.push(formatErrorWithCause(err)) },
-  ]);
+  const reporter =
+    ctx.outputMode === "json"
+      ? createCompositeReporter([
+          deps.reporter,
+          {
+            onFlowFail: ({ err }) =>
+              failureDetails.push(formatErrorWithCause(err)),
+          },
+        ])
+      : deps.reporter;
 
   const result = await executeFlows({
     ctx,
