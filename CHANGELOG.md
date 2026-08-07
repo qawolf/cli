@@ -1,5 +1,12 @@
 # @qawolf/cli
 
+## 1.7.1
+
+### Patch Changes
+
+- daf62a1: Correct the agent skill to use `QAWOLF_ENVIRONMENT`, matching the environment variable consumed by CLI flow commands.
+- 1a4558f: Improve the bundled agent skill with reusable environment selection, result reuse, and safe write guidance, and regenerate command documentation from `@qawolf/api-contracts` 0.22.0.
+
 ## 1.7.0
 
 ### Minor Changes
