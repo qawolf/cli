@@ -34,22 +34,28 @@ export async function ensurePackageJson(
 
   const raw = await deps.fs.readFile(pkgPath);
 
-  let pkg: Record<string, unknown>;
+  let parsed: unknown;
   try {
-    pkg = JSON.parse(raw) as Record<string, unknown>;
+    parsed = JSON.parse(raw);
   } catch {
     ctx.ui.warn(initMessages.packageJsonInvalidJson);
     return;
   }
+  // JSON.parse also accepts null, arrays, and primitives — none of which can
+  // safely take property assignments (or keep them through stringify).
+  if (!isRecord(parsed)) {
+    ctx.ui.warn(initMessages.packageJsonNotAnObject);
+    return;
+  }
+  const pkg = parsed;
 
-  const scripts = (pkg["scripts"] ?? {}) as Record<string, string>;
-  const dependencies = (pkg["dependencies"] ?? {}) as Record<string, string>;
-  const devDependencies = (pkg["devDependencies"] ?? {}) as Record<
-    string,
-    string
-  >;
+  // A section that exists but is not an object cannot be repaired without
+  // destroying whatever the user put there; skip only that repair.
+  const scripts = readSection(ctx, pkg, "scripts");
+  const dependencies = readSection(ctx, pkg, "dependencies");
+  const devDependencies = readSection(ctx, pkg, "devDependencies");
 
-  const needScript = !scripts["test:e2e"];
+  const needScript = scripts !== undefined && !scripts["test:e2e"];
   // The scaffolded flow and config are ES modules; Node picks their module
   // format from this package.json's "type". `npm init -y` writes an explicit
   // "type": "commonjs" on current npm, so an explicit value does not signal
@@ -59,7 +65,9 @@ export async function ensurePackageJson(
   const priorType = pkg["type"];
   const needType = priorType !== "module";
   const needFlowsDep =
-    !dependencies["@qawolf/flows"] && !devDependencies["@qawolf/flows"];
+    dependencies !== undefined &&
+    !dependencies["@qawolf/flows"] &&
+    !devDependencies?.["@qawolf/flows"];
 
   const changes: string[] = [];
   if (needScript) changes.push(initMessages.pkgChanges.script);
@@ -70,7 +78,7 @@ export async function ensurePackageJson(
     ctx.ui.info(initMessages.packageJsonUpToDate);
     return;
   }
-  if (!needScript) {
+  if (scripts !== undefined && scripts["test:e2e"]) {
     ctx.ui.warn(initMessages.packageJsonHasTestE2e);
   }
 
@@ -83,12 +91,12 @@ export async function ensurePackageJson(
     return;
   }
 
-  if (needScript) {
+  if (needScript && scripts !== undefined) {
     scripts["test:e2e"] = "qawolf flows run";
     pkg["scripts"] = scripts;
   }
   if (needType) pkg["type"] = "module";
-  if (needFlowsDep) {
+  if (needFlowsDep && dependencies !== undefined) {
     dependencies["@qawolf/flows"] = flowsVersion;
     pkg["dependencies"] = dependencies;
   }
@@ -104,4 +112,25 @@ export async function ensurePackageJson(
       typeof priorType === "string" ? priorType : JSON.stringify(priorType);
     ctx.ui.warn(initMessages.typeChanged(label));
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Reads a package.json section as a mutable record. Absent sections come back
+ * as an empty record (repairable); malformed ones come back undefined after a
+ * warning, so their repairs are skipped rather than destroying user data.
+ */
+function readSection(
+  ctx: CommandContext,
+  pkg: Record<string, unknown>,
+  key: "scripts" | "dependencies" | "devDependencies",
+): Record<string, unknown> | undefined {
+  const value = pkg[key];
+  if (value === undefined) return {};
+  if (isRecord(value)) return value;
+  ctx.ui.warn(initMessages.packageJsonMalformedSection(key));
+  return undefined;
 }

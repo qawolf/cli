@@ -28,7 +28,61 @@ async function initWithPkg(
   };
 }
 
+async function initWithRaw(raw: string) {
+  const memFs = makeMemoryFs();
+  await memFs.mkdir(cwd, { recursive: true });
+  await memFs.writeFile(pkgPath, raw);
+  const { ctx, messages } = makeCtx();
+
+  await handleInit(ctx, { yes: true }, { cwd, fs: memFs });
+
+  return { messages, written: await memFs.readFile(pkgPath) };
+}
+
 describe("handleInit with an existing package.json", () => {
+  it.each([["null"], ['"hello"'], ["[1]"]])(
+    "warns and leaves valid-JSON-but-not-an-object content %s unchanged",
+    async (raw) => {
+      const { written, messages } = await initWithRaw(raw);
+
+      expect(written).toBe(raw);
+      expect(
+        messages.some(
+          (m) => m.method === "warn" && m.text.includes("not a JSON object"),
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it("skips only the script repair when scripts is not an object", async () => {
+    const { pkg, messages } = await initWithPkg({
+      name: "app",
+      scripts: "broken",
+    });
+
+    expect(pkg["scripts"]).toBe("broken");
+    expect(pkg["type"]).toBe("module");
+    const deps = pkg["dependencies"] as Record<string, string>;
+    expect(deps["@qawolf/flows"]).toBe(flowsVersion);
+    expect(
+      messages.some(
+        (m) => m.method === "warn" && m.text.includes('non-object "scripts"'),
+      ),
+    ).toBe(true);
+  });
+
+  it("skips only the dependency repair when dependencies is not an object", async () => {
+    const { pkg } = await initWithPkg({
+      name: "app",
+      dependencies: "broken",
+    });
+
+    expect(pkg["dependencies"]).toBe("broken");
+    expect(pkg["type"]).toBe("module");
+    const scripts = pkg["scripts"] as Record<string, string>;
+    expect(scripts["test:e2e"]).toBe("qawolf flows run");
+  });
+
   it('sets "type": "module" and adds @qawolf/flows when both are missing', async () => {
     // The npm-init default: no "type", no dependencies — the state the
     // scaffolded ESM flow could not load from.

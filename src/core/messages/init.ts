@@ -8,6 +8,10 @@ export const initMessages = {
   createdPackageJson: "Created package.json",
   packageJsonInvalidJson:
     "package.json is not valid JSON — skipped updating it",
+  packageJsonNotAnObject:
+    "package.json is not a JSON object — skipped updating it",
+  packageJsonMalformedSection: (field: string) =>
+    `package.json has a non-object "${field}" — skipped changes to it`,
   packageJsonHasTestE2e:
     "package.json already has `test:e2e` — leaving it as is",
   packageJsonUpToDate: "package.json already configured — nothing to update",
