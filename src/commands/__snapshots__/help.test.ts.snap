@@ -20,12 +20,25 @@ Commands:
                                directory
   install [options] [pattern]  Install every runtime dependency the project's
                                flows need
-  automate [options]           Request an automation that builds the selected
-                               draft flows in an environment.
+  automate [options]           Request automation for draft flows. First create
+                               a named local .flow.ts draft for every requested
+                               journey that does not already have a matching
+                               draft; never reuse a generic starter or
+                               placeholder. Each new draft must start with a
+                               JSDoc Goal: description, import flow from
+                               @qawolf/flows/web, and use export default
+                               flow(...); a comment-only file or direct
+                               test(...) call is not a valid draft. Commit and
+                               push all changes with Git to publish them, then
+                               list remote drafts to resolve every selected ID.
+                               Do not use patch to create or rename a selected
+                               flow. Finally make one automation request
+                               containing all requested flow IDs.
   environment                  QA Wolf public API environment commands
   flow                         QA Wolf public API flow commands
   issue                        QA Wolf public API issue commands
   run                          Trigger and manage QA Wolf runs on the platform
+  runner                       QA Wolf public API runner commands
   tag                          QA Wolf public API tag commands
   help [command]               display help for command
 "

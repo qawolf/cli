@@ -7,6 +7,7 @@ export type Page = {
     id: string;
     name: string;
     kind: "static" | "preview";
+    runConcurrencyLimit: string;
     status: "blocked" | "needs-investigation" | "ready" | "running";
     url: string;
   }[];
@@ -64,5 +65,12 @@ export function env(
   name: string,
   kind: "static" | "preview" = "static",
 ): Page["environments"][number] {
-  return { id, name, kind, status: "ready", url: "https://x" };
+  return {
+    id,
+    name,
+    kind,
+    runConcurrencyLimit: "5",
+    status: "ready",
+    url: "https://x",
+  };
 }

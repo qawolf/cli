@@ -9,9 +9,10 @@ compatibility: Requires the qawolf CLI on PATH. Install it from @qawolf/cli or u
 
 `qawolf` runs QA Wolf flows locally and calls the QA Wolf public API.
 
-This file is an overview, not a reference. Before using any command, run
-`qawolf <command> --help` — the installed CLI is authoritative for flags and
-always matches its version.
+This file is an overview, not a reference. Before first using a command whose
+flags are not shown here, run `qawolf <command> --help` once. The installed CLI
+is authoritative for flags and always matches its version; reuse that syntax
+for the rest of the task.
 
 ## Auth
 
@@ -26,22 +27,42 @@ target another deployment host, for example
 `https://app.staging.example.com`. `QAWOLF_API_URL` is a separate API endpoint
 and does not select the deployment host used by CLI commands.
 
-For tasks that need the current environment, use `QAWOLF_ENVIRONMENT`. If it is
-unset, select an id from `qawolf --json environment find` and export it.
-Check the command's help for its environment flag: variable commands use
-`--environment-id`; `qawolf flows run` uses `--env`.
+Resolve the target environment once per task. Use `QAWOLF_ENVIRONMENT` when it
+is set; otherwise select an id or alias from
+`qawolf --json environment find` and reuse it. Shell invocations may not share
+exported variables, so pass the selected environment explicitly instead of
+rediscovering it. Check the command's help for its environment flag: variable
+commands use `--environment-id`; `qawolf flows run` uses `--env`.
+
+If multiple environments are returned and the task context does not identify
+the target, ask instead of guessing. Do not default to the newest environment.
+
+`qawolf environment listVariableNames` intentionally returns names only. A
+listed name is enough to reference `process.env.NAME` in flow code; do not ask
+for its value merely because the CLI does not return it.
 
 ## Output
 
 When consuming output programmatically, always pass `--json` (or `--agent`).
 Human-formatted output is not stable across versions. Errors go to stderr;
-a non-zero exit code means the command failed.
+a non-zero exit code means the command failed. Reuse successful read results
+within a task unless a relevant write or target change could make them stale.
 
 ## Safety: reads vs writes
 
-Read commands are safe to run and retry freely. Write commands act on the
-real team — confirm intent before running them, and never blind-retry a
-write on timeout: it may have reached the server the first time.
+Read commands do not change team data, but some have operational effects noted
+in their command entry. Write commands act on the real team. Do not invent
+configuration or write speculative values; write only when requested or when
+the task requires missing configuration whose exact value is known. A
+successful write response is confirmation, so do not read immediately only to
+verify it. Never blind-retry a write on timeout: it may have reached the server
+the first time.
+
+## Git-backed workflows
+
+Inspect `git status` before publishing. Stage and commit only files changed for
+the current task, preserve unrelated worktree changes, then push the task's
+current branch.
 
 ## Commands
 
