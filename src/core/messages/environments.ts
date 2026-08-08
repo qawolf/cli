@@ -12,6 +12,10 @@ export const environmentsMessages = {
     static: "Static environments",
     preview: "Preview (PR) environments",
   },
+  resolvedAlias: (ref: string, id: string) =>
+    `Environment ${ref} resolved to ${id}.`,
+  couldNotResolve: (ref: string, detail: string) =>
+    `Could not resolve environment ${ref}: ${detail} If ${ref} is an alias, note that aliases require a team API key.`,
   aborted: "Aborted; no environment selected.",
   tooManyPages: (pages: number) =>
     `Stopped listing environments after ${pages} pages. Pass --env explicitly.`,
