@@ -113,7 +113,7 @@ export function withContext(
     try {
       const result = await fn(ctx);
       if (result !== undefined) {
-        ctx.ui.error(result.error);
+        ctx.ui.error(result.error, result.errorBody);
         process.exitCode = result.exitCode ?? 1;
       }
     } catch (err: unknown) {
@@ -165,7 +165,7 @@ export function withAuthContext(
         apiKeySource: resolved.source,
       });
       if (result !== undefined) {
-        ctx.ui.error(result.error);
+        ctx.ui.error(result.error, result.errorBody);
         process.exitCode = result.exitCode ?? 1;
       }
     } catch (err: unknown) {

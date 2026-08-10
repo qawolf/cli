@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 import { Command } from "commander";
 
 import {
@@ -117,5 +125,25 @@ describe("withContext exit code plumbing", () => {
     })({}, fakeCommand());
 
     expect(process.exitCode).toBe(1);
+  });
+
+  it("passes errorBody through to the error diagnostic", async () => {
+    const writes: string[] = [];
+    spyOn(process.stderr, "write").mockImplementation((chunk) => {
+      writes.push(String(chunk));
+      return true;
+    });
+
+    await withContext(noopSignals, async () => ({
+      error: "1 flow(s) failed",
+      errorBody: "Caused by: expected title to be 'Dashboard'",
+    }))({}, fakeCommand());
+
+    const errorLine = writes.find((line) => line.includes('"type":"error"'));
+    expect(errorLine).toBeDefined();
+    expect(errorLine).toContain('"title":"1 flow(s) failed"');
+    expect(errorLine).toContain(
+      '"body":"Caused by: expected title to be \'Dashboard\'"',
+    );
   });
 });
