@@ -39,8 +39,19 @@ const skippedContractNames: ReadonlySet<string> = new Set([
 ]);
 
 const optionEnvironmentVariables = new Map([
+  ["environmentId", "QAWOLF_ENVIRONMENT"],
   ["public.run.create.aiTaskId", "QAWOLF_AI_TASK_ID"],
 ]);
+
+function optionEnvironmentVariable(
+  spec: CommandSpec,
+  field: string,
+): string | undefined {
+  return (
+    optionEnvironmentVariables.get(`${spec.trpcPath}.${field}`) ??
+    optionEnvironmentVariables.get(field)
+  );
+}
 
 function resolveGroup(parent: Command, segment: string): Command {
   const existing = parent.commands.find(
@@ -82,9 +93,7 @@ function registerSpec(
     spec.kind,
   ).description(spec.description);
   for (const flag of spec.flags) {
-    const environmentVariable = optionEnvironmentVariables.get(
-      `${spec.trpcPath}.${flag.field}`,
-    );
+    const environmentVariable = optionEnvironmentVariable(spec, flag.field);
     if (environmentVariable) {
       const option = new Option(flag.flag, flag.description).env(
         environmentVariable,
