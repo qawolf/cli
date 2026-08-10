@@ -4,7 +4,6 @@ import { join } from "node:path";
 import {
   appiumCliCandidates,
   nodeModulesBinCandidates,
-  playwrightCliCandidates,
 } from "./nodeModulesBins.js";
 
 describe("nodeModulesBinCandidates", () => {
@@ -40,16 +39,6 @@ describe("tool wrappers", () => {
     expect(appiumCliCandidates(envDir, "win32")).toEqual([
       join(binDir, "appium.cmd"),
       join(binDir, "appium.exe"),
-    ]);
-  });
-
-  it("names playwright", () => {
-    expect(playwrightCliCandidates(envDir, "linux")).toEqual([
-      join(binDir, "playwright"),
-    ]);
-    expect(playwrightCliCandidates(envDir, "win32")).toEqual([
-      join(binDir, "playwright.cmd"),
-      join(binDir, "playwright.exe"),
     ]);
   });
 });

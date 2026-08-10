@@ -14,6 +14,7 @@ type CheckDeps = {
   readonly apiKey: string | undefined;
   readonly fetch: typeof globalThis.fetch;
   readonly spawn: SpawnFn;
+  readonly execPath: string;
   readonly apiBaseUrl: string;
   readonly enginesNode: string;
   readonly processVersion: string;
@@ -44,6 +45,7 @@ export async function runChecks(deps: CheckDeps): Promise<CheckResult[]> {
     }),
     checkPlaywright({
       spawn: deps.spawn,
+      execPath: deps.execPath,
       envDir: deps.envDir,
       platform: deps.platform,
       checkExists: deps.checkExists,

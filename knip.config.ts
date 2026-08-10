@@ -15,8 +15,6 @@ const config: KnipConfig = {
     "dist/cli.js",
   ],
   ignoreDependencies: [
-    // TODO WIZ-10341 follow-up: consumed once the web-flow runner imports it.
-    "@playwright/test",
     // Installed into the managed runtime dir at runtime by ensureRuntimeEnv; not imported by the CLI.
     "appium",
     "appium-xcuitest-driver",

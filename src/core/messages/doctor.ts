@@ -59,6 +59,8 @@ export const doctorMessages = {
     launchFailed:
       "Could not launch Playwright. Try reinstalling the qawolf CLI.",
     versionUnparseable: "Could not parse playwright version output",
+    versionMismatch: (installed: string, pinned: string) =>
+      `Playwright ${installed} is installed but the flow runtime requires ${pinned}; local runs will fail to launch browsers. Run \`qawolf install\` to repair the runtime dependencies.`,
   },
   appium: {
     notFound: (path?: string) => toolNotInstalled("Appium", path),

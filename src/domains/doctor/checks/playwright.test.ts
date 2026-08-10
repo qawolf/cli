@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { join } from "node:path";
 
+import { playwrightVersion } from "~/generated/dependencyVersions.js";
 import type { SpawnFn, SpawnResult } from "~/shell/spawn.js";
 
 import { checkPlaywright } from "./playwright.js";
@@ -14,62 +15,55 @@ function spawnReturning(result: SpawnResult): SpawnFn {
 }
 
 const envDir = "/fake";
-const fakeCli = join(envDir, "node_modules", ".bin", "playwright");
+const execPath = "/fake/bin/node";
+const fakeCliJs = join(envDir, "node_modules", "playwright", "cli.js");
 
 const checkDeps = (spawn: SpawnFn) => ({
   spawn,
+  execPath,
   envDir,
   platform: "linux" as NodeJS.Platform,
   checkExists: () => true,
 });
 
+const versionOutput = (version: string): SpawnResult => ({
+  exitCode: 0,
+  stdout: `Version ${version}\n`,
+  stderr: "",
+});
+
 describe("checkPlaywright", () => {
-  it("spawns the .cmd shim when the platform is win32", async () => {
-    const spawn = spawnReturning({
-      exitCode: 0,
-      stdout: "Version 1.49.1\n",
-      stderr: "",
-    });
-    const r = await checkPlaywright({
-      spawn,
-      envDir,
-      platform: "win32",
-      checkExists: () => true,
-    });
+  it("runs the playwright package's cli.js through execPath, not a .bin shim", async () => {
+    const spawn = spawnReturning(versionOutput(playwrightVersion));
+    const r = await checkPlaywright(checkDeps(spawn));
     expect(r.status).toBe("pass");
-    expect(spawn).toHaveBeenCalledWith(
-      join(envDir, "node_modules", ".bin", "playwright.cmd"),
-      ["--version"],
-      { platform: "win32" },
-    );
+    expect(spawn).toHaveBeenCalledWith(execPath, [fakeCliJs, "--version"], {
+      platform: "linux",
+      env: { BUN_BE_BUN: "1" },
+    });
   });
 
-  it("spawns the .exe on win32 when bun wrote no .cmd shim", async () => {
-    const spawn = spawnReturning({
-      exitCode: 0,
-      stdout: "Version 1.49.1\n",
-      stderr: "",
-    });
+  it("uses the same cli.js path on win32 (no .cmd/.exe shim games)", async () => {
+    const spawn = spawnReturning(versionOutput(playwrightVersion));
     const r = await checkPlaywright({
       spawn,
+      execPath,
       envDir,
       platform: "win32",
-      checkExists: (path) => path.endsWith(".exe"),
+      checkExists: (path) => path === fakeCliJs,
     });
     expect(r.status).toBe("pass");
-    expect(spawn).toHaveBeenCalledWith(
-      join(envDir, "node_modules", ".bin", "playwright.exe"),
-      ["--version"],
-      { platform: "win32" },
-    );
+    expect(spawn).toHaveBeenCalledWith(execPath, [fakeCliJs, "--version"], {
+      platform: "win32",
+      env: { BUN_BE_BUN: "1" },
+    });
   });
 
   it("fails immediately when there is no env dir to resolve from", async () => {
-    const spawn = mock<SpawnFn>(() =>
-      Promise.resolve({ exitCode: 0, stdout: "", stderr: "" }),
-    );
+    const spawn = spawnReturning(versionOutput(playwrightVersion));
     const r = await checkPlaywright({
       spawn,
+      execPath,
       envDir: undefined,
       platform: "linux",
       checkExists: () => true,
@@ -82,39 +76,43 @@ describe("checkPlaywright", () => {
     expect(spawn).not.toHaveBeenCalled();
   });
 
-  it("fails immediately when no candidate shim exists", async () => {
-    const spawn = mock<SpawnFn>(() =>
-      Promise.resolve({ exitCode: 0, stdout: "", stderr: "" }),
-    );
+  it("fails immediately when cli.js does not exist", async () => {
+    const spawn = spawnReturning(versionOutput(playwrightVersion));
     const r = await checkPlaywright({
       spawn,
+      execPath,
       envDir,
       platform: "linux",
       checkExists: () => false,
     });
     expect(r.status).toBe("fail");
     expect(r.detail).toBe(
-      `Playwright not found at ${fakeCli}.\n` +
+      `Playwright not found at ${fakeCliJs}.\n` +
         "Run `qawolf install` to install the runtime dependencies.",
     );
     expect(spawn).not.toHaveBeenCalled();
   });
 
-  it("passes when --version exits 0 with a parseable version and includes version string", async () => {
-    const spawn = spawnReturning({
-      exitCode: 0,
-      stdout: "Version 1.49.1\n",
-      stderr: "",
-    });
+  it("passes when the reported version matches the pinned runtime version", async () => {
+    const spawn = spawnReturning(versionOutput(playwrightVersion));
     const r = await checkPlaywright(checkDeps(spawn));
     expect(r).toEqual({
       name: "playwright",
       status: "pass",
-      version: "1.49.1",
+      version: playwrightVersion,
     });
-    expect(spawn).toHaveBeenCalledWith(fakeCli, ["--version"], {
-      platform: "linux",
-    });
+  });
+
+  // The state the client report hit: doctor said "pass" while the installed
+  // playwright could not launch the browser build the runtime needs.
+  it("fails when the reported version differs from the pinned runtime version", async () => {
+    const spawn = spawnReturning(versionOutput("1.49.1"));
+    const r = await checkPlaywright(checkDeps(spawn));
+    expect(r.status).toBe("fail");
+    expect(r.version).toBe("1.49.1");
+    expect(r.detail).toBe(
+      `Playwright 1.49.1 is installed but the flow runtime requires ${playwrightVersion}; local runs will fail to launch browsers. Run \`qawolf install\` to repair the runtime dependencies.`,
+    );
   });
 
   it("fails when spawn errors (process failed to launch)", async () => {

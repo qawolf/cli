@@ -1,10 +1,9 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
-import { join } from "node:path";
 
 import { installBrowsers } from "~/domains/install/browsers.js";
 import {
-  envDir,
   fakeCli,
+  fakeExecPath,
   callsOf,
   makeDeps,
   makeCtx,
@@ -17,16 +16,18 @@ afterEach(() => {
   mock.restore();
 });
 
+const bunBeBun = { env: { BUN_BE_BUN: "1" } };
+
 describe("installBrowsers", () => {
-  it("spawns the .cmd shim when the platform is win32", async () => {
+  it("runs the same cli.js through execPath on win32 (no .cmd shim)", async () => {
     const { deps, ctx } = setup("Web - Chrome", { platform: "win32" });
 
     await installBrowsers(ctx, undefined, deps);
 
     expect(deps.spawn).toHaveBeenCalledWith(
-      join(envDir, "node_modules", ".bin", "playwright.cmd"),
-      ["install", "chromium"],
-      { platform: "win32" },
+      fakeExecPath,
+      [fakeCli, "install", "chromium"],
+      { platform: "win32", ...bunBeBun },
     );
   });
 
@@ -37,9 +38,11 @@ describe("installBrowsers", () => {
 
     expect(result).toBeUndefined();
     expect(deps.spawn).toHaveBeenCalledTimes(1);
-    expect(deps.spawn).toHaveBeenCalledWith(fakeCli, ["install", "chromium"], {
-      platform: "darwin",
-    });
+    expect(deps.spawn).toHaveBeenCalledWith(
+      fakeExecPath,
+      [fakeCli, "install", "chromium"],
+      { platform: "darwin", ...bunBeBun },
+    );
     expect(ui.withProgress).toHaveBeenCalledWith(
       expect.anything(),
       "Installed 1 browser.",
@@ -60,11 +63,11 @@ describe("installBrowsers", () => {
 
     await installBrowsers(ctx, undefined, deps);
 
-    const darwin = { platform: "darwin" };
+    const darwin = { platform: "darwin", ...bunBeBun };
     expect(callsOf(deps.spawn)).toEqual([
-      [fakeCli, ["install", "chromium"], darwin],
-      [fakeCli, ["install", "firefox"], darwin],
-      [fakeCli, ["install", "webkit"], darwin],
+      [fakeExecPath, [fakeCli, "install", "chromium"], darwin],
+      [fakeExecPath, [fakeCli, "install", "firefox"], darwin],
+      [fakeExecPath, [fakeCli, "install", "webkit"], darwin],
     ]);
     expect(ctx.ui.withProgress).toHaveBeenCalledWith(
       expect.anything(),
@@ -131,9 +134,9 @@ describe("installBrowsers", () => {
     await installBrowsers(ctx, undefined, deps);
 
     expect(deps.spawn).toHaveBeenCalledWith(
-      fakeCli,
-      ["install", "--with-deps", "chromium"],
-      { platform: "linux" },
+      fakeExecPath,
+      [fakeCli, "install", "--with-deps", "chromium"],
+      { platform: "linux", ...bunBeBun },
     );
   });
 
@@ -145,9 +148,11 @@ describe("installBrowsers", () => {
 
     await installBrowsers(ctx, undefined, deps);
 
-    expect(deps.spawn).toHaveBeenCalledWith(fakeCli, ["install", "chromium"], {
-      platform: "linux",
-    });
+    expect(deps.spawn).toHaveBeenCalledWith(
+      fakeExecPath,
+      [fakeCli, "install", "chromium"],
+      { platform: "linux", ...bunBeBun },
+    );
   });
 
   it("throws and stops on first non-zero exit", async () => {

@@ -17,9 +17,12 @@ function seedFullEnv(fs: MemFs, dir: string): void {
     fs.mkdirSync(pkgDir, { recursive: true });
     fs.writeFileSync(join(pkgDir, "package.json"), JSON.stringify({ version }));
   }
+  fs.writeFileSync(
+    join(dir, "node_modules", "playwright", "cli.js"),
+    "#!/usr/bin/env node",
+  );
   const binDir = join(dir, "node_modules", ".bin");
   fs.mkdirSync(binDir, { recursive: true });
-  fs.writeFileSync(join(binDir, "playwright"), "#!/bin/sh");
   fs.writeFileSync(join(binDir, "appium"), "#!/bin/sh");
 }
 

@@ -19,10 +19,3 @@ export function appiumCliCandidates(
 ): string[] {
   return nodeModulesBinCandidates(envDir, "appium", platform);
 }
-
-export function playwrightCliCandidates(
-  envDir: string,
-  platform: NodeJS.Platform,
-): string[] {
-  return nodeModulesBinCandidates(envDir, "playwright", platform);
-}

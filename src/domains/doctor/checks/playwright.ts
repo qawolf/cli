@@ -1,11 +1,16 @@
 import { doctorMessages } from "~/core/messages/index.js";
-import { playwrightCliCandidates } from "~/core/nodeModulesBins.js";
+import {
+  playwrightCliInvocation,
+  playwrightCliJsPath,
+} from "~/core/playwrightCli.js";
+import { playwrightVersion } from "~/generated/dependencyVersions.js";
 import type { SpawnFn } from "~/shell/spawn.js";
 
 import type { CheckResult } from "~/domains/doctor/types.js";
 
 type PlaywrightDeps = {
   readonly spawn: SpawnFn;
+  readonly execPath: string;
   readonly envDir: string | undefined;
   readonly platform: NodeJS.Platform;
   readonly checkExists: (path: string) => boolean;
@@ -14,21 +19,30 @@ type PlaywrightDeps = {
 export async function checkPlaywright(
   deps: PlaywrightDeps,
 ): Promise<CheckResult> {
-  const candidates = deps.envDir
-    ? playwrightCliCandidates(deps.envDir, deps.platform)
-    : [];
-  const cliPath = candidates.find(deps.checkExists);
+  const { envDir } = deps;
+  const cliJsPath =
+    envDir === undefined ? undefined : playwrightCliJsPath(envDir);
 
-  if (cliPath === undefined) {
+  if (
+    envDir === undefined ||
+    cliJsPath === undefined ||
+    !deps.checkExists(cliJsPath)
+  ) {
     return {
       name: "playwright",
       status: "fail",
-      detail: doctorMessages.playwright.notFound(candidates[0]),
+      detail: doctorMessages.playwright.notFound(cliJsPath),
     };
   }
 
-  const result = await deps.spawn(cliPath, ["--version"], {
+  const invocation = playwrightCliInvocation({
+    envDir,
+    execPath: deps.execPath,
+    cliArgs: ["--version"],
+  });
+  const result = await deps.spawn(invocation.cmd, invocation.args, {
     platform: deps.platform,
+    env: invocation.env,
   });
 
   if (result.exitCode < 0) {
@@ -52,6 +66,20 @@ export async function checkPlaywright(
       name: "playwright",
       status: "fail",
       detail: doctorMessages.playwright.versionUnparseable,
+    };
+  }
+
+  // A version other than the pin means the env dir resolves a playwright the
+  // flow runtime was not built against — browser builds will not line up.
+  if (version !== playwrightVersion) {
+    return {
+      name: "playwright",
+      status: "fail",
+      version,
+      detail: doctorMessages.playwright.versionMismatch(
+        version,
+        playwrightVersion,
+      ),
     };
   }
 
