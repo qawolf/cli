@@ -19,6 +19,10 @@ export const flowsMessages = {
       "--remote requires an environment. Pass --env <env> or set QAWOLF_ENVIRONMENT.",
     flagsRequireRemote: "--env and --include-drafts require --remote",
   },
+  run: {
+    requiresEnv:
+      "An environment is required. Pass --env <env> or set QAWOLF_ENVIRONMENT.",
+  },
   pull: {
     requiresEnv:
       "An environment is required. Pass --env <env> or set QAWOLF_ENVIRONMENT.",

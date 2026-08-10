@@ -1,7 +1,8 @@
 import type { Command } from "commander";
 
-import { withAuthContext, withContext } from "~/commands/context.js";
+import { withContext } from "~/commands/context.js";
 import { declareCommandKind } from "~/commands/commandKind.js";
+import { flowsMessages } from "~/core/messages/index.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import type {
   HarContent,
@@ -15,6 +16,7 @@ import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
 import { handleFlowsRun } from "./runDefaults.js";
 import { handleHybridFlowsRun } from "./hybridRunDefaults.js";
+import { withResolvedEnv } from "./withResolvedEnv.js";
 
 const videoModes = ["on", "off", "retain-on-failure"] as const;
 const traceModes = ["on", "off", "retain-on-failure"] as const;
@@ -115,9 +117,16 @@ export function registerFlowsRunCommand(
         command: Command,
       ) => {
         if (opts.env !== undefined) {
-          const hybridFlags = { ...opts, env: opts.env };
-          return withAuthContext(signals, (ctx) =>
-            handleHybridFlowsRun(ctx, pattern, hybridFlags),
+          // Resolution turns an alias into the canonical id before the
+          // .qawolf/<env>/ cache lookup, so --env <alias> and --env <id>
+          // share one cache directory.
+          return withResolvedEnv(
+            signals,
+            {
+              explicit: opts.env,
+              requiredMessage: flowsMessages.run.requiresEnv,
+            },
+            (ctx, env) => handleHybridFlowsRun(ctx, pattern, { ...opts, env }),
           )(opts, command);
         }
         return withContext(signals, (ctx) =>

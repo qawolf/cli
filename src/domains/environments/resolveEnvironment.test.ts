@@ -4,27 +4,72 @@ import { resolveEnvironment } from "./resolveEnvironment.js";
 import { env, makeDeps } from "./resolveEnvironment.testUtils.js";
 
 describe("resolveEnvironment", () => {
-  it("returns the trimmed --env flag without any lookup", async () => {
-    const { deps, callPublicApi } = makeDeps({});
+  it("resolves the trimmed --env flag through environment.get", async () => {
+    const { deps, getEnvironment, findEnvironments } = makeDeps({
+      getEnv: env("env-1", "Staging"),
+    });
 
     const outcome = await resolveEnvironment(deps, {
       explicit: "  staging  ",
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "staging" });
-    expect(callPublicApi).not.toHaveBeenCalled();
+    expect(outcome).toEqual({ kind: "resolved", env: "env-1" });
+    expect(getEnvironment).toHaveBeenCalledWith({ environmentId: "staging" });
+    expect(findEnvironments).not.toHaveBeenCalled();
   });
 
-  it("falls back to QAWOLF_ENVIRONMENT and notes the source", async () => {
-    const { deps, info } = makeDeps({ envVar: " prod " });
+  it("notes the id an alias resolved to", async () => {
+    const { deps, info } = makeDeps({ getEnv: env("env-1", "Staging") });
+
+    await resolveEnvironment(deps, {
+      explicit: "staging",
+      requiredMessage: "req",
+    });
+
+    expect(info).toHaveBeenCalledWith("Environment staging resolved to env-1.");
+  });
+
+  it("stays quiet when --env is already the canonical id", async () => {
+    const { deps, info } = makeDeps({ getEnv: env("env-1", "Staging") });
+
+    const outcome = await resolveEnvironment(deps, {
+      explicit: "env-1",
+      requiredMessage: "req",
+    });
+
+    expect(outcome).toEqual({ kind: "resolved", env: "env-1" });
+    expect(info).not.toHaveBeenCalled();
+  });
+
+  it("surfaces an environment.get failure with the alias caveat", async () => {
+    const { deps } = makeDeps({ getError: "HTTP 400" });
+
+    const outcome = await resolveEnvironment(deps, {
+      explicit: "staging",
+      requiredMessage: "req",
+    });
+
+    expect(outcome).toEqual({
+      kind: "error",
+      error:
+        "Could not resolve environment staging: HTTP 400 If staging is an alias, note that aliases require a team API key.",
+    });
+  });
+
+  it("falls back to QAWOLF_ENVIRONMENT, notes the source, and resolves it", async () => {
+    const { deps, info, getEnvironment } = makeDeps({
+      envVar: " prod ",
+      getEnv: env("env-2", "Prod"),
+    });
 
     const outcome = await resolveEnvironment(deps, {
       explicit: undefined,
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "prod" });
+    expect(outcome).toEqual({ kind: "resolved", env: "env-2" });
+    expect(getEnvironment).toHaveBeenCalledWith({ environmentId: "prod" });
     expect(info).toHaveBeenCalledWith(
       "Using environment from QAWOLF_ENVIRONMENT (prod)",
     );
@@ -43,7 +88,7 @@ describe("resolveEnvironment", () => {
 
   it("errors with the required message in non-human modes", async () => {
     for (const mode of ["json", "agent"] as const) {
-      const { deps, callPublicApi } = makeDeps({ mode });
+      const { deps, findEnvironments, getEnvironment } = makeDeps({ mode });
 
       const outcome = await resolveEnvironment(deps, {
         explicit: undefined,
@@ -51,7 +96,8 @@ describe("resolveEnvironment", () => {
       });
 
       expect(outcome).toEqual({ kind: "error", error: "req" });
-      expect(callPublicApi).not.toHaveBeenCalled();
+      expect(findEnvironments).not.toHaveBeenCalled();
+      expect(getEnvironment).not.toHaveBeenCalled();
     }
   });
 
@@ -112,7 +158,7 @@ describe("resolveEnvironment", () => {
   });
 
   it("pages through nextCursor before prompting", async () => {
-    const { deps, callPublicApi, select } = makeDeps({
+    const { deps, findEnvironments, select } = makeDeps({
       pages: [
         { environments: [env("env-1", "A")], nextCursor: "c2" },
         { environments: [env("env-2", "B")] },
@@ -126,7 +172,7 @@ describe("resolveEnvironment", () => {
     });
 
     expect(outcome).toEqual({ kind: "resolved", env: "env-1" });
-    expect(callPublicApi).toHaveBeenCalledTimes(2);
+    expect(findEnvironments).toHaveBeenCalledTimes(2);
     expect(select).toHaveBeenCalledTimes(1);
   });
 
@@ -145,7 +191,7 @@ describe("resolveEnvironment", () => {
   });
 
   it("stops with an error when pagination never terminates", async () => {
-    const { deps, callPublicApi } = makeDeps({ endlessCursor: true });
+    const { deps, findEnvironments } = makeDeps({ endlessCursor: true });
 
     const outcome = await resolveEnvironment(deps, {
       explicit: undefined,
@@ -157,7 +203,7 @@ describe("resolveEnvironment", () => {
       error:
         "Stopped listing environments after 10 pages. Pass --env explicitly.",
     });
-    expect(callPublicApi).toHaveBeenCalledTimes(10);
+    expect(findEnvironments).toHaveBeenCalledTimes(10);
   });
 
   it("surfaces a platform error", async () => {
