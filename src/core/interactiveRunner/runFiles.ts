@@ -1,5 +1,5 @@
 import {
-  type RunFile,
+  type RunFiles,
   maxRunFilesByteLength,
   runFilesByteLength,
   runPackageJsonPath,
@@ -35,26 +35,24 @@ export type RunFilesCheck =
  */
 const namedLargestFileCount = 3;
 
-function largestFiles(
-  files: readonly RunFile[],
-): { byteLength: number; path: string }[] {
-  return files
-    .map((file) => ({
-      byteLength: runFilesByteLength([file]),
-      path: file.path,
+function largestFiles(files: RunFiles): { byteLength: number; path: string }[] {
+  return Object.entries(files)
+    .map(([path, content]) => ({
+      byteLength: runFilesByteLength({ [path]: content }),
+      path,
     }))
     .sort((a, b) => b.byteLength - a.byteLength)
     .slice(0, namedLargestFileCount);
 }
 
 export function checkRunFiles(
-  files: readonly RunFile[],
+  files: RunFiles,
   entryPointPath: string,
 ): RunFilesCheck {
-  if (!files.some((file) => file.path === entryPointPath)) {
+  if (!Object.hasOwn(files, entryPointPath)) {
     return { entryPointPath, type: "missing-entry-point" };
   }
-  if (!files.some((file) => file.path === runPackageJsonPath)) {
+  if (!Object.hasOwn(files, runPackageJsonPath)) {
     return { type: "missing-package-json" };
   }
   const byteLength = runFilesByteLength(files);

@@ -1,5 +1,5 @@
 import type { Mock } from "bun:test";
-import type { RunFile } from "@qawolf/api-contracts/v1";
+import type { RunFiles } from "@qawolf/api-contracts/v1";
 
 import { makeCtx } from "~/shell/commandContext.testUtils.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
@@ -56,10 +56,10 @@ function streamCalls(base: CommandContext): [unknown, string][] {
 export function makeTestDeps(
   overrides: Partial<InteractiveRunnerDeps> = {},
 ): InteractiveRunnerDeps {
-  const files: RunFile[] = [
-    { content: "{}", path: "package.json" },
-    { content: "export default {};", path: "flow.ts" },
-  ];
+  const files: RunFiles = {
+    "flow.ts": "export default {};",
+    "package.json": "{}",
+  };
   return {
     collectRunFiles: async () => files,
     cwd: testCwd,

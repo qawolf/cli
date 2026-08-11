@@ -32,7 +32,7 @@ async function collect(files: Record<string, string>): Promise<string[]> {
     cwd: makeWorkspace(files),
     fs: makeDefaultFs(),
   });
-  return collected.map((file) => file.path);
+  return Object.keys(collected);
 }
 
 describe("collectRunFiles", () => {
@@ -45,11 +45,11 @@ describe("collectRunFiles", () => {
 
     const collected = await collectRunFiles({ cwd, fs: makeDefaultFs() });
 
-    expect(collected).toEqual([
-      { content: "export default {};", path: "flows/checkout.flow.ts" },
-      { content: '{"name":"project"}', path: "package.json" },
-      { content: "{}", path: "tsconfig.json" },
-    ]);
+    expect(collected).toEqual({
+      "flows/checkout.flow.ts": "export default {};",
+      "package.json": '{"name":"project"}',
+      "tsconfig.json": "{}",
+    });
   });
 
   it("leaves behind what the travel rule refuses", async () => {

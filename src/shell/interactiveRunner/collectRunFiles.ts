@@ -1,5 +1,5 @@
 import {
-  type RunFile,
+  type RunFiles,
   isShippableRunFilePath,
   shippableRunFileExtensions,
 } from "@qawolf/api-contracts/v1";
@@ -29,7 +29,7 @@ import type { Fs } from "~/shell/fs.js";
 export async function collectRunFiles(options: {
   cwd: string;
   fs: Fs;
-}): Promise<RunFile[]> {
+}): Promise<RunFiles> {
   const paths = await glob(
     shippableRunFileExtensions.map((extension) => `**/*${extension}`),
     {
@@ -46,7 +46,7 @@ export async function collectRunFiles(options: {
   // In batches rather than all at once: a repository can hold thousands of
   // matching files, and one open descriptor each is how a collection fails with
   // EMFILE instead of a payload.
-  const files: RunFile[] = [];
+  const files: RunFiles = {};
   const read = batchMap(
     shippable,
     async (path) => ({
@@ -55,6 +55,6 @@ export async function collectRunFiles(options: {
     }),
     flowBatchSize,
   );
-  for await (const file of read) files.push(file);
+  for await (const file of read) files[file.path] = file.content;
   return files;
 }

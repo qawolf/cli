@@ -1,4 +1,4 @@
-import type { RunFile } from "@qawolf/api-contracts/v1";
+import type { RunFiles } from "@qawolf/api-contracts/v1";
 
 import { sleep as defaultSleep } from "~/core/sleep.js";
 import type { Fs } from "~/shell/fs.js";
@@ -15,7 +15,7 @@ import {
  * sleep that does not wait.
  */
 export type InteractiveRunnerDeps = {
-  collectRunFiles: () => Promise<RunFile[]>;
+  collectRunFiles: () => Promise<RunFiles>;
   cwd: string;
   env: Record<string, string | undefined>;
   makeRunnerId: () => string;

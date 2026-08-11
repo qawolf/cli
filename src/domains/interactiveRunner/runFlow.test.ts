@@ -37,10 +37,10 @@ describe("handleRunnerRun", () => {
       publicContractsV1.runner.runFlow,
       {
         entryPointPath: "flow.ts",
-        files: [
-          { content: "{}", path: "package.json" },
-          { content: "export default {};", path: "flow.ts" },
-        ],
+        files: {
+          "flow.ts": "export default {};",
+          "package.json": "{}",
+        },
         id: "ci",
       },
     );
@@ -77,9 +77,7 @@ describe("handleRunnerRun", () => {
       ctx,
       { entryPoint: "flow.ts", follow: false, runner: "ci" },
       makeTestDeps({
-        collectRunFiles: async () => [
-          { content: "export default {};", path: "flow.ts" },
-        ],
+        collectRunFiles: async () => ({ "flow.ts": "export default {};" }),
       }),
     );
 
@@ -136,11 +134,11 @@ describe("handleRunnerRun", () => {
       ctx,
       { entryPoint: "flow.ts", follow: false, runner: "ci" },
       makeTestDeps({
-        collectRunFiles: async () => [
-          { content: "{}", path: "package.json" },
-          { content: "export default {};", path: "flow.ts" },
-          { content: "x".repeat(5 * 1024 * 1024), path: "dist/bundle.js" },
-        ],
+        collectRunFiles: async () => ({
+          "dist/bundle.js": "x".repeat(5 * 1024 * 1024),
+          "flow.ts": "export default {};",
+          "package.json": "{}",
+        }),
       }),
     );
 
