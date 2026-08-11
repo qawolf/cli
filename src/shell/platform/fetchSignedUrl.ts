@@ -75,6 +75,9 @@ export async function fetchSignedUrl(
     try {
       handle = await fs.openWriteHandle(partPath);
     } catch (error: unknown) {
+      // Nothing else cancels the transfer on an early return — without the
+      // abort the connection stays open and the body buffers in the background.
+      controller.abort(toError(error));
       return { ok: false, error: { cause: toError(error), kind: "network" } };
     }
     const discardPart = async () => {
@@ -103,6 +106,7 @@ export async function fetchSignedUrl(
       try {
         await handle.write(result.value);
       } catch (error: unknown) {
+        controller.abort(toError(error));
         await discardPart();
         return { ok: false, error: { cause: toError(error), kind: "network" } };
       }
