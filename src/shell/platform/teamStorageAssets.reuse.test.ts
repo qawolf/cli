@@ -71,16 +71,21 @@ describe("PlatformClient.syncTeamStorageAssets etag reuse", () => {
         : file,
     );
     const fetch = makeFetch(changedFiles);
+    const progress: { current: number; total: number }[] = [];
 
     const result = await createPlatformClient("qawolf_key", {
       baseUrl: "https://test.qawolf.com",
       fetch: fetch.fetch,
-    }).syncTeamStorageAssets(assetsDir);
+    }).syncTeamStorageAssets(assetsDir, {
+      onProgress: (p) => progress.push(p),
+    });
 
     expect(result).toEqual({
       ok: true,
       value: { downloadedCount: 1, reusedCount: 1, skippedCount: 0 },
     });
+    // Progress counts only real downloads; the reused file is not in the total.
+    expect(progress).toEqual([{ current: 1, total: 1 }]);
     expect(fetch.assetUrls).toEqual(["https://storage.example.com/root-v2"]);
     expect(await readFile(join(assetsDir, "root.txt"), "utf8")).toBe("root-v2");
     expect(await readFile(join(assetsDir, "nested", "data.csv"), "utf8")).toBe(

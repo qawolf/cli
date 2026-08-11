@@ -43,6 +43,35 @@ describe("PlatformClient.syncTeamStorageAssets", () => {
     expect(await fs.readFile("/assets/nested/data.csv")).toBe("nested");
   });
 
+  it("reports per-file progress while downloading", async () => {
+    const fakeFetch = makeFetch([
+      {
+        path: "root.txt",
+        signedUrl: "https://storage.example.com/root",
+        size: 4,
+      },
+      {
+        path: "nested/data.csv",
+        signedUrl: "https://storage.example.com/nested",
+        size: 6,
+      },
+    ]);
+    const progress: { current: number; total: number }[] = [];
+
+    await createPlatformClient("qawolf_key", {
+      baseUrl: "https://test.qawolf.com",
+      fetch: fakeFetch.fetch,
+      fs,
+    }).syncTeamStorageAssets(assetsDir, {
+      onProgress: (p) => progress.push(p),
+    });
+
+    expect(progress).toEqual([
+      { current: 1, total: 2 },
+      { current: 2, total: 2 },
+    ]);
+  });
+
   it("writes downloaded assets through the platform fs dependency", async () => {
     const fakeFetch = makeFetch([
       {

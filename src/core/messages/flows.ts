@@ -33,6 +33,8 @@ export const flowsMessages = {
     aborted: "Aborted; no changes.",
     extractingBundle: "Extracting bundle",
     downloadingTeamStorageAssets: "Downloading team-storage assets",
+    downloadingTeamStorageAssetsProgress: (current: number, total: number) =>
+      `Downloading team-storage assets (${String(current)}/${String(total)})`,
     teamStorageRequiresTeamKey:
       "Team storage requires a team API key; organization keys are not supported here.",
     summary: (result: PullSummaryInput, assetsAbs: string) => {
