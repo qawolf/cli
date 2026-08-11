@@ -38,7 +38,10 @@ function extractMessage(parsed: unknown): string | undefined {
  * HTML or a stack trace, neither of which belongs in CLI output. Returns ""
  * when the body is empty, is not JSON, or carries no message.
  */
-export function parseErrorBody(body: string, maxLength = defaultMaxLength) {
+export function parseErrorBody(
+  body: string,
+  maxLength = defaultMaxLength,
+): string {
   if (!body) return "";
 
   let parsed: unknown;
