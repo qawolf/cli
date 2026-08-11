@@ -63,6 +63,11 @@ const compile = spawnSync(
     "--strict",
     "--target",
     "es2022",
+    // Named rather than left to discovery: the sources are outside this repo, so
+    // tsc looks for @types beside them and finds none, and the package uses
+    // Buffer.
+    "--types",
+    "node",
     "--verbatimModuleSyntax",
     join(sourceSrcPath, "index.ts"),
   ],
