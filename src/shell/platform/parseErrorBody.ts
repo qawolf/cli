@@ -53,9 +53,12 @@ export function parseErrorBody(
 
   const message = extractMessage(parsed)?.trim();
   if (!message) return "";
-  // The ellipsis counts toward the limit, so the result is never longer
-  // than `maxLength`.
-  return message.length > maxLength
-    ? `${message.slice(0, maxLength - 1)}…`
-    : message;
+  return clip(message, maxLength);
+}
+
+// The ellipsis counts toward the limit, so the result is never longer than
+// `maxLength` — including a limit with no room for anything but the ellipsis.
+function clip(message: string, maxLength: number): string {
+  if (message.length <= maxLength) return message;
+  return maxLength < 1 ? "" : `${message.slice(0, maxLength - 1)}…`;
 }

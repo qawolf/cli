@@ -90,4 +90,16 @@ describe("parseErrorBody", () => {
 
     expect(parseErrorBody(body, 4)).toBe("abcd");
   });
+
+  it("returns just the ellipsis when the limit leaves room for nothing else", () => {
+    const body = JSON.stringify({ error: "abcdefghij" });
+
+    expect(parseErrorBody(body, 1)).toBe("…");
+  });
+
+  it.each([0, -5])("returns an empty string for a limit of %i", (maxLength) => {
+    const body = JSON.stringify({ error: "abcdefghij" });
+
+    expect(parseErrorBody(body, maxLength)).toBe("");
+  });
 });
