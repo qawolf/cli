@@ -1,33 +1,15 @@
-// oxlint-disable eslint/max-lines -- makeMemoryFs implements the full Fs interface in one closure over shared state; splitting would fragment it
 import type { FsDirent, Fs } from "./fs.js";
-import { posix } from "node:path";
 import { Readable } from "node:stream";
 
-const dirname = posix.dirname;
-
-// Callers build paths with a literal "/", but the code under test joins with
-// node:path, which emits "\" and a drive prefix on win32. Key every entry in
-// one POSIX form so both spellings name the same entry.
-function toKey(path: string) {
-  return path.replace(/\\/g, "/").replace(/^[A-Za-z]:/, "");
-}
-
-function throwNoEntError(
-  path: string,
-  kind: "mkdir" | "open" | "rm" | "stat" | "unlink",
-): never {
-  throw Object.assign(
-    new Error(`ENOENT: no such file or directory, ${kind} '${path}'`),
-    { code: "ENOENT" },
-  );
-}
-
-function throwNotDirError(path: string, syscall: string): never {
-  throw Object.assign(
-    new Error(`ENOTDIR: not a directory, ${syscall} '${path}'`),
-    { code: "ENOTDIR" },
-  );
-}
+import {
+  addParents,
+  childNames,
+  joinPath,
+  requireParent,
+  throwNoEntError,
+  throwNotDirError,
+  toKey,
+} from "./memoryFsTree.testUtils.js";
 
 export function makeMemoryFs(): Fs {
   const files = new Map<string, Uint8Array>();
@@ -35,53 +17,12 @@ export function makeMemoryFs(): Fs {
   const textEncoder = new TextEncoder();
   const textDecoder = new TextDecoder();
 
-  function joinPath(dir: string, name: string) {
-    return dir === "/" ? `/${name}` : `${dir}/${name}`;
-  }
-
-  function addParents(filePath: string) {
-    let dir = dirname(filePath);
-    while (dir !== "." && dir !== "/") {
-      dirs.add(dir);
-      dir = dirname(dir);
-    }
-    if (dir === "/") dirs.add(dir);
-  }
-
-  function childNames(path: string) {
-    const prefix = path === "/" ? "/" : path + "/";
-    const names = new Set<string>();
-    for (const f of files.keys()) {
-      if (f.startsWith(prefix)) {
-        const segment = f.slice(prefix.length).split("/")[0];
-        if (segment) names.add(segment);
-      }
-    }
-    for (const d of dirs) {
-      if (d !== path && d.startsWith(prefix)) {
-        const rel = d.slice(prefix.length);
-        if (!rel.includes("/")) names.add(rel);
-      }
-    }
-    return [...names];
-  }
-
-  // `rawPath` is only for the error message, so it echoes the caller's spelling.
-  function requireParent(
-    path: string,
-    rawPath: string,
-    kind: "mkdir" | "open",
-  ) {
-    const parent = dirname(path);
-    if (parent !== "/" && !dirs.has(parent)) throwNoEntError(rawPath, kind);
-  }
-
   return {
     async mkdir(rawPath, opts) {
       const path = toKey(rawPath);
-      if (!opts?.recursive) requireParent(path, rawPath, "mkdir");
+      if (!opts?.recursive) requireParent(dirs, path, rawPath, "mkdir");
       dirs.add(path);
-      if (opts?.recursive) addParents(path);
+      if (opts?.recursive) addParents(dirs, path);
     },
     async pathExists(rawPath) {
       const path = toKey(rawPath);
@@ -148,7 +89,7 @@ export function makeMemoryFs(): Fs {
     },
     async writeFile(rawPath, data, _options) {
       const path = toKey(rawPath);
-      requireParent(path, rawPath, "open");
+      requireParent(dirs, path, rawPath, "open");
       files.set(
         path,
         typeof data === "string" ? textEncoder.encode(data) : data,
@@ -156,7 +97,7 @@ export function makeMemoryFs(): Fs {
     },
     async openWriteHandle(rawPath) {
       const path = toKey(rawPath);
-      requireParent(path, rawPath, "open");
+      requireParent(dirs, path, rawPath, "open");
       files.set(path, new Uint8Array(0));
       return {
         async write(chunk) {
@@ -173,14 +114,14 @@ export function makeMemoryFs(): Fs {
       const path = toKey(rawPath);
       if (files.has(path)) throwNotDirError(rawPath, "scandir");
       if (!dirs.has(path)) throwNoEntError(rawPath, "open");
-      return Promise.resolve(childNames(path));
+      return Promise.resolve(childNames(files, dirs, path));
     },
     readdirWithTypes(rawPath) {
       const path = toKey(rawPath);
       if (files.has(path)) throwNotDirError(rawPath, "scandir");
       if (!dirs.has(path)) throwNoEntError(rawPath, "open");
       return Promise.resolve<FsDirent[]>(
-        childNames(path).map((name) => {
+        childNames(files, dirs, path).map((name) => {
           const fullPath = joinPath(path, name);
           const isFileSnapshot = files.has(fullPath);
           const isDirSnapshot = dirs.has(fullPath);
@@ -196,13 +137,13 @@ export function makeMemoryFs(): Fs {
       const oldPath = toKey(rawOldPath);
       const newPath = toKey(rawNewPath);
       if (files.has(oldPath)) {
-        requireParent(newPath, rawNewPath, "open");
+        requireParent(dirs, newPath, rawNewPath, "open");
         files.set(newPath, files.get(oldPath)!);
         files.delete(oldPath);
         return Promise.resolve();
       }
       if (dirs.has(oldPath)) {
-        requireParent(newPath, rawNewPath, "open");
+        requireParent(dirs, newPath, rawNewPath, "open");
         const oldPrefix = oldPath + "/";
         const newPrefix = newPath + "/";
         dirs.delete(oldPath);
@@ -235,7 +176,7 @@ export function makeMemoryFs(): Fs {
       const destination = toKey(rawDestination);
       const data = files.get(toKey(rawSource));
       if (data === undefined) throwNoEntError(rawSource, "open");
-      requireParent(destination, rawDestination, "open");
+      requireParent(dirs, destination, rawDestination, "open");
       files.set(destination, data.slice());
     },
     existsSync(rawPath) {
@@ -249,14 +190,14 @@ export function makeMemoryFs(): Fs {
     },
     writeFileSync(rawPath, data) {
       const path = toKey(rawPath);
-      requireParent(path, rawPath, "open");
+      requireParent(dirs, path, rawPath, "open");
       files.set(path, textEncoder.encode(data));
     },
     mkdirSync(rawPath, opts) {
       const path = toKey(rawPath);
-      if (!opts?.recursive) requireParent(path, rawPath, "mkdir");
+      if (!opts?.recursive) requireParent(dirs, path, rawPath, "mkdir");
       dirs.add(path);
-      if (opts?.recursive) addParents(path);
+      if (opts?.recursive) addParents(dirs, path);
     },
   };
 }
