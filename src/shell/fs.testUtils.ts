@@ -1,3 +1,4 @@
+// oxlint-disable eslint/max-lines -- makeMemoryFs implements the full Fs interface in one closure over shared state; splitting would fragment it
 import type { FsDirent, Fs } from "./fs.js";
 import { posix } from "node:path";
 import { Readable } from "node:stream";
@@ -152,6 +153,21 @@ export function makeMemoryFs(): Fs {
         path,
         typeof data === "string" ? textEncoder.encode(data) : data,
       );
+    },
+    async openWriteHandle(rawPath) {
+      const path = toKey(rawPath);
+      requireParent(path, rawPath, "open");
+      files.set(path, new Uint8Array(0));
+      return {
+        async write(chunk) {
+          const existing = files.get(path) ?? new Uint8Array(0);
+          const grown = new Uint8Array(existing.length + chunk.length);
+          grown.set(existing, 0);
+          grown.set(chunk, existing.length);
+          files.set(path, grown);
+        },
+        async close() {},
+      };
     },
     readdir(rawPath) {
       const path = toKey(rawPath);

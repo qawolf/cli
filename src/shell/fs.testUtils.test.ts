@@ -446,4 +446,34 @@ describe("makeMemoryFs", () => {
     expect(await fs.readdir("/x/y")).toEqual(["f.txt"]);
     expect(await fs.pathExists("/x")).toBe(true);
   });
+
+  it("should accumulate write-handle chunks into the file across close", async () => {
+    const fs = makeMemoryFs();
+    const encoder = new TextEncoder();
+    const handle = await fs.openWriteHandle("/streamed.bin");
+    await handle.write(encoder.encode("abc"));
+    await handle.write(encoder.encode("def"));
+    await handle.close();
+    expect(await fs.readFile("/streamed.bin")).toBe("abcdef");
+  });
+
+  it("should replace existing content when a write handle opens the path", async () => {
+    const fs = makeMemoryFs();
+    await fs.writeFile("/f.txt", "old content");
+    const handle = await fs.openWriteHandle("/f.txt");
+    await handle.write(new TextEncoder().encode("new"));
+    await handle.close();
+    expect(await fs.readFile("/f.txt")).toBe("new");
+  });
+
+  it("should throw ENOENT when a write handle opens under a missing parent", async () => {
+    const fs = makeMemoryFs();
+    let caughtError: unknown;
+    try {
+      await fs.openWriteHandle("/no/such/dir/f.bin");
+    } catch (e) {
+      caughtError = e;
+    }
+    expect(isNoEntError(caughtError)).toBe(true);
+  });
 });

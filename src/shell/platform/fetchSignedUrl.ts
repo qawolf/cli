@@ -1,5 +1,5 @@
 import { isTimeoutError } from "~/core/errors.js";
-import { makeDefaultFs, type Fs } from "~/shell/fs.js";
+import { makeDefaultFs, type Fs, type FsWriteHandle } from "~/shell/fs.js";
 import type { WireResult } from "./createTrpcClient.js";
 import { toError } from "./toError.js";
 
@@ -22,6 +22,10 @@ export async function fetchSignedUrl(
   deps: Deps = { fetch: globalThis.fetch },
 ): Promise<WireResult<void>> {
   const timeoutMs = deps.stallTimeoutMs ?? defaultStallTimeoutMs;
+  const fs = deps.fs ?? makeDefaultFs();
+  // Chunks stream to a sibling .part file so peak memory stays at one chunk
+  // regardless of asset size; the finished file is renamed into place.
+  const partPath = `${args.dest}.part`;
 
   // The window is a stall timeout, not a whole-download deadline: it resets
   // every time bytes arrive, so a slow-but-progressing download of any size can
@@ -67,38 +71,51 @@ export async function fetchSignedUrl(
       };
     }
 
-    // Read the body before writing it, so a stall part-way through the
-    // download is a timeout while a failed write is local.
-    const chunks: Uint8Array[] = [];
+    let handle: FsWriteHandle;
     try {
-      const reader = response.body.getReader();
-      for (;;) {
-        const result: BodyReadResult = await reader.read();
-        if (result.done) break;
-        chunks.push(result.value);
-        armStallTimer();
-      }
-    } catch (error: unknown) {
-      if (isTimeoutError(error)) {
-        return { ok: false, error: { kind: "timeout", timeoutMs } };
-      }
-      return { ok: false, error: { cause: toError(error), kind: "network" } };
-    }
-
-    try {
-      const downloaded = new Uint8Array(
-        chunks.reduce((total, chunk) => total + chunk.byteLength, 0),
-      );
-      let offset = 0;
-      for (const chunk of chunks) {
-        downloaded.set(chunk, offset);
-        offset += chunk.byteLength;
-      }
-      await (deps.fs ?? makeDefaultFs()).writeFile(args.dest, downloaded);
+      handle = await fs.openWriteHandle(partPath);
     } catch (error: unknown) {
       return { ok: false, error: { cause: toError(error), kind: "network" } };
     }
+    const discardPart = async () => {
+      await handle.close().catch(() => {});
+      await fs.unlink(partPath).catch(() => {});
+    };
 
+    // Reads and writes report through separate catches so a failed disk write
+    // stays a local error and never masquerades as a network stall.
+    const reader = response.body.getReader();
+    for (;;) {
+      let result: BodyReadResult;
+      try {
+        result = await reader.read();
+      } catch (error: unknown) {
+        await discardPart();
+        if (isTimeoutError(error)) {
+          return { ok: false, error: { kind: "timeout", timeoutMs } };
+        }
+        return { ok: false, error: { cause: toError(error), kind: "network" } };
+      }
+      if (result.done) break;
+      // The stall clock measures the network, not the disk: pause it while a
+      // chunk is being written so a slow disk cannot abort a live download.
+      clearTimeout(stallTimer);
+      try {
+        await handle.write(result.value);
+      } catch (error: unknown) {
+        await discardPart();
+        return { ok: false, error: { cause: toError(error), kind: "network" } };
+      }
+      armStallTimer();
+    }
+
+    try {
+      await handle.close();
+      await fs.rename(partPath, args.dest);
+    } catch (error: unknown) {
+      await fs.unlink(partPath).catch(() => {});
+      return { ok: false, error: { cause: toError(error), kind: "network" } };
+    }
     return { ok: true, data: undefined };
   } finally {
     clearTimeout(stallTimer);

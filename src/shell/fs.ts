@@ -24,6 +24,16 @@ export type FsDirent = {
   isDirectory(): boolean;
 };
 
+/**
+ * An open file being written incrementally. `write` appends one chunk;
+ * `close` releases the descriptor and must be called on every path,
+ * including failures.
+ */
+export type FsWriteHandle = {
+  write(chunk: Uint8Array): Promise<void>;
+  close(): Promise<void>;
+};
+
 export type Fs = {
   mkdir(
     path: string,
@@ -42,6 +52,7 @@ export type Fs = {
     data: string | Uint8Array,
     options?: { mode?: number },
   ): Promise<void>;
+  openWriteHandle(path: string): Promise<FsWriteHandle>;
   readdir(path: string): Promise<string[]>;
   readdirWithTypes(path: string): Promise<FsDirent[]>;
   rename(oldPath: string, newPath: string): Promise<void>;
@@ -81,6 +92,17 @@ export function makeDefaultFs(): Fs {
       } else {
         await fs.promises.writeFile(path, data, options ?? undefined);
       }
+    },
+    async openWriteHandle(path) {
+      const handle = await fs.promises.open(path, "w");
+      return {
+        async write(chunk) {
+          await handle.write(chunk);
+        },
+        close() {
+          return handle.close();
+        },
+      };
     },
     readdir(path) {
       return fs.promises.readdir(path);
