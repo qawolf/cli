@@ -5,6 +5,7 @@ import type {
   AuthCommandContext,
   CommandResult,
 } from "~/shell/commandContext.js";
+import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { CommandSpec } from "./commandSpecs.js";
 
@@ -98,11 +99,7 @@ export async function handlePublicApiCommand(
     spec.contract,
     parsed.data,
   );
-  if (!result.ok) {
-    return result.errorBody
-      ? { error: result.error, errorBody: result.errorBody }
-      : { error: result.error };
-  }
+  if (!result.ok) return failureFields(result);
 
   ctx.ui.output(result.value, renderHuman(result.value));
   return undefined;

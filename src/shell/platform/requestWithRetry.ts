@@ -11,6 +11,17 @@ export type PlatformResult<T> =
   | { ok: true; value: T }
   | ({ ok: false } & PlatformError);
 
+/**
+ * Narrows a failed result to just its error fields, so a caller can rebuild
+ * it as its own result type. Omits `errorBody` entirely when the server gave
+ * no reason, rather than setting it to undefined.
+ */
+export function failureFields(failure: PlatformError): PlatformError {
+  return failure.errorBody
+    ? { error: failure.error, errorBody: failure.errorBody }
+    : { error: failure.error };
+}
+
 type RequestWithRetryArgs<T> = {
   // The wire call to make. Should return a WireResult<T>; do not throw.
   call: () => Promise<WireResult<T>>;

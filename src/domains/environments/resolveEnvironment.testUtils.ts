@@ -28,6 +28,7 @@ export function makeDeps(args: {
   envVar?: string;
   pages?: Page[];
   findError?: string;
+  findErrorBody?: string;
   // Every fetch returns a page with a nextCursor, so pagination never
   // terminates on its own — for testing the page cap.
   endlessCursor?: boolean;
@@ -35,6 +36,7 @@ export function makeDeps(args: {
   // trigger ref resolution omit both getEnv and getError.
   getEnv?: Page["environments"][number];
   getError?: string;
+  getErrorBody?: string;
   selectAnswers?: string[];
   selectCancelled?: boolean;
 }) {
@@ -43,7 +45,9 @@ export function makeDeps(args: {
   const findEnvironments = mock(
     async (): Promise<PlatformResult<FindOutput>> => {
       if (args.findError !== undefined) {
-        return { ok: false, error: args.findError };
+        return args.findErrorBody === undefined
+          ? { ok: false, error: args.findError }
+          : { ok: false, error: args.findError, errorBody: args.findErrorBody };
       }
       if (args.endlessCursor) {
         return { ok: true, value: { environments: [], nextCursor: "again" } };
@@ -57,7 +61,9 @@ export function makeDeps(args: {
   const getEnvironment = mock(
     async (_input: unknown): Promise<PlatformResult<GetOutput>> => {
       if (args.getError !== undefined) {
-        return { ok: false, error: args.getError };
+        return args.getErrorBody === undefined
+          ? { ok: false, error: args.getError }
+          : { ok: false, error: args.getError, errorBody: args.getErrorBody };
       }
       const value = args.getEnv;
       if (value === undefined)
