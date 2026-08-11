@@ -30,7 +30,7 @@ export async function handleRunnerScreenshot(
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
   // Never launches: the virtual desktop starts with the runner's first run, so a
-  // runner started for this command could only answer `screen-not-ready`.
+  // runner started for this command could only answer `screen-needs-a-run`.
   const resolved = await resolveRunner(
     ctx,
     {
