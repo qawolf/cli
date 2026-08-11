@@ -5,7 +5,7 @@ import { environmentsMessages } from "~/core/messages/index.js";
 import { pluralize } from "~/core/pluralize.js";
 import {
   failureFields,
-  type PlatformError,
+  type PlatformFailure,
 } from "~/shell/platform/requestWithRetry.js";
 import type {
   ResolveEnvironmentDeps,
@@ -100,7 +100,7 @@ const maxPages = 10;
 async function fetchAllEnvironments(
   platformClient: ResolveEnvironmentDeps["platformClient"],
 ): Promise<
-  { ok: true; environments: Environment[] } | ({ ok: false } & PlatformError)
+  { ok: true; environments: Environment[] } | ({ ok: false } & PlatformFailure)
 > {
   const environments: Environment[] = [];
   let cursor: string | undefined;

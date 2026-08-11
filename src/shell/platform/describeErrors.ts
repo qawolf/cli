@@ -2,14 +2,14 @@ import { formatSeconds } from "~/core/formatSeconds.js";
 import { authMessages } from "~/core/messages/index.js";
 import type { WireError } from "./createTrpcClient.js";
 import { parseErrorBody } from "./parseErrorBody.js";
-import type { PlatformError } from "./requestWithRetry.js";
+import type { PlatformFailure } from "./requestWithRetry.js";
 
 const m = authMessages.errors;
 
 /** Identity failures inline the reason into a single line, so keep it short. */
 const inlineReasonMaxLength = 200;
 
-export function describeIdentityError(err: WireError): PlatformError {
+export function describeIdentityError(err: WireError): PlatformFailure {
   if (err.kind === "http") {
     if (err.status === 401 || err.status === 403) {
       return { error: m.identity.invalidOrUnauthorized };
@@ -36,7 +36,7 @@ export function describeRequestError(
   err: WireError,
   baseUrl: string,
   noun?: string,
-): PlatformError {
+): PlatformFailure {
   if (err.kind === "http") {
     const reason = parseErrorBody(err.body);
     const body = reason ? { errorBody: reason } : {};
