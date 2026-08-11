@@ -5,6 +5,7 @@ import type {
   AuthCommandContext,
   CommandResult,
 } from "~/shell/commandContext.js";
+import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import { flowsMessages, runnerMessages } from "~/core/messages/index.js";
 
 import { renderListTable } from "./renderListTable.js";
@@ -34,9 +35,7 @@ export async function flowsListRemote(
       includeDrafts: options.includeDrafts,
     },
   );
-  if (!result.ok) {
-    return { error: result.error };
-  }
+  if (!result.ok) return failureFields(result);
 
   const matches = pattern ? picomatch(pattern) : undefined;
   const items: RemoteListItem[] = result.value.flows

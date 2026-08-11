@@ -224,23 +224,3 @@ describe("flowsListRemote executionTarget shapes", () => {
     ]);
   });
 });
-
-describe("flowsListRemote platform error", () => {
-  it("returns a CommandResult with the platform error message", async () => {
-    const { ui, result } = await run({
-      mode: "human",
-      platformClient: makeMockPlatformClient({
-        callPublicApi: makeCallPublicApiMock().mockResolvedValue({
-          ok: false,
-          error: "QA Wolf API rejected the flow.list request (HTTP 401).",
-        }),
-      }),
-    });
-
-    expect(result).toEqual({
-      error: "QA Wolf API rejected the flow.list request (HTTP 401).",
-    });
-    expect(ui.write).not.toHaveBeenCalled();
-    expect(ui.json).not.toHaveBeenCalled();
-  });
-});

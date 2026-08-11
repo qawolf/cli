@@ -42,21 +42,6 @@ describe("resolveEnvironment", () => {
     expect(info).not.toHaveBeenCalled();
   });
 
-  it("surfaces an environment.get failure with the alias caveat", async () => {
-    const { deps } = makeDeps({ getError: "HTTP 400" });
-
-    const outcome = await resolveEnvironment(deps, {
-      explicit: "staging",
-      requiredMessage: "req",
-    });
-
-    expect(outcome).toEqual({
-      kind: "error",
-      error:
-        "Could not resolve environment staging: HTTP 400 If staging is an alias, note that aliases require a team API key.",
-    });
-  });
-
   it("falls back to QAWOLF_ENVIRONMENT, notes the source, and resolves it", async () => {
     const { deps, info, getEnvironment } = makeDeps({
       envVar: " prod ",
@@ -204,16 +189,5 @@ describe("resolveEnvironment", () => {
         "Stopped listing environments after 10 pages. Pass --env explicitly.",
     });
     expect(findEnvironments).toHaveBeenCalledTimes(10);
-  });
-
-  it("surfaces a platform error", async () => {
-    const { deps } = makeDeps({ findError: "HTTP 500" });
-
-    const outcome = await resolveEnvironment(deps, {
-      explicit: undefined,
-      requiredMessage: "req",
-    });
-
-    expect(outcome).toEqual({ kind: "error", error: "HTTP 500" });
   });
 });

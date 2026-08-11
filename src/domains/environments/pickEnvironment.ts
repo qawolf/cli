@@ -3,6 +3,10 @@ import type { z } from "zod";
 
 import { environmentsMessages } from "~/core/messages/index.js";
 import { pluralize } from "~/core/pluralize.js";
+import {
+  failureFields,
+  type PlatformFailure,
+} from "~/shell/platform/requestWithRetry.js";
 import type {
   ResolveEnvironmentDeps,
   ResolveEnvironmentOutcome,
@@ -20,7 +24,7 @@ export async function pickEnvironment(
   deps: ResolveEnvironmentDeps,
 ): Promise<ResolveEnvironmentOutcome> {
   const fetched = await fetchAllEnvironments(deps.platformClient);
-  if (!fetched.ok) return { kind: "error", error: fetched.error };
+  if (!fetched.ok) return { ...failureFields(fetched), kind: "error" };
 
   const environments = fetched.environments;
   if (environments.length === 0) {
@@ -96,7 +100,7 @@ const maxPages = 10;
 async function fetchAllEnvironments(
   platformClient: ResolveEnvironmentDeps["platformClient"],
 ): Promise<
-  { ok: true; environments: Environment[] } | { ok: false; error: string }
+  { ok: true; environments: Environment[] } | ({ ok: false } & PlatformFailure)
 > {
   const environments: Environment[] = [];
   let cursor: string | undefined;
