@@ -66,8 +66,10 @@ export const interactiveRunnerMessages = {
     "The runner could not evaluate the snippet. As well as a runner that is still starting or busy, this covers one with no live page to evaluate against, which will never clear: check that the runner you launched runs a browser.",
   runnerUnreachable:
     "The runner could not be reached. It may still be starting, or it may have terminated after inactivity. Retry, or launch it again.",
+  screenNeedsARun:
+    "This runner has not run anything yet, so its screen has never started. Waiting will not clear this and there is nothing to retry: run a flow on it with qawolf runner run, then ask again. Evaluating a snippet does not start a screen.",
   screenNotReady:
-    "The runner has a screen and cannot serve this yet. Its virtual desktop starts with the runner's first run, it restarts when a run changes the display size, and it serves one request at a time. Retry in a second or two, or run something on the runner if it has not run anything yet.",
+    "The runner has a screen and cannot serve this yet. Its virtual desktop restarts when a run changes the display size, and it serves one request at a time, so something already in flight is the usual reason. Retry in a second or two.",
   screenshotNotAnImage:
     "The screen was captured but did not arrive as a JPEG, so nothing was written. Nothing about the command needs changing: try it again, and report it if it keeps happening.",
   screenshotUnwritable: (path: string, detail: string) =>

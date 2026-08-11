@@ -17,10 +17,11 @@ import { announceRunner, resolveRunner } from "./resolveRunner.js";
  * open an image on disk and none can read a base64 field out of a JSON answer.
  * The bytes are decoded on the way (see `writeScreenshot`).
  *
- * The three non-image answers are kept apart at the terminal and in `--json`,
- * because only one of them is worth trying again. A caller that cannot tell
- * `screen-not-ready` from `runner-has-no-screen` either gives up on a screen that
- * was seconds from being up, or retries for ever against a runner that has none.
+ * The four non-image answers are kept apart at the terminal and in `--json`,
+ * because each implies a different next move and only one of them is retrying.
+ * A caller that cannot tell them apart gives up on a screen that was seconds from
+ * being up, retries for ever against a runner that has none, or waits out a
+ * runner that only needs a run.
  */
 export async function handleRunnerScreenshot(
   ctx: AuthCommandContext,
@@ -71,8 +72,15 @@ export async function handleRunnerScreenshot(
       );
       return undefined;
     }
-    // Transient: the desktop starts with the runner's first run, and it serves
-    // one see-or-act request at a time.
+    // Permanent until the caller acts, so not a retry: only a run starts the
+    // desktop, and waiting is what a caller does with `screen-not-ready`.
+    case "screen-needs-a-run":
+      return {
+        error: interactiveRunnerMessages.screenNeedsARun,
+        exitCode: exitCodes.invalidArgs,
+      };
+    // Transient: the desktop restarts when a run changes the display size, and it
+    // serves one see-or-act request at a time.
     case "screen-not-ready":
       return {
         error: interactiveRunnerMessages.screenNotReady,

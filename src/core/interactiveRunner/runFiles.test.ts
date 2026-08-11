@@ -89,20 +89,20 @@ describe("checkSnippetFiles", () => {
   // Unlike a run, a snippet installs nothing, so demanding a package.json would
   // refuse requests the server would have accepted.
   it("accepts a scope file with no package.json beside it", () => {
-    expect(checkSnippetFiles([flow], flow.path)).toEqual({ type: "ok" });
+    expect(checkSnippetFiles(flow, flowPath)).toEqual({ type: "ok" });
   });
 
   it("refuses a scope file that is not among the collected files", () => {
-    expect(checkSnippetFiles([flow], "elsewhere.ts")).toEqual({
+    expect(checkSnippetFiles(flow, "elsewhere.ts")).toEqual({
       path: "elsewhere.ts",
       type: "missing-file",
     });
   });
 
   it("holds a snippet's scope to the same size cap as a run", () => {
-    const huge = { content: "a".repeat(maxRunFilesByteLength), path: "big.ts" };
+    const huge = { "big.ts": "a".repeat(maxRunFilesByteLength) };
 
-    const check = checkSnippetFiles([huge], huge.path);
+    const check = checkSnippetFiles(huge, "big.ts");
 
     expect(check.type).toBe("too-large");
     if (check.type !== "too-large") return;

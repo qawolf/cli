@@ -53,7 +53,27 @@ describe("handleRunnerScreenshot", () => {
     });
   });
 
-  // Worth waiting on: the desktop starts with the runner's first run.
+  // Not worth waiting on: only a run starts the desktop.
+  it("reads a screen that has never started as needing a run, not a retry", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { outcome: "screen-needs-a-run" },
+    });
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerScreenshot(
+      ctx,
+      { out: "shot.jpg", runner: "ci" },
+      deps,
+    );
+
+    expect(result?.error).toContain("qawolf runner run");
+    expect(result?.exitCode).toBe(2);
+    expect(deps.written).toEqual([]);
+  });
+
+  // Worth waiting on: something already in flight, or a display restarting.
   it("reads a screen that is not up yet as worth retrying", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({

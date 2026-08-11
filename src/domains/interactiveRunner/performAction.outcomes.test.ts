@@ -46,6 +46,15 @@ describe("handleRunnerAct outcomes", () => {
     expect(result?.exitCode).toBe(1);
   });
 
+  // Not a wait: only a run starts the desktop, so a caller that retries this one
+  // retries for ever.
+  it("reads a screen that has never started as needing a run, not a retry", async () => {
+    const { result } = await actWith({ outcome: "screen-needs-a-run" });
+
+    expect(result?.error).toContain("qawolf runner run");
+    expect(result?.exitCode).toBe(2);
+  });
+
   // Transient, and worth trying again in a second or two.
   it("reads a screen that is not up yet as worth retrying", async () => {
     const { result } = await actWith({ outcome: "screen-not-ready" });

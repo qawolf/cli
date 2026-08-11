@@ -95,6 +95,11 @@ export async function handleRunnerAct(
         ),
         exitCode: exitCodes.testFailure,
       };
+    case "screen-needs-a-run":
+      return {
+        error: interactiveRunnerMessages.screenNeedsARun,
+        exitCode: exitCodes.invalidArgs,
+      };
     case "screen-not-ready":
       return {
         error: interactiveRunnerMessages.screenNotReady,
