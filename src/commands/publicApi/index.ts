@@ -1,4 +1,4 @@
-import type { Command } from "commander";
+import { Option, type Command } from "commander";
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
 import { withAuthContext } from "~/commands/context.js";
@@ -42,6 +42,21 @@ const skippedContractNames: ReadonlySet<string> = new Set([
   "runner.performAction",
 ]);
 
+const optionEnvironmentVariables = new Map([
+  ["environmentId", "QAWOLF_ENVIRONMENT"],
+  ["public.run.create.aiTaskId", "QAWOLF_AI_TASK_ID"],
+]);
+
+function optionEnvironmentVariable(
+  spec: CommandSpec,
+  field: string,
+): string | undefined {
+  return (
+    optionEnvironmentVariables.get(`${spec.trpcPath}.${field}`) ??
+    optionEnvironmentVariables.get(field)
+  );
+}
+
 function resolveGroup(parent: Command, segment: string): Command {
   const existing = parent.commands.find(
     (command) => command.name() === segment,
@@ -82,7 +97,14 @@ function registerSpec(
     spec.kind,
   ).description(spec.description);
   for (const flag of spec.flags) {
-    if (flag.required) {
+    const environmentVariable = optionEnvironmentVariable(spec, flag.field);
+    if (environmentVariable) {
+      const option = new Option(flag.flag, flag.description).env(
+        environmentVariable,
+      );
+      if (flag.required) option.makeOptionMandatory();
+      command.addOption(option);
+    } else if (flag.required) {
       command.requiredOption(flag.flag, flag.description);
     } else {
       command.option(flag.flag, flag.description);
