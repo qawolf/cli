@@ -1,6 +1,6 @@
 /**
  * Longest server message we will surface. Anything longer is almost certainly
- * a stack trace or an HTML error page rather than a reason a caller can act on.
+ * a stack trace rather than a reason a caller can act on.
  */
 const defaultMaxLength = 1024;
 
