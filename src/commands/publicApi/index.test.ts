@@ -172,6 +172,35 @@ describe("registerPublicApiCommands", () => {
     ).toBeDefined();
   });
 
+  // Mirrors the shape `runner.performAction` will arrive with: an action union
+  // has no flag form, and an unmappable contract throws while the program is
+  // built. The skip has to be in place before the contracts dependency brings
+  // the real one in.
+  it("survives a contracts version that includes runner.performAction", () => {
+    const performActionContract = {
+      description: "Perform one raw browser action on an interactive runner.",
+      input: z.object({
+        action: z.union([
+          z.object({ type: z.literal("click"), x: z.number(), y: z.number() }),
+          z.object({ text: z.string(), type: z.literal("type") }),
+        ]),
+        id: z.string(),
+      }),
+      kind: "write",
+      name: "runner.performAction",
+      output: z.object({ outcome: z.literal("performed") }),
+    } as const;
+    const program = makeProgram();
+
+    registerPublicApiCommands(program, createSignalRegistry(), {
+      contracts: { runner: { performAction: performActionContract } },
+    });
+
+    expect(
+      program.commands.find((command) => command.name() === "runner"),
+    ).toBeUndefined();
+  });
+
   it("registers nested namespaces from custom contract trees", () => {
     const contract = {
       description: "Look up a run attempt.",
