@@ -2,6 +2,9 @@ import type { Readable } from "node:stream";
 import * as fs from "node:fs";
 
 import { isNoEntError } from "~/core/errors.js";
+import { openFsWriteHandle, type FsWriteHandle } from "./fsWriteHandle.js";
+
+export type { FsWriteHandle } from "./fsWriteHandle.js";
 
 export async function pathExists(p: string): Promise<boolean> {
   try {
@@ -22,16 +25,6 @@ export type FsDirent = {
   name: string;
   isFile(): boolean;
   isDirectory(): boolean;
-};
-
-/**
- * An open file being written incrementally. `write` appends one chunk;
- * `close` releases the descriptor and must be called on every path,
- * including failures.
- */
-export type FsWriteHandle = {
-  write(chunk: Uint8Array): Promise<void>;
-  close(): Promise<void>;
 };
 
 export type Fs = {
@@ -93,17 +86,7 @@ export function makeDefaultFs(): Fs {
         await fs.promises.writeFile(path, data, options ?? undefined);
       }
     },
-    async openWriteHandle(path) {
-      const handle = await fs.promises.open(path, "w");
-      return {
-        async write(chunk) {
-          await handle.write(chunk);
-        },
-        close() {
-          return handle.close();
-        },
-      };
-    },
+    openWriteHandle: openFsWriteHandle,
     readdir(path) {
       return fs.promises.readdir(path);
     },
