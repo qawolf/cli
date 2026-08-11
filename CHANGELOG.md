@@ -1,5 +1,15 @@
 # @qawolf/cli
 
+## 1.7.4
+
+### Patch Changes
+
+- 837d79e: Use `QAWOLF_ENVIRONMENT` as the default for generated public API `--environment-id` options. Pass `QAWOLF_AI_TASK_ID` to the public `run create` API input when the generated `--ai-task-id` option is available. Explicit flags take precedence over the environment.
+- 80e3be3: Show the server's reason when a public API call fails, instead of only an HTTP
+  status. A rejected request now prints why it was rejected without needing
+  `--verbose`.
+- fc8b048: Skip `runner.performAction` in the generated public API commands. An upcoming `@qawolf/api-contracts` version adds this contract, and its action-union input has no flag form; without the skip, upgrading the dependency would make command generation throw while the program is built, breaking every command. The verb will get a hand-written command instead.
+
 ## 1.7.3
 
 ### Patch Changes
