@@ -37,8 +37,12 @@ export function createAgentRenderers(): RendererSet {
       const results: unknown[] = [];
       const total = steps.length;
       for (const [i, step] of steps.entries()) {
-        writeStderrLine(`[${String(i + 1)}/${String(total)}] ${step.message}`);
-        results.push(await step.task());
+        const label = (message: string) =>
+          `[${String(i + 1)}/${String(total)}] ${message}`;
+        writeStderrLine(label(step.message));
+        results.push(
+          await step.task((message) => writeStderrLine(label(message))),
+        );
       }
 
       const { typed, doneMessage } = finalizeResults(results, done);

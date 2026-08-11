@@ -37,7 +37,9 @@ export function createJsonRenderers(): RendererSet {
           step: i + 1,
           total,
         });
-        results.push(await step.task());
+        // Step events already carry structure; per-file progress updates would
+        // only add noise for NDJSON consumers.
+        results.push(await step.task(() => {}));
       }
 
       const { typed, doneMessage } = finalizeResults(results, done);

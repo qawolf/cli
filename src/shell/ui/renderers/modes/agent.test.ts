@@ -151,5 +151,24 @@ describe("agent renderers", () => {
       expect(spy).toHaveBeenCalledWith("All done!\n");
       expect(clack.spinner).not.toHaveBeenCalled();
     });
+
+    it("writes a stderr line when a task reports progress", async () => {
+      const spy = stderrSpy();
+      const { withProgress } = createAgentRenderers();
+
+      await withProgress(
+        [
+          {
+            message: "Downloading assets",
+            task: async (update) => {
+              update("Downloading assets (1/2)");
+            },
+          },
+        ],
+        "done",
+      );
+
+      expect(spy).toHaveBeenCalledWith("[1/1] Downloading assets (1/2)\n");
+    });
   });
 });
