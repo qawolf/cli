@@ -46,11 +46,9 @@ describe("handleInit with an existing package.json", () => {
       const { written, messages } = await initWithRaw(raw);
 
       expect(written).toBe(raw);
-      expect(
-        messages.some(
-          (m) => m.method === "warn" && m.text.includes("not a JSON object"),
-        ),
-      ).toBe(true);
+      expect(messages.find((m) => m.method === "warn")?.text).toBe(
+        "`package.json` must contain a JSON object. Update it, then run `qawolf init` again.",
+      );
     },
   );
 
@@ -64,11 +62,9 @@ describe("handleInit with an existing package.json", () => {
     expect(pkg["type"]).toBe("module");
     const deps = pkg["dependencies"] as Record<string, string>;
     expect(deps["@qawolf/flows"]).toBe(flowsVersion);
-    expect(
-      messages.some(
-        (m) => m.method === "warn" && m.text.includes('non-object "scripts"'),
-      ),
-    ).toBe(true);
+    expect(messages.find((m) => m.method === "warn")?.text).toBe(
+      "The `scripts` field in `package.json` must be a JSON object. Update it, then run `qawolf init` again.",
+    );
   });
 
   it("skips only the dependency repair when dependencies is not an object", async () => {

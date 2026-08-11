@@ -7,11 +7,11 @@ export const initMessages = {
   skippedUpdatingPackageJson: "Skipped updating package.json",
   createdPackageJson: "Created package.json",
   packageJsonInvalidJson:
-    "package.json is not valid JSON — skipped updating it",
+    "`package.json` contains invalid JSON. Correct the JSON syntax, then run `qawolf init` again.",
   packageJsonNotAnObject:
-    "package.json is not a JSON object — skipped updating it",
+    "`package.json` must contain a JSON object. Update it, then run `qawolf init` again.",
   packageJsonMalformedSection: (field: string) =>
-    `package.json has a non-object "${field}" — skipped changes to it`,
+    `The \`${field}\` field in \`package.json\` must be a JSON object. Update it, then run \`qawolf init\` again.`,
   packageJsonHasTestE2e:
     "package.json already has `test:e2e` — leaving it as is",
   packageJsonUpToDate: "package.json already configured — nothing to update",

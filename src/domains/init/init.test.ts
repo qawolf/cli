@@ -180,10 +180,8 @@ describe("handleInit", () => {
     await handleInit(ctx, { yes: false }, { cwd, fs: memFs });
 
     expect(await memFs.readFile(join(cwd, "package.json"))).toBe("not json {");
-    expect(
-      messages.some(
-        (m) => m.method === "warn" && m.text.includes("not valid JSON"),
-      ),
-    ).toBe(true);
+    expect(messages.find((m) => m.method === "warn")?.text).toBe(
+      "`package.json` contains invalid JSON. Correct the JSON syntax, then run `qawolf init` again.",
+    );
   });
 });
