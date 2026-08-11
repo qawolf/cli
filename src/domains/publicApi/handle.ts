@@ -98,7 +98,11 @@ export async function handlePublicApiCommand(
     spec.contract,
     parsed.data,
   );
-  if (!result.ok) return { error: result.error };
+  if (!result.ok) {
+    return result.errorBody
+      ? { error: result.error, errorBody: result.errorBody }
+      : { error: result.error };
+  }
 
   ctx.ui.output(result.value, renderHuman(result.value));
   return undefined;

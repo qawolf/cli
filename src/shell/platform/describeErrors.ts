@@ -1,57 +1,60 @@
 import { formatSeconds } from "~/core/formatSeconds.js";
 import { authMessages } from "~/core/messages/index.js";
 import type { WireError } from "./createTrpcClient.js";
+import { parseErrorBody } from "./parseErrorBody.js";
+import type { PlatformError } from "./requestWithRetry.js";
 
 const m = authMessages.errors;
 
-export function describeIdentityError(err: WireError): string {
+/** Identity failures inline the reason into a single line, so keep it short. */
+const inlineReasonMaxLength = 200;
+
+export function describeIdentityError(err: WireError): PlatformError {
   if (err.kind === "http") {
     if (err.status === 401 || err.status === 403) {
-      return m.identity.invalidOrUnauthorized;
+      return { error: m.identity.invalidOrUnauthorized };
     }
-    return m.identity.couldNotVerify(parseErrorBody(err.body), err.status);
+    return {
+      error: m.identity.couldNotVerify(
+        parseErrorBody(err.body, inlineReasonMaxLength),
+        err.status,
+      ),
+    };
   }
   if (err.kind === "network") {
-    return m.identity.couldNotVerifyNetwork(err.cause.message);
+    return { error: m.identity.couldNotVerifyNetwork(err.cause.message) };
   }
-  if (err.kind === "timeout") return m.identity.timedOut(err.timeoutMs);
-  return m.identity.unexpectedFormat;
+  if (err.kind === "timeout") {
+    return { error: m.identity.timedOut(err.timeoutMs) };
+  }
+  return { error: m.identity.unexpectedFormat };
 }
 
-function parseErrorBody(body: string): string {
-  if (!body) return "";
-  try {
-    const parsed: unknown = JSON.parse(body);
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      "error" in parsed &&
-      typeof (parsed as { error: unknown }).error === "string"
-    ) {
-      return (parsed as { error: string }).error;
-    }
-  } catch {
-    // not JSON; fall through
-  }
-  return "";
-}
-
+// The title stays short and stable so a caller can branch on it; the server's
+// reason goes in the body.
 export function describeRequestError(
   err: WireError,
   baseUrl: string,
   noun?: string,
-): string {
+): PlatformError {
   if (err.kind === "http") {
-    if (err.status === 401) return m.request.rejected401(noun);
-    if (err.status === 403) return m.request.rejected403(noun);
-    if (err.status === 404) return m.request.notFound404(noun);
-    return m.request.failedWithStatus(err.status, noun);
+    const reason = parseErrorBody(err.body);
+    const body = reason ? { errorBody: reason } : {};
+    if (err.status === 401)
+      return { error: m.request.rejected401(noun), ...body };
+    if (err.status === 403)
+      return { error: m.request.rejected403(noun), ...body };
+    if (err.status === 404)
+      return { error: m.request.notFound404(noun), ...body };
+    return { error: m.request.failedWithStatus(err.status, noun), ...body };
   }
   if (err.kind === "network") {
-    return m.request.networkUnreachable(baseUrl, noun);
+    return { error: m.request.networkUnreachable(baseUrl, noun) };
   }
-  if (err.kind === "timeout") return m.request.timedOut(err.timeoutMs, noun);
-  return m.request.unexpectedResponse(noun);
+  if (err.kind === "timeout") {
+    return { error: m.request.timedOut(err.timeoutMs, noun) };
+  }
+  return { error: m.request.unexpectedResponse(noun) };
 }
 
 export function describeBundleDownloadError(err: WireError): string {

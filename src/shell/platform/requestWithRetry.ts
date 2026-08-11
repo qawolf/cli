@@ -1,9 +1,15 @@
 import { sleep as defaultSleep } from "~/core/sleep.js";
 import type { WireError, WireResult } from "./createTrpcClient.js";
 
+/**
+ * A failure split into a short, stable title callers can branch on and an
+ * optional longer reason from the server.
+ */
+export type PlatformError = { error: string; errorBody?: string };
+
 export type PlatformResult<T> =
   | { ok: true; value: T }
-  | { ok: false; error: string };
+  | ({ ok: false } & PlatformError);
 
 type RequestWithRetryArgs<T> = {
   // The wire call to make. Should return a WireResult<T>; do not throw.
@@ -11,8 +17,8 @@ type RequestWithRetryArgs<T> = {
   // Backoff schedule. Length = retry budget. Final attempt has no backoff
   // and surfaces the error if it still hasn't succeeded.
   backoffMs: readonly number[];
-  // Builds the user-facing error message from the WireError.
-  describe: (err: WireError) => string;
+  // Builds the user-facing error from the WireError.
+  describe: (err: WireError) => PlatformError;
   // Override for sleep (tests pass a no-op). Pass undefined for production
   // callers; the helper supplies the real implementation.
   sleep: ((ms: number) => Promise<void>) | undefined;
@@ -34,7 +40,7 @@ export async function requestWithRetry<T>(
     const retryable =
       result.error.kind === "network" || result.error.kind === "timeout";
     if (backoff === undefined || !retryable) {
-      return { ok: false, error: args.describe(result.error) };
+      return { ok: false, ...args.describe(result.error) };
     }
     await sleep(backoff);
   }

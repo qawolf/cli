@@ -210,4 +210,26 @@ describe("handlePublicApiCommand", () => {
 
     expect(result).toEqual({ error: "run.create failed (500)." });
   });
+
+  it("passes the server's reason through as the error body", async () => {
+    const callPublicApi = makeCallPublicApiMock().mockResolvedValue({
+      ok: false,
+      error: "QA Wolf API run.create request failed (HTTP 400).",
+      errorBody: "environmentId does not belong to your team.",
+    });
+    const ctx = ctxWith(
+      makeFakeUI(),
+      makeMockPlatformClient({ callPublicApi }),
+    );
+
+    const result = await handlePublicApiCommand(ctx, runCreateSpec(), {
+      environmentId: "environment-id",
+      flowIds: ["flow-id"],
+    });
+
+    expect(result).toEqual({
+      error: "QA Wolf API run.create request failed (HTTP 400).",
+      errorBody: "environmentId does not belong to your team.",
+    });
+  });
 });
