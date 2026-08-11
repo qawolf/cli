@@ -212,7 +212,7 @@ A freshly launched runner has no screen. The virtual desktop starts with the
 runner's **first run** and nothing else starts it, so until you have run
 something:
 
-- `screenshot` and `act` (other than `navigate`) fail with exit code `4`
+- `screenshot` and `act` (other than `navigate`) fail with exit code `2`
 - `exec` fails with exit code `4`
 - `events recorder` reads as empty
 
@@ -227,16 +227,17 @@ So the first call on a new runner has to be a run. That means a flow file and a
 there is no "just give me a screen" call. Once one run has happened, the
 screenshot-and-act loop below works for the rest of the runner's life.
 
-Retry on the exit code, not on the message text. The outcome names below are
-wire values and never appear in the output:
+Retry on the exit code, not on the message text:
 
-- `4` is transient. The screen is starting, restarting after a display-size
-  change, or busy serving another request. Retry in a second or two.
-- `2` is permanent. This runner has no browser at all, and no amount of retrying
-  fixes it: launch with `--name node20WithPlaywright` instead.
+- `4` is transient. The screen is up but cannot serve this instant: restarting
+  after a display-size change, or busy with another request. Retry in a second
+  or two.
+- `2` will not clear on its own. Either nothing has run on this runner yet, so
+  run a flow, or the runner has no browser at all, so launch with
+  `--name node20WithPlaywright` instead. The message says which.
 
-The one exception is `exec`, which reports both cases as `4`; read its message
-to tell them apart.
+The one exception is `exec`, which reports both as `4`; read its message to tell
+them apart.
 
 ### Seeing and acting: the loop is yours
 
