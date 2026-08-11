@@ -75,13 +75,19 @@ describe("parseErrorBody", () => {
     });
 
     const parsed = parseErrorBody(body);
-    expect(parsed).toHaveLength(1025);
+    expect(parsed).toHaveLength(1024);
     expect(parsed.endsWith("…")).toBe(true);
   });
 
-  it("clips to a caller-supplied limit", () => {
+  it("clips to a caller-supplied limit, counting the ellipsis", () => {
     const body = JSON.stringify({ error: "abcdefghij" });
 
-    expect(parseErrorBody(body, 4)).toBe("abcd…");
+    expect(parseErrorBody(body, 4)).toBe("abc…");
+  });
+
+  it("leaves a message that exactly fills the limit alone", () => {
+    const body = JSON.stringify({ error: "abcd" });
+
+    expect(parseErrorBody(body, 4)).toBe("abcd");
   });
 });

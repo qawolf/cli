@@ -50,7 +50,9 @@ export function parseErrorBody(body: string, maxLength = defaultMaxLength) {
 
   const message = extractMessage(parsed)?.trim();
   if (!message) return "";
+  // The ellipsis counts toward the limit, so the result is never longer
+  // than `maxLength`.
   return message.length > maxLength
-    ? `${message.slice(0, maxLength)}…`
+    ? `${message.slice(0, maxLength - 1)}…`
     : message;
 }
