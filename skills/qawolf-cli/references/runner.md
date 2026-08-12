@@ -135,11 +135,16 @@ browser is showing, which is how you read a value out of the page rather than
 looking at it. Two things to know, because neither is guessable:
 
 It does not return what the snippet evaluated to, only whether it ran. To get a
-value back, print it and read the `console` stream:
+value back, print it and read the `console` stream. Print it behind a marker you
+chose, and match on that rather than taking the newest line: the page logs to the
+same stream, so anything it prints after your snippet would be what `--tail 1`
+hands back. Entries carry `source`, which is `serverConsole` for your snippet and
+`browserConsole` for the page, so filtering on both is what pins the value down.
 
 ```sh
-echo 'console.log(await page.title())' | qawolf runner exec -
-qawolf runner events console --tail 1 | jq -r '.message'
+echo 'console.log("qw-title:", await page.title())' | qawolf runner exec -
+qawolf runner events console --tail 20 \
+  | jq -r 'select(.source == "serverConsole" and (.message | contains("qw-title:"))) | .message'
 ```
 
 And the snippet imports nothing of yours by default. Pass `--file <path>` to
