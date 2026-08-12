@@ -71,7 +71,7 @@ export async function handleRunnerAct(
     deps,
   );
   if (resolved.type === "failed") {
-    return { error: resolved.error, exitCode: resolved.exitCode };
+    return { ...failureFields(resolved), exitCode: resolved.exitCode };
   }
   announceRunner(ctx, resolved);
 
