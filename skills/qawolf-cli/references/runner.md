@@ -4,7 +4,7 @@ An interactive runner is a live pod with a browser in it. You launch one, look
 at it, act on it, run flows on it, and read what it recorded. Everything is a
 plain request to one host, so there is no connection to hold open.
 
-### Getting one
+## Getting one
 
 Runner ids are yours to choose and are scoped to your team, so `agent-1` is a
 fine id. Launching an id that is already running attaches to that runner instead
@@ -41,7 +41,7 @@ No `read` command ever launches a runner. `screenshot`, `events` and `keepalive`
 tell you there is no runner rather than quietly billing one, and so does `stop`,
 since starting a pod in order to stop it would be absurd.
 
-### The order that matters
+## The order that matters
 
 A freshly launched runner has no screen. The virtual desktop starts with the
 runner's **first run** and nothing else starts it, so until you have run
@@ -76,7 +76,7 @@ Retry on the exit code, not on the message text:
 The one exception is `exec`, which reports both as `4`; read its message to tell
 them apart.
 
-### Seeing and acting: the loop is yours
+## Seeing and acting: the loop is yours
 
 Two primitives, and you close the loop with your own model. There is no hosted
 vision loop on this surface.
@@ -107,7 +107,7 @@ taken effect. On a `4` from `act`, take a screenshot before repeating a click.
 looks the same from outside, so treat a `4` from a snippet that changes something
 as "may have run" rather than "did not run".
 
-### The recorder: what you cannot get from pixels
+## The recorder: what you cannot get from pixels
 
 `qawolf runner events recorder` is the capability that has no equivalent in a
 screenshot. As you drive the browser, the runner records each interaction and
@@ -128,7 +128,7 @@ has a browser context, so an early empty answer means "not yet", not "broken".
 Do not add `--json` here: it wraps each line in an envelope and these field paths
 stop matching.
 
-### Reading the page: `exec`
+## Reading the page: `exec`
 
 `qawolf runner exec <file>` evaluates a snippet against whatever the runner's
 browser is showing, which is how you read a value out of the page rather than
@@ -146,7 +146,7 @@ And the snippet imports nothing of yours by default. Pass `--file <path>` to
 evaluate it in that file's scope, which also ships the directory's other files,
 so the snippet can use your own page objects and helpers.
 
-### Running a flow
+## Running a flow
 
 `qawolf runner run <file>` ships the current directory's runnable files with the
 request. The runner holds no copy of your project, so what runs is exactly what
@@ -199,7 +199,7 @@ resubmit always risks a second billed run. Prefer polling `run-status` a while
 longer over resubmitting; only submit again once you are willing to accept that
 risk.
 
-### Reading history
+## Reading history
 
 Everything observable is an append-only stream on the pod, read by cursor or
 tail rather than subscribed to, so attaching late still gets you the history that
@@ -236,7 +236,7 @@ highest `sequence` you actually saw. So a narrow `--run` filter over a busy
 stream stalls: with nothing matching, there is no new `sequence` to move on to,
 and you re-read the same window until something matches (NOVA-1397).
 
-### Staying alive
+## Staying alive
 
 A runner is reaped after a period of inactivity, and every command that talks to
 the runner counts as activity, including a journal read.
@@ -250,7 +250,7 @@ on a timer you forget, and call `qawolf runner stop` when you are done rather
 than leaving a pod to time out. A loop that keeps a runner alive and never stops
 it bills until someone notices.
 
-### End to end
+## End to end
 
 Run from a directory holding a flow and a `package.json`. The run is what starts
 the screen, so it is not optional even though the goal here is to drive by hand.
