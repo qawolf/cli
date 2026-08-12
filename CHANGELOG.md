@@ -1,5 +1,13 @@
 # @qawolf/cli
 
+## 1.7.5
+
+### Patch Changes
+
+- 8680389: Show a per-file counter while `flows pull` downloads team-storage assets. The progress line now reads "Downloading team-storage assets (2/12)" and advances as each file starts. The total counts only files that download; reused and skipped files are not included. In human mode the spinner label updates in place, and when a download fails the error line keeps the last counter so you can see where it stopped. Agent mode writes one progress line per file to stderr. The json output does not change.
+- 8094697: Let large signed-URL downloads finish on slow links. Before this change, flow-bundle and team-storage asset downloads had a fixed 30-second deadline for the full download. A large asset, for example a video file, could not finish in time and `flows pull` failed with a timeout. The 30-second window is now a stall timeout. The timer resets each time data arrives, so a slow download that makes progress can run to completion. A download that receives no data for 30 seconds still fails, and the error message now says the download stalled.
+- e58f2dc: Stream signed-URL downloads to disk instead of buffering them in memory. Before this change, the CLI held the whole file in memory and briefly needed about twice the file size, so a multi-gigabyte asset could exceed the memory limit of a small CI container. The download now writes each chunk to a `.part` file and renames it into place when the download completes, so peak memory stays near one chunk for any file size. A pull of a 1.4 GB asset now peaks at about 290 MB of memory instead of 3.3 GB. A failed download removes the partial file, and slow disk writes do not count toward the 30-second stall timeout.
+
 ## 1.7.4
 
 ### Patch Changes
