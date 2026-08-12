@@ -75,7 +75,7 @@
     "pino": "10.3.1",
     "playwright": "1.62.0",
     "superjson": "2.2.6",
-    "tar": "7.5.16",
+    "tar": "7.5.21",
     "tinyglobby": "0.2.17",
     "webdriverio": "9.27.1",
     "zod": "4.4.3"
