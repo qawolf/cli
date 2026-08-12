@@ -39,11 +39,14 @@ describe("requestWithRetry", () => {
     });
   });
 
-  it("does not say so when the connection failed", async () => {
+  // The network kind covers a reset after the request body was sent as well as
+  // a connection refused outright, so it cannot prove the request never arrived.
+  it("says a request whose connection failed may have arrived", async () => {
     expect(
-      await failWith({ cause: Error("ECONNREFUSED"), kind: "network" }),
+      await failWith({ cause: Error("ECONNRESET"), kind: "network" }),
     ).toEqual({
       error: "failed",
+      mayHaveArrived: true,
       ok: false,
     });
   });

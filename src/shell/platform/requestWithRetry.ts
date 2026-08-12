@@ -60,13 +60,13 @@ export async function requestWithRetry<T>(
     const retryable =
       result.error.kind === "network" || result.error.kind === "timeout";
     if (backoff === undefined || !retryable) {
-      // A reached deadline says nothing about whether the server acted: the
-      // request was sent and no answer came back. An unparseable reply is the
-      // server answering, so the request certainly arrived even though the
-      // answer was lost. An HTTP status is the server answering readably, and a
-      // refused connection never arrived.
-      const mayHaveArrived =
-        result.error.kind === "timeout" || result.error.kind === "parse";
+      // Only an HTTP status proves the server answered without acting on a
+      // lost request. A reached deadline says nothing about whether the server
+      // acted; an unparseable reply is the server answering, so the request
+      // certainly arrived; and a network failure covers a connection reset
+      // after the request body was sent just as it covers one refused outright,
+      // so it cannot prove the request never arrived either.
+      const mayHaveArrived = result.error.kind !== "http";
       return {
         ok: false,
         ...args.describe(result.error),
