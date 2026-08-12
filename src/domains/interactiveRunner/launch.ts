@@ -9,6 +9,10 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
+import {
+  failureFields,
+  type PlatformFailure,
+} from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { parseRunnerId, parseRunnerName } from "./runnerIds.js";
@@ -20,9 +24,9 @@ type LaunchedRunner = {
   runnerName: RunnerNameForPublicApi;
 };
 
-type LaunchResult =
-  | { ok: true; value: LaunchedRunner }
-  | { ok: false; error: string; exitCode: number; mayHaveArrived: boolean };
+type LaunchFailure = PlatformFailure & { ok: false; exitCode: number };
+
+type LaunchResult = { ok: true; value: LaunchedRunner } | LaunchFailure;
 
 /**
  * Launches a runner under `id`, or attaches to the one already running there.
@@ -42,7 +46,7 @@ async function launchRunner(
   );
   if (!result.ok) {
     return {
-      error: result.error,
+      ...failureFields(result),
       exitCode: exitCodes.network,
       mayHaveArrived: result.mayHaveArrived ?? false,
       ok: false,
@@ -100,12 +104,10 @@ export async function launchAndRemember(
     ).catch(() => undefined);
   }
   return {
+    ...launched,
     error: launched.mayHaveArrived
       ? interactiveRunnerMessages.launchLost(options.id, launched.error)
       : interactiveRunnerMessages.launchFailed(options.id, launched.error),
-    exitCode: launched.exitCode,
-    mayHaveArrived: launched.mayHaveArrived,
-    ok: false,
   };
 }
 
@@ -133,7 +135,7 @@ export async function handleRunnerLaunch(
     deps,
   );
   if (!launched.ok) {
-    return { error: launched.error, exitCode: launched.exitCode };
+    return { ...failureFields(launched), exitCode: launched.exitCode };
   }
 
   ctx.ui.output(
