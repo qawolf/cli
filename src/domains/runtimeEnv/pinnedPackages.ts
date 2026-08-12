@@ -1,7 +1,6 @@
 import {
   appiumUiautomator2DriverVersion,
   appiumVersion,
-  appiumXcuitestDriverVersion,
   emailsVersion,
   expectWebdriverioVersion,
   flowsVersion,
@@ -18,7 +17,6 @@ export const pinnedPackages: PinnedPackage[] = [
   { name: "@qawolf/emails", version: emailsVersion },
   { name: "@qawolf/testkit", version: testkitVersion },
   { name: "appium", version: appiumVersion },
-  { name: "appium-xcuitest-driver", version: appiumXcuitestDriverVersion },
   {
     name: "appium-uiautomator2-driver",
     version: appiumUiautomator2DriverVersion,

@@ -20,7 +20,6 @@ const playwrightVersion = readVersion("playwright");
 const emailsVersion = readVersion("@qawolf/emails");
 const testkitVersion = readVersion("@qawolf/testkit");
 const appiumVersion = readVersion("appium");
-const appiumXcuitestDriverVersion = readVersion("appium-xcuitest-driver");
 const appiumUiautomator2DriverVersion = readVersion(
   "appium-uiautomator2-driver",
 );
@@ -34,7 +33,6 @@ const out = [
   `export const emailsVersion = "${emailsVersion}";`,
   `export const testkitVersion = "${testkitVersion}";`,
   `export const appiumVersion = "${appiumVersion}";`,
-  `export const appiumXcuitestDriverVersion = "${appiumXcuitestDriverVersion}";`,
   `export const appiumUiautomator2DriverVersion = "${appiumUiautomator2DriverVersion}";`,
   `export const expectWebdriverioVersion = "${expectWebdriverioVersion}";`,
   "",
@@ -44,5 +42,5 @@ const outDir = join(root, "src/generated");
 mkdirSync(outDir, { recursive: true });
 writeFileSync(join(outDir, "dependencyVersions.ts"), out);
 console.log(
-  `Generated src/generated/dependencyVersions.ts: flows=${flowsVersion} playwright=${playwrightVersion} emails=${emailsVersion} testkit=${testkitVersion} appium=${appiumVersion} xcuitest=${appiumXcuitestDriverVersion} uiautomator2=${appiumUiautomator2DriverVersion} expect-webdriverio=${expectWebdriverioVersion}`,
+  `Generated src/generated/dependencyVersions.ts: flows=${flowsVersion} playwright=${playwrightVersion} emails=${emailsVersion} testkit=${testkitVersion} appium=${appiumVersion} uiautomator2=${appiumUiautomator2DriverVersion} expect-webdriverio=${expectWebdriverioVersion}`,
 );
