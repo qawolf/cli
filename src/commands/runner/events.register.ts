@@ -46,9 +46,7 @@ export function registerEventsCommand(
           ctx,
           {
             // --json is a global flag, so it is read from the parsed globals
-            // rather than declared here. It selects the full envelope, which is
-            // what a caller paging or correlating entries needs; the payload
-            // alone is what a caller reading them wants.
+            // rather than declared here.
             envelope: Boolean(
               command.optsWithGlobals<{ json?: boolean }>().json,
             ),

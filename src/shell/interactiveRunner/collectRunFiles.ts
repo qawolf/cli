@@ -20,8 +20,7 @@ import type { Fs } from "~/shell/fs.js";
  * therefore not disagree, and widening the rule on the server needs no change
  * here beyond a dependency bump.
  *
- * The narrowing is not free of consequence in one respect worth stating: the
- * glob's own defaults skip dot-prefixed paths, and so never offer `.env` or
+ * The glob's own defaults skip dot-prefixed paths, and so never offer `.env` or
  * `.git` to the predicate. The predicate refuses them as well, so what a run
  * ships today is the same either way, and the pre-filter is what keeps the walk
  * out of `.git` altogether.

@@ -1,6 +1,4 @@
-// Which published contracts get no generated command, and why. A fact about the
-// contract catalog rather than about Commander wiring, so it sits beside
-// buildCommandSpecs, which is what consumes it.
+// Which published contracts get no generated command, and why.
 
 // Served by hand-written commands instead; the generator must not mint
 // duplicates (flow.list is served by `qawolf flows list --remote`).
