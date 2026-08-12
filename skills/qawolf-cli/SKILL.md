@@ -215,15 +215,15 @@ A freshly launched runner has no screen. The virtual desktop starts with the
 runner's **first run** and nothing else starts it, so until you have run
 something:
 
-- `screenshot` and `act` (other than `navigate`) fail with exit code `2`
+- `screenshot` and `act` fail with exit code `2`, except `navigate`, which
+  fails with exit code `1` (`action-failed`): it skips the screen but still
+  needs the runner to have run something
 - `exec` fails with exit code `4`
 - `events recorder` reads as empty
 
 None of that is a fault, and none of it clears on its own. **Only
-`qawolf runner run <flow>` starts the screen.** `qawolf runner act navigate --url
-<url>` is the one action that works beforehand, because it goes through the page
-rather than the screen, but it opens a page without starting the screen: a
-screenshot after a bare navigate still fails, however long you wait.
+`qawolf runner run <flow>` starts the screen.** A bare navigate does not: it
+fails until the first run, however long you wait.
 
 So the first call on a new runner has to be a run. That means a flow file and a
 `package.json` on disk, even if all you want is to drive the browser by hand;
@@ -232,9 +232,11 @@ screenshot-and-act loop below works for the rest of the runner's life.
 
 Retry on the exit code, not on the message text:
 
-- `4` is transient. The screen is up but cannot serve this instant: restarting
-  after a display-size change, or busy with another request. Retry in a second
-  or two.
+- `4` is usually transient. The screen is up but cannot serve this instant:
+  restarting after a display-size change, or busy with another request. Retry in
+  a second or two — but bound the retries, because `4` also covers a runner that
+  was reaped after inactivity, which no amount of retrying brings back. If `4`
+  persists past a few tries, relaunch the id.
 - `2` will not clear on its own. Either nothing has run on this runner yet, so
   run a flow, or the runner has no browser at all, so launch with
   `--name node20WithPlaywright` instead. The message says which.
@@ -319,9 +321,9 @@ request. The runner holds no copy of your project, so what runs is exactly what
 is on disk at that moment, uncommitted edits included. A `package.json` has to
 be there, since the run reads its npm dependencies from it, and the files may
 carry at most 4 MiB in total: run from a directory holding the flow and what it
-imports rather than from the root of a large monorepo. Check the path before you
-call, because a missing file or a missing `package.json` is caught only after a
-runner has been launched, so a typo can bill a pod and then exit `2`.
+imports rather than from the root of a large monorepo. A missing file, a missing
+`package.json` and files over the cap are all refused before any runner is
+resolved or launched, so a typo costs nothing.
 
 The call answers with a run id as soon as the run is accepted. **The outcome is
 not in that answer**, it is in the `run-status` stream, whose entries carry
@@ -364,9 +366,10 @@ Everything observable is an append-only stream on the pod, read by cursor or
 tail rather than subscribed to, so attaching late still gets you the history that
 is still there. It is not unbounded: a size cap drops the oldest entries on a
 long-lived runner, and a `--tail N` read can stop early and hand back fewer than
-N even when more matched. Neither is reported, so treat a short answer as "at
-least this" rather than "all there was", and read what you care about as you go
-rather than at the end. QA Wolf writes `recorder`, `console`, `run-events`,
+N even when more matched. Both are warned about on stderr — dropped entries only
+once a read holds a cursor, a stopped-early read with a pointer at `--since` —
+so watch stderr, treat a short answer as "at least this" rather than "all there
+was", and read what you care about as you go rather than at the end. QA Wolf writes `recorder`, `console`, `run-events`,
 `run-logs` and `run-status`; a stream nobody has written reads as empty rather
 than as an error, and a stream this CLI version does not know about is still
 readable by name.
