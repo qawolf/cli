@@ -119,6 +119,7 @@ describe("handleRunnerLaunch", () => {
     expect(result?.exitCode).toBe(4);
     expect(result?.error).toContain("timed out");
     expect(result?.error).toContain("qawolf runner launch --id ci");
+    expect(result?.errorBody).toBeUndefined();
     expect(await deps.store.readDefaultRunnerId()).toBe("ci");
   });
 
@@ -142,6 +143,28 @@ describe("handleRunnerLaunch", () => {
     expect(result?.error).toContain("already running node20Basic");
     expect(result?.error).not.toContain("relaunch");
     expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
+  });
+
+  // The server's own reason is the only thing that names which image the id is
+  // already running, so a refused launch has to pass it on rather than leave
+  // the caller with a bare status code.
+  it("passes on the reason the server gave for refusing the launch", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "QA Wolf API runner.launch request failed (HTTP 409).",
+      errorBody:
+        "runner ci is already running node20Basic; stop it before launching node20WithAndroid",
+      ok: false,
+    });
+
+    const result = await handleRunnerLaunch(
+      ctx,
+      { id: "ci", name: "node20WithAndroid" },
+      makeTestDeps(),
+    );
+
+    expect(result?.errorBody).toContain("already running node20Basic");
+    expect(result?.exitCode).toBe(4);
   });
 
   // The default the directory had before may name a runner that is still
