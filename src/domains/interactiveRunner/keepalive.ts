@@ -15,9 +15,8 @@ import { resolveRunner } from "./resolveRunner.js";
  * There is no keepalive endpoint, and this command does not want one: the
  * published contract for `runner.readJournal` promises that "a read counts as
  * activity, so working through history does not get the runner reaped underneath
- * you". A bounded read is therefore the whole implementation, and it is honest
- * rather than a stand-in for something missing. What it buys a caller is not
- * having to know which of the verbs happens to count.
+ * you". A bounded read is therefore the whole implementation; what it buys a
+ * caller is not having to know which of the verbs happens to count.
  *
  * `run-status` with `tail: 1` because a tail read seeks from the end rather than
  * scanning the file, so the cheapest read available is also one that says
