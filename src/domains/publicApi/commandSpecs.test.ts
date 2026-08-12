@@ -7,7 +7,7 @@ import { buildCommandSpecs } from "./commandSpecs.js";
 describe("buildCommandSpecs", () => {
   it("flattens the published contract tree into command specs", () => {
     const specs = buildCommandSpecs(publicContractsV1, {
-      skipContractNames: new Set(["issue.update"]),
+      skipContractNames: new Set(["issue.update", "runner.performAction"]),
     });
 
     const runCreate = specs.find(
@@ -21,6 +21,7 @@ describe("buildCommandSpecs", () => {
     );
     expect(runCreate?.contract).toBe(publicContractsV1.run.create);
     expect(runCreate?.flags.map((flag) => flag.field)).toEqual([
+      "aiTaskId",
       "environmentId",
       "environmentVariables",
       "ignoreRules",
