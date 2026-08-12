@@ -83,8 +83,8 @@ signal on a failure: error text is prose and not stable across versions.
 - `4` could not be served right now, and usually worth retrying
 - `5` bad `qawolf.config.ts`, a file collision during `init`, or a run file
   that could not be read
-- `6` `run --follow` stopped waiting before the run settled; the run may still
-  be going
+- `6` a `--follow` reached its `--timeout`: on `run`, before the run settled,
+  so the run may still be going; on `events`, follow again to continue
 
 `4` is the only one that is not self-explanatory: it covers a genuinely
 transient condition and, on `exec`, a permanent one as well, so read the message
@@ -338,9 +338,10 @@ qawolf runner run flows/checkout.flow.ts --follow
 ```
 
 If you would rather submit and come back later, note that `--follow` on `events`
-is `tail -f` and never returns on its own, so it cannot be used to wait for a
-run. Poll instead, and decide with the same rule the CLI uses: `status` is
-`in-progress` while the run is going, and any other value means it has settled.
+does not end when the run settles — it runs until its own `--timeout`, an hour
+by default — so it cannot be used to wait for a run. Poll instead, and decide
+with the same rule the CLI uses: `status` is `in-progress` while the run is
+going, and any other value means it has settled.
 
 ```sh
 qawolf runner run flows/checkout.flow.ts --json     # -> {"runId":"...","runnerId":"..."}
@@ -383,9 +384,10 @@ qawolf runner events run-logs --run <runId> --follow > run.log
 `--tail N` takes the newest N, `--since <sequence>` reads everything after a
 cursor, and `--run <id>` narrows the run-scoped streams.
 
-`--follow` polls and prints as entries arrive. It is `tail -f`: it never returns
-on its own, so redirect it to a file and stop it yourself, or use repeated
-`--since` reads when you need the command to end.
+`--follow` polls and prints as entries arrive. It is `tail -f` with a bound: it
+ends only at its `--timeout` (an hour by default, exit `6`), because reading
+keeps the runner alive and billing. Redirect it to a file and stop it yourself,
+or use repeated `--since` reads when you need the command to end sooner.
 
 Where it does win is the cursor. The pod reports how far a read scanned rather
 than how far it matched, and `--follow` carries that number, so a filtered read
