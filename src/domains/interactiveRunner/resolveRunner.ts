@@ -37,7 +37,16 @@ async function chooseRunnerId(
 
 export async function resolveRunner(
   ctx: AuthCommandContext,
-  options: { autoLaunch: boolean; runner: string | undefined },
+  options: {
+    autoLaunch: boolean;
+    /**
+     * What to say when nothing names a runner and none will be launched.
+     * Optional because most commands want the plain answer; a command whose next
+     * step is more than "launch one" supplies its own.
+     */
+    noRunnerIdMessage?: string;
+    runner: string | undefined;
+  },
   deps: InteractiveRunnerDeps,
 ): Promise<ResolvedRunner> {
   const chosen = await chooseRunnerId(options.runner, deps);
@@ -54,7 +63,7 @@ export async function resolveRunner(
 
   if (!options.autoLaunch) {
     return {
-      error: interactiveRunnerMessages.noRunnerId,
+      error: options.noRunnerIdMessage ?? interactiveRunnerMessages.noRunnerId,
       exitCode: exitCodes.invalidArgs,
       type: "failed",
     };

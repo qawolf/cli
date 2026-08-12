@@ -111,6 +111,43 @@ describe("handleRunnerScreenshot", () => {
     expect(result?.exitCode).toBe(2);
   });
 
+  it("never launches a runner, and names the screen as well as the runner", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerScreenshot(
+      ctx,
+      { out: "shot.jpg", runner: undefined },
+      deps,
+    );
+
+    expect(result?.exitCode).toBe(2);
+    expect(result?.error).toContain("qawolf runner launch");
+    // A run is the only thing that starts the virtual desktop, so it is the only
+    // next step worth naming: navigating needs a page a fresh runner has not got.
+    expect(result?.error).toContain("run a flow on it with qawolf runner run");
+    expect(callPublicApi).not.toHaveBeenCalled();
+    expect(deps.written).toEqual([]);
+  });
+
+  it("takes the stored default when no flag names a runner", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { imageJpegBase64, outcome: "captured" },
+    });
+    const deps = makeTestDeps();
+    await deps.store.writeDefaultRunnerId("from-store");
+
+    await handleRunnerScreenshot(
+      ctx,
+      { out: "shot.jpg", runner: undefined },
+      deps,
+    );
+
+    expect(callPublicApi.mock.calls[0]?.[1]).toEqual({ id: "from-store" });
+  });
+
   it("reports an unreachable runner, writing nothing", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({

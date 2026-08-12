@@ -1,6 +1,8 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
+import { interactiveRunnerMessages } from "~/core/messages/index.js";
+
 import { resolveRunner } from "./resolveRunner.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 
@@ -82,8 +84,32 @@ describe("resolveRunner", () => {
       makeTestDeps(),
     );
 
-    expect(resolved.type).toBe("failed");
+    expect(resolved).toEqual({
+      error: interactiveRunnerMessages.noRunnerId,
+      exitCode: 2,
+      type: "failed",
+    });
     expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
+  it("uses a command's own wording when it supplies one", async () => {
+    const { ctx } = makeAuthCtx();
+
+    const resolved = await resolveRunner(
+      ctx,
+      {
+        autoLaunch: false,
+        noRunnerIdMessage: "Launch one and open a page first.",
+        runner: undefined,
+      },
+      makeTestDeps(),
+    );
+
+    expect(resolved).toEqual({
+      error: "Launch one and open a page first.",
+      exitCode: 2,
+      type: "failed",
+    });
   });
 
   it("refuses an id the published schema does not admit", async () => {

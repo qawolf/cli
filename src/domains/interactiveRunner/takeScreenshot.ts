@@ -9,7 +9,7 @@ import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
-import { announceRunner, resolveRunner } from "./resolveRunner.js";
+import { resolveRunner } from "./resolveRunner.js";
 
 /**
  * Takes one screenshot and writes it to a file.
@@ -29,15 +29,20 @@ export async function handleRunnerScreenshot(
   options: { out: string; runner: string | undefined },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
+  // Never launches: the virtual desktop starts with the runner's first run, so a
+  // runner started for this command could only answer `screen-needs-a-run`.
   const resolved = await resolveRunner(
     ctx,
-    { autoLaunch: true, runner: options.runner },
+    {
+      autoLaunch: false,
+      noRunnerIdMessage: interactiveRunnerMessages.noRunnerIdForScreenshot,
+      runner: options.runner,
+    },
     deps,
   );
   if (resolved.type === "failed") {
     return { error: resolved.error, exitCode: resolved.exitCode };
   }
-  announceRunner(ctx, resolved);
 
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.runner.takeScreenshot,
