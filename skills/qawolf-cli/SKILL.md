@@ -45,9 +45,10 @@ for its value merely because the CLI does not return it.
 
 An interactive runner is a live pod holding a browser, and it is billed while it
 runs. `qawolf runner launch` starts one; `qawolf runner run` starts one too when
-no runner is already available, and says so when it does. `qawolf runner stop`
-is what ends it, so stop a runner you launched rather than leaving it to time
-out.
+no runner is already available, and says so when it does. Reading a runner
+counts as activity, so `qawolf runner events --follow` left open keeps it alive
+and billing. `qawolf runner stop` is what ends it, so stop a runner you launched
+rather than leaving it to time out.
 
 `qawolf runner launch` remembers its runner as this directory's default, so the
 commands that follow need no `--runner`. Override that default for one command
