@@ -72,24 +72,6 @@ each printed line from the payload alone to the whole envelope (`sequence`,
 `recordedAt`, `payload`). Both are JSON. Pass it when you want to page by
 sequence, omit it when you want the payloads themselves.
 
-Exit codes are stable and worth branching on. They are the only machine-readable
-signal on a failure: error text is prose and not stable across versions.
-
-- `0` succeeded
-- `1` attempted and did not succeed: a run that failed, an action that did not
-  take effect, a snippet that threw
-- `2` impossible as asked: bad arguments, or a runner that can never do it
-- `3` missing or invalid `QAWOLF_API_KEY`
-- `4` could not be served right now, and usually worth retrying
-- `5` bad `qawolf.config.ts`, a file collision during `init`, or a run file
-  that could not be read
-- `6` a `--follow` reached its `--timeout`: on `run`, before the run settled,
-  so the run may still be going; on `events`, follow again to continue
-
-`4` is the only one that is not self-explanatory: it covers a genuinely
-transient condition and, on `exec`, a permanent one as well, so read the message
-before deciding to retry.
-
 ## Safety: reads vs writes
 
 Read commands do not change team data, but some have operational effects noted
