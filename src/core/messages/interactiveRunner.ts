@@ -46,6 +46,8 @@ export const interactiveRunnerMessages = {
   runPassed: "The run passed.",
   runSettledUnknown: (status: string) =>
     `The run settled as "${status}", which this version of the CLI does not recognize. Upgrade to read it.`,
+  runSubmitAnsweredUnknown: (outcome: string) =>
+    `The runner answered the submission with "${outcome}", which this version of the CLI does not recognize. Upgrade to read it.`,
   runSubmitted: (runId: string) => `Submitted run ${runId}.`,
   runnerUnreachable:
     "The runner could not be reached. It may still be starting, or it may have terminated after inactivity. Retry, or launch it again.",

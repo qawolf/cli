@@ -118,5 +118,17 @@ export async function handleRunnerRun(
         deps,
       );
     }
+    // An outcome added to the contract must not fall through to exit 0: today
+    // the response schema refuses one this version does not know, and this
+    // keeps a future contracts bump a compile error rather than a silent pass.
+    default: {
+      result.value satisfies never;
+      return {
+        error: interactiveRunnerMessages.runSubmitAnsweredUnknown(
+          String((result.value as { outcome: string }).outcome),
+        ),
+        exitCode: exitCodes.network,
+      };
+    }
   }
 }

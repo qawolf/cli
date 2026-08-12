@@ -96,6 +96,14 @@ describe("handleRunnerRun", () => {
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 
+  // An outcome the CLI does not know must not read as success.
+  it("reports an outcome it does not recognize rather than exiting 0", async () => {
+    const { result } = await runWith({ outcome: "queued" });
+
+    expect(result?.error).toContain('"queued"');
+    expect(result?.exitCode).toBe(4);
+  });
+
   it("names both images when the runner is the wrong one for the flow", async () => {
     const { result } = await runWith({
       outcome: "runner-target-mismatch",
