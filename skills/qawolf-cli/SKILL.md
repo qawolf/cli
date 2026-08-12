@@ -81,7 +81,10 @@ signal on a failure: error text is prose and not stable across versions.
 - `2` impossible as asked: bad arguments, or a runner that can never do it
 - `3` missing or invalid `QAWOLF_API_KEY`
 - `4` could not be served right now, and usually worth retrying
-- `5` bad `qawolf.config.ts`, or a file collision during `init`
+- `5` bad `qawolf.config.ts`, a file collision during `init`, or a run file
+  that could not be read
+- `6` `run --follow` stopped waiting before the run settled; the run may still
+  be going
 
 `4` is the only one that is not self-explanatory: it covers a genuinely
 transient condition and, on `exec`, a permanent one as well, so read the message
