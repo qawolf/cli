@@ -210,6 +210,7 @@ describe("handleRunnerExec", () => {
     );
 
     expect(result?.error).toContain("no live page");
+    expect(result?.error).toContain("not proof the snippet did not run");
     expect(result?.exitCode).toBe(4);
   });
 });

@@ -63,7 +63,7 @@ export const interactiveRunnerMessages = {
   runnerHasNoScreen:
     "This runner does not run a browser on a virtual desktop, so there is nothing about it to see or drive. Retrying will never help: launch a node20WithPlaywright runner instead.",
   runnerHasNoScreenToEvaluate:
-    "The runner could not evaluate the snippet. As well as a runner that is still starting or busy, this covers one with no live page to evaluate against, which will never clear: check that the runner you launched runs a browser.",
+    "The runner could not evaluate the snippet. As well as a runner that is still starting or busy, this covers one with no live page to evaluate against, which will never clear: check that the runner you launched runs a browser. It is not proof the snippet did not run, so do not resubmit one that mutates the page without reading qawolf runner events console first.",
   runnerUnreachable:
     "The runner could not be reached. It may still be starting, or it may have terminated after inactivity. Retry, or launch it again.",
   screenNeedsARun:
