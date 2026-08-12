@@ -3,6 +3,7 @@ import { knownJournalStreams } from "@qawolf/api-contracts/v1";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext } from "~/commands/context.js";
+import { defaultFollowTimeoutSeconds } from "~/core/interactiveRunner/followTimeout.js";
 import { handleRunnerEvents } from "~/domains/interactiveRunner/events.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
@@ -20,6 +21,7 @@ type EventsFlags = {
   runner?: string;
   since?: string;
   tail?: string;
+  timeout: string;
 };
 
 export function registerEventsCommand(
@@ -39,6 +41,11 @@ export function registerEventsCommand(
     .option("--runner <id>", runnerFlagDescription)
     .option("--since <sequence>", "Read entries after this sequence")
     .option("--tail <count>", "Read only the newest <count> entries")
+    .option(
+      "--timeout <seconds>",
+      "Give up following after this long. Reading keeps the runner alive, so a follow left open would otherwise bill until the terminal closed",
+      String(defaultFollowTimeoutSeconds),
+    )
     .addHelpText("after", eventsExamples)
     .action((stream: string, opts: EventsFlags, command: Command) =>
       withAuthContext(signals, (ctx) =>
@@ -56,6 +63,7 @@ export function registerEventsCommand(
             since: opts.since,
             stream,
             tail: opts.tail,
+            timeout: opts.timeout,
           },
           deps(ctx),
         ),

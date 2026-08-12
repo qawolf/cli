@@ -30,6 +30,8 @@ export const interactiveRunnerMessages = {
   launched: (id: string) => `Launched runner ${id}.`,
   launchedForCommand: (id: string) =>
     `No runner was given, so launched ${id} for this command. Its browser is fresh: nothing has been run on it and nothing is signed in. It bills until it is stopped or idles out, so stop it with qawolf runner stop --runner ${id} when you are done.`,
+  followEventsTimedOut: (stream: string, seconds: number) =>
+    `Stopped following ${stream} after ${formatSeconds(seconds * 1000)}: reading keeps the runner alive and billing, so a follow does not run unbounded. Pass --timeout to wait longer, or follow again to continue.`,
   followTimedOut: (runId: string, runnerId: string, seconds: number) =>
     `Stopped following run ${runId} after ${formatSeconds(seconds * 1000)}. The run may still be going: read it with qawolf runner events run-status --run ${runId}, and stop the runner with qawolf runner stop --runner ${runnerId} when you are done. Pass --timeout to wait longer.`,
   missingPackageJson:

@@ -12,6 +12,7 @@ const baseOptions = {
   since: undefined,
   stream: "recorder",
   tail: undefined,
+  timeout: undefined,
 };
 
 describe("handleRunnerEvents", () => {
@@ -182,6 +183,37 @@ describe("handleRunnerEvents", () => {
     }
 
     expect(streamedData()).toEqual([{ code: "a" }]);
+  });
+
+  // A follow keeps the runner alive and billing, so it has to end on its own
+  // rather than only when the terminal closes.
+  it("gives up following at --timeout, saying how to wait longer", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockImplementation(makeJournal({ recorder: [] }));
+
+    const result = await handleRunnerEvents(
+      ctx,
+      { ...baseOptions, follow: true, timeout: "2" },
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(6);
+    expect(result?.error).toContain("Stopped following recorder");
+    expect(result?.error).toContain("--timeout");
+    expect(callPublicApi).toHaveBeenCalledTimes(2);
+  });
+
+  it("refuses a --timeout that is not a positive number of seconds", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+
+    const result = await handleRunnerEvents(
+      ctx,
+      { ...baseOptions, follow: true, timeout: "soon" },
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(2);
+    expect(callPublicApi).not.toHaveBeenCalled();
   });
 
   // Starting and billing a pod in order to print no lines would serve nobody.

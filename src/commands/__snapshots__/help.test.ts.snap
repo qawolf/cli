@@ -339,15 +339,18 @@ Print a runner's journal, one entry per line. QA Wolf writes console, recorder,
 run-events, run-logs, run-status
 
 Options:
-  --follow            Keep reading as new entries arrive. Reading counts as
-                      activity, so a follow left open keeps the runner alive and
-                      billing (default: false)
-  --run <id>          Restrict run-scoped streams to one run
-  --runner <id>       Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
-                      directory's stored runner
-  --since <sequence>  Read entries after this sequence
-  --tail <count>      Read only the newest <count> entries
-  -h, --help          display help for command
+  --follow             Keep reading as new entries arrive. Reading counts as
+                       activity, so a follow left open keeps the runner alive
+                       and billing (default: false)
+  --run <id>           Restrict run-scoped streams to one run
+  --runner <id>        Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
+                       directory's stored runner
+  --since <sequence>   Read entries after this sequence
+  --tail <count>       Read only the newest <count> entries
+  --timeout <seconds>  Give up following after this long. Reading keeps the
+                       runner alive, so a follow left open would otherwise bill
+                       until the terminal closed (default: "3600")
+  -h, --help           display help for command
 
 Examples:
   $ qawolf runner events recorder --tail 5

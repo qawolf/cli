@@ -1,10 +1,6 @@
-import {
-  journalStreamSchema,
-  knownJournalStreams,
-  readJournalRequestSchema,
-} from "@qawolf/api-contracts/v1";
-import { z } from "zod";
+import { knownJournalStreams } from "@qawolf/api-contracts/v1";
 
+import { parseFollowTimeout } from "~/core/interactiveRunner/followTimeout.js";
 import { formatJournalLine } from "~/core/interactiveRunner/journal.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
@@ -15,64 +11,19 @@ import { exitCodes } from "~/shell/exit.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import {
+  type RunnerEventsOptions,
+  parseEventsOptions,
+} from "./eventsOptions.js";
+import {
   createJournalCursor,
   createUnreachableBudget,
 } from "./journalCursor.js";
 import { unreachableFailure } from "./readJournal.js";
 import { resolveRunner } from "./resolveRunner.js";
 
+export type { RunnerEventsOptions } from "./eventsOptions.js";
+
 const pollIntervalMs = 1_000;
-
-export type RunnerEventsOptions = {
-  envelope: boolean;
-  follow: boolean;
-  run: string | undefined;
-  runner: string | undefined;
-  since: string | undefined;
-  stream: string;
-  tail: string | undefined;
-};
-
-const countSchema = z.coerce.number().int().positive();
-const sequenceSchema = z.coerce.number().int().nonnegative();
-
-type ParsedOptions = {
-  runId: string | undefined;
-  sinceSequence: number | undefined;
-  stream: string;
-  tail: number | undefined;
-};
-
-function parseOptions(
-  options: RunnerEventsOptions,
-): { ok: true; value: ParsedOptions } | { ok: false; error: string } {
-  const parsed = z
-    .object({
-      // A run id is a path segment on the runner just as a stream name is, so it
-      // is held to the published bound rather than passed through unchecked.
-      run: readJournalRequestSchema.shape.runId,
-      since: sequenceSchema.optional(),
-      stream: journalStreamSchema,
-      tail: countSchema.optional(),
-    })
-    .safeParse({
-      stream: options.stream,
-      ...(options.run === undefined ? {} : { run: options.run }),
-      ...(options.since === undefined ? {} : { since: options.since }),
-      ...(options.tail === undefined ? {} : { tail: options.tail }),
-    });
-  if (!parsed.success)
-    return { error: z.prettifyError(parsed.error), ok: false };
-  return {
-    ok: true,
-    value: {
-      runId: parsed.data.run,
-      sinceSequence: parsed.data.since,
-      stream: parsed.data.stream,
-      tail: parsed.data.tail,
-    },
-  };
-}
 
 /**
  * Prints one stream of a runner's journal, one entry per line.
@@ -82,15 +33,24 @@ function parseOptions(
  * sandbox that can only make requests. `tail` applies to the first read only:
  * afterwards there is a cursor, and re-applying a tail would skip entries that
  * arrived between polls.
+ *
+ * `timeoutSeconds` bounds a follow for the same reason `run --follow` is
+ * bounded: a journal read counts as activity, so a follow left open keeps the
+ * runner alive and billing for as long as the terminal stayed open.
  */
 export async function handleRunnerEvents(
   ctx: AuthCommandContext,
   options: RunnerEventsOptions,
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
-  const parsed = parseOptions(options);
+  const parsed = parseEventsOptions(options);
   if (!parsed.ok)
     return { error: parsed.error, exitCode: exitCodes.invalidArgs };
+
+  const timeout = parseFollowTimeout(options.timeout);
+  if (!timeout.ok) {
+    return { error: timeout.error, exitCode: exitCodes.invalidArgs };
+  }
 
   // Alone among the runner-targeting commands, this one never launches. A read
   // of a runner that does not exist has nothing to return, so starting and
@@ -117,7 +77,14 @@ export async function handleRunnerEvents(
   const read = createJournalCursor(ctx, resolved.runnerId, parsed.value);
   const unreachable = createUnreachableBudget(pollIntervalMs);
 
-  for (;;) {
+  // Polls rather than a clock, like followRun: the loop sleeps a known interval
+  // between reads, so counting them bounds the follow.
+  const maxPolls = Math.max(
+    1,
+    Math.ceil((timeout.seconds * 1_000) / pollIntervalMs),
+  );
+
+  for (let poll = 1; ; poll++) {
     const window = await read();
     if (window.type === "failed") return window;
 
@@ -127,18 +94,27 @@ export async function handleRunnerEvents(
       if (!options.follow || unreachable.exhausted()) {
         return { ...unreachableFailure };
       }
-      await deps.sleep(pollIntervalMs);
-      continue;
-    }
-    unreachable.reset();
+    } else {
+      unreachable.reset();
 
-    for (const entry of window.entries) {
-      const { data, line } = formatJournalLine(entry, {
-        envelope: options.envelope,
-      });
-      ctx.ui.stream(data, line);
+      for (const entry of window.entries) {
+        const { data, line } = formatJournalLine(entry, {
+          envelope: options.envelope,
+        });
+        ctx.ui.stream(data, line);
+      }
+      if (!options.follow) return undefined;
     }
-    if (!options.follow) return undefined;
+
+    if (poll >= maxPolls) {
+      return {
+        error: interactiveRunnerMessages.followEventsTimedOut(
+          parsed.value.stream,
+          timeout.seconds,
+        ),
+        exitCode: exitCodes.timeout,
+      };
+    }
     await deps.sleep(pollIntervalMs);
   }
 }

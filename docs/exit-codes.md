@@ -10,7 +10,7 @@ CI consumers depend on consistent exit codes. The CLI commits to the following c
 | `3`  | `auth`        | Missing or invalid `QAWOLF_API_KEY`.                                                                                        |
 | `4`  | `network`     | Apex unreachable, GCS download failure, registry unreachable, or an interactive runner that could not be reached.           |
 | `5`  | `config`      | `qawolf.config.ts` invalid, file collision during `init`, or a run file that could not be read.                             |
-| `6`  | `timeout`     | `qawolf runner run --follow` stopped waiting before its run settled. The run may still be going.                            |
+| `6`  | `timeout`     | A `--follow` reached its `--timeout`: `runner run` before its run settled (the run may still be going), or `runner events`. |
 
 ## Using the helper
 
