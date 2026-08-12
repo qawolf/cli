@@ -194,8 +194,8 @@ describe("handleRunnerExec", () => {
     expect(result?.exitCode).toBe(1);
   });
 
-  // The same promise for the launch this command makes on the caller's behalf:
-  // the server's reason must survive the trip through resolveRunner.
+  // The handler rebuilds resolveRunner's failure as its own result, and the
+  // server's reason has to survive that rebuild too.
   it("passes on the reason the server gave for refusing the auto-launch", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
