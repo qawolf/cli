@@ -33,9 +33,9 @@ export function describeRunFilesCheck(
 
 /**
  * Every shippable file under the working directory is read, so any one of them
- * being unreadable stops the run — a broken symlink named `foo.ts`, or a file the
- * current user cannot open. Caught here rather than left to the catch-all, which
- * exits 1 and tells CI the flow failed.
+ * being unreadable stops the run — a file the current user cannot open, or one
+ * deleted mid-walk. Caught here rather than left to the catch-all, which exits 1
+ * and tells CI the flow failed.
  */
 export async function collectRunFiles(
   deps: InteractiveRunnerDeps,

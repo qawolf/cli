@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -103,4 +109,24 @@ describe("collectRunFiles", () => {
   it("collects nothing from an empty directory", async () => {
     expect(await collect({})).toEqual([]);
   });
+
+  // A symlink reads as whatever it points at, which can be outside the working
+  // directory entirely. A run must not ship files from elsewhere on the machine.
+  it.skipIf(process.platform === "win32")(
+    "leaves behind a symbolic link to a file outside the directory",
+    async () => {
+      const outside = mkdtempSync(join(tmpdir(), "qawolf-outside-"));
+      roots.push(outside);
+      writeFileSync(join(outside, "secret.ts"), "export const secret = 1;");
+      const cwd = makeWorkspace({
+        "flow.ts": "export default {};",
+        "package.json": "{}",
+      });
+      symlinkSync(join(outside, "secret.ts"), join(cwd, "linked.ts"));
+
+      const collected = await collectRunFiles({ cwd, fs: makeDefaultFs() });
+
+      expect(Object.keys(collected)).toEqual(["flow.ts", "package.json"]);
+    },
+  );
 });

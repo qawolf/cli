@@ -33,6 +33,10 @@ export async function collectRunFiles(options: {
     shippableRunFileExtensions.map((extension) => `**/*${extension}`),
     {
       cwd: options.cwd,
+      // A symlink reads as whatever it points at, which can be outside the
+      // working directory entirely — a run must not quietly ship files from
+      // elsewhere on the machine under an in-directory name.
+      followSymbolicLinks: false,
       // An installed dependency tree is never shipped, and it is where nearly
       // every matching file in a real project lives; the predicate refuses it
       // too, but only after the walk has already paid for it.
