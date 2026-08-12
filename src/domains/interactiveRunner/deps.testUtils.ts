@@ -2,7 +2,9 @@ import type { Mock } from "bun:test";
 import type { RunFiles } from "@qawolf/api-contracts/v1";
 
 import { makeCtx } from "~/shell/commandContext.testUtils.js";
+import type { Fs } from "~/shell/fs.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
+import { writeScreenshot } from "~/shell/interactiveRunner/writeScreenshot.js";
 import {
   makeCallPublicApiMock,
   makeMockPlatformClient,
@@ -53,20 +55,45 @@ function streamCalls(base: CommandContext): [unknown, string][] {
     .calls;
 }
 
+/** What reached the filesystem, so a test can assert on the bytes themselves. */
+export type WrittenScreenshot = { bytes: Uint8Array; path: string };
+
 export function makeTestDeps(
   overrides: Partial<InteractiveRunnerDeps> = {},
-): InteractiveRunnerDeps {
+): InteractiveRunnerDeps & { written: WrittenScreenshot[] } {
   const files: RunFiles = {
     "flow.ts": "export default {};",
     "package.json": "{}",
+  };
+  const written: WrittenScreenshot[] = [];
+  // The real writer over a memory filesystem, rather than a stand-in that
+  // decodes for itself: a double with its own `Buffer.from` would keep passing
+  // if the real one were changed to write the base64 string, which is the whole
+  // thing it exists to prevent.
+  const fs = makeMemoryFs();
+  const recordingFs: Fs = {
+    ...fs,
+    async writeFile(path, data, options) {
+      await fs.writeFile(path, data, options);
+      written.push({ bytes: Uint8Array.from(data as Uint8Array), path });
+    },
   };
   return {
     collectRunFiles: async () => files,
     cwd: testCwd,
     env: {},
     makeRunnerId: () => "cli-minted",
+    readFile: async (path) => {
+      const content = files[path];
+      if (content === undefined) throw Error(`no such file: ${path}`);
+      return content;
+    },
+    readStdin: async () => "",
     sleep: async () => {},
     store: makeRunnerStore({ cwd: testCwd, fs: makeMemoryFs() }),
+    writeScreenshot: (screenshot) =>
+      writeScreenshot({ ...screenshot, fs: recordingFs }),
+    written,
     ...overrides,
   };
 }

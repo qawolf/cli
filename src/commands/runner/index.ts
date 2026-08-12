@@ -2,12 +2,9 @@ import type { Command } from "commander";
 
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
-import { registerEventsCommand } from "./events.register.js";
-import {
-  registerLaunchCommand,
-  registerStopCommand,
-} from "./lifecycle.register.js";
-import { registerRunCommand } from "./run.register.js";
+import { registerRunnerInteractCommands } from "./interact.register.js";
+import { registerRunnerLifecycleCommands } from "./lifecycle.register.js";
+import { registerRunnerRunCommands } from "./run.register.js";
 
 export function registerRunnerCommand(
   program: Command,
@@ -17,8 +14,7 @@ export function registerRunnerCommand(
     .command("runner")
     .description("Drive an interactive runner on the QA Wolf platform");
 
-  registerLaunchCommand(runner, signals);
-  registerStopCommand(runner, signals);
-  registerRunCommand(runner, signals);
-  registerEventsCommand(runner, signals);
+  registerRunnerLifecycleCommands(runner, signals);
+  registerRunnerRunCommands(runner, signals);
+  registerRunnerInteractCommands(runner, signals);
 }

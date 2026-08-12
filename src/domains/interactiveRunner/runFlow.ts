@@ -1,8 +1,11 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
-import { isAbsolute, relative, resolve, sep } from "node:path";
 
 import { parseFollowTimeout } from "~/core/interactiveRunner/followTimeout.js";
-import { checkRunFiles } from "~/core/interactiveRunner/runFiles.js";
+import {
+  checkRunFiles,
+  describeRunFilesCheck,
+  toCollectedPath,
+} from "~/core/interactiveRunner/runFiles.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
   AuthCommandContext,
@@ -11,22 +14,10 @@ import type {
 import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
-import { collectRunFiles, describeRunFilesCheck } from "./collectFiles.js";
+import { collectRunFiles } from "./collectFiles.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { followRun } from "./followRun.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
-
-/**
- * The path the request names the entry point by, which is the path the file
- * travels under: relative to the directory the files were collected from, with
- * forward slashes whatever the platform's separator is.
- */
-function toCollectedPath(cwd: string, entryPoint: string): string {
-  const absolute = isAbsolute(entryPoint)
-    ? entryPoint
-    : resolve(cwd, entryPoint);
-  return relative(cwd, absolute).split(sep).join("/");
-}
 
 export async function handleRunnerRun(
   ctx: AuthCommandContext,

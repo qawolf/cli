@@ -2,11 +2,12 @@ import type { Command } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext } from "~/commands/context.js";
+import { handleRunnerKeepalive } from "~/domains/interactiveRunner/keepalive.js";
 import { handleRunnerLaunch } from "~/domains/interactiveRunner/launch.js";
 import { handleRunnerStop } from "~/domains/interactiveRunner/stop.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
-import { deps, runnerFlagDescription } from "./shared.js";
+import { runnerDeps, runnerFlagDescription } from "./context.js";
 
 const launchExamples = `
 Examples:
@@ -14,7 +15,12 @@ Examples:
   $ qawolf runner launch --name node20WithAndroid
   $ qawolf runner launch --id ci`;
 
-export function registerLaunchCommand(
+const keepaliveExamples = `
+Examples:
+  $ qawolf runner keepalive
+  $ qawolf runner keepalive --runner ci`;
+
+export function registerRunnerLifecycleCommands(
   runner: Command,
   signals: SignalRegistry,
 ): void {
@@ -30,21 +36,32 @@ export function registerLaunchCommand(
     .addHelpText("after", launchExamples)
     .action((opts: { id?: string; name?: string }, command: Command) =>
       withAuthContext(signals, (ctx) =>
-        handleRunnerLaunch(ctx, { id: opts.id, name: opts.name }, deps(ctx)),
+        handleRunnerLaunch(
+          ctx,
+          { id: opts.id, name: opts.name },
+          runnerDeps(ctx),
+        ),
       )(opts, command),
     );
-}
 
-export function registerStopCommand(
-  runner: Command,
-  signals: SignalRegistry,
-): void {
   declareCommandKind(runner.command("stop"), "write")
     .description("Stop an interactive runner")
     .option("--runner <id>", runnerFlagDescription)
     .action((opts: { runner?: string }, command: Command) =>
       withAuthContext(signals, (ctx) =>
-        handleRunnerStop(ctx, { runner: opts.runner }, deps(ctx)),
+        handleRunnerStop(ctx, { runner: opts.runner }, runnerDeps(ctx)),
+      )(opts, command),
+    );
+
+  declareCommandKind(runner.command("keepalive"), "read")
+    .description(
+      "Reset a runner's inactivity clock, for a caller that pauses between actions",
+    )
+    .option("--runner <id>", runnerFlagDescription)
+    .addHelpText("after", keepaliveExamples)
+    .action((opts: { runner?: string }, command: Command) =>
+      withAuthContext(signals, (ctx) =>
+        handleRunnerKeepalive(ctx, { runner: opts.runner }, runnerDeps(ctx)),
       )(opts, command),
     );
 }

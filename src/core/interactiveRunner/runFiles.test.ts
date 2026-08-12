@@ -4,7 +4,11 @@ import {
 } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
-import { checkRunFiles } from "./runFiles.js";
+import {
+  checkRunFiles,
+  checkSnippetFiles,
+  toCollectedPath,
+} from "./runFiles.js";
 
 const flowPath = "flows/checkout.flow.ts";
 const packageJson = { "package.json": "{}" };
@@ -38,8 +42,8 @@ describe("checkRunFiles", () => {
 
   it("refuses an entry point that is not among the collected files", () => {
     expect(checkRunFiles(packageJson, "flows/missing.flow.ts")).toEqual({
-      entryPointPath: "flows/missing.flow.ts",
-      type: "missing-entry-point",
+      path: "flows/missing.flow.ts",
+      type: "missing-file",
     });
   });
 
@@ -78,5 +82,52 @@ describe("checkRunFiles", () => {
       "dist/bundle.js.map",
       "flows/checkout.flow.ts",
     ]);
+  });
+});
+
+describe("checkSnippetFiles", () => {
+  // Unlike a run, a snippet installs nothing, so demanding a package.json would
+  // refuse requests the server would have accepted.
+  it("accepts a scope file with no package.json beside it", () => {
+    expect(checkSnippetFiles(flow, flowPath)).toEqual({ type: "ok" });
+  });
+
+  it("refuses a scope file that is not among the collected files", () => {
+    expect(checkSnippetFiles(flow, "elsewhere.ts")).toEqual({
+      path: "elsewhere.ts",
+      type: "missing-file",
+    });
+  });
+
+  it("holds a snippet's scope to the same size cap as a run", () => {
+    const huge = { "big.ts": "a".repeat(maxRunFilesByteLength) };
+
+    const check = checkSnippetFiles(huge, "big.ts");
+
+    expect(check.type).toBe("too-large");
+    if (check.type !== "too-large") return;
+    expect(check.maxByteLength).toBe(maxRunFilesByteLength);
+  });
+});
+
+describe("toCollectedPath", () => {
+  it("leaves a path already relative to the collection directory alone", () => {
+    expect(toCollectedPath("/workspace", "flows/checkout.flow.ts")).toBe(
+      "flows/checkout.flow.ts",
+    );
+  });
+
+  it("makes an absolute path relative to the collection directory", () => {
+    expect(
+      toCollectedPath("/workspace", "/workspace/flows/checkout.flow.ts"),
+    ).toBe("flows/checkout.flow.ts");
+  });
+
+  // Which then fails the presence check, because a file outside the directory
+  // is not one that travels.
+  it("keeps a path outside the collection directory recognisably outside", () => {
+    expect(toCollectedPath("/workspace", "../elsewhere/flow.ts")).toBe(
+      "../elsewhere/flow.ts",
+    );
   });
 });
