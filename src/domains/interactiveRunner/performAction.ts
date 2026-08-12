@@ -80,7 +80,19 @@ export async function handleRunnerAct(
     { action: built.action, id: resolved.runnerId },
   );
   if (!result.ok) {
-    return { ...failureFields(result), exitCode: exitCodes.network };
+    // A lost answer at the transport is the same hazard as the unreachable
+    // outcome below: the action may have taken effect before the answer was
+    // lost, so this failure must not invite a bare repeat either.
+    const fields = failureFields(result);
+    return {
+      ...fields,
+      ...(result.mayHaveArrived
+        ? {
+            error: `${fields.error} ${interactiveRunnerMessages.actionMayHaveHappened}`,
+          }
+        : {}),
+      exitCode: exitCodes.network,
+    };
   }
 
   switch (result.value.outcome) {

@@ -82,4 +82,23 @@ describe("handleRunnerAct outcomes", () => {
     );
     expect(result?.exitCode).toBe(4);
   });
+
+  // The same hazard arrives at the transport as a timed-out request, and it must
+  // carry the same warning rather than the generic failure alone.
+  it("does not invite a bare repeat when the request timed out", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "request timed out after 15000ms",
+      mayHaveArrived: true,
+      ok: false,
+    });
+
+    const result = await handleRunnerAct(ctx, click, makeTestDeps());
+
+    expect(result?.error).toContain("timed out");
+    expect(result?.error).toContain(
+      "does not mean the action was not performed",
+    );
+    expect(result?.exitCode).toBe(4);
+  });
 });
