@@ -1,9 +1,7 @@
 import { join } from "node:path";
 
-import {
-  appiumCliCandidates,
-  playwrightCliCandidates,
-} from "~/core/nodeModulesBins.js";
+import { appiumCliCandidates } from "~/core/nodeModulesBins.js";
+import { playwrightCliJsPath } from "~/core/playwrightCli.js";
 import type { Fs } from "~/shell/fs.js";
 
 import { pinnedPackages } from "./pinnedPackages.js";
@@ -40,13 +38,25 @@ export type PinnedFailure =
       pinned: string;
       installed: string | undefined;
     }
-  | { kind: "shim"; name: string };
+  | { kind: "shim"; name: string; display: string };
 
-// The same candidate lists installBrowserList and createAppiumServer resolve
-// from, so this check and those two cannot disagree.
+// The same paths installBrowserList and createAppiumServer resolve from, so
+// this check and those two cannot disagree. Playwright is spawned via its
+// package's own cli.js (never the winner-takes-all .bin shim); appium still
+// spawns the .bin shim.
 const shims = [
-  { name: "playwright", candidates: playwrightCliCandidates },
-  { name: "appium", candidates: appiumCliCandidates },
+  {
+    name: "playwright",
+    display: "node_modules/playwright/cli.js",
+    candidates: (dir: string, _platform: NodeJS.Platform) => [
+      playwrightCliJsPath(dir),
+    ],
+  },
+  {
+    name: "appium",
+    display: "node_modules/.bin/appium",
+    candidates: appiumCliCandidates,
+  },
 ];
 
 /**
@@ -68,9 +78,9 @@ export function pinnedResolutionFailures(
       failures.push({ kind: "package", name, pinned: version, installed });
     }
   }
-  for (const { name, candidates } of shims) {
+  for (const { name, display, candidates } of shims) {
     if (!candidates(dir, platform).some((p) => fs.existsSync(p))) {
-      failures.push({ kind: "shim", name });
+      failures.push({ kind: "shim", name, display });
     }
   }
   return failures;
@@ -78,7 +88,7 @@ export function pinnedResolutionFailures(
 
 export function describePinnedFailure(failure: PinnedFailure): string {
   if (failure.kind === "shim") {
-    return `node_modules/.bin/${failure.name} (missing)`;
+    return `${failure.display} (missing)`;
   }
   return failure.installed === undefined
     ? `${failure.name} (missing, pinned ${failure.pinned})`

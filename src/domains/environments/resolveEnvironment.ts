@@ -2,7 +2,10 @@ import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import type { z } from "zod";
 
 import { environmentsMessages } from "~/core/messages/index.js";
-import type { PlatformResult } from "~/shell/platform/requestWithRetry.js";
+import {
+  failureFields,
+  type PlatformResult,
+} from "~/shell/platform/requestWithRetry.js";
 import type { UI } from "~/shell/ui/index.js";
 import { pickEnvironment } from "./pickEnvironment.js";
 
@@ -15,7 +18,7 @@ type GetOutput = z.output<typeof getContract.output>;
 export type ResolveEnvironmentOutcome =
   | { kind: "resolved"; env: string }
   | { kind: "cancelled" }
-  | { kind: "error"; error: string };
+  | { kind: "error"; error: string; errorBody?: string };
 
 // The concrete instantiations of PlatformClient["callPublicApi"] this domain
 // needs. The real generic method is assignable to the overload set, and test
@@ -79,6 +82,7 @@ async function resolveRef(
   });
   if (!result.ok) {
     return {
+      ...failureFields(result),
       kind: "error",
       error: environmentsMessages.couldNotResolve(ref, result.error),
     };

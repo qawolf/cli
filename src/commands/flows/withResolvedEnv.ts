@@ -7,6 +7,7 @@ import type {
   AuthCommandContext,
   CommandResult,
 } from "~/shell/commandContext.js";
+import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { detectOutputMode, type OutputFlags } from "~/shell/ui/env.js";
 
@@ -56,7 +57,7 @@ export function withResolvedEnv(
         return;
       }
       if (outcome.kind === "error") {
-        return { error: outcome.error };
+        return failureFields(outcome);
       }
       return fn(ctx, outcome.env);
     })(opts, command);

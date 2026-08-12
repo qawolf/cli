@@ -2,31 +2,12 @@ import { describe, expect, it } from "bun:test";
 import { join } from "node:path";
 
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
-import type { CommandContext } from "~/shell/commandContext.js";
 import { handleInit } from "./init.js";
 import { flowsVersion } from "~/generated/dependencyVersions.js";
+import { makeCtx } from "./init.fixtures.js";
 import { exampleFlowTs, qawolfConfigTs, qawolfGitignore } from "./templates.js";
 
 const cwd = "/test/project";
-
-function makeCtx(confirmValue = true) {
-  const messages: { method: string; text: string }[] = [];
-  const ctx = {
-    ui: {
-      gap: () => {},
-      intro: () => {},
-      step: (m: string) => messages.push({ method: "step", text: m }),
-      info: (m: string) => messages.push({ method: "info", text: m }),
-      warn: (m: string) => messages.push({ method: "warn", text: m }),
-      outro: () => {},
-      confirm: async (_msg: string, opts?: { yes?: boolean }) => {
-        if (opts?.yes) return { ok: true, value: true };
-        return { ok: true, value: confirmValue };
-      },
-    },
-  } as unknown as CommandContext;
-  return { ctx, messages };
-}
 
 describe("handleInit", () => {
   it("should create all four artifacts in an empty directory", async () => {
@@ -199,10 +180,8 @@ describe("handleInit", () => {
     await handleInit(ctx, { yes: false }, { cwd, fs: memFs });
 
     expect(await memFs.readFile(join(cwd, "package.json"))).toBe("not json {");
-    expect(
-      messages.some(
-        (m) => m.method === "warn" && m.text.includes("not valid JSON"),
-      ),
-    ).toBe(true);
+    expect(messages.find((m) => m.method === "warn")?.text).toBe(
+      "`package.json` contains invalid JSON. Correct the JSON syntax, then run `qawolf init` again.",
+    );
   });
 });

@@ -105,4 +105,65 @@ describe("callPublicApi", () => {
     expect(callCount(f)).toBe(2);
     expect(result).toEqual({ ok: true, value: { status: "completed" } });
   });
+
+  it("surfaces the server's reason alongside the status", async () => {
+    const message =
+      "src/flows/checkout.flow.ts is not a flow file. A run's entry point must be a flow file under src/flows.";
+    const f = mockFetch(
+      new Response(
+        JSON.stringify({
+          error: {
+            json: {
+              code: -32603,
+              data: {
+                code: "BAD_REQUEST",
+                httpStatus: 400,
+                path: "public.run.create",
+                message,
+              },
+              message,
+            },
+          },
+        }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      ),
+    );
+
+    const result = await createPlatformClient(apiKey, {
+      fetch: f,
+      baseUrl,
+      sleep: noSleep,
+    }).callPublicApi(publicContractsV1.run.create, {
+      environmentId: "environment-id",
+      flowIds: ["flow-id"],
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: "QA Wolf API run.create request failed (HTTP 400).",
+      errorBody: message,
+    });
+  });
+
+  it("keeps the status-only message when the body carries no reason", async () => {
+    const f = mockFetch(
+      new Response("<html><body>502 Bad Gateway</body></html>", {
+        status: 502,
+      }),
+    );
+
+    const result = await createPlatformClient(apiKey, {
+      fetch: f,
+      baseUrl,
+      sleep: noSleep,
+    }).callPublicApi(publicContractsV1.run.create, {
+      environmentId: "environment-id",
+      flowIds: ["flow-id"],
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: "QA Wolf API run.create request failed (HTTP 502).",
+    });
+  });
 });

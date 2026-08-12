@@ -47,6 +47,7 @@ export function buildFlowsRunDeps(args: BuildFlowsRunDepsArgs): FlowsRunDeps {
     installBrowsers: (innerCtx, browsers) =>
       installBrowserList(innerCtx, browsers, {
         spawn: defaultSpawn,
+        execPath: process.execPath,
         platform: process.platform,
         browserDeps: flags.browserDeps,
         envDir: resolvedDir,

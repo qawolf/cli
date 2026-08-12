@@ -1,5 +1,23 @@
 # @qawolf/cli
 
+## 1.7.4
+
+### Patch Changes
+
+- 837d79e: Use `QAWOLF_ENVIRONMENT` as the default for generated public API `--environment-id` options. Pass `QAWOLF_AI_TASK_ID` to the public `run create` API input when the generated `--ai-task-id` option is available. Explicit flags take precedence over the environment.
+- 80e3be3: Show the server's reason when a public API call fails, instead of only an HTTP
+  status. A rejected request now prints why it was rejected without needing
+  `--verbose`.
+- fc8b048: Skip `runner.performAction` in the generated public API commands. An upcoming `@qawolf/api-contracts` version adds this contract, and its action-union input has no flag form; without the skip, upgrading the dependency would make command generation throw while the program is built, breaking every command. The verb will get a hand-written command instead.
+
+## 1.7.3
+
+### Patch Changes
+
+- 1f57b57: Align browser install and doctor with the pinned playwright runtime. The CLI shipped an unused `@playwright/test` dependency, and user projects can install their own copy at any version. Both packages declare a `playwright` bin, and either can win the `node_modules/.bin/playwright` shim. When the shim belongs to a different version than the pinned `playwright`, `install browsers` downloads browser builds for the wrong playwright version. The flow runtime imports the `playwright` module, so it could not launch the installed builds. This change removes the `@playwright/test` dependency. `install browsers`, `doctor`, and runtime-dir validation now run the `playwright` package's own `cli.js` through the CLI's runtime, so the installed builds always match the runtime. `doctor` now also fails with a clear message when the installed playwright version differs from the pinned runtime version.
+- 563dbd7: Make `init` repair an existing package.json so the scaffolded flow can load. The scaffolded flow and config are ES modules. Node reads their module format from the nearest package.json `type` field. Before this change, `init` only added the `test:e2e` script to an existing package.json. It did not set `"type": "module"` and did not add the `@qawolf/flows` dependency, so the example flow failed to load. Current npm writes `"type": "commonjs"` into every `npm init -y` package.json, so an explicit value does not signal author intent. `init` now offers three changes in one prompt: add the `test:e2e` script, set `"type": "module"`, and add the `@qawolf/flows` dependency. It applies the missing ones and skips the rest. It prints a warning after it changes an explicit `type` value, because that changes how every `.js` file in the package loads. Run `init` again on a half-configured project to repair it; the old code stopped at the first existing script.
+- 163f6aa: Show flow failure detail in json output. Before this change, a failed `flows run` printed only `{"type":"error","title":"N flow(s) failed"}` in json mode. The CLI also selects json mode in CI and when stdout is piped. The failure message and stack only reached disk through the `--junit` report. The final error event now includes a `body` field. The `body` field contains the message and the cause stack for each failed flow. Human and agent modes do not change. They already show the failure detail inline.
+
 ## 1.7.2
 
 ### Patch Changes

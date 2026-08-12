@@ -10,12 +10,12 @@ export function describeBundleRequestError(
   err: WireError,
   baseUrl: string,
 ): string {
-  return describeRequestError(err, baseUrl);
+  return describeRequestError(err, baseUrl).error;
 }
 
 export function describeEnvVarsRequestError(
   err: WireError,
   baseUrl: string,
 ): string {
-  return describeRequestError(err, baseUrl, "env-vars");
+  return describeRequestError(err, baseUrl, "env-vars").error;
 }

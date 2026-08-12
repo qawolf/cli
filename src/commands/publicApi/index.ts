@@ -1,4 +1,4 @@
-import type { Command } from "commander";
+import { Option, type Command } from "commander";
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
 import { withAuthContext } from "~/commands/context.js";
@@ -31,12 +31,31 @@ const groupDescriptions: Record<string, string> = {
 const handWrittenContractNames: ReadonlySet<string> = new Set(["flow.list"]);
 
 // Kept out of generated commands: the hand-written ones above, plus contracts
-// whose input can't be expressed as CLI flags (issue.update is a
-// discriminator-less union).
+// whose input can't be expressed as CLI flags. `issue.update` is a
+// discriminator-less union. `runner.performAction` (in an upcoming contracts
+// version) takes an action union where the arm a caller means is the whole
+// request; listed ahead of the bump because an unmappable contract throws while
+// the program is built, taking every command down with it.
 const skippedContractNames: ReadonlySet<string> = new Set([
   ...handWrittenContractNames,
   "issue.update",
+  "runner.performAction",
 ]);
+
+const optionEnvironmentVariables = new Map([
+  ["environmentId", "QAWOLF_ENVIRONMENT"],
+  ["public.run.create.aiTaskId", "QAWOLF_AI_TASK_ID"],
+]);
+
+function optionEnvironmentVariable(
+  spec: CommandSpec,
+  field: string,
+): string | undefined {
+  return (
+    optionEnvironmentVariables.get(`${spec.trpcPath}.${field}`) ??
+    optionEnvironmentVariables.get(field)
+  );
+}
 
 function resolveGroup(parent: Command, segment: string): Command {
   const existing = parent.commands.find(
@@ -78,7 +97,14 @@ function registerSpec(
     spec.kind,
   ).description(spec.description);
   for (const flag of spec.flags) {
-    if (flag.required) {
+    const environmentVariable = optionEnvironmentVariable(spec, flag.field);
+    if (environmentVariable) {
+      const option = new Option(flag.flag, flag.description).env(
+        environmentVariable,
+      );
+      if (flag.required) option.makeOptionMandatory();
+      command.addOption(option);
+    } else if (flag.required) {
       command.requiredOption(flag.flag, flag.description);
     } else {
       command.option(flag.flag, flag.description);

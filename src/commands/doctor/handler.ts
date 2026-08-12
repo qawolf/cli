@@ -67,6 +67,7 @@ export async function handleDoctor(
     apiKey: resolved?.key,
     fetch: globalThis.fetch,
     spawn: defaultSpawn,
+    execPath: process.execPath,
     apiBaseUrl: ctx.apiBaseUrl,
     enginesNode: packageJson.engines.node,
     processVersion: process.version,
