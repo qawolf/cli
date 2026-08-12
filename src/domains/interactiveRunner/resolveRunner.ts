@@ -1,6 +1,7 @@
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
+import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { launchAndRemember } from "./launch.js";
@@ -17,7 +18,7 @@ import { parseRunnerId } from "./runnerIds.js";
 export type ResolvedRunner =
   | { type: "resolved"; runnerId: string }
   | { type: "launched"; runnerId: string }
-  | { type: "failed"; error: string; exitCode: number };
+  | { type: "failed"; error: string; errorBody?: string; exitCode: number };
 
 const runnerIdEnvironmentVariable = "QAWOLF_RUNNER_ID";
 
@@ -76,7 +77,7 @@ export async function resolveRunner(
   );
   if (!launched.ok) {
     return {
-      error: launched.error,
+      ...failureFields(launched),
       exitCode: launched.exitCode,
       type: "failed",
     };

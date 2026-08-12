@@ -41,7 +41,7 @@ export async function handleRunnerScreenshot(
     deps,
   );
   if (resolved.type === "failed") {
-    return { error: resolved.error, exitCode: resolved.exitCode };
+    return { ...failureFields(resolved), exitCode: resolved.exitCode };
   }
 
   const result = await ctx.platformClient.callPublicApi(

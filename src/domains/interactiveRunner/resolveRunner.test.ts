@@ -162,6 +162,30 @@ describe("resolveRunner", () => {
     expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
   });
 
+  // The server's own reason is the only thing that names which image the id is
+  // already running, so a refused auto-launch has to pass it on rather than
+  // leave the caller with a bare status code.
+  it("passes on the reason the server gave for refusing the launch", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "QA Wolf API runner.launch request failed (HTTP 409).",
+      errorBody:
+        "runner cli-minted is already running node20Basic; stop it before launching node20WithAndroid",
+      ok: false,
+    });
+
+    const resolved = await resolveRunner(
+      ctx,
+      { autoLaunch: true, runner: undefined },
+      makeTestDeps(),
+    );
+
+    expect(
+      resolved.type === "failed" ? resolved.errorBody : undefined,
+    ).toContain("already running node20Basic");
+    expect(resolved).toMatchObject({ exitCode: 4, type: "failed" });
+  });
+
   it("names the runner it was launching when the launch fails", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({ ok: false, error: "apex unreachable" });

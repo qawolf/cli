@@ -3,6 +3,7 @@ import type {
   AuthCommandContext,
   CommandResult,
 } from "~/shell/commandContext.js";
+import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { readJournal, unreachableFailure } from "./readJournal.js";
@@ -37,7 +38,7 @@ export async function handleRunnerKeepalive(
     deps,
   );
   if (resolved.type === "failed") {
-    return { error: resolved.error, exitCode: resolved.exitCode };
+    return { ...failureFields(resolved), exitCode: resolved.exitCode };
   }
 
   const window = await readJournal(ctx, resolved.runnerId, {

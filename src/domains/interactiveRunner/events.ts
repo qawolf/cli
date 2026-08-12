@@ -8,6 +8,7 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
+import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import {
@@ -61,7 +62,7 @@ export async function handleRunnerEvents(
     deps,
   );
   if (resolved.type === "failed") {
-    return { error: resolved.error, exitCode: resolved.exitCode };
+    return { ...failureFields(resolved), exitCode: resolved.exitCode };
   }
 
   // A stream name is a path segment on the runner rather than a closed set, so an
