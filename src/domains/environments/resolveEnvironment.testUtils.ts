@@ -11,17 +11,7 @@ const getContract = publicContractsV1.environment.get;
 type FindOutput = z.output<typeof findContract.output>;
 type GetOutput = z.output<typeof getContract.output>;
 
-export type Page = {
-  environments: {
-    id: string;
-    name: string;
-    kind: "static" | "preview";
-    runConcurrencyLimit: string;
-    status: "blocked" | "needs-investigation" | "ready" | "running";
-    url: string;
-  }[];
-  nextCursor?: string;
-};
+export type Page = FindOutput;
 
 export function makeDeps(args: {
   mode?: "human" | "json" | "agent";
@@ -50,7 +40,14 @@ export function makeDeps(args: {
           : { ok: false, error: args.findError, errorBody: args.findErrorBody };
       }
       if (args.endlessCursor) {
-        return { ok: true, value: { environments: [], nextCursor: "again" } };
+        return {
+          ok: true,
+          value: {
+            defaultEnvironmentId: "env-default",
+            environments: [],
+            nextCursor: "again",
+          },
+        };
       }
       const page = pages[call];
       call += 1;
@@ -107,13 +104,23 @@ export function env(
   id: string,
   name: string,
   kind: "static" | "preview" = "static",
+  isDefault = false,
 ): Page["environments"][number] {
   return {
     id,
+    isDefault,
     name,
     kind,
     runConcurrencyLimit: "5",
     status: "ready",
     url: "https://x",
   };
+}
+
+export function page(
+  defaultEnvironmentId: string,
+  environments: Page["environments"],
+  nextCursor?: string,
+): Page {
+  return { defaultEnvironmentId, environments, nextCursor };
 }

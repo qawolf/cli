@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
 import { resolveEnvironment } from "./resolveEnvironment.js";
-import { env, makeDeps } from "./resolveEnvironment.testUtils.js";
+import { env, makeDeps, page } from "./resolveEnvironment.testUtils.js";
 
 describe("resolveEnvironment", () => {
   it("resolves the trimmed --env flag through environment.get", async () => {
@@ -87,7 +87,7 @@ describe("resolveEnvironment", () => {
   });
 
   it("errors when the team has no environments", async () => {
-    const { deps } = makeDeps({ pages: [{ environments: [] }] });
+    const { deps } = makeDeps({ pages: [page("env-default", [])] });
 
     const outcome = await resolveEnvironment(deps, {
       explicit: undefined,
@@ -103,7 +103,7 @@ describe("resolveEnvironment", () => {
 
   it("auto-picks a sole environment and says so", async () => {
     const { deps, select, info } = makeDeps({
-      pages: [{ environments: [env("env-1", "Staging")] }],
+      pages: [page("env-1", [env("env-1", "Staging", "static", true)])],
     });
 
     const outcome = await resolveEnvironment(deps, {
@@ -121,7 +121,10 @@ describe("resolveEnvironment", () => {
   it("prompts with name labels and kind/status hints when several exist", async () => {
     const { deps, select, info } = makeDeps({
       pages: [
-        { environments: [env("env-1", "Staging"), env("env-2", "Prod")] },
+        page("env-1", [
+          env("env-1", "Staging", "static", true),
+          env("env-2", "Prod"),
+        ]),
       ],
       selectAnswers: ["env-2"],
     });
@@ -145,8 +148,8 @@ describe("resolveEnvironment", () => {
   it("pages through nextCursor before prompting", async () => {
     const { deps, findEnvironments, select } = makeDeps({
       pages: [
-        { environments: [env("env-1", "A")], nextCursor: "c2" },
-        { environments: [env("env-2", "B")] },
+        page("env-1", [env("env-1", "A", "static", true)], "c2"),
+        page("env-1", [env("env-2", "B")]),
       ],
       selectAnswers: ["env-1"],
     });
@@ -163,7 +166,9 @@ describe("resolveEnvironment", () => {
 
   it("returns cancelled when the prompt is dismissed", async () => {
     const { deps } = makeDeps({
-      pages: [{ environments: [env("env-1", "A"), env("env-2", "B")] }],
+      pages: [
+        page("env-1", [env("env-1", "A", "static", true), env("env-2", "B")]),
+      ],
       selectCancelled: true,
     });
 

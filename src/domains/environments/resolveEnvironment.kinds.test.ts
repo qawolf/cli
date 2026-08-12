@@ -1,18 +1,16 @@
 import { describe, expect, it } from "bun:test";
 
 import { resolveEnvironment } from "./resolveEnvironment.js";
-import { env, makeDeps } from "./resolveEnvironment.testUtils.js";
+import { env, makeDeps, page } from "./resolveEnvironment.testUtils.js";
 
 describe("resolveEnvironment kind pre-selector", () => {
   it("skips the kind pre-selector when only previews exist", async () => {
     const { deps, select } = makeDeps({
       pages: [
-        {
-          environments: [
-            env("env-1", "PR 1", "preview"),
-            env("env-2", "PR 2", "preview"),
-          ],
-        },
+        page("env-1", [
+          env("env-1", "PR 1", "preview", true),
+          env("env-2", "PR 2", "preview"),
+        ]),
       ],
       selectAnswers: ["env-1"],
     });
@@ -29,14 +27,12 @@ describe("resolveEnvironment kind pre-selector", () => {
   it("pre-selects a kind when both kinds exist, then lists only that kind", async () => {
     const { deps, select } = makeDeps({
       pages: [
-        {
-          environments: [
-            env("env-1", "PR 1", "preview"),
-            env("env-2", "PR 2", "preview"),
-            env("env-3", "Staging", "static"),
-            env("env-4", "Prod", "static"),
-          ],
-        },
+        page("env-1", [
+          env("env-1", "PR 1", "preview", true),
+          env("env-2", "PR 2", "preview"),
+          env("env-3", "Staging", "static"),
+          env("env-4", "Prod", "static"),
+        ]),
       ],
       selectAnswers: ["preview", "env-2"],
     });
@@ -64,13 +60,11 @@ describe("resolveEnvironment kind pre-selector", () => {
   it("auto-picks when the chosen kind has exactly one environment", async () => {
     const { deps, select, info } = makeDeps({
       pages: [
-        {
-          environments: [
-            env("env-1", "PR 1", "preview"),
-            env("env-2", "PR 2", "preview"),
-            env("env-3", "Staging", "static"),
-          ],
-        },
+        page("env-1", [
+          env("env-1", "PR 1", "preview", true),
+          env("env-2", "PR 2", "preview"),
+          env("env-3", "Staging", "static"),
+        ]),
       ],
       selectAnswers: ["static"],
     });
@@ -88,12 +82,10 @@ describe("resolveEnvironment kind pre-selector", () => {
   it("returns cancelled when the kind prompt is dismissed", async () => {
     const { deps } = makeDeps({
       pages: [
-        {
-          environments: [
-            env("env-1", "PR 1", "preview"),
-            env("env-2", "Staging", "static"),
-          ],
-        },
+        page("env-1", [
+          env("env-1", "PR 1", "preview", true),
+          env("env-2", "Staging", "static"),
+        ]),
       ],
       selectCancelled: true,
     });
