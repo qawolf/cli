@@ -32,10 +32,9 @@ const handWrittenContractNames: ReadonlySet<string> = new Set(["flow.list"]);
 
 // Kept out of generated commands: the hand-written ones above, plus contracts
 // whose input can't be expressed as CLI flags. `issue.update` is a
-// discriminator-less union. `runner.performAction` (in an upcoming contracts
-// version) takes an action union where the arm a caller means is the whole
-// request; listed ahead of the bump because an unmappable contract throws while
-// the program is built, taking every command down with it.
+// discriminator-less union. `runner.performAction` takes an action union where
+// the arm a caller means is the whole request. An unmappable contract throws
+// while the program is built, taking every command down with it.
 const skippedContractNames: ReadonlySet<string> = new Set([
   ...handWrittenContractNames,
   "issue.update",

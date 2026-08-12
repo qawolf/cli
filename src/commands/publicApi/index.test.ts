@@ -37,6 +37,7 @@ describe("registerPublicApiCommands", () => {
       publicContractsV1.run.create.description,
     );
     expect(create?.options.map((option) => option.flags)).toEqual([
+      "--ai-task-id <value>",
       "--environment-id <value>",
       "--environment-variables <KEY=VALUE...>",
       "--ignore-rules",
@@ -46,6 +47,7 @@ describe("registerPublicApiCommands", () => {
       "--tag-names <values...>",
     ]);
     expect(create?.options.map((option) => option.mandatory)).toEqual([
+      false,
       true,
       false,
       false,
@@ -172,10 +174,8 @@ describe("registerPublicApiCommands", () => {
     ).toBeDefined();
   });
 
-  // Mirrors the shape `runner.performAction` will arrive with: an action union
-  // has no flag form, and an unmappable contract throws while the program is
-  // built. The skip has to be in place before the contracts dependency brings
-  // the real one in.
+  // Mirrors the shape of `runner.performAction`: an action union has no flag
+  // form, and an unmappable contract throws while the program is built.
   it("survives a contracts version that includes runner.performAction", () => {
     const performActionContract = {
       description: "Perform one raw browser action on an interactive runner.",
