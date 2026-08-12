@@ -1,5 +1,36 @@
 # @qawolf/cli
 
+## 1.9.0
+
+### Minor Changes
+
+- 8c97c28: Update `@qawolf/api-contracts` to 0.25.0. Environment responses now identify
+  the default environment, and `qawolf run get` includes attempt artifacts and
+  failure diagnoses when available.
+- d2460a7: Add `qawolf runner screenshot`, `act`, `exec` and `keepalive`, so a caller with a shell and its own vision model can close the see-and-act loop against an interactive runner.
+
+  `qawolf runner screenshot` writes the runner's screen to a file, decoding the image on the way, and keeps the three ways it can have no image apart: the runner has not run anything yet, so nothing has started its screen (run a flow); the screen is up but cannot serve this instant (retry); the runner has no screen at all (launch a different image). `qawolf runner act <action>` performs one raw action in the computer-use vocabulary a vision model emits, validated against the published schema before it is sent, and accepts a whole action as JSON on stdin so a model's tool call can be forwarded unchanged. `qawolf runner exec <file|->` evaluates a snippet against the live page, with `--file` to give it the scope of one of your own files; it reports whether the snippet ran, and points at the `console` stream for anything it printed. `qawolf runner keepalive` resets a runner's inactivity clock for a caller that pauses between actions.
+
+- 7275358: Add `qawolf runner`, a command group for driving an interactive runner on the QA Wolf platform.
+
+  `qawolf runner launch` starts one and makes it this directory's default; `qawolf runner stop` stops it. `qawolf runner run <file>` ships the current directory's runnable files and runs a flow on the runner, and with `--follow` streams the run's logs until the run settles. `qawolf runner events <stream>` prints a runner's journal one entry per line, so `--tail`, `--since`, `--run` and `--follow` compose with `grep` and `jq`; `--json` prints the whole envelope. Every `--follow` is bounded by `--timeout` (an hour by default), because reading a runner keeps it alive and billing.
+
+  Runner-targeting commands take an optional `--runner <id>`, falling back to `QAWOLF_RUNNER_ID` and then to the runner stored for the directory. A command with no runner available launches one and says so, naming it, so a caller knows the browser it is now driving is fresh. A launch that fails still names the runner it was launching, because a launch whose answer was lost may have started one: relaunching that same id attaches to it rather than starting a second.
+
+  Under `--json`, and so in CI, a followed run's logs are printed as journal entries rather than as bare text, which keeps everything the command writes to stdout parseable as one stream.
+
+### Patch Changes
+
+- a76fbcd: `qawolf runner screenshot` asks for a runner that already has a screen instead of starting one, and `qawolf runner exec` names the missing page rather than the runner's image.
+
+  A runner's virtual desktop starts with its first run, so a runner launched to serve a screenshot would have no screen and could only answer `screen-needs-a-run`. `screenshot` refuses instead, and names both things it needs: a runner, and a run on it. That also keeps the group readable, because no `read` command starts a runner.
+
+  A `node20WithPlaywright` runner with no live page does run a browser and simply has nothing open on it yet, so `qawolf runner exec` points at the page rather than at the runner's image. Checking the image stays as the secondary possibility, since it is the case that never clears.
+
+- 7275358: `qawolf runner` now passes on the reason QA Wolf gave for refusing a request, instead of only the status code.
+
+  Running a file that is not a flow used to answer "runner.runFlow request failed (HTTP 400)" and stop there, while the server had already said which file was wrong and that an entry point has to be a flow file under `src/flows`. That sentence now reaches the caller, on `run`, `stop`, `screenshot`, `act` and `exec` alike.
+
 ## 1.8.1
 
 ### Patch Changes
