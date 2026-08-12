@@ -212,4 +212,31 @@ describe("handleRunnerRun", () => {
       id: "cli-minted",
     });
   });
+
+  // The server's own reason is the only thing that names which file was wrong
+  // and what it needed to be, so a refused run has to pass it on rather than
+  // leave the caller with a bare status code.
+  it("passes on the reason the server gave for refusing the run", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "QA Wolf API runner.runFlow request failed (HTTP 400).",
+      errorBody:
+        "src/lib/register-pages.ts is not a flow file. A run's entry point must be a flow file under src/flows.",
+      ok: false,
+    });
+
+    const result = await handleRunnerRun(
+      ctx,
+      {
+        entryPoint: "flow.ts",
+        follow: false,
+        runner: "ci",
+        timeout: undefined,
+      },
+      makeTestDeps(),
+    );
+
+    expect(result?.errorBody).toContain("must be a flow file under src/flows");
+    expect(result?.exitCode).toBe(4);
+  });
 });

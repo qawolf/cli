@@ -6,6 +6,7 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
+import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { resolveRunner } from "./resolveRunner.js";
@@ -33,7 +34,7 @@ export async function handleRunnerStop(
     },
   );
   if (!result.ok) {
-    return { error: result.error, exitCode: exitCodes.network };
+    return { ...failureFields(result), exitCode: exitCodes.network };
   }
 
   // Whether it was running or already gone, this runner is not somewhere later

@@ -9,6 +9,7 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
+import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import { collectRunFiles, describeRunFilesCheck } from "./collectFiles.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
@@ -74,7 +75,7 @@ export async function handleRunnerRun(
     { entryPointPath, files, id: resolved.runnerId },
   );
   if (!result.ok) {
-    return { error: result.error, exitCode: exitCodes.network };
+    return { ...failureFields(result), exitCode: exitCodes.network };
   }
 
   switch (result.value.outcome) {
