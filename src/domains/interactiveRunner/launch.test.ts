@@ -101,9 +101,13 @@ describe("handleRunnerLaunch", () => {
   // is created and billed anyway. Forgetting the id here is what would make the
   // retry mint a new one and pay for a second pod, so the id survives the
   // failure and the message says what to do with it.
-  it("keeps the id and names it when the request fails", async () => {
+  it("keeps the id and names it when the answer was lost", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
-    callPublicApi.mockResolvedValue({ ok: false, error: "apex unreachable" });
+    callPublicApi.mockResolvedValue({
+      error: "request timed out after 15000ms",
+      mayHaveArrived: true,
+      ok: false,
+    });
     const deps = makeTestDeps();
 
     const result = await handleRunnerLaunch(
@@ -113,9 +117,31 @@ describe("handleRunnerLaunch", () => {
     );
 
     expect(result?.exitCode).toBe(4);
-    expect(result?.error).toContain("apex unreachable");
+    expect(result?.error).toContain("timed out");
     expect(result?.error).toContain("qawolf runner launch --id ci");
     expect(await deps.store.readDefaultRunnerId()).toBe("ci");
+  });
+
+  // The server answering "no" means no pod exists under this id. Relaunching it
+  // would fail the same way, and leaving it stored would send every later command
+  // in this directory to a runner that was never started.
+  it("forgets the id and gives no relaunch advice when the launch was refused", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "runner ci is already running node20Basic",
+      ok: false,
+    });
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerLaunch(
+      ctx,
+      { id: "ci", name: undefined },
+      deps,
+    );
+
+    expect(result?.error).toContain("already running node20Basic");
+    expect(result?.error).not.toContain("relaunch");
+    expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
   });
 
   // The pod is what costs money, so a directory the CLI cannot write to must not

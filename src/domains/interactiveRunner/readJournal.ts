@@ -6,13 +6,25 @@ import { exitCodes } from "~/shell/exit.js";
 
 type JournalWindow = {
   entries: JournalEntry<unknown>[];
+  hasUnsearchedHistory: boolean;
   nextSequence: number;
   oldestAvailableSequence: number;
 };
 
+/**
+ * `unreachable` is its own answer rather than a failure.
+ *
+ * The contract calls it transient — the runner may still be starting, or be too
+ * busy to answer — and says nothing was changed, so retrying is safe. A single
+ * read has nothing to do but give up on it; a follow has to keep asking, because
+ * the first read of a run lands while the pod is still installing dependencies
+ * and starting the browser. Collapsing it into a failure here would decide that
+ * for both.
+ */
 export type JournalReadResult =
-  | { ok: true; value: JournalWindow }
-  | { ok: false; error: string; exitCode: number };
+  | { type: "read"; value: JournalWindow }
+  | { type: "unreachable" }
+  | { type: "failed"; error: string; exitCode: number };
 
 export type JournalRequest = {
   runId?: string | undefined;
@@ -21,12 +33,13 @@ export type JournalRequest = {
   tail?: number | undefined;
 };
 
-/**
- * One window of one stream. `runner-unreachable` becomes a failure here rather
- * than a value the caller has to re-handle at every read site: a journal read
- * changes nothing, so there is exactly one thing to say about it and one code to
- * exit with.
- */
+/** What a caller with nothing to retry with says about an unreachable runner. */
+export const unreachableFailure = {
+  error: interactiveRunnerMessages.runnerUnreachable,
+  exitCode: exitCodes.network,
+} as const;
+
+/** One window of one stream. */
 export async function readJournal(
   ctx: AuthCommandContext,
   runnerId: string,
@@ -45,14 +58,10 @@ export async function readJournal(
     },
   );
   if (!result.ok) {
-    return { error: result.error, exitCode: exitCodes.network, ok: false };
+    return { error: result.error, exitCode: exitCodes.network, type: "failed" };
   }
   if (result.value.outcome === "runner-unreachable") {
-    return {
-      error: interactiveRunnerMessages.runnerUnreachable,
-      exitCode: exitCodes.network,
-      ok: false,
-    };
+    return { type: "unreachable" };
   }
-  return { ok: true, value: result.value };
+  return { type: "read", value: result.value };
 }

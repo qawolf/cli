@@ -79,4 +79,31 @@ describe("handleRunnerStop", () => {
 
     expect(await deps.store.readDefaultRunnerId()).toBe("ci");
   });
+
+  // The pod is what costs money, and by this point it is already stopped. A
+  // directory the CLI cannot write to must not turn that into a failed command.
+  it("still reports the stop when the stored default cannot be cleared", async () => {
+    const { callPublicApi, ctx, outputs } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { id: "ci", outcome: "stopped" },
+    });
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerStop(
+      ctx,
+      { runner: "ci" },
+      {
+        ...deps,
+        store: {
+          ...deps.store,
+          readDefaultRunnerId: () => Promise.reject(Error("EROFS")),
+        },
+      },
+    );
+
+    expect(result).toBeUndefined();
+    expect(outputs()[0]?.humanMessage).toContain("Stopped runner ci");
+    expect(ctx.ui.warn).toHaveBeenCalled();
+  });
 });

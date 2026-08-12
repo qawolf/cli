@@ -1,6 +1,7 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 
+import { parseFollowTimeout } from "~/core/interactiveRunner/followTimeout.js";
 import { checkRunFiles } from "~/core/interactiveRunner/runFiles.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
@@ -9,6 +10,7 @@ import type {
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
 
+import { collectRunFiles, describeRunFilesCheck } from "./collectFiles.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { followRun } from "./followRun.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
@@ -25,38 +27,36 @@ function toCollectedPath(cwd: string, entryPoint: string): string {
   return relative(cwd, absolute).split(sep).join("/");
 }
 
-function describeCheck(
-  check: Exclude<ReturnType<typeof checkRunFiles>, { type: "ok" }>,
-): string {
-  switch (check.type) {
-    case "missing-entry-point":
-      return interactiveRunnerMessages.entryPointNotCollected(
-        check.entryPointPath,
-      );
-    case "missing-package-json":
-      return interactiveRunnerMessages.missingPackageJson;
-    case "too-large":
-      return interactiveRunnerMessages.filesTooLarge(
-        check.byteLength,
-        check.maxByteLength,
-        check.largest,
-      );
-  }
-}
-
 export async function handleRunnerRun(
   ctx: AuthCommandContext,
-  options: { entryPoint: string; follow: boolean; runner: string | undefined },
+  options: {
+    entryPoint: string;
+    follow: boolean;
+    runner: string | undefined;
+    timeout: string | undefined;
+  },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
+  const timeout = parseFollowTimeout(options.timeout);
+  if (!timeout.ok) {
+    return { error: timeout.error, exitCode: exitCodes.invalidArgs };
+  }
+
   // Before the runner, not after: collecting and checking the files costs
   // nothing and resolving a runner may launch and bill one. A misspelled flow
   // name should not be answered with a pod.
   const entryPointPath = toCollectedPath(deps.cwd, options.entryPoint);
-  const files = await deps.collectRunFiles();
+  const collected = await collectRunFiles(deps);
+  if (!collected.ok) {
+    return { error: collected.error, exitCode: exitCodes.config };
+  }
+  const files = collected.files;
   const check = checkRunFiles(files, entryPointPath);
   if (check.type !== "ok") {
-    return { error: describeCheck(check), exitCode: exitCodes.invalidArgs };
+    return {
+      error: describeRunFilesCheck(check),
+      exitCode: exitCodes.invalidArgs,
+    };
   }
 
   const resolved = await resolveRunner(
@@ -95,12 +95,27 @@ export async function handleRunnerRun(
       };
     case "submitted": {
       const runId = result.value.runId;
-      ctx.ui.output(
-        { runId, runnerId: resolved.runnerId },
-        interactiveRunnerMessages.runSubmitted(runId),
+      if (!options.follow) {
+        ctx.ui.output(
+          { runId, runnerId: resolved.runnerId },
+          interactiveRunnerMessages.runSubmitted(runId),
+        );
+        return undefined;
+      }
+      // A diagnostic while following, not the command's output: what stdout
+      // carries then is the run's journal entries, and a differently shaped
+      // object among them leaves a reader of the stream sniffing keys to tell
+      // which lines are log entries.
+      ctx.ui.info(interactiveRunnerMessages.runSubmitted(runId));
+      return followRun(
+        ctx,
+        {
+          runId,
+          runnerId: resolved.runnerId,
+          timeoutSeconds: timeout.seconds,
+        },
+        deps,
       );
-      if (!options.follow) return undefined;
-      return followRun(ctx, { runId, runnerId: resolved.runnerId }, deps);
     }
   }
 }

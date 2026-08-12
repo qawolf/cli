@@ -101,11 +101,12 @@ describe("resolveRunner", () => {
   // The id is written before the request, not after: a launch that times out may
   // still have created and billed a pod, and an id kept only on success would be
   // lost exactly then, so the retry would mint a new one and pay twice.
-  it("remembers the minted id before it launches, so a failure cannot lose it", async () => {
+  it("remembers the minted id before it launches, so a lost answer cannot lose it", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
-      ok: false,
       error: "request timed out after 15000ms",
+      mayHaveArrived: true,
+      ok: false,
     });
     const deps = makeTestDeps();
 
@@ -117,6 +118,22 @@ describe("resolveRunner", () => {
 
     expect(resolved).toMatchObject({ exitCode: 4, type: "failed" });
     expect(await deps.store.readDefaultRunnerId()).toBe("cli-minted");
+  });
+
+  // A refusal is the server saying no pod exists under this id, so leaving it as
+  // the directory's default would point every later command at a runner that was
+  // never started.
+  it("forgets the minted id when the launch was refused", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "already running a different image",
+      ok: false,
+    });
+    const deps = makeTestDeps();
+
+    await resolveRunner(ctx, { autoLaunch: true, runner: undefined }, deps);
+
+    expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
   });
 
   it("names the runner it was launching when the launch fails", async () => {

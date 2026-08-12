@@ -22,6 +22,7 @@ async function runWith(
       entryPoint: options.entryPoint ?? "flow.ts",
       follow: false,
       runner: "ci",
+      timeout: undefined,
     },
     makeTestDeps(),
   );
@@ -61,7 +62,12 @@ describe("handleRunnerRun", () => {
 
     const result = await handleRunnerRun(
       ctx,
-      { entryPoint: "flows/missing.ts", follow: false, runner: "ci" },
+      {
+        entryPoint: "flows/missing.ts",
+        follow: false,
+        runner: "ci",
+        timeout: undefined,
+      },
       makeTestDeps(),
     );
 
@@ -75,7 +81,12 @@ describe("handleRunnerRun", () => {
 
     const result = await handleRunnerRun(
       ctx,
-      { entryPoint: "flow.ts", follow: false, runner: "ci" },
+      {
+        entryPoint: "flow.ts",
+        follow: false,
+        runner: "ci",
+        timeout: undefined,
+      },
       makeTestDeps({
         collectRunFiles: async () => ({ "flow.ts": "export default {};" }),
       }),
@@ -118,6 +129,7 @@ describe("handleRunnerRun", () => {
         entryPoint: "flows/chekcout.flow.ts",
         follow: false,
         runner: undefined,
+        timeout: undefined,
       },
       deps,
     );
@@ -127,23 +139,45 @@ describe("handleRunnerRun", () => {
     expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
   });
 
-  it("names the largest files when the payload is over the cap", async () => {
-    const { ctx } = makeAuthCtx();
+  it("refuses a --timeout that is not a positive number of seconds", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
 
     const result = await handleRunnerRun(
       ctx,
-      { entryPoint: "flow.ts", follow: false, runner: "ci" },
-      makeTestDeps({
-        collectRunFiles: async () => ({
-          "dist/bundle.js": "x".repeat(5 * 1024 * 1024),
-          "flow.ts": "export default {};",
-          "package.json": "{}",
-        }),
-      }),
+      { entryPoint: "flow.ts", follow: true, runner: "ci", timeout: "0" },
+      makeTestDeps(),
     );
 
     expect(result?.exitCode).toBe(2);
-    expect(result?.error).toContain("dist/bundle.js");
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
+  // Following puts the run's journal entries on stdout, so the submitted run goes
+  // to stderr instead: two differently shaped objects on one stream would leave a
+  // reader sniffing keys to tell which lines are log entries.
+  it("announces the submitted run as a diagnostic when following", async () => {
+    const { callPublicApi, ctx, outputs } = makeAuthCtx();
+    callPublicApi
+      .mockResolvedValueOnce({ ok: true, value: submitted })
+      .mockResolvedValue({
+        ok: true,
+        value: {
+          entries: [],
+          hasUnsearchedHistory: false,
+          nextSequence: 1,
+          oldestAvailableSequence: 1,
+          outcome: "read",
+        },
+      });
+
+    await handleRunnerRun(
+      ctx,
+      { entryPoint: "flow.ts", follow: true, runner: "ci", timeout: "1" },
+      makeTestDeps(),
+    );
+
+    expect(ctx.ui.info).toHaveBeenCalledWith(expect.stringContaining("run-a"));
+    expect(outputs()).toEqual([]);
   });
 
   it("announces the runner it had to launch, naming it", async () => {
@@ -162,7 +196,12 @@ describe("handleRunnerRun", () => {
 
     await handleRunnerRun(
       ctx,
-      { entryPoint: "flow.ts", follow: false, runner: undefined },
+      {
+        entryPoint: "flow.ts",
+        follow: false,
+        runner: undefined,
+        timeout: undefined,
+      },
       makeTestDeps(),
     );
 

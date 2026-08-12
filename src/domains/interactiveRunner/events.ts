@@ -1,13 +1,11 @@
 import {
   journalStreamSchema,
+  knownJournalStreams,
   readJournalRequestSchema,
 } from "@qawolf/api-contracts/v1";
 import { z } from "zod";
 
-import {
-  countSkippedEntries,
-  formatJournalLine,
-} from "~/core/interactiveRunner/journal.js";
+import { formatJournalLine } from "~/core/interactiveRunner/journal.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
   AuthCommandContext,
@@ -16,7 +14,11 @@ import type {
 import { exitCodes } from "~/shell/exit.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
-import { readJournal } from "./readJournal.js";
+import {
+  createJournalCursor,
+  createUnreachableBudget,
+} from "./journalCursor.js";
+import { unreachableFailure } from "./readJournal.js";
 import { resolveRunner } from "./resolveRunner.js";
 
 const pollIntervalMs = 1_000;
@@ -102,42 +104,41 @@ export async function handleRunnerEvents(
     return { error: resolved.error, exitCode: resolved.exitCode };
   }
 
-  let request = parsed.value;
+  // A stream name is a path segment on the runner rather than a closed set, so an
+  // unknown one is a legal read that returns nothing. Said out loud, because a
+  // typo that exits 0 with no output reads exactly like a stream with no entries.
+  const known: readonly string[] = knownJournalStreams;
+  if (!known.includes(parsed.value.stream)) {
+    ctx.ui.warn(
+      interactiveRunnerMessages.unknownStream(parsed.value.stream, known),
+    );
+  }
+
+  const read = createJournalCursor(ctx, resolved.runnerId, parsed.value);
+  const unreachable = createUnreachableBudget(pollIntervalMs);
+
   for (;;) {
-    const window = await readJournal(ctx, resolved.runnerId, request);
-    if (!window.ok) return { error: window.error, exitCode: window.exitCode };
+    const window = await read();
+    if (window.type === "failed") return window;
 
-    // Only against a cursor: with no `sinceSequence` the read starts at the
-    // oldest available entry by definition, so there is nothing to have missed.
-    if (request.sinceSequence !== undefined) {
-      const skipped = countSkippedEntries(
-        request.sinceSequence,
-        window.value.oldestAvailableSequence,
-      );
-      if (skipped > 0) {
-        ctx.ui.warn(
-          interactiveRunnerMessages.skippedEntries(request.stream, skipped),
-        );
+    // A single read has nothing to retry with, so an unreachable runner is all
+    // it can report. A follow keeps asking until the grace window is spent.
+    if (window.type === "unreachable") {
+      if (!options.follow || unreachable.exhausted()) {
+        return { ...unreachableFailure };
       }
+      await deps.sleep(pollIntervalMs);
+      continue;
     }
+    unreachable.reset();
 
-    for (const entry of window.value.entries) {
+    for (const entry of window.entries) {
       const { data, line } = formatJournalLine(entry, {
         envelope: options.envelope,
       });
       ctx.ui.stream(data, line);
     }
     if (!options.follow) return undefined;
-    request = {
-      ...request,
-      // Never backwards: a cursor that moved back would reprint the window it
-      // already printed, once a second, for as long as the follow ran.
-      sinceSequence: Math.max(
-        request.sinceSequence ?? 0,
-        window.value.nextSequence,
-      ),
-      tail: undefined,
-    };
     await deps.sleep(pollIntervalMs);
   }
 }

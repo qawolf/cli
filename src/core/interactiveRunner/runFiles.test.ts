@@ -1,4 +1,7 @@
-import { maxRunFilesByteLength } from "@qawolf/api-contracts/v1";
+import {
+  maxRunFilesByteLength,
+  runFilesByteLength,
+} from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
 import { checkRunFiles } from "./runFiles.js";
@@ -12,6 +15,25 @@ describe("checkRunFiles", () => {
     expect(checkRunFiles({ ...packageJson, ...flow }, flowPath)).toEqual({
       type: "ok",
     });
+  });
+
+  // Escaping inflates content on the way out — a control character costs one byte
+  // of content and six encoded — so a set of files well inside the content cap can
+  // still encode to more than a runner accepts. Refused here so the caller is told
+  // which cap it broke rather than handed an opaque transport failure.
+  it("refuses files that encode to more than a runner accepts", () => {
+    const escapeHeavy = {
+      "data.json": String.fromCharCode(1).repeat(2 * 1024 * 1024),
+    };
+    const files = { ...packageJson, ...flow, ...escapeHeavy };
+
+    expect(runFilesByteLength(files)).toBeLessThan(maxRunFilesByteLength);
+
+    const check = checkRunFiles(files, flowPath);
+
+    expect(check.type).toBe("request-too-large");
+    if (check.type !== "request-too-large") return;
+    expect(check.byteLength).toBeGreaterThan(check.maxByteLength);
   });
 
   it("refuses an entry point that is not among the collected files", () => {

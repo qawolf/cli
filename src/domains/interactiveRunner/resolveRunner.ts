@@ -3,7 +3,8 @@ import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
-import { launchAndRemember, parseRunnerId } from "./launch.js";
+import { launchAndRemember } from "./launch.js";
+import { parseRunnerId } from "./runnerIds.js";
 
 /**
  * Which runner a runner-targeting command means.

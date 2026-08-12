@@ -318,10 +318,13 @@ Run a flow on an interactive runner, shipping the current directory's files with
 it
 
 Options:
-  --follow       Stream the run's logs until it settles (default: false)
-  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
-                 directory's stored runner
-  -h, --help     display help for command
+  --follow             Stream the run's logs until it settles (default: false)
+  --runner <id>        Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
+                       directory's stored runner
+  --timeout <seconds>  Give up following after this long. Following keeps the
+                       runner alive, so a run that never settles would otherwise
+                       bill until the terminal closed (default: "3600")
+  -h, --help           display help for command
 
 Examples:
   $ qawolf runner run flows/checkout.flow.ts
@@ -336,7 +339,9 @@ Print a runner's journal, one entry per line. QA Wolf writes console, recorder,
 run-events, run-logs, run-status
 
 Options:
-  --follow            Keep reading as new entries arrive (default: false)
+  --follow            Keep reading as new entries arrive. Reading counts as
+                      activity, so a follow left open keeps the runner alive and
+                      billing (default: false)
   --run <id>          Restrict run-scoped streams to one run
   --runner <id>       Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
                       directory's stored runner

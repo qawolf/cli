@@ -76,69 +76,6 @@ describe("handleRunnerEvents", () => {
     });
   });
 
-  // Re-applying the tail on every poll would skip entries that arrived between
-  // them, so the cursor takes over once there is one.
-  it("follows from the cursor rather than re-tailing", async () => {
-    const { callPublicApi, ctx, streamed } = makeAuthCtx();
-    callPublicApi.mockImplementation(
-      makeJournal({ recorder: [[{ code: "a" }], [{ code: "b" }]] }),
-    );
-
-    // A follow is endless by design, so the injected sleep is what ends it:
-    // it throws once both scripted reads have been printed.
-    const stopFollowing = "stop following";
-    try {
-      await handleRunnerEvents(
-        ctx,
-        { ...baseOptions, follow: true, tail: "1" },
-        makeTestDeps({
-          sleep: async () => {
-            if (streamed().length >= 2) throw Error(stopFollowing);
-          },
-        }),
-      );
-    } catch (error) {
-      expect((error as Error).message).toBe(stopFollowing);
-    }
-
-    expect(callPublicApi.mock.calls[0]?.[1]).toMatchObject({ tail: 1 });
-    expect(callPublicApi.mock.calls[1]?.[1]).toMatchObject({
-      sinceSequence: 1,
-    });
-    expect(callPublicApi.mock.calls[1]?.[1]).not.toHaveProperty("tail");
-  });
-
-  // Follow-up polls read against a cursor, and the journal's history is bounded:
-  // a follow that falls behind is handed a window starting after where it asked
-  // to continue from, and the entries in between are gone.
-  it("says so when entries were dropped before the read it asked for", async () => {
-    const { callPublicApi, ctx, warnings } = makeAuthCtx();
-    callPublicApi.mockImplementation(
-      makeJournal({ recorder: [[{ code: "a" }]] }, { recorder: 91 }),
-    );
-
-    await handleRunnerEvents(
-      ctx,
-      { ...baseOptions, since: "10" },
-      makeTestDeps(),
-    );
-
-    expect(warnings().join(" ")).toContain("80 entries of recorder");
-  });
-
-  // A first read with no cursor starts at the oldest available entry by
-  // definition, so there is nothing to have missed and nothing to warn about.
-  it("says nothing about dropped entries when no cursor was given", async () => {
-    const { callPublicApi, ctx, warnings } = makeAuthCtx();
-    callPublicApi.mockImplementation(
-      makeJournal({ recorder: [[{ code: "a" }]] }, { recorder: 91 }),
-    );
-
-    await handleRunnerEvents(ctx, baseOptions, makeTestDeps());
-
-    expect(warnings()).toEqual([]);
-  });
-
   it("refuses a stream name that could address a path outside the journal", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
 
@@ -177,6 +114,74 @@ describe("handleRunnerEvents", () => {
     );
 
     expect(result?.exitCode).toBe(2);
+  });
+
+  // A stream name is a path segment rather than a closed set, so a typo is a
+  // legal read that returns nothing — which looks exactly like an empty stream.
+  it("says so when asked for a stream QA Wolf does not write", async () => {
+    const { callPublicApi, ctx, warnings } = makeAuthCtx();
+    callPublicApi.mockImplementation(makeJournal({}));
+
+    await handleRunnerEvents(
+      ctx,
+      { ...baseOptions, stream: "consle" },
+      makeTestDeps(),
+    );
+
+    expect(warnings().join(" ")).toContain("not a stream QA Wolf writes");
+  });
+
+  it("says nothing about the stream name when it is one QA Wolf writes", async () => {
+    const { callPublicApi, ctx, warnings } = makeAuthCtx();
+    callPublicApi.mockImplementation(
+      makeJournal({ console: [[{ text: "x" }]] }),
+    );
+
+    await handleRunnerEvents(
+      ctx,
+      { ...baseOptions, stream: "console" },
+      makeTestDeps(),
+    );
+
+    expect(warnings()).toEqual([]);
+  });
+
+  // A single read has nothing to retry with, so it reports the unreachable runner
+  // rather than polling one the caller never asked it to wait for.
+  it("reports an unreachable runner rather than retrying when not following", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockImplementation(
+      makeJournal({ recorder: ["unreachable"] }),
+    );
+
+    const result = await handleRunnerEvents(ctx, baseOptions, makeTestDeps());
+
+    expect(result?.exitCode).toBe(4);
+    expect(callPublicApi).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps following through a runner that is briefly unreachable", async () => {
+    const { callPublicApi, ctx, streamedData } = makeAuthCtx();
+    callPublicApi.mockImplementation(
+      makeJournal({ recorder: ["unreachable", [{ code: "a" }]] }),
+    );
+
+    const stopFollowing = "stop following";
+    try {
+      await handleRunnerEvents(
+        ctx,
+        { ...baseOptions, follow: true },
+        makeTestDeps({
+          sleep: async () => {
+            if (streamedData().length >= 1) throw Error(stopFollowing);
+          },
+        }),
+      );
+    } catch (error) {
+      expect((error as Error).message).toBe(stopFollowing);
+    }
+
+    expect(streamedData()).toEqual([{ code: "a" }]);
   });
 
   // Starting and billing a pod in order to print no lines would serve nobody.

@@ -1,10 +1,7 @@
 import {
   type RunnerNameForPublicApi,
   publicContractsV1,
-  runnerIdSchema,
-  runnerNameSchema,
 } from "@qawolf/api-contracts/v1";
-import { z } from "zod";
 
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
@@ -14,6 +11,7 @@ import type {
 import { exitCodes } from "~/shell/exit.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
+import { parseRunnerId, parseRunnerName } from "./runnerIds.js";
 
 type LaunchedRunner = {
   gpuAccelerated: boolean;
@@ -24,7 +22,7 @@ type LaunchedRunner = {
 
 type LaunchResult =
   | { ok: true; value: LaunchedRunner }
-  | { ok: false; error: string; exitCode: number };
+  | { ok: false; error: string; exitCode: number; mayHaveArrived: boolean };
 
 /**
  * Launches a runner under `id`, or attaches to the one already running there.
@@ -43,7 +41,12 @@ async function launchRunner(
     },
   );
   if (!result.ok) {
-    return { error: result.error, exitCode: exitCodes.network, ok: false };
+    return {
+      error: result.error,
+      exitCode: exitCodes.network,
+      mayHaveArrived: result.mayHaveArrived ?? false,
+      ok: false,
+    };
   }
   return { ok: true, value: result.value };
 }
@@ -59,6 +62,11 @@ async function launchRunner(
  * first, a retry addresses the same id and the contract attaches to the runner
  * already running under it.
  *
+ * A refusal is the other half of that, and it undoes the record. The server
+ * answering "no" — an id already running a different image, a quota reached —
+ * means no pod exists under this id, and leaving it as the directory's default
+ * would point every later command at a runner that was never started.
+ *
  * Recording is best effort. The pod is the thing that costs money, so a working
  * directory the CLI cannot write to must not turn a launch that worked into a
  * failed command with an unnamed runner left behind.
@@ -68,42 +76,28 @@ export async function launchAndRemember(
   options: { id: string; runnerName: RunnerNameForPublicApi | undefined },
   deps: InteractiveRunnerDeps,
 ): Promise<LaunchResult> {
-  await deps.store.writeDefaultRunnerId(options.id).catch(() => {
-    ctx.ui.warn(interactiveRunnerMessages.defaultNotRemembered(options.id));
-  });
+  const remembered = await deps.store
+    .writeDefaultRunnerId(options.id)
+    .then(() => true)
+    .catch(() => {
+      ctx.ui.warn(interactiveRunnerMessages.defaultNotRemembered(options.id));
+      return false;
+    });
 
   const launched = await launchRunner(ctx, options);
   if (launched.ok) return launched;
+
+  if (remembered && !launched.mayHaveArrived) {
+    await deps.store.clearDefaultRunnerId().catch(() => undefined);
+  }
   return {
-    error: interactiveRunnerMessages.launchFailed(options.id, launched.error),
+    error: launched.mayHaveArrived
+      ? interactiveRunnerMessages.launchLost(options.id, launched.error)
+      : interactiveRunnerMessages.launchFailed(options.id, launched.error),
     exitCode: launched.exitCode,
+    mayHaveArrived: launched.mayHaveArrived,
     ok: false,
   };
-}
-
-/**
- * Validates a runner id or image name against the published schema before it
- * reaches the wire, so a typo is answered with the rule it broke rather than
- * with a round trip.
- */
-export function parseRunnerId(
-  id: string,
-): { ok: true; id: string } | { ok: false; error: string } {
-  const parsed = runnerIdSchema.safeParse(id);
-  if (!parsed.success)
-    return { error: z.prettifyError(parsed.error), ok: false };
-  return { id: parsed.data, ok: true };
-}
-
-function parseRunnerName(
-  runnerName: string,
-):
-  | { ok: true; runnerName: RunnerNameForPublicApi }
-  | { ok: false; error: string } {
-  const parsed = runnerNameSchema.safeParse(runnerName);
-  if (!parsed.success)
-    return { error: z.prettifyError(parsed.error), ok: false };
-  return { ok: true, runnerName: parsed.data };
 }
 
 export async function handleRunnerLaunch(

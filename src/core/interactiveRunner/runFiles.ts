@@ -1,18 +1,24 @@
 import {
   type RunFiles,
   maxRunFilesByteLength,
+  maxRunnerRequestEncodedByteLength,
   runFilesByteLength,
   runPackageJsonPath,
 } from "@qawolf/api-contracts/v1";
 
 /**
- * The two rules `runner.runFlow` refuses a request for, checked here so a caller
- * is told what to fix instead of being handed a schema error, plus the size cap.
+ * The rules `runner.runFlow` refuses a request for, checked here so a caller is
+ * told what to fix instead of being handed a schema error.
  *
- * All three come from the published contract rather than being restated: the
- * server validates with the same predicate, the same cap and the same required
- * path, so a request this accepts cannot be one the server turns down for a
- * reason the CLI could have named first.
+ * Every rule comes from the published contract rather than being restated: the
+ * server validates with the same predicate, the same caps and the same required
+ * path.
+ *
+ * The encoded cap is the one check that is an estimate. The server applies it to
+ * the fully assembled request, which carries transport framing the CLI does not
+ * reproduce, so this measures the request body alone. It therefore catches the
+ * overage a caller can act on — one large file — and can still let a request
+ * through that the server refuses by a margin.
  */
 export type RunFilesCheck =
   | { type: "ok" }
@@ -22,6 +28,11 @@ export type RunFilesCheck =
       type: "too-large";
       byteLength: number;
       largest: { byteLength: number; path: string }[];
+      maxByteLength: number;
+    }
+  | {
+      type: "request-too-large";
+      byteLength: number;
       maxByteLength: number;
     };
 
@@ -62,6 +73,18 @@ export function checkRunFiles(
       largest: largestFiles(files),
       maxByteLength: maxRunFilesByteLength,
       type: "too-large",
+    };
+  }
+
+  const encodedByteLength = Buffer.byteLength(
+    JSON.stringify({ entryPointPath, files }),
+    "utf8",
+  );
+  if (encodedByteLength > maxRunnerRequestEncodedByteLength) {
+    return {
+      byteLength: encodedByteLength,
+      maxByteLength: maxRunnerRequestEncodedByteLength,
+      type: "request-too-large",
     };
   }
   return { type: "ok" };

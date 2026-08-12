@@ -5,6 +5,7 @@ export const exitCodes = {
   auth: 3,
   network: 4,
   config: 5,
+  timeout: 6,
 } as const;
 
 type ExitCode = (typeof exitCodes)[keyof typeof exitCodes];

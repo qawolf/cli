@@ -1,5 +1,4 @@
 import {
-  countSkippedEntries,
   formatRunLogLine,
   readRunSettlement,
 } from "~/core/interactiveRunner/journal.js";
@@ -11,7 +10,12 @@ import type {
 import { exitCodes } from "~/shell/exit.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
-import { readJournal } from "./readJournal.js";
+import {
+  type CursorRead,
+  createJournalCursor,
+  createUnreachableBudget,
+} from "./journalCursor.js";
+import { unreachableFailure } from "./readJournal.js";
 
 const pollIntervalMs = 1_000;
 
@@ -60,70 +64,80 @@ function reportSettlement(
  * would look like one still working. The logs are the output; the status is the
  * answer.
  *
- * A pod that stops answering ends the follow too, as a failure. `run-status`
- * cannot cover a runner killed without running its shutdown path, so the runner
- * becoming unreachable is the only signal that such a run is over.
+ * A runner that stops answering for long enough ends the follow too, as a
+ * failure. `run-status` cannot cover a runner killed without running its
+ * shutdown path, so a persistently unreachable runner is the only signal that
+ * such a run is over. One unreachable answer is not that signal — see
+ * {@link createUnreachableBudget}.
+ *
+ * `timeoutSeconds` bounds the whole follow, because a journal read counts as
+ * activity: polling a runner is what stops it being reaped for inactivity, so a
+ * run that never settles would have the follow keep its pod alive and billing
+ * for as long as the terminal stayed open.
  */
 export async function followRun(
   ctx: AuthCommandContext,
-  options: { runId: string; runnerId: string },
+  options: { runId: string; runnerId: string; timeoutSeconds: number },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
-  let logsSequence = 0;
-  let statusSequence = 0;
+  const readLogs = createJournalCursor(ctx, options.runnerId, {
+    runId: options.runId,
+    stream: "run-logs",
+  });
+  const readStatus = createJournalCursor(ctx, options.runnerId, {
+    runId: options.runId,
+    stream: "run-status",
+  });
+  const unreachable = createUnreachableBudget(pollIntervalMs);
 
-  const drainLogs = async (): Promise<
-    { ok: true } | { ok: false; error: string; exitCode: number }
-  > => {
-    const logs = await readJournal(ctx, options.runnerId, {
-      runId: options.runId,
-      sinceSequence: logsSequence,
-      stream: "run-logs",
-    });
-    if (!logs.ok) return logs;
-
-    const skipped = countSkippedEntries(
-      logsSequence,
-      logs.value.oldestAvailableSequence,
-    );
-    if (skipped > 0) {
-      ctx.ui.warn(
-        interactiveRunnerMessages.skippedEntries("run-logs", skipped),
-      );
-    }
-
-    for (const entry of logs.value.entries) {
+  const printLogs = async (): Promise<CursorRead> => {
+    const logs = await readLogs();
+    if (logs.type !== "entries") return logs;
+    for (const entry of logs.entries) {
       ctx.ui.stream(entry, formatRunLogLine(entry.payload));
     }
-    // Never backwards, so a cursor that moved back cannot make the follow
-    // reprint the same lines once a second for as long as the run lasts.
-    logsSequence = Math.max(logsSequence, logs.value.nextSequence);
-    return { ok: true };
+    return logs;
   };
 
-  for (;;) {
-    const drained = await drainLogs();
-    if (!drained.ok)
-      return { error: drained.error, exitCode: drained.exitCode };
+  // Polls rather than a clock: the loop sleeps a known interval between reads,
+  // so counting them bounds the follow without making it depend on wall time.
+  const maxPolls = Math.max(
+    1,
+    Math.ceil((options.timeoutSeconds * 1_000) / pollIntervalMs),
+  );
 
-    const status = await readJournal(ctx, options.runnerId, {
-      runId: options.runId,
-      sinceSequence: statusSequence,
-      stream: "run-status",
-    });
-    if (!status.ok) return { error: status.error, exitCode: status.exitCode };
-    statusSequence = Math.max(statusSequence, status.value.nextSequence);
+  for (let poll = 1; ; poll++) {
+    const logs = await printLogs();
+    if (logs.type === "failed") return logs;
 
-    const settlement = findSettlement(status.value.entries);
-    if (settlement !== undefined) {
-      // Read the logs once more before reporting: the settling status entry and
-      // the run's last lines are appended to different streams, so the status can
-      // win the race and stopping here would cut the output off short of the very
-      // failure being reported.
-      await drainLogs();
-      return reportSettlement(ctx, settlement);
+    const status = logs.type === "unreachable" ? logs : await readStatus();
+    if (status.type === "failed") return status;
+
+    if (logs.type === "unreachable" || status.type === "unreachable") {
+      if (unreachable.exhausted()) return { ...unreachableFailure };
+    } else {
+      unreachable.reset();
+      const settlement = findSettlement(status.entries);
+      if (settlement !== undefined) {
+        // Read the logs once more before reporting: the settling status entry and
+        // the run's last lines are appended to different streams, so the status can
+        // win the race and stopping here would cut the output off short of the very
+        // failure being reported.
+        await printLogs();
+        return reportSettlement(ctx, settlement);
+      }
     }
 
+    if (poll >= maxPolls) {
+      return {
+        error: interactiveRunnerMessages.followTimedOut(
+          options.runId,
+          options.runnerId,
+          options.timeoutSeconds,
+        ),
+        exitCode: exitCodes.timeout,
+      };
+    }
     await deps.sleep(pollIntervalMs);
   }
 }
