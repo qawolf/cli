@@ -358,7 +358,13 @@ lives on the same pod, so while the runner stays unreachable a `run-status` read
 fails the same way and cannot tell you whether a run is going. Wait for the
 runner to answer again, then read `run-status` without `--run` and look at the
 newest `runId`: if one appeared, that is your run and you should follow it rather
-than submit again. Only resubmit once a read has succeeded and shown you nothing.
+than submit again. An empty read is not proof the run did not start, though:
+`run` returns the moment the run is accepted, and its first `run-status` entry
+may not be written yet, so a run accepted just before the runner went quiet can
+still be in flight with nothing to show. `runFlow` has no idempotency key, so a
+resubmit always risks a second billed run. Prefer polling `run-status` a while
+longer over resubmitting; only submit again once you are willing to accept that
+risk.
 
 ### Reading history
 
