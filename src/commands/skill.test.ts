@@ -14,6 +14,14 @@ const skillTemplatePath = join(
   import.meta.dirname,
   "qawolfCliSkill.template.md",
 );
+const commandsMdPath = join(
+  import.meta.dirname,
+  "../../skills/qawolf-cli/references/commands.md",
+);
+const commandsTemplatePath = join(
+  import.meta.dirname,
+  "qawolfCliCommands.template.md",
+);
 
 describe("renderCommandsTable", () => {
   it("lists every visible command with its kind", () => {
@@ -46,13 +54,25 @@ describe("renderCommandsTable", () => {
 });
 
 describe("qawolf-cli skill", () => {
-  it("matches its template and generated commands table", async () => {
+  it("SKILL.md matches its template", async () => {
     const skillMd = await Bun.file(skillMdPath).text();
     const skillTemplate = await Bun.file(skillTemplatePath).text();
+    expect(skillMd).toBe(skillTemplate);
+  });
+
+  it("references/commands.md matches its template and generated table", async () => {
+    const commandsMd = await Bun.file(commandsMdPath).text();
+    const commandsTemplate = await Bun.file(commandsTemplatePath).text();
     const table = renderCommandsTable(
       createProgram({ signals: makeNoopSignals() }),
     );
-    expect(skillMd).toBe(spliceCommandsTable(skillTemplate, table));
+    expect(commandsMd).toBe(spliceCommandsTable(commandsTemplate, table));
+  });
+
+  it("keeps the full command table out of SKILL.md", async () => {
+    const skillMd = await Bun.file(skillMdPath).text();
+    expect(skillMd).not.toContain("commands-table:start");
+    expect(skillMd).toContain("references/commands.md");
   });
 
   it("has frontmatter naming the skill", async () => {
