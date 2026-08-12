@@ -1,6 +1,11 @@
 export type ProgressStep<T = unknown> = {
   message: string;
-  task: () => Promise<T>;
+  /**
+   * `update` replaces the step's displayed message while the task runs, e.g.
+   * with a per-file download counter. Tasks without in-flight progress can
+   * ignore it.
+   */
+  task: (update: (message: string) => void) => Promise<T>;
 };
 
 export type InferStepResults<T extends readonly ProgressStep[]> = {

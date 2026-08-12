@@ -39,9 +39,16 @@ export function createHumanRenderers(
         let currentLabel = "";
         try {
           for (const [i, step] of steps.entries()) {
-            currentLabel = `[${String(i + 1)}/${String(total)}] ${step.message}`;
+            const label = (message: string) =>
+              `[${String(i + 1)}/${String(total)}] ${message}`;
+            currentLabel = label(step.message);
             clack.log.step(currentLabel);
-            results.push(await step.task());
+            results.push(
+              await step.task((message) => {
+                currentLabel = label(message);
+                clack.log.step(currentLabel);
+              }),
+            );
           }
           const { typed, doneMessage } = finalizeResults(results, done);
           clack.log.success(doneMessage);
@@ -52,18 +59,26 @@ export function createHumanRenderers(
         }
       }
 
-      // existing spinner path — unchanged
       const s = clack.spinner();
       let currentLabel = "";
       try {
         for (const [i, step] of steps.entries()) {
-          currentLabel = `[${String(i + 1)}/${String(total)}] ${step.message}`;
+          const label = (message: string) =>
+            `[${String(i + 1)}/${String(total)}] ${message}`;
+          currentLabel = label(step.message);
           if (i === 0) {
             s.start(currentLabel);
           } else {
             s.message(currentLabel);
           }
-          results.push(await step.task());
+          // Track the latest progress label so a mid-task failure reports
+          // where the work stopped, not just which step it was in.
+          results.push(
+            await step.task((message) => {
+              currentLabel = label(message);
+              s.message(currentLabel);
+            }),
+          );
         }
         const { typed, doneMessage } = finalizeResults(results, done);
         s.stop(doneMessage);

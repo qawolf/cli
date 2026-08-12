@@ -92,9 +92,19 @@ export async function handleFlowsPull(
         },
         {
           message: flowsMessages.pull.downloadingTeamStorageAssets,
-          task: async () => {
-            const result =
-              await ctx.platformClient.syncTeamStorageAssets(assetsAbs);
+          task: async (update) => {
+            const result = await ctx.platformClient.syncTeamStorageAssets(
+              assetsAbs,
+              {
+                onProgress: ({ current, total }) =>
+                  update(
+                    flowsMessages.pull.downloadingTeamStorageAssetsProgress(
+                      current,
+                      total,
+                    ),
+                  ),
+              },
+            );
             if (!result.ok) throw new Error(result.error);
             return result.value;
           },

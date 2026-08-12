@@ -1,9 +1,5 @@
-import { dirname, join } from "node:path";
-
 import { errorMessage } from "~/core/errors.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
-import { describeTeamStorageDownloadError } from "./describeErrors.js";
-import { fetchSignedUrl } from "./fetchSignedUrl.js";
 import type { PlatformResult } from "./requestWithRetry.js";
 import {
   readAssetManifest,
@@ -21,6 +17,10 @@ import {
   type ReusableAssetFile,
 } from "./teamStorageAssetReuse.js";
 import type { TeamStorageFile } from "./types.js";
+import {
+  writeAssetSnapshot,
+  type TeamStorageAssetProgress,
+} from "./writeAssetSnapshot.js";
 
 export type SyncTeamStorageAssetsResult = {
   downloadedCount: number;
@@ -36,6 +36,7 @@ type DownloadTeamStorageAssetsArgs = {
 type DownloadTeamStorageAssetsDeps = {
   fetch: typeof globalThis.fetch;
   fs?: Fs | undefined;
+  onProgress?: ((progress: TeamStorageAssetProgress) => void) | undefined;
 };
 
 export async function downloadTeamStorageAssets(
@@ -87,7 +88,7 @@ async function writeTeamStorageAssets(
   try {
     const downloadedCount = await writeAssetSnapshot({
       assetsAbs: args.assetsAbs,
-      deps: { fetch: deps.fetch, fs },
+      deps: { fetch: deps.fetch, fs, onProgress: deps.onProgress },
       reusable,
       safeFiles,
       tmpAssets,
@@ -106,41 +107,4 @@ async function writeTeamStorageAssets(
     await cleanupAssetSnapshot(tmpAssets, fs);
     throw error;
   }
-}
-
-type WriteAssetSnapshotArgs = {
-  assetsAbs: string;
-  deps: { fetch: typeof globalThis.fetch; fs: Fs };
-  reusable: ReadonlySet<string>;
-  safeFiles: readonly ReusableAssetFile[];
-  tmpAssets: string;
-};
-
-async function writeAssetSnapshot(
-  args: WriteAssetSnapshotArgs,
-): Promise<number> {
-  let downloadedCount = 0;
-  await args.deps.fs.mkdir(args.tmpAssets, { recursive: true });
-
-  for (const { file, relativePath } of args.safeFiles) {
-    const dest = join(args.tmpAssets, relativePath);
-    await args.deps.fs.mkdir(dirname(dest), { recursive: true });
-    if (args.reusable.has(relativePath)) {
-      await args.deps.fs.copyFile(join(args.assetsAbs, relativePath), dest);
-      continue;
-    }
-
-    const result = await fetchSignedUrl(
-      { url: file.signedUrl, dest },
-      { fetch: args.deps.fetch, fs: args.deps.fs },
-    );
-    if (!result.ok) {
-      throw new Error(
-        describeTeamStorageDownloadError(file.path, result.error),
-      );
-    }
-    downloadedCount++;
-  }
-
-  return downloadedCount;
 }

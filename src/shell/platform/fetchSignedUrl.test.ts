@@ -5,7 +5,11 @@ import { join } from "node:path";
 
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import { fetchSignedUrl } from "./fetchSignedUrl.js";
-import { makeTimingOutBodyFetch } from "./slowFetch.testUtils.js";
+import {
+  makeDrippingBodyFetch,
+  makeStallingBodyFetch,
+  makeTimingOutBodyFetch,
+} from "./slowFetch.testUtils.js";
 
 const cleanups: (() => void)[] = [];
 
@@ -125,17 +129,36 @@ describe("fetchSignedUrl", () => {
     });
   });
 
-  // The split that made the timeout visible must not reclassify a failed write.
-  it("still returns a network error when the body arrives but the write fails", async () => {
-    const fs = makeMemoryFs();
-    const cause = new Error("disk full");
-    fs.writeFile = mock(() => Promise.reject(cause));
+  // The window is a stall timeout, not a whole-download deadline: it fires only
+  // when no bytes arrive for its duration.
+  it("returns a timeout when no data arrives within the stall window", async () => {
+    const dest = createTempDest();
 
     const result = await fetchSignedUrl(
-      { dest: "/assets/file.txt", url },
-      { fetch: asFetch(createFetchMock(new Response("bytes"))), fs },
+      { dest, url },
+      { fetch: makeStallingBodyFetch(["first bytes"]), stallTimeoutMs: 50 },
     );
 
-    expect(result).toEqual({ ok: false, error: { cause, kind: "network" } });
+    expect(result).toEqual({
+      ok: false,
+      error: { kind: "timeout", timeoutMs: 50 },
+    });
+  });
+
+  // A large asset on a slow link takes longer than any fixed deadline; as long
+  // as bytes keep arriving the download must be allowed to finish.
+  it("succeeds when the download outlasts the stall window but keeps making progress", async () => {
+    const dest = createTempDest();
+
+    const result = await fetchSignedUrl(
+      { dest, url },
+      {
+        fetch: makeDrippingBodyFetch(["a", "b", "c", "d", "e", "f"], 40),
+        stallTimeoutMs: 100,
+      },
+    );
+
+    expect(result).toEqual({ ok: true, data: undefined });
+    expect(readFileSync(dest, "utf8")).toBe("abcdef");
   });
 });

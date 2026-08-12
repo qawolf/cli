@@ -65,7 +65,7 @@ export const authMessages = {
       networkUnreachable:
         "Could not reach the flow bundle storage. Check your network connection and try again.",
       timedOut: (timeoutMs: number) =>
-        `Downloading the flow bundle timed out after ${formatSeconds(timeoutMs)}. Please try again.`,
+        `Downloading the flow bundle stalled — no data arrived for ${formatSeconds(timeoutMs)}. Please try again.`,
       malformed:
         "The flow bundle download was malformed. Please run `qawolf flows pull` again.",
     },

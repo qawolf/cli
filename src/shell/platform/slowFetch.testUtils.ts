@@ -47,6 +47,65 @@ export function makeTimingOutBodyFetch(): typeof fetch {
   ) as unknown as typeof fetch;
 }
 
+/**
+ * A fetch whose body delivers `chunks` right away and then stalls forever. Like
+ * a real fetch, aborting the request signal errors the pending body read with
+ * the abort reason.
+ */
+export function makeStallingBodyFetch(chunks: string[]): typeof fetch {
+  return mock<FetchImpl>(async (_url, init) => {
+    const signal = init?.signal;
+    return new Response(
+      new ReadableStream({
+        start(controller) {
+          for (const chunk of chunks) {
+            controller.enqueue(new TextEncoder().encode(chunk));
+          }
+          signal?.addEventListener("abort", () =>
+            controller.error(signal.reason),
+          );
+        },
+      }),
+    );
+  }) as unknown as typeof fetch;
+}
+
+/**
+ * A fetch whose body delivers one of `chunks` every `intervalMs` and then
+ * closes — a slow download that never stops making progress. Like a real fetch,
+ * aborting the request signal errors the pending body read with the abort
+ * reason.
+ */
+export function makeDrippingBodyFetch(
+  chunks: string[],
+  intervalMs: number,
+): typeof fetch {
+  return mock<FetchImpl>(async (_url, init) => {
+    const signal = init?.signal;
+    return new Response(
+      new ReadableStream({
+        start(controller) {
+          let delivered = 0;
+          const timer = setInterval(() => {
+            const chunk = chunks[delivered];
+            delivered += 1;
+            if (chunk === undefined) {
+              clearInterval(timer);
+              controller.close();
+              return;
+            }
+            controller.enqueue(new TextEncoder().encode(chunk));
+          }, intervalMs);
+          signal?.addEventListener("abort", () => {
+            clearInterval(timer);
+            controller.error(signal.reason);
+          });
+        },
+      }),
+    );
+  }) as unknown as typeof fetch;
+}
+
 /** A fetch that answers after `delayMs`, unless its deadline arrives first. */
 export function makeDelayedFetch(
   makeResponse: () => Response,

@@ -18,6 +18,7 @@ import {
   downloadTeamStorageAssets,
   type SyncTeamStorageAssetsResult,
 } from "./teamStorageAssets.js";
+import type { TeamStorageAssetProgress } from "./writeAssetSnapshot.js";
 import {
   environmentWithVariablesResponseSchema,
   flowsBundleResponseSchema,
@@ -36,6 +37,9 @@ export type PlatformClient = {
   listTeamStorageFiles: () => Promise<PlatformResult<TeamStorageFile[]>>;
   syncTeamStorageAssets: (
     assetsAbs: string,
+    opts?: {
+      onProgress?: (progress: TeamStorageAssetProgress) => void;
+    },
   ) => Promise<PlatformResult<SyncTeamStorageAssetsResult>>;
   downloadBundle: (
     envId: string,
@@ -124,12 +128,12 @@ export function createPlatformClient(
       );
     },
 
-    async syncTeamStorageAssets(assetsAbs) {
+    async syncTeamStorageAssets(assetsAbs, opts) {
       const files = await this.listTeamStorageFiles();
       if (!files.ok) return files;
       return downloadTeamStorageAssets(
         { assetsAbs, files: files.value },
-        { fetch: deps.fetch, fs },
+        { fetch: deps.fetch, fs, onProgress: opts?.onProgress },
       );
     },
 

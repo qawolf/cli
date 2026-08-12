@@ -2,6 +2,9 @@ import type { Readable } from "node:stream";
 import * as fs from "node:fs";
 
 import { isNoEntError } from "~/core/errors.js";
+import { openFsWriteHandle, type FsWriteHandle } from "./fsWriteHandle.js";
+
+export type { FsWriteHandle } from "./fsWriteHandle.js";
 
 export async function pathExists(p: string): Promise<boolean> {
   try {
@@ -42,6 +45,7 @@ export type Fs = {
     data: string | Uint8Array,
     options?: { mode?: number },
   ): Promise<void>;
+  openWriteHandle(path: string): Promise<FsWriteHandle>;
   readdir(path: string): Promise<string[]>;
   readdirWithTypes(path: string): Promise<FsDirent[]>;
   rename(oldPath: string, newPath: string): Promise<void>;
@@ -82,6 +86,7 @@ export function makeDefaultFs(): Fs {
         await fs.promises.writeFile(path, data, options ?? undefined);
       }
     },
+    openWriteHandle: openFsWriteHandle,
     readdir(path) {
       return fs.promises.readdir(path);
     },

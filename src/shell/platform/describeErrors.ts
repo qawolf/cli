@@ -81,7 +81,7 @@ export function describeTeamStorageDownloadError(
     return `Could not reach team-storage while downloading ${path}. Check your network connection and try again.`;
   }
   if (err.kind === "timeout") {
-    return `Downloading the team-storage asset ${path} timed out after ${formatSeconds(err.timeoutMs)}. Please try again.`;
+    return `Downloading the team-storage asset ${path} stalled — no data arrived for ${formatSeconds(err.timeoutMs)}. Please try again.`;
   }
   return `The team-storage download for ${path} was malformed. Please run \`qawolf flows pull\` again.`;
 }

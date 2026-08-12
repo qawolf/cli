@@ -200,5 +200,28 @@ describe("json renderers", () => {
       );
       expect(clack.spinner).not.toHaveBeenCalled();
     });
+
+    // Step events already carry structure; per-file updates would only add
+    // noise to NDJSON consumers. The callback must still be callable so tasks
+    // can report progress without checking the mode.
+    it("passes tasks a callable progress update that emits nothing", async () => {
+      const spy = stderrSpy();
+      const { withProgress } = createJsonRenderers();
+
+      await withProgress(
+        [
+          {
+            message: "step",
+            task: async (update) => {
+              update("progress detail");
+            },
+          },
+        ],
+        "done",
+      );
+
+      const messages = spy.mock.calls.map((call) => String(call[0]));
+      expect(messages.some((m) => m.includes("progress detail"))).toBe(false);
+    });
   });
 });

@@ -33,14 +33,16 @@ afterEach(async () => {
 // Real withProgress: runs every task in order, returns their results.
 // makeFakeUI's stub resolves to []; we need the inner tasks to execute so
 // the handler reaches its JSON-output branch with real result data.
-function makeJsonUi(): UI {
+function makeJsonUi(onUpdate?: (message: string) => void): UI {
   const ui = makeFakeUI();
   const withProgress = async (
-    steps: readonly { task: () => Promise<unknown> }[],
+    steps: readonly {
+      task: (update: (message: string) => void) => Promise<unknown>;
+    }[],
   ): Promise<unknown[]> => {
     const results: unknown[] = [];
     for (const step of steps) {
-      results.push(await step.task());
+      results.push(await step.task((message) => onUpdate?.(message)));
     }
     return results;
   };
@@ -57,6 +59,7 @@ function makeCtx(
   ui: UI,
   bundlePath: string,
   envVars: Record<string, string> = {},
+  syncTeamStorageAssets?: ReturnType<typeof mock>,
 ): AuthCommandContext {
   return {
     ui,
@@ -77,10 +80,12 @@ function makeCtx(
         ok: true,
         value: envVars,
       }),
-      syncTeamStorageAssets: mock().mockResolvedValue({
-        ok: true,
-        value: { downloadedCount: 0, reusedCount: 0, skippedCount: 0 },
-      }),
+      syncTeamStorageAssets:
+        syncTeamStorageAssets ??
+        mock().mockResolvedValue({
+          ok: true,
+          value: { downloadedCount: 0, reusedCount: 0, skippedCount: 0 },
+        }),
     }),
   };
 }
@@ -131,6 +136,37 @@ describe("handleFlowsPull json mode output", () => {
       manifestPath: join(destDir, manifestFilename),
     });
     expect(JSON.parse(JSON.stringify(payload))).toEqual(payload);
+  });
+
+  it("relays per-file asset download progress to the progress step", async () => {
+    await buildBundle(bundleArchive, {
+      flows: [{ name: "a.flow.ts", data: "// a\n" }],
+    });
+    const updates: string[] = [];
+    const ui = makeJsonUi((message) => updates.push(message));
+    const syncMock = mock(
+      async (
+        _assetsAbs: string,
+        opts?: {
+          onProgress?: (p: { current: number; total: number }) => void;
+        },
+      ) => {
+        opts?.onProgress?.({ current: 1, total: 3 });
+        opts?.onProgress?.({ current: 2, total: 3 });
+        return {
+          ok: true,
+          value: { downloadedCount: 3, reusedCount: 0, skippedCount: 0 },
+        };
+      },
+    );
+    const ctx = makeCtx(ui, bundleArchive, {}, syncMock);
+
+    await handleFlowsPull(ctx, { env: "env-abc", out: destDir });
+
+    expect(updates).toEqual([
+      "Downloading team-storage assets (1/3)",
+      "Downloading team-storage assets (2/3)",
+    ]);
   });
 
   it("does not call ui.output when mode is not json", async () => {
