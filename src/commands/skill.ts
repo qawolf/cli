@@ -39,16 +39,21 @@ function resolveKind(command: Command, path: string): string {
     : `${declared.kind} (${declared.kindNote})`;
 }
 
+// Cells stay unpadded: column alignment costs tokens on every skill
+// activation (the widest cell would pad all rows to its width) and
+// markdown renders unaligned tables identically. The prettier-ignore
+// comment keeps oxfmt from re-padding the table; oxfmt wants it
+// directly above the table, with no blank line between.
 function renderTable(rows: string[][]): string {
   const header = ["Command", "Kind", "What it does"];
-  const all = [header, ...rows];
-  const widths = header.map((_, column) =>
-    Math.max(...all.map((row) => (row[column] ?? "").length)),
-  );
-  const renderRow = (row: string[]) =>
-    `| ${row.map((cell, column) => cell.padEnd(widths[column] ?? 0)).join(" | ")} |`;
-  const divider = `| ${widths.map((width) => "-".repeat(width)).join(" | ")} |`;
-  return [renderRow(header), divider, ...rows.map(renderRow)].join("\n");
+  const renderRow = (row: string[]) => `| ${row.join(" | ")} |`;
+  const divider = `| ${header.map(() => "---").join(" | ")} |`;
+  return [
+    "<!-- prettier-ignore -->",
+    renderRow(header),
+    divider,
+    ...rows.map(renderRow),
+  ].join("\n");
 }
 
 export function renderCommandsTable(program: Command): string {
