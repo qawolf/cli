@@ -17,7 +17,6 @@ const config: KnipConfig = {
   ignoreDependencies: [
     // Installed into the managed runtime dir at runtime by ensureRuntimeEnv; not imported by the CLI.
     "appium",
-    "appium-xcuitest-driver",
     "appium-uiautomator2-driver",
   ],
   ignore: [
