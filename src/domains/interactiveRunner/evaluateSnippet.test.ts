@@ -194,6 +194,26 @@ describe("handleRunnerExec", () => {
     expect(result?.exitCode).toBe(1);
   });
 
+  // The same promise for the launch this command makes on the caller's behalf:
+  // the server's reason must survive the trip through resolveRunner.
+  it("passes on the reason the server gave for refusing the auto-launch", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "QA Wolf API runner.launch request failed (HTTP 409).",
+      errorBody: "Runner quota reached: 5 of 5 runners are already running.",
+      ok: false,
+    });
+
+    const result = await handleRunnerExec(
+      ctx,
+      { contextFile: undefined, runner: undefined, source: "flow.ts" },
+      makeTestDeps(),
+    );
+
+    expect(result?.errorBody).toContain("quota reached");
+    expect(result?.exitCode).toBe(4);
+  });
+
   // For this verb, unreachable also covers a runner with no live page, which will
   // never clear, so the message has to name that rather than just say "retry".
   it("names the no-live-page case an unreachable answer hides", async () => {
