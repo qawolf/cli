@@ -792,6 +792,13 @@
                 "message": "Cross-domain import: shared types belong in core/ or shell/."
               },
               {
+                "group": [
+                  "~/domains/interactiveRunner/*",
+                  "~/domains/interactiveRunner/**"
+                ],
+                "message": "Cross-domain import: shared types belong in core/ or shell/."
+              },
+              {
                 "group": ["~/domains/publicApi/*", "~/domains/publicApi/**"],
                 "message": "Cross-domain import: shared types belong in core/ or shell/."
               },
