@@ -82,15 +82,23 @@ describe("collectRunFiles", () => {
   // Everything else the travel rule refuses is refused by the glob first, so this
   // is the case that proves the predicate is what decides. A control character in
   // a name is matched by `**/*.ts` and rejected only by `isShippableRunFilePath`.
-  it("leaves behind a path only the predicate refuses", async () => {
-    expect(
-      await collect({
-        [`bad${String.fromCharCode(1)}name.ts`]: "export default {};",
-        "flow.ts": "export default {};",
-        "package.json": "{}",
-      }),
-    ).toEqual(["flow.ts", "package.json"]);
-  });
+  //
+  // Windows filenames cannot hold a control character at all, so there the file
+  // cannot be written to test with. Every other path the predicate alone refuses
+  // is likewise unwritable there — a backslash separates, `.` and `..` name
+  // directories — which leaves nothing to assert on that platform.
+  it.skipIf(process.platform === "win32")(
+    "leaves behind a path only the predicate refuses",
+    async () => {
+      expect(
+        await collect({
+          [`bad${String.fromCharCode(1)}name.ts`]: "export default {};",
+          "flow.ts": "export default {};",
+          "package.json": "{}",
+        }),
+      ).toEqual(["flow.ts", "package.json"]);
+    },
+  );
 
   it("collects nothing from an empty directory", async () => {
     expect(await collect({})).toEqual([]);
