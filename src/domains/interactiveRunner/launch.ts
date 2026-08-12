@@ -65,7 +65,9 @@ async function launchRunner(
  * A refusal is the other half of that, and it undoes the record. The server
  * answering "no" — an id already running a different image, a quota reached —
  * means no pod exists under this id, and leaving it as the directory's default
- * would point every later command at a runner that was never started.
+ * would point every later command at a runner that was never started. The
+ * default it had before comes back instead: a runner that was already running
+ * and billing must not be forgotten because a different launch was refused.
  *
  * Recording is best effort. The pod is the thing that costs money, so a working
  * directory the CLI cannot write to must not turn a launch that worked into a
@@ -76,6 +78,9 @@ export async function launchAndRemember(
   options: { id: string; runnerName: RunnerNameForPublicApi | undefined },
   deps: InteractiveRunnerDeps,
 ): Promise<LaunchResult> {
+  const priorDefault = await deps.store
+    .readDefaultRunnerId()
+    .catch(() => undefined);
   const remembered = await deps.store
     .writeDefaultRunnerId(options.id)
     .then(() => true)
@@ -88,7 +93,11 @@ export async function launchAndRemember(
   if (launched.ok) return launched;
 
   if (remembered && !launched.mayHaveArrived) {
-    await deps.store.clearDefaultRunnerId().catch(() => undefined);
+    await (
+      priorDefault === undefined
+        ? deps.store.clearDefaultRunnerId()
+        : deps.store.writeDefaultRunnerId(priorDefault)
+    ).catch(() => undefined);
   }
   return {
     error: launched.mayHaveArrived

@@ -144,6 +144,22 @@ describe("handleRunnerLaunch", () => {
     expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
   });
 
+  // The default the directory had before may name a runner that is still
+  // running and billing, so a refused launch of a different id must not lose it.
+  it("restores the previous default when the launch was refused", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "runner quota reached",
+      ok: false,
+    });
+    const deps = makeTestDeps();
+    await deps.store.writeDefaultRunnerId("running-a");
+
+    await handleRunnerLaunch(ctx, { id: "ci", name: undefined }, deps);
+
+    expect(await deps.store.readDefaultRunnerId()).toBe("running-a");
+  });
+
   // The pod is what costs money, so a directory the CLI cannot write to must not
   // turn a launch that worked into a failure with an unnamed runner behind it.
   it("still reports the runner when the default cannot be written", async () => {
