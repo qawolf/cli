@@ -11,6 +11,7 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
+import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
@@ -107,7 +108,9 @@ export async function handleRunnerExec(
       ...(scope.files === undefined ? {} : { files: scope.files }),
     },
   );
-  if (!result.ok) return { error: result.error, exitCode: exitCodes.network };
+  if (!result.ok) {
+    return { ...failureFields(result), exitCode: exitCodes.network };
+  }
 
   if (result.value.outcome === "runner-unreachable") {
     return {

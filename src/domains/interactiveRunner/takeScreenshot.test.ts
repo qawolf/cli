@@ -175,4 +175,24 @@ describe("handleRunnerScreenshot", () => {
     expect(deps.written).toEqual([]);
     expect(outputs()).toEqual([]);
   });
+
+  // A refusal QA Wolf explained is worth more than the status code alone, and a
+  // rate limit is the case where the reason carries the wait a caller needs.
+  it("passes on the reason QA Wolf gave for refusing the request", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "QA Wolf API rejected the runner.takeScreenshot request.",
+      errorBody: "Too many screenshots this hour. Retry after 42 seconds.",
+      ok: false,
+    });
+
+    const result = await handleRunnerScreenshot(
+      ctx,
+      { out: "shot.jpg", runner: "ci" },
+      makeTestDeps(),
+    );
+
+    expect(result?.errorBody).toContain("Retry after 42 seconds");
+    expect(result?.exitCode).toBe(4);
+  });
 });

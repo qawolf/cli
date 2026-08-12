@@ -6,6 +6,7 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
+import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
@@ -42,7 +43,9 @@ export async function handleRunnerScreenshot(
     publicContractsV1.runner.takeScreenshot,
     { id: resolved.runnerId },
   );
-  if (!result.ok) return { error: result.error, exitCode: exitCodes.network };
+  if (!result.ok) {
+    return { ...failureFields(result), exitCode: exitCodes.network };
+  }
 
   switch (result.value.outcome) {
     case "captured": {
