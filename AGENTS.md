@@ -71,7 +71,8 @@ src/
 │   ├── flows/           # expandPatterns, peekFlowMeta, flowsList, pull/
 │   ├── init/            # init handler + templates
 │   ├── install/         # installBrowsers, installBrowserList
-│   ├── runner/          # flowsRun, runWebFlow, runAndroidFlow, worker dispatch + pool
+│   ├── interactiveRunner/ # remote runners on the platform: launch, stop, runFlow, journal
+│   ├── runner/          # the LOCAL execution engine: flowsRun, runWebFlow, runAndroidFlow, worker dispatch + pool
 │   └── updateCheck/     # startUpdateCheck: new-version notice after commands
 └── commands/            # Thin CLI glue — Commander registration + composite root
     ├── context.ts       # withContext() Commander action wrapper
@@ -80,7 +81,8 @@ src/
     ├── doctor/          # doctor handler
     ├── flows/           # flows run/list/pull handlers; runDefaults composite root
     ├── init/            # init handler
-    └── install/         # install browsers/android handlers
+    ├── install/         # install browsers/android handlers
+    └── runner/          # runner launch/stop/run/events (domains/interactiveRunner)
 ```
 
 The codebase is organized into four strict layers. **`core/`** holds pure functions and types with zero I/O. **`shell/`** holds I/O executors (process spawning, Playwright, UI rendering, API clients). **`domains/`** holds bounded-context business logic; each domain may import `core/` and `shell/` but never a sibling domain. **`commands/`** is the composite root: thin Commander registration plus `runDefaults.ts`, which bridges multiple domains to assemble the `flows run` command. oxlint enforces these boundaries via per-layer `no-restricted-imports` overrides in `.oxlintrc.json`.

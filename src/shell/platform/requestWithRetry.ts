@@ -4,8 +4,17 @@ import type { WireError, WireResult } from "./createTrpcClient.js";
 /**
  * A failure split into a short, stable title callers can branch on and an
  * optional longer reason from the server.
+ *
+ * `mayHaveArrived` separates a request that failed on the way out from one the
+ * server answered by refusing it. Only the first leaves a caller unable to say
+ * whether the action happened, which for a write is the difference between
+ * "retry the same id" and "that will fail the same way again".
  */
-export type PlatformFailure = { error: string; errorBody?: string };
+export type PlatformFailure = {
+  error: string;
+  errorBody?: string;
+  mayHaveArrived?: boolean;
+};
 
 export type PlatformResult<T> =
   | { ok: true; value: T }
@@ -51,7 +60,18 @@ export async function requestWithRetry<T>(
     const retryable =
       result.error.kind === "network" || result.error.kind === "timeout";
     if (backoff === undefined || !retryable) {
-      return { ok: false, ...args.describe(result.error) };
+      // Only an HTTP status proves the server answered without acting on a
+      // lost request. A reached deadline says nothing about whether the server
+      // acted; an unparseable reply is the server answering, so the request
+      // certainly arrived; and a network failure covers a connection reset
+      // after the request body was sent just as it covers one refused outright,
+      // so it cannot prove the request never arrived either.
+      const mayHaveArrived = result.error.kind !== "http";
+      return {
+        ok: false,
+        ...args.describe(result.error),
+        ...(mayHaveArrived ? { mayHaveArrived } : {}),
+      };
     }
     await sleep(backoff);
   }

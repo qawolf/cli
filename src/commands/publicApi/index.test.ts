@@ -174,27 +174,12 @@ describe("registerPublicApiCommands", () => {
     ).toBeDefined();
   });
 
-  // Mirrors the shape of `runner.performAction`: an action union has no flag
-  // form, and an unmappable contract throws while the program is built.
-  it("survives a contracts version that includes runner.performAction", () => {
-    const performActionContract = {
-      description: "Perform one raw browser action on an interactive runner.",
-      input: z.object({
-        action: z.union([
-          z.object({ type: z.literal("click"), x: z.number(), y: z.number() }),
-          z.object({ text: z.string(), type: z.literal("type") }),
-        ]),
-        id: z.string(),
-      }),
-      kind: "write",
-      name: "runner.performAction",
-      output: z.object({ outcome: z.literal("performed") }),
-    } as const;
+  // The runner group is hand-written, so a generated `qawolf runner launch`
+  // beside it would be a collision the generator throws on.
+  it("mints no runner commands from the published contracts", () => {
     const program = makeProgram();
 
-    registerPublicApiCommands(program, createSignalRegistry(), {
-      contracts: { runner: { performAction: performActionContract } },
-    });
+    registerPublicApiCommands(program, createSignalRegistry());
 
     expect(
       program.commands.find((command) => command.name() === "runner"),

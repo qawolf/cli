@@ -14,6 +14,21 @@ export type RendererSet = {
   error(title: string, body?: string): void;
   output(data: unknown, humanMessage: string): void;
   gap(): void;
+  /**
+   * One line of primary command data to stdout, in every output mode.
+   *
+   * Apart from `write`, which is decoration and so goes to stderr where an agent
+   * reads it and nowhere at all in json mode. A streamed journal line is the
+   * answer to the command, and `qawolf runner events recorder | jq` has to see it
+   * whether a terminal, a pipe or a harness is on the other end.
+   *
+   * Two arguments for the same reason `output` takes two: json mode owes its
+   * reader parseable lines, and a run's log message is prose. Redirecting stdout
+   * is enough to select json mode, so a single pre-rendered string would put
+   * prose on the same stream as JSON objects and break every consumer of
+   * `qawolf runner run --follow > run.log`.
+   */
+  stream(data: unknown, line: string): void;
   write(text: string): void;
   withProgress: WithProgressFn;
 };

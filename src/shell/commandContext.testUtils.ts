@@ -29,6 +29,7 @@ export function makeFakeUI(mode: OutputMode = "human"): UI {
       },
     ) as unknown as UI["withProgress"],
     step: mock(() => {}),
+    stream: mock(() => {}),
     success: mock(() => {}),
     warn: mock(() => {}),
     cancel: mock(() => {}),

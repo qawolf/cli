@@ -58,6 +58,7 @@ describe("exit", () => {
       auth: 3,
       network: 4,
       config: 5,
+      timeout: 6,
     });
   });
 });

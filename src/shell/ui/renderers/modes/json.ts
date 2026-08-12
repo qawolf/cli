@@ -26,6 +26,7 @@ export function createJsonRenderers(): RendererSet {
     error: (title, body) => writeJsonDiagnostic({ type: "error", title, body }),
     output: (data, _humanMessage) => writeJsonLine(data),
     gap: () => {},
+    stream: (data, _line) => writeJsonLine(data),
     write: () => {},
     withProgress: async (steps, done) => {
       const results: unknown[] = [];

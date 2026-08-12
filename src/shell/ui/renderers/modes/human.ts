@@ -27,6 +27,7 @@ export function createHumanRenderers(
     },
     output: (_data, humanMessage) => clack.log.info(humanMessage),
     gap: () => process.stderr.write("\n"),
+    stream: (_data, line) => writeStdoutRaw(`${line}\n`),
     write: (text) => writeStdoutRaw(text),
     withProgress: async (steps, done) => {
       const results: unknown[] = [];

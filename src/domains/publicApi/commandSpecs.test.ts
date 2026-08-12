@@ -3,11 +3,12 @@ import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { z } from "zod";
 
 import { buildCommandSpecs } from "./commandSpecs.js";
+import { skippedContractNames } from "./skippedContracts.js";
 
 describe("buildCommandSpecs", () => {
   it("flattens the published contract tree into command specs", () => {
     const specs = buildCommandSpecs(publicContractsV1, {
-      skipContractNames: new Set(["issue.update", "runner.performAction"]),
+      skipContractNames: skippedContractNames,
     });
 
     const runCreate = specs.find(

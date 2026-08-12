@@ -8,6 +8,7 @@ import {
   type ContractTree,
 } from "~/domains/publicApi/commandSpecs.js";
 import { handlePublicApiCommand } from "~/domains/publicApi/handle.js";
+import { skippedContractNames } from "~/domains/publicApi/skippedContracts.js";
 import { declareCommandKind } from "~/commands/commandKind.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
@@ -25,21 +26,6 @@ type Options = {
 const groupDescriptions: Record<string, string> = {
   run: "Trigger and manage QA Wolf runs on the platform",
 };
-
-// Contracts already served by hand-written commands; the generator must not
-// mint duplicates (flow.list is served by `qawolf flows list --remote`).
-const handWrittenContractNames: ReadonlySet<string> = new Set(["flow.list"]);
-
-// Kept out of generated commands: the hand-written ones above, plus contracts
-// whose input can't be expressed as CLI flags. `issue.update` is a
-// discriminator-less union. `runner.performAction` takes an action union where
-// the arm a caller means is the whole request. An unmappable contract throws
-// while the program is built, taking every command down with it.
-const skippedContractNames: ReadonlySet<string> = new Set([
-  ...handWrittenContractNames,
-  "issue.update",
-  "runner.performAction",
-]);
 
 const optionEnvironmentVariables = new Map([
   ["environmentId", "QAWOLF_ENVIRONMENT"],
