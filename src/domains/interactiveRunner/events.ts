@@ -18,7 +18,7 @@ import {
   createJournalCursor,
   createUnreachableBudget,
 } from "./journalCursor.js";
-import { unreachableFailure } from "./readJournal.js";
+import { journalReadFailure, unreachableFailure } from "./readJournal.js";
 import { resolveRunner } from "./resolveRunner.js";
 
 export type { RunnerEventsOptions } from "./eventsOptions.js";
@@ -86,7 +86,7 @@ export async function handleRunnerEvents(
 
   for (let poll = 1; ; poll++) {
     const window = await read();
-    if (window.type === "failed") return window;
+    if (window.type === "failed") return journalReadFailure(window);
 
     // A single read has nothing to retry with, so an unreachable runner is all
     // it can report. A follow keeps asking until the grace window is spent.

@@ -9,7 +9,7 @@ import { type JournalRequest, readJournal } from "./readJournal.js";
 export type CursorRead =
   | { type: "entries"; entries: JournalEntry<unknown>[] }
   | { type: "unreachable" }
-  | { type: "failed"; error: string; exitCode: number };
+  | { type: "failed"; error: string; errorBody?: string; exitCode: number };
 
 /**
  * One stream of one runner's journal, read forwards.

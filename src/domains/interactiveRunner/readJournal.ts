@@ -3,6 +3,7 @@ import { type JournalEntry, publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
+import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 type JournalWindow = {
   entries: JournalEntry<unknown>[];
@@ -24,7 +25,15 @@ type JournalWindow = {
 export type JournalReadResult =
   | { type: "read"; value: JournalWindow }
   | { type: "unreachable" }
-  | { type: "failed"; error: string; exitCode: number };
+  | { type: "failed"; error: string; errorBody?: string; exitCode: number };
+
+/** The failed variant as a command result, without the internal discriminant. */
+export function journalReadFailure(
+  failed: Extract<JournalReadResult, { type: "failed" }>,
+): { error: string; errorBody?: string; exitCode: number } {
+  const { type: _type, ...failure } = failed;
+  return failure;
+}
 
 export type JournalRequest = {
   runId?: string | undefined;
@@ -58,7 +67,11 @@ export async function readJournal(
     },
   );
   if (!result.ok) {
-    return { error: result.error, exitCode: exitCodes.network, type: "failed" };
+    return {
+      ...failureFields(result),
+      exitCode: exitCodes.network,
+      type: "failed",
+    };
   }
   if (result.value.outcome === "runner-unreachable") {
     return { type: "unreachable" };

@@ -15,7 +15,7 @@ import {
   createJournalCursor,
   createUnreachableBudget,
 } from "./journalCursor.js";
-import { unreachableFailure } from "./readJournal.js";
+import { journalReadFailure, unreachableFailure } from "./readJournal.js";
 
 const pollIntervalMs = 1_000;
 
@@ -108,10 +108,10 @@ export async function followRun(
 
   for (let poll = 1; ; poll++) {
     const logs = await printLogs();
-    if (logs.type === "failed") return logs;
+    if (logs.type === "failed") return journalReadFailure(logs);
 
     const status = logs.type === "unreachable" ? logs : await readStatus();
-    if (status.type === "failed") return status;
+    if (status.type === "failed") return journalReadFailure(status);
 
     if (logs.type === "unreachable" || status.type === "unreachable") {
       if (unreachable.exhausted()) return { ...unreachableFailure };

@@ -147,6 +147,23 @@ describe("handleRunnerEvents", () => {
     expect(warnings()).toEqual([]);
   });
 
+  // The server's own reason names what went wrong, so a failed read keeps it
+  // just as a failed run does — and the internal discriminant stays internal.
+  it("passes on the reason a failed read came back with", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "QA Wolf API runner.readJournal request failed (HTTP 403).",
+      errorBody: "This runner belongs to another team.",
+      ok: false,
+    });
+
+    const result = await handleRunnerEvents(ctx, baseOptions, makeTestDeps());
+
+    expect(result?.errorBody).toContain("another team");
+    expect(result?.exitCode).toBe(4);
+    expect(result).not.toHaveProperty("type");
+  });
+
   // A single read has nothing to retry with, so it reports the unreachable runner
   // rather than polling one the caller never asked it to wait for.
   it("reports an unreachable runner rather than retrying when not following", async () => {
