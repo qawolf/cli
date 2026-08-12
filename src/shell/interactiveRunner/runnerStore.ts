@@ -33,7 +33,10 @@ export type RunnerStore = {
 export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
   const directory = join(options.cwd, qawolfDir);
   const path = join(directory, storeFileName);
-  const pendingPath = `${path}.tmp`;
+  // Unique per write: two commands writing at once must not share a temp file,
+  // or one rename pulls the other's out from under it.
+  let pendingWrites = 0;
+  const nextPendingPath = () => `${path}.${process.pid}.${++pendingWrites}.tmp`;
 
   return {
     async clearDefaultRunnerId() {
@@ -56,6 +59,7 @@ export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
     // default", and the command that met it would launch and bill a second
     // runner.
     async writeDefaultRunnerId(runnerId) {
+      const pendingPath = nextPendingPath();
       await options.fs.mkdir(directory, { recursive: true });
       await options.fs.writeFile(
         pendingPath,

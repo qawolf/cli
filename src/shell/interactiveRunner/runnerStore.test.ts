@@ -45,6 +45,33 @@ describe("makeRunnerStore", () => {
     await makeStore().clearDefaultRunnerId();
   });
 
+  // Each write keeps its own temp file, so one write's rename cannot pull the
+  // other's out from under it. The first write is held open until the second
+  // has finished, so the two genuinely overlap.
+  it("survives two writes in flight at once", async () => {
+    const fs = makeMemoryFs();
+    let holdFirstWrite: (() => void) | undefined;
+    const overlappingFs: typeof fs = {
+      ...fs,
+      async writeFile(path, data, options) {
+        await fs.writeFile(path, data, options);
+        if (holdFirstWrite === undefined && path.endsWith(".tmp")) {
+          await new Promise<void>((resolve) => {
+            holdFirstWrite = resolve;
+          });
+        }
+      },
+    };
+    const store = makeRunnerStore({ cwd, fs: overlappingFs });
+
+    const first = store.writeDefaultRunnerId("first");
+    await store.writeDefaultRunnerId("second");
+    holdFirstWrite?.();
+    await first;
+
+    expect(await store.readDefaultRunnerId()).toBe("first");
+  });
+
   // A stale cache file is not a reason to refuse to run: the caller's next step
   // is to launch a runner either way.
   it("reads unparseable contents as no default", async () => {
