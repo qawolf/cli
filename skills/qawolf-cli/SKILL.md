@@ -1,13 +1,14 @@
 ---
 name: qawolf-cli
-description: Manage QA Wolf through the qawolf CLI. Use when asked which QA Wolf environment variables are available or to list, set, or delete them; manage environments, flows, runs, tags, or issues; authenticate; install; or perform other QA Wolf operations from a shell.
+description: Manage QA Wolf through the qawolf CLI. Use when asked which QA Wolf environment variables are available or to list, set, or delete them; manage environments, flows, runs, tags, or issues; authenticate; install; run or list flows; or drive a live cloud browser (launch a runner, screenshot it, click and type on it, read its recorder) from a shell.
 license: Apache-2.0
 compatibility: Requires the qawolf CLI on PATH. Install it from @qawolf/cli or use a standalone binary from GitHub Releases.
 ---
 
 # QA Wolf CLI
 
-`qawolf` runs QA Wolf flows locally and calls the QA Wolf public API.
+`qawolf` runs QA Wolf flows locally, calls the QA Wolf public API, and drives
+interactive runners: live cloud pods holding a browser you can see and act on.
 
 This file is an overview, not a reference. Before first using a command whose
 flags are not shown here, run `qawolf <command> --help` once. The installed CLI
@@ -21,6 +22,11 @@ environment variable (or stored credentials from `qawolf auth login`).
 `read` and `write` commands require auth; `local` commands do not, unless
 their table entry notes a flag that switches them to `read`.
 Verify with `qawolf auth whoami`. Never print or log the key.
+
+A team API key in the environment is the whole credential, including for the
+`runner` group. Nothing needs a browser login, a session token or a held
+connection, so a sandbox that can set one environment variable and make
+requests to one host can do everything below.
 
 Commands use `https://app.qawolf.com` by default. Set `QAWOLF_HOST_URL` to
 target another deployment host, for example
@@ -61,6 +67,11 @@ Human-formatted output is not stable across versions. Errors go to stderr;
 a non-zero exit code means the command failed. Reuse successful read results
 within a task unless a relevant write or target change could make them stale.
 
+One exception to know about: on `qawolf runner events`, `--json` also switches
+each printed line from the payload alone to the whole envelope (`sequence`,
+`recordedAt`, `payload`). Both are JSON. Pass it when you want to page by
+sequence, omit it when you want the payloads themselves.
+
 ## Safety: reads vs writes
 
 Read commands do not change team data, but some have operational effects noted
@@ -70,6 +81,12 @@ the task requires missing configuration whose exact value is known. A
 successful write response is confirmation, so do not read immediately only to
 verify it. Never blind-retry a write on timeout: it may have reached the server
 the first time.
+
+Two runner-specific costs to keep in mind. Launching a runner starts a billed
+pod, so reuse one id rather than minting new ones per step, and stop a runner
+when you are done. And `run`, `act` and `exec` may all have taken effect even
+when their answer never arrives, so none of them is safe to blind-retry; `run`
+is the expensive one, because a second submission bills a second run.
 
 ## Git-backed workflows
 
@@ -95,7 +112,7 @@ current branch.
 | `qawolf environment get` | read | Read a single environment's name, kind, health status, run concurrency limit, and termination state. |
 | `qawolf environment getVariable` | read | Read the values of named environment variables in one call. Values are secrets. Names that do not exist go to missingNames and do not fail the call. |
 | `qawolf environment listVariableNames` | read | Use this to answer which QA Wolf environment variables are available to test code. Returns names only; values never leave the server. |
-| `qawolf environment setVariable` | write | Create or replace an environment variable. If the user asks to create one for "my email" without naming it, use DEFAULT_EMAIL. The value is never returned. |
+| `qawolf environment setVariable` | write | Create or replace an environment variable. If the user asks to create one for "my email" without naming it, use DEFAULT_ENVIRONMENT_EMAIL. The value is never returned. |
 | `qawolf environment update` | write | Update an environment owned by the caller's team and return it in the environment.get shape. Omitted fields remain unchanged. |
 | `qawolf flow addTag` | write | Assign an existing tag to the selected flows. Create tags with tag.create. |
 | `qawolf flow update` | write | Move a flow between draft and active readiness. The other statuses shown in the app are derived and cannot be set. |
@@ -130,3 +147,18 @@ Kinds: `read` calls the QA Wolf API without changing anything; `write`
 changes team state; `local` only affects this machine. A parenthesized
 note like `local (read with --remote)` means that flag makes the command
 call the QA Wolf API and require auth.
+
+## Driving a browser: the `runner` group
+
+The `runner` commands drive a live cloud browser: `launch` one, `screenshot` to
+see it, `act` to click and type, `run` a flow on it, `exec` a snippet against its
+page, `events` to read its journal (including the `recorder` stream, which turns
+your actions into Playwright locators), `keepalive` to hold it open, and `stop`
+when done. Everything is a plain request to one host, so a shell with an API key
+and its own vision model can close the see-and-act loop with no other tooling.
+
+The full workflow is its own guide: how a runner is billed, why the first call
+must be a run, the order the commands go in, the see-and-act loop, `exec`, the
+recorder, reading history, staying alive, and an end-to-end example. **Read
+[`references/runner.md`](references/runner.md) before driving a runner for the
+first time.**
