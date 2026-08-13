@@ -46,6 +46,8 @@ export const interactiveRunnerMessages = {
     `No runner was given, so launched ${id} for this command. Its browser is fresh: nothing has been run on it and nothing is signed in. It bills until it is stopped or idles out, so stop it with qawolf runner stop --runner ${id} when you are done.`,
   followEventsTimedOut: (stream: string, seconds: number) =>
     `Stopped following ${stream} after ${formatSeconds(seconds * 1000)}: reading keeps the runner alive and billing, so a follow does not run unbounded. Pass --timeout to wait longer, or follow again to continue.`,
+  followEndCutShort:
+    "The run settled, but the last window of its followed streams could not be read, so the output above may be missing its final lines.",
   followTimedOut: (runId: string, runnerId: string, seconds: number) =>
     `Stopped following run ${runId} after ${formatSeconds(seconds * 1000)}. The run may still be going: read it with qawolf runner events run-status --run ${runId}, and stop the runner with qawolf runner stop --runner ${runnerId} when you are done. Pass --timeout to wait longer.`,
   missingPackageJson:
@@ -57,6 +59,7 @@ export const interactiveRunnerMessages = {
     errorMessage === undefined
       ? "The run failed and reported no reason."
       : `The run failed: ${errorMessage}`,
+  runInProgress: "The run is in progress.",
   runPassed: "The run passed.",
   runSettledUnknown: (status: string) =>
     `The run settled as "${status}", which this version of the CLI does not recognize. Upgrade to read it.`,

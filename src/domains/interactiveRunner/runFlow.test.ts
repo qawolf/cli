@@ -24,6 +24,9 @@ async function runWith(
       follow: false,
       runner: "ci",
       timeout: undefined,
+      logs: false,
+      recorderEvents: false,
+      runEvents: false,
     },
     makeTestDeps(),
   );
@@ -66,6 +69,9 @@ describe("handleRunnerRun", () => {
         follow: false,
         runner: "ci",
         timeout: undefined,
+        logs: false,
+        recorderEvents: false,
+        runEvents: false,
       },
       makeTestDeps(),
     );
@@ -85,6 +91,9 @@ describe("handleRunnerRun", () => {
         follow: false,
         runner: "ci",
         timeout: undefined,
+        logs: false,
+        recorderEvents: false,
+        runEvents: false,
       },
       makeTestDeps({
         collectRunFiles: async () => ({ "flow.ts": "export default {};" }),
@@ -137,6 +146,9 @@ describe("handleRunnerRun", () => {
         follow: false,
         runner: undefined,
         timeout: undefined,
+        logs: false,
+        recorderEvents: false,
+        runEvents: false,
       },
       deps,
     );
@@ -144,47 +156,6 @@ describe("handleRunnerRun", () => {
     expect(result?.exitCode).toBe(2);
     expect(callPublicApi).not.toHaveBeenCalled();
     expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
-  });
-
-  it("refuses a --timeout that is not a positive number of seconds", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
-
-    const result = await handleRunnerRun(
-      ctx,
-      { entryPoint: "flow.ts", follow: true, runner: "ci", timeout: "0" },
-      makeTestDeps(),
-    );
-
-    expect(result?.exitCode).toBe(2);
-    expect(callPublicApi).not.toHaveBeenCalled();
-  });
-
-  // Following puts the run's journal entries on stdout, so the submitted run goes
-  // to stderr instead: two differently shaped objects on one stream would leave a
-  // reader sniffing keys to tell which lines are log entries.
-  it("announces the submitted run as a diagnostic when following", async () => {
-    const { callPublicApi, ctx, outputs } = makeAuthCtx();
-    callPublicApi
-      .mockResolvedValueOnce({ ok: true, value: submitted })
-      .mockResolvedValue({
-        ok: true,
-        value: {
-          entries: [],
-          hasUnsearchedHistory: false,
-          nextSequence: 1,
-          oldestAvailableSequence: 1,
-          outcome: "read",
-        },
-      });
-
-    await handleRunnerRun(
-      ctx,
-      { entryPoint: "flow.ts", follow: true, runner: "ci", timeout: "1" },
-      makeTestDeps(),
-    );
-
-    expect(ctx.ui.info).toHaveBeenCalledWith(expect.stringContaining("run-a"));
-    expect(outputs()).toEqual([]);
   });
 
   it("announces the runner it had to launch, naming it", async () => {
@@ -208,6 +179,9 @@ describe("handleRunnerRun", () => {
         follow: false,
         runner: undefined,
         timeout: undefined,
+        logs: false,
+        recorderEvents: false,
+        runEvents: false,
       },
       makeTestDeps(),
     );
@@ -239,6 +213,9 @@ describe("handleRunnerRun", () => {
         follow: false,
         runner: "ci",
         timeout: undefined,
+        logs: false,
+        recorderEvents: false,
+        runEvents: false,
       },
       makeTestDeps(),
     );

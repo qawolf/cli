@@ -1,5 +1,6 @@
 import {
-  formatRunLogLine,
+  type SettledRun,
+  findSettlement,
   readRunSettlement,
 } from "~/core/interactiveRunner/journal.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
@@ -11,6 +12,10 @@ import { exitCodes } from "~/shell/exit.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import {
+  type FollowStreamOptions,
+  createFollowPrinters,
+} from "./followPrinters.js";
+import {
   type CursorRead,
   createJournalCursor,
   createUnreachableBudget,
@@ -19,29 +24,9 @@ import { journalReadFailure, unreachableFailure } from "./readJournal.js";
 
 const pollIntervalMs = 1_000;
 
-type Settlement =
-  | { type: "passed" }
-  | { type: "failed"; errorMessage: string | undefined }
-  | { type: "unrecognized"; status: string };
-
-function findSettlement(
-  entries: readonly { payload: unknown }[],
-): Settlement | undefined {
-  for (const entry of entries) {
-    const settlement = readRunSettlement(entry.payload);
-    if (settlement.type !== "settled") continue;
-    if (settlement.status === "passed") return { type: "passed" };
-    if (settlement.status === "failed") {
-      return { errorMessage: settlement.errorMessage, type: "failed" };
-    }
-    return { status: settlement.status, type: "unrecognized" };
-  }
-  return undefined;
-}
-
 function reportSettlement(
   ctx: AuthCommandContext,
-  settlement: Settlement,
+  settlement: SettledRun,
 ): CommandResult {
   if (settlement.type === "passed") {
     ctx.ui.success(interactiveRunnerMessages.runPassed);
@@ -59,10 +44,13 @@ function reportSettlement(
 /**
  * Follows a run to its end.
  *
- * What ends the follow is an entry on `run-status`, never the logs: a run that
+ * What the follow prints is the flags' choice: only the run's `run-status`
+ * events — in progress, passed, failed — by default, plus whichever mirror
+ * streams were asked for (see {@link createFollowPrinters}). What ends the
+ * follow is an entry on `run-status` either way, never the mirrors: a run that
  * prints nothing would otherwise never finish, and a run that dies mid-sentence
- * would look like one still working. The logs are the output; the status is the
- * answer.
+ * would look like one still working. The mirrors are the output; the status is
+ * the answer.
  *
  * A runner that stops answering for long enough ends the follow too, as a
  * failure. `run-status` cannot cover a runner killed without running its
@@ -77,26 +65,38 @@ function reportSettlement(
  */
 export async function followRun(
   ctx: AuthCommandContext,
-  options: { runId: string; runnerId: string; timeoutSeconds: number },
+  options: FollowStreamOptions & { timeoutSeconds: number },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
-  const readLogs = createJournalCursor(ctx, options.runnerId, {
-    runId: options.runId,
-    stream: "run-logs",
-  });
+  const printers = createFollowPrinters(ctx, options);
   const readStatus = createJournalCursor(ctx, options.runnerId, {
     runId: options.runId,
     stream: "run-status",
   });
   const unreachable = createUnreachableBudget(pollIntervalMs);
 
-  const printLogs = async (): Promise<CursorRead> => {
-    const logs = await readLogs();
-    if (logs.type !== "entries") return logs;
-    for (const entry of logs.entries) {
-      ctx.ui.stream(entry, formatRunLogLine(entry.payload));
+  /** Undefined when every printer read cleanly; the interrupting read if not. */
+  const printAll = async (): Promise<CursorRead | undefined> => {
+    for (const print of printers) {
+      const window = await print();
+      if (window.type !== "entries") return window;
     }
-    return logs;
+    return undefined;
+  };
+
+  // The in-progress line is for the otherwise-silent follow: any mirror stream
+  // already shows life, and prose among its JSON lines would hurt a parser. The
+  // runner may also write `in-progress` again (a heartbeat, a retry); the quiet
+  // follow reports it once.
+  let progressReported = false;
+  const printProgress = (entries: readonly { payload: unknown }[]): void => {
+    if (printers.length > 0 || progressReported) return;
+    const entry = entries.find(
+      (e) => readRunSettlement(e.payload).type === "in-progress",
+    );
+    if (entry === undefined) return;
+    progressReported = true;
+    ctx.ui.stream(entry, interactiveRunnerMessages.runInProgress);
   };
 
   // Polls rather than a clock: the loop sleeps a known interval between reads,
@@ -107,23 +107,29 @@ export async function followRun(
   );
 
   for (let poll = 1; ; poll++) {
-    const logs = await printLogs();
-    if (logs.type === "failed") return journalReadFailure(logs);
+    const interrupted = await printAll();
+    if (interrupted?.type === "failed") return journalReadFailure(interrupted);
 
-    const status = logs.type === "unreachable" ? logs : await readStatus();
+    const status =
+      interrupted?.type === "unreachable" ? interrupted : await readStatus();
     if (status.type === "failed") return journalReadFailure(status);
 
-    if (logs.type === "unreachable" || status.type === "unreachable") {
+    if (status.type === "unreachable") {
       if (unreachable.exhausted()) return { ...unreachableFailure };
     } else {
       unreachable.reset();
+      printProgress(status.entries);
       const settlement = findSettlement(status.entries);
       if (settlement !== undefined) {
-        // Read the logs once more before reporting: the settling status entry and
-        // the run's last lines are appended to different streams, so the status can
-        // win the race and stopping here would cut the output off short of the very
-        // failure being reported.
-        await printLogs();
+        // Read the mirrors once more before reporting: the settling status entry
+        // and the run's last lines are appended to different streams, so the
+        // status can win the race and stopping here would cut the output off
+        // short of the very failure being reported. A warning rather than a
+        // failure when this read does not answer: the settlement is known, and
+        // the run's outcome must not be overridden by a flush of its output.
+        if ((await printAll()) !== undefined) {
+          ctx.ui.warn(interactiveRunnerMessages.followEndCutShort);
+        }
         return reportSettlement(ctx, settlement);
       }
     }

@@ -68,6 +68,28 @@ export function createJournalCursor(
 }
 
 /**
+ * A cursor that prints what it reads: every new entry is streamed to the UI,
+ * the whole entry as the data and `format`'s rendering of its payload as the
+ * line.
+ */
+export function createPrintingCursor(
+  ctx: AuthCommandContext,
+  runnerId: string,
+  request: JournalRequest,
+  format: (payload: unknown) => string,
+): () => Promise<CursorRead> {
+  const read = createJournalCursor(ctx, runnerId, request);
+  return async () => {
+    const window = await read();
+    if (window.type !== "entries") return window;
+    for (const entry of window.entries) {
+      ctx.ui.stream(entry, format(entry.payload));
+    }
+    return window;
+  };
+}
+
+/**
  * How long a follow keeps asking a runner that will not answer.
  *
  * A read that comes back `runner-unreachable` is transient by contract, and the
