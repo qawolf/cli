@@ -1,5 +1,21 @@
 # @qawolf/cli
 
+## 1.9.2
+
+### Patch Changes
+
+- 62d07c4: move appium-uiautomator2-driver to devDependencies and remove it from the managed runtime
+
+  The runtime does not load this driver from node_modules. Appium loads it from APPIUM_HOME, where `qawolf install android` installs it.
+
+  The devDependency stays so the build can read the pinned version for the APPIUM_HOME install.
+
+  This prevents lockfile churn in consumer repositories when a future driver version ships a problematic npm-shrinkwrap.json.
+
+- a442520: Teach the shipped `qawolf-cli` skill the runner group, written for a harness that has a shell, an API key and its own vision model and none of QA Wolf's tooling.
+
+  The guide is a skill resource rather than part of the skill body, so it costs nothing until a runner is what the task needs. It leads with what is expensive to discover: relaunching an id attaches rather than billing a second pod; a runner launched for you has a fresh browser with nothing signed in and no page open; only a run starts the screen, so a screenshot before one fails however long you wait; the recorder carries the `locator` and `alternates` a screenshot cannot give you; `exec` returns whether a snippet ran and not its value, so results come back through the `console` stream; and an unreachable answer from `qawolf runner run` does not mean the run did not start, so resubmitting bills a second one. Auth and the reads-versus-writes framing account for the group as well.
+
 ## 1.9.1
 
 ### Patch Changes
