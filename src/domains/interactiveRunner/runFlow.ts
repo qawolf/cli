@@ -25,6 +25,7 @@ export async function handleRunnerRun(
   options: {
     entryPoint: string;
     follow: boolean;
+    logs: boolean;
     runner: string | undefined;
     timeout: string | undefined;
   },
@@ -89,7 +90,10 @@ export async function handleRunnerRun(
       };
     case "submitted": {
       const runId = result.value.runId;
-      if (!options.follow) {
+      // --logs implies --follow: it only chooses what a follow prints, so
+      // alone it can only mean "follow, with the logs".
+      const follow = options.follow || options.logs;
+      if (!follow) {
         ctx.ui.output(
           { runId, runnerId: resolved.runnerId },
           interactiveRunnerMessages.runSubmitted(runId),
@@ -104,6 +108,7 @@ export async function handleRunnerRun(
       return followRun(
         ctx,
         {
+          logs: options.logs,
           runId,
           runnerId: resolved.runnerId,
           timeoutSeconds: timeout.seconds,

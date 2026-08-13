@@ -57,6 +57,7 @@ export const interactiveRunnerMessages = {
     errorMessage === undefined
       ? "The run failed and reported no reason."
       : `The run failed: ${errorMessage}`,
+  runInProgress: "The run is in progress.",
   runPassed: "The run passed.",
   runSettledUnknown: (status: string) =>
     `The run settled as "${status}", which this version of the CLI does not recognize. Upgrade to read it.`,

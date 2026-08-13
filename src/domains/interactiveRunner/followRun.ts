@@ -1,4 +1,6 @@
 import {
+  type SettledRun,
+  findSettlement,
   formatRunLogLine,
   readRunSettlement,
 } from "~/core/interactiveRunner/journal.js";
@@ -19,29 +21,9 @@ import { journalReadFailure, unreachableFailure } from "./readJournal.js";
 
 const pollIntervalMs = 1_000;
 
-type Settlement =
-  | { type: "passed" }
-  | { type: "failed"; errorMessage: string | undefined }
-  | { type: "unrecognized"; status: string };
-
-function findSettlement(
-  entries: readonly { payload: unknown }[],
-): Settlement | undefined {
-  for (const entry of entries) {
-    const settlement = readRunSettlement(entry.payload);
-    if (settlement.type !== "settled") continue;
-    if (settlement.status === "passed") return { type: "passed" };
-    if (settlement.status === "failed") {
-      return { errorMessage: settlement.errorMessage, type: "failed" };
-    }
-    return { status: settlement.status, type: "unrecognized" };
-  }
-  return undefined;
-}
-
 function reportSettlement(
   ctx: AuthCommandContext,
-  settlement: Settlement,
+  settlement: SettledRun,
 ): CommandResult {
   if (settlement.type === "passed") {
     ctx.ui.success(interactiveRunnerMessages.runPassed);
@@ -59,10 +41,12 @@ function reportSettlement(
 /**
  * Follows a run to its end.
  *
- * What ends the follow is an entry on `run-status`, never the logs: a run that
- * prints nothing would otherwise never finish, and a run that dies mid-sentence
- * would look like one still working. The logs are the output; the status is the
- * answer.
+ * What the follow prints is `logs`'s choice: every `run-logs` line when set,
+ * only the run's `run-status` events — in progress, passed, failed — when not. What
+ * ends the follow is an entry on `run-status` either way, never the logs: a run
+ * that prints nothing would otherwise never finish, and a run that dies
+ * mid-sentence would look like one still working. The logs are the output; the
+ * status is the answer.
  *
  * A runner that stops answering for long enough ends the follow too, as a
  * failure. `run-status` cannot cover a runner killed without running its
@@ -77,26 +61,47 @@ function reportSettlement(
  */
 export async function followRun(
   ctx: AuthCommandContext,
-  options: { runId: string; runnerId: string; timeoutSeconds: number },
+  options: {
+    logs: boolean;
+    runId: string;
+    runnerId: string;
+    timeoutSeconds: number;
+  },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
-  const readLogs = createJournalCursor(ctx, options.runnerId, {
-    runId: options.runId,
-    stream: "run-logs",
-  });
+  const readLogs = options.logs
+    ? createJournalCursor(ctx, options.runnerId, {
+        runId: options.runId,
+        stream: "run-logs",
+      })
+    : undefined;
   const readStatus = createJournalCursor(ctx, options.runnerId, {
     runId: options.runId,
     stream: "run-status",
   });
   const unreachable = createUnreachableBudget(pollIntervalMs);
 
-  const printLogs = async (): Promise<CursorRead> => {
+  const printLogs = async (): Promise<CursorRead | undefined> => {
+    if (readLogs === undefined) return undefined;
     const logs = await readLogs();
     if (logs.type !== "entries") return logs;
     for (const entry of logs.entries) {
       ctx.ui.stream(entry, formatRunLogLine(entry.payload));
     }
     return logs;
+  };
+
+  // The runner may write `in-progress` again (a heartbeat, a retry); the quiet
+  // follow reports it once.
+  let progressReported = false;
+  const printProgress = (entries: readonly { payload: unknown }[]): void => {
+    if (options.logs || progressReported) return;
+    const entry = entries.find(
+      (e) => readRunSettlement(e.payload).type === "in-progress",
+    );
+    if (entry === undefined) return;
+    progressReported = true;
+    ctx.ui.stream(entry, interactiveRunnerMessages.runInProgress);
   };
 
   // Polls rather than a clock: the loop sleeps a known interval between reads,
@@ -108,15 +113,16 @@ export async function followRun(
 
   for (let poll = 1; ; poll++) {
     const logs = await printLogs();
-    if (logs.type === "failed") return journalReadFailure(logs);
+    if (logs?.type === "failed") return journalReadFailure(logs);
 
-    const status = logs.type === "unreachable" ? logs : await readStatus();
+    const status = logs?.type === "unreachable" ? logs : await readStatus();
     if (status.type === "failed") return journalReadFailure(status);
 
-    if (logs.type === "unreachable" || status.type === "unreachable") {
+    if (status.type === "unreachable") {
       if (unreachable.exhausted()) return { ...unreachableFailure };
     } else {
       unreachable.reset();
+      printProgress(status.entries);
       const settlement = findSettlement(status.entries);
       if (settlement !== undefined) {
         // Read the logs once more before reporting: the settling status entry and

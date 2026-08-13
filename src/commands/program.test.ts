@@ -96,6 +96,29 @@ describe("createProgram", () => {
     }
   });
 
+  // A program-level option matches anywhere on the command line, so a
+  // subcommand redefining one gets a flag that parses but never reaches its
+  // handler: the program consumes it first.
+  it("no subcommand redefines a program-level option", () => {
+    const program = createProgram({ signals: noopSignals });
+    const globalFlags = new Set(program.options.map((option) => option.long));
+
+    const collisions: string[] = [];
+    const walk = (commands: readonly (typeof program)[]): void => {
+      for (const command of commands) {
+        for (const option of command.options) {
+          if (option.long !== undefined && globalFlags.has(option.long)) {
+            collisions.push(`${command.name()} ${option.long}`);
+          }
+        }
+        walk(command.commands as (typeof program)[]);
+      }
+    };
+    walk(program.commands as (typeof program)[]);
+
+    expect(collisions).toEqual([]);
+  });
+
   it("throws on unknown option", () => {
     let err: unknown;
     try {

@@ -15,16 +15,23 @@ const failed = {
 
 const follow = (
   ctx: ReturnType<typeof makeAuthCtx>["ctx"],
-  timeoutSeconds = 3600,
+  options: { timeoutSeconds?: number; logs?: boolean } = {},
 ) =>
   followRun(
     ctx,
-    { runId: "run-a", runnerId: "ci", timeoutSeconds },
+    {
+      runId: "run-a",
+      runnerId: "ci",
+      timeoutSeconds: options.timeoutSeconds ?? 3600,
+      logs: options.logs ?? false,
+    },
     makeTestDeps(),
   );
 
+// The quiet default lives in followRun.quiet.test.ts; this file covers the
+// --logs follow and what both modes share: settlement, unreachability, timeout.
 describe("followRun", () => {
-  it("prints the run's logs and reports it passed", async () => {
+  it("prints the run's logs when asked for them", async () => {
     const { callPublicApi, ctx, streamed } = makeAuthCtx();
     callPublicApi.mockImplementation(
       makeJournal({
@@ -33,7 +40,7 @@ describe("followRun", () => {
       }),
     );
 
-    expect(await follow(ctx)).toBeUndefined();
+    expect(await follow(ctx, { logs: true })).toBeUndefined();
 
     expect(streamed()).toEqual(["starting", "clicked Sign in"]);
     expect(ctx.ui.success).toHaveBeenCalled();
@@ -47,7 +54,7 @@ describe("followRun", () => {
       makeJournal({ "run-logs": [], "run-status": [[passed]] }),
     );
 
-    expect(await follow(ctx)).toBeUndefined();
+    expect(await follow(ctx, { logs: true })).toBeUndefined();
     expect(streamed()).toEqual([]);
   });
 
@@ -75,7 +82,7 @@ describe("followRun", () => {
       }),
     );
 
-    await follow(ctx);
+    await follow(ctx, { logs: true });
 
     expect(streamed()).toEqual(["expected 3 to be 4"]);
   });
@@ -108,7 +115,7 @@ describe("followRun", () => {
       }),
     );
 
-    expect(await follow(ctx)).toBeUndefined();
+    expect(await follow(ctx, { logs: true })).toBeUndefined();
     expect(streamed()).toEqual(["starting"]);
   });
 
@@ -127,7 +134,7 @@ describe("followRun", () => {
       }),
     );
 
-    await follow(ctx);
+    await follow(ctx, { logs: true });
 
     expect(warnings().join(" ")).toContain("3999 entries of run-logs");
   });
@@ -138,7 +145,7 @@ describe("followRun", () => {
       makeJournal({ "run-logs": [], "run-status": [[inProgress]] }),
     );
 
-    const result = await follow(ctx, 3);
+    const result = await follow(ctx, { timeoutSeconds: 3 });
 
     expect(result?.exitCode).toBe(6);
     expect(result?.error).toContain("may still be going");
@@ -155,7 +162,7 @@ describe("followRun", () => {
       }),
     );
 
-    await follow(ctx);
+    await follow(ctx, { logs: true });
 
     expect(streamedData()[0]).toMatchObject({
       payload: { message: "starting" },

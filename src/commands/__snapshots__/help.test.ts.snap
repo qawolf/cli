@@ -328,7 +328,10 @@ Run a flow on an interactive runner, shipping the current directory's files with
 it
 
 Options:
-  --follow             Stream the run's logs until it settles (default: false)
+  --follow             Report the run's status until it settles: in progress,
+                       then passed or failed (default: false)
+  --logs               Stream every log line the run produces while following.
+                       Implies --follow (default: false)
   --runner <id>        Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
                        directory's stored runner
   --timeout <seconds>  Give up following after this long. Following keeps the
@@ -339,6 +342,7 @@ Options:
 Examples:
   $ qawolf runner run flows/checkout.flow.ts
   $ qawolf runner run flows/checkout.flow.ts --follow
+  $ qawolf runner run flows/checkout.flow.ts --follow --logs
 "
 `;
 

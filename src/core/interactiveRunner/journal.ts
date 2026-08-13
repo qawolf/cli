@@ -71,6 +71,27 @@ export function readRunSettlement(payload: unknown): RunSettlement {
   };
 }
 
+export type SettledRun =
+  | { type: "passed" }
+  | { type: "failed"; errorMessage: string | undefined }
+  | { type: "unrecognized"; status: string };
+
+/** The first settling entry in a window of `run-status` entries, if any. */
+export function findSettlement(
+  entries: readonly { payload: unknown }[],
+): SettledRun | undefined {
+  for (const entry of entries) {
+    const settlement = readRunSettlement(entry.payload);
+    if (settlement.type !== "settled") continue;
+    if (settlement.status === "passed") return { type: "passed" };
+    if (settlement.status === "failed") {
+      return { errorMessage: settlement.errorMessage, type: "failed" };
+    }
+    return { status: settlement.status, type: "unrecognized" };
+  }
+  return undefined;
+}
+
 /**
  * A run's own log line, as much of it as the CLI renders. Tolerant for the same
  * reason as above: an entry it cannot read is printed as JSON rather than

@@ -166,13 +166,16 @@ The call answers with a run id as soon as the run is accepted. **The outcome is
 not in that answer**, it is in the `run-status` stream, whose entries carry
 `runId`, `status` and an `errorMessage` when there is one.
 
-**Pass `--follow` to `run` and let it wait for you.** It streams the run's logs
-and ends on the settled status, never on the logs, so a run that prints nothing
-still terminates the follow and a run that dies mid-sentence still reports how.
-Exit code `1` means the run did not pass.
+**Pass `--follow` to `run` and let it wait for you.** It reports the run's
+status — in progress, then passed or failed — and ends on the settled status.
+Exit code `1` means the run did not pass. Add `--logs` to also stream every
+log line the run produces; the follow still ends on the status, never on the
+logs, so a run that prints nothing still terminates the follow and a run that
+dies mid-sentence still reports how.
 
 ```sh
 qawolf runner run flows/checkout.flow.ts --follow
+qawolf runner run flows/checkout.flow.ts --follow --logs
 ```
 
 If you would rather submit and come back later, note that `--follow` on `events`

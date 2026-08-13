@@ -13,7 +13,8 @@ import { runnerDeps, runnerFlagDescription } from "./context.js";
 const runExamples = `
 Examples:
   $ qawolf runner run flows/checkout.flow.ts
-  $ qawolf runner run flows/checkout.flow.ts --follow`;
+  $ qawolf runner run flows/checkout.flow.ts --follow
+  $ qawolf runner run flows/checkout.flow.ts --follow --logs`;
 
 const eventsExamples = `
 Examples:
@@ -21,7 +22,12 @@ Examples:
   $ qawolf runner events run-logs --run <runId> --follow
   $ qawolf runner events console --since 120 --json`;
 
-type RunFlags = { follow: boolean; runner?: string; timeout: string };
+type RunFlags = {
+  follow: boolean;
+  logs: boolean;
+  runner?: string;
+  timeout: string;
+};
 
 type EventsFlags = {
   follow: boolean;
@@ -40,7 +46,18 @@ export function registerRunnerRunCommands(
     .description(
       "Run a flow on an interactive runner, shipping the current directory's files with it",
     )
-    .option("--follow", "Stream the run's logs until it settles", false)
+    .option(
+      "--follow",
+      "Report the run's status until it settles: in progress, then passed or failed",
+      false,
+    )
+    // Not --verbose: the program already claims that flag for debug logging,
+    // and Commander lets a program-level option swallow it from any position.
+    .option(
+      "--logs",
+      "Stream every log line the run produces while following. Implies --follow",
+      false,
+    )
     .option("--runner <id>", runnerFlagDescription)
     .option(
       "--timeout <seconds>",
@@ -55,6 +72,7 @@ export function registerRunnerRunCommands(
           {
             entryPoint: file,
             follow: opts.follow,
+            logs: opts.logs,
             runner: opts.runner,
             timeout: opts.timeout,
           },
