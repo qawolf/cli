@@ -168,14 +168,21 @@ not in that answer**, it is in the `run-status` stream, whose entries carry
 
 **Pass `--follow` to `run` and let it wait for you.** It reports the run's
 status — in progress, then passed or failed — and ends on the settled status.
-Exit code `1` means the run did not pass. Add `--logs` to also stream every
-log line the run produces; the follow still ends on the status, never on the
-logs, so a run that prints nothing still terminates the follow and a run that
-dies mid-sentence still reports how.
+Exit code `1` means the run did not pass. Three flags mirror more streams into
+the follow, and each implies `--follow` on its own: `--logs` streams every log
+line the run produces, `--run-events` streams the run's progress events as JSON
+lines, and `--recorder-events` streams the browser actions the runner records
+as JSON lines — the recorder is runner-wide rather than run-scoped, so that one
+carries what is recorded from submission on. Whatever mirrors are on, the
+follow still ends on the status, never on them, so a run that prints nothing
+still terminates the follow and a run that dies mid-sentence still reports how.
+Combining mirror flags interleaves their lines with nothing saying which stream
+a line came from — fine for eyeballs; when parsing, follow one stream at a time.
 
 ```sh
 qawolf runner run flows/checkout.flow.ts --follow
 qawolf runner run flows/checkout.flow.ts --follow --logs
+qawolf runner run flows/checkout.flow.ts --follow --recorder-events
 ```
 
 If you would rather submit and come back later, note that `--follow` on `events`

@@ -15,15 +15,22 @@ const failed = {
 
 const follow = (
   ctx: ReturnType<typeof makeAuthCtx>["ctx"],
-  options: { timeoutSeconds?: number; logs?: boolean } = {},
+  options: {
+    logs?: boolean;
+    recorderSinceSequence?: number;
+    runEvents?: boolean;
+    timeoutSeconds?: number;
+  } = {},
 ) =>
   followRun(
     ctx,
     {
+      logs: options.logs ?? false,
+      recorderSinceSequence: options.recorderSinceSequence,
+      runEvents: options.runEvents ?? false,
       runId: "run-a",
       runnerId: "ci",
       timeoutSeconds: options.timeoutSeconds ?? 3600,
-      logs: options.logs ?? false,
     },
     makeTestDeps(),
   );

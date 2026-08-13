@@ -16,6 +16,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import { collectRunFiles } from "./collectFiles.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
+import { resolveRecorderAnchor } from "./followPrinters.js";
 import { followRun } from "./followRun.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
@@ -26,6 +27,8 @@ export async function handleRunnerRun(
     entryPoint: string;
     follow: boolean;
     logs: boolean;
+    recorderEvents: boolean;
+    runEvents: boolean;
     runner: string | undefined;
     timeout: string | undefined;
   },
@@ -63,6 +66,13 @@ export async function handleRunnerRun(
   }
   announceRunner(ctx, resolved);
 
+  let recorderSinceSequence: number | undefined;
+  if (options.recorderEvents) {
+    const anchor = await resolveRecorderAnchor(ctx, resolved, deps);
+    if (!anchor.ok) return { ...anchor.failure };
+    recorderSinceSequence = anchor.sinceSequence;
+  }
+
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.runner.runFlow,
     { entryPointPath, files, id: resolved.runnerId },
@@ -90,9 +100,13 @@ export async function handleRunnerRun(
       };
     case "submitted": {
       const runId = result.value.runId;
-      // --logs implies --follow: it only chooses what a follow prints, so
-      // alone it can only mean "follow, with the logs".
-      const follow = options.follow || options.logs;
+      // The stream flags imply --follow: each only chooses what a follow
+      // prints, so alone it can only mean "follow, with that stream".
+      const follow =
+        options.follow ||
+        options.logs ||
+        options.runEvents ||
+        options.recorderEvents;
       if (!follow) {
         ctx.ui.output(
           { runId, runnerId: resolved.runnerId },
@@ -109,6 +123,8 @@ export async function handleRunnerRun(
         ctx,
         {
           logs: options.logs,
+          recorderSinceSequence,
+          runEvents: options.runEvents,
           runId,
           runnerId: resolved.runnerId,
           timeoutSeconds: timeout.seconds,

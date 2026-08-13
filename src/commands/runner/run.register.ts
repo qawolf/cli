@@ -25,6 +25,8 @@ Examples:
 type RunFlags = {
   follow: boolean;
   logs: boolean;
+  recorderEvents: boolean;
+  runEvents: boolean;
   runner?: string;
   timeout: string;
 };
@@ -58,6 +60,16 @@ export function registerRunnerRunCommands(
       "Stream every log line the run produces while following. Implies --follow",
       false,
     )
+    .option(
+      "--run-events",
+      "Stream the run's progress events as JSON lines while following. Implies --follow",
+      false,
+    )
+    .option(
+      "--recorder-events",
+      "Stream the browser actions the runner records as JSON lines while following, from submission on: the recorder is runner-wide, not run-scoped. Implies --follow",
+      false,
+    )
     .option("--runner <id>", runnerFlagDescription)
     .option(
       "--timeout <seconds>",
@@ -73,6 +85,8 @@ export function registerRunnerRunCommands(
             entryPoint: file,
             follow: opts.follow,
             logs: opts.logs,
+            recorderEvents: opts.recorderEvents,
+            runEvents: opts.runEvents,
             runner: opts.runner,
             timeout: opts.timeout,
           },

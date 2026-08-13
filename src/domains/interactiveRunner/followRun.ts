@@ -1,7 +1,6 @@
 import {
   type SettledRun,
   findSettlement,
-  formatRunLogLine,
   readRunSettlement,
 } from "~/core/interactiveRunner/journal.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
@@ -12,6 +11,10 @@ import type {
 import { exitCodes } from "~/shell/exit.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
+import {
+  type FollowStreamOptions,
+  createFollowPrinters,
+} from "./followPrinters.js";
 import {
   type CursorRead,
   createJournalCursor,
@@ -41,12 +44,13 @@ function reportSettlement(
 /**
  * Follows a run to its end.
  *
- * What the follow prints is `logs`'s choice: every `run-logs` line when set,
- * only the run's `run-status` events — in progress, passed, failed — when not. What
- * ends the follow is an entry on `run-status` either way, never the logs: a run
- * that prints nothing would otherwise never finish, and a run that dies
- * mid-sentence would look like one still working. The logs are the output; the
- * status is the answer.
+ * What the follow prints is the flags' choice: only the run's `run-status`
+ * events — in progress, passed, failed — by default, plus whichever mirror
+ * streams were asked for (see {@link createFollowPrinters}). What ends the
+ * follow is an entry on `run-status` either way, never the mirrors: a run that
+ * prints nothing would otherwise never finish, and a run that dies mid-sentence
+ * would look like one still working. The mirrors are the output; the status is
+ * the answer.
  *
  * A runner that stops answering for long enough ends the follow too, as a
  * failure. `run-status` cannot cover a runner killed without running its
@@ -61,41 +65,32 @@ function reportSettlement(
  */
 export async function followRun(
   ctx: AuthCommandContext,
-  options: {
-    logs: boolean;
-    runId: string;
-    runnerId: string;
-    timeoutSeconds: number;
-  },
+  options: FollowStreamOptions & { timeoutSeconds: number },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
-  const readLogs = options.logs
-    ? createJournalCursor(ctx, options.runnerId, {
-        runId: options.runId,
-        stream: "run-logs",
-      })
-    : undefined;
+  const printers = createFollowPrinters(ctx, options);
   const readStatus = createJournalCursor(ctx, options.runnerId, {
     runId: options.runId,
     stream: "run-status",
   });
   const unreachable = createUnreachableBudget(pollIntervalMs);
 
-  const printLogs = async (): Promise<CursorRead | undefined> => {
-    if (readLogs === undefined) return undefined;
-    const logs = await readLogs();
-    if (logs.type !== "entries") return logs;
-    for (const entry of logs.entries) {
-      ctx.ui.stream(entry, formatRunLogLine(entry.payload));
+  /** Undefined when every printer read cleanly; the interrupting read if not. */
+  const printAll = async (): Promise<CursorRead | undefined> => {
+    for (const print of printers) {
+      const window = await print();
+      if (window.type !== "entries") return window;
     }
-    return logs;
+    return undefined;
   };
 
-  // The runner may write `in-progress` again (a heartbeat, a retry); the quiet
+  // The in-progress line is for the otherwise-silent follow: any mirror stream
+  // already shows life, and prose among its JSON lines would hurt a parser. The
+  // runner may also write `in-progress` again (a heartbeat, a retry); the quiet
   // follow reports it once.
   let progressReported = false;
   const printProgress = (entries: readonly { payload: unknown }[]): void => {
-    if (options.logs || progressReported) return;
+    if (printers.length > 0 || progressReported) return;
     const entry = entries.find(
       (e) => readRunSettlement(e.payload).type === "in-progress",
     );
@@ -112,10 +107,11 @@ export async function followRun(
   );
 
   for (let poll = 1; ; poll++) {
-    const logs = await printLogs();
-    if (logs?.type === "failed") return journalReadFailure(logs);
+    const interrupted = await printAll();
+    if (interrupted?.type === "failed") return journalReadFailure(interrupted);
 
-    const status = logs?.type === "unreachable" ? logs : await readStatus();
+    const status =
+      interrupted?.type === "unreachable" ? interrupted : await readStatus();
     if (status.type === "failed") return journalReadFailure(status);
 
     if (status.type === "unreachable") {
@@ -125,11 +121,11 @@ export async function followRun(
       printProgress(status.entries);
       const settlement = findSettlement(status.entries);
       if (settlement !== undefined) {
-        // Read the logs once more before reporting: the settling status entry and
-        // the run's last lines are appended to different streams, so the status can
-        // win the race and stopping here would cut the output off short of the very
-        // failure being reported.
-        await printLogs();
+        // Read the mirrors once more before reporting: the settling status entry
+        // and the run's last lines are appended to different streams, so the
+        // status can win the race and stopping here would cut the output off
+        // short of the very failure being reported.
+        await printAll();
         return reportSettlement(ctx, settlement);
       }
     }

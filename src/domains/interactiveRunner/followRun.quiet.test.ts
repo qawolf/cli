@@ -10,7 +10,14 @@ const passed = { runId: "run-a", status: "passed" };
 const follow = (ctx: ReturnType<typeof makeAuthCtx>["ctx"]) =>
   followRun(
     ctx,
-    { logs: false, runId: "run-a", runnerId: "ci", timeoutSeconds: 3600 },
+    {
+      logs: false,
+      recorderSinceSequence: undefined,
+      runEvents: false,
+      runId: "run-a",
+      runnerId: "ci",
+      timeoutSeconds: 3600,
+    },
     makeTestDeps(),
   );
 

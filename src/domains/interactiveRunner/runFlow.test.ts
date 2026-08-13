@@ -25,6 +25,8 @@ async function runWith(
       runner: "ci",
       timeout: undefined,
       logs: false,
+      recorderEvents: false,
+      runEvents: false,
     },
     makeTestDeps(),
   );
@@ -68,6 +70,8 @@ describe("handleRunnerRun", () => {
         runner: "ci",
         timeout: undefined,
         logs: false,
+        recorderEvents: false,
+        runEvents: false,
       },
       makeTestDeps(),
     );
@@ -88,6 +92,8 @@ describe("handleRunnerRun", () => {
         runner: "ci",
         timeout: undefined,
         logs: false,
+        recorderEvents: false,
+        runEvents: false,
       },
       makeTestDeps({
         collectRunFiles: async () => ({ "flow.ts": "export default {};" }),
@@ -141,6 +147,8 @@ describe("handleRunnerRun", () => {
         runner: undefined,
         timeout: undefined,
         logs: false,
+        recorderEvents: false,
+        runEvents: false,
       },
       deps,
     );
@@ -172,6 +180,8 @@ describe("handleRunnerRun", () => {
         runner: undefined,
         timeout: undefined,
         logs: false,
+        recorderEvents: false,
+        runEvents: false,
       },
       makeTestDeps(),
     );
@@ -204,6 +214,8 @@ describe("handleRunnerRun", () => {
         runner: "ci",
         timeout: undefined,
         logs: false,
+        recorderEvents: false,
+        runEvents: false,
       },
       makeTestDeps(),
     );
