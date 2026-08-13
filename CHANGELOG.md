@@ -1,5 +1,26 @@
 # @qawolf/cli
 
+## 1.9.1
+
+### Patch Changes
+
+- 3268fd4: `qawolf install android` now installs the uiautomator2 driver at 4.2.9 rather than 3.7.0, which carries patched `body-parser`, `cross-spawn`, `path-to-regexp` and `brace-expansion`. The driver pins those itself through a bundled `npm-shrinkwrap.json`, so bumping the driver is the only thing that can move them.
+
+  A machine that already has the driver keeps the version it has, because `install android` skips the step whenever a uiautomator2 driver is present. Updating it by hand needs `APPIUM_HOME` pointed at the CLI-managed Appium home — a bare `appium driver update` would update your default `~/.appium` instead and leave the CLI still on 3.7.0:
+
+  ```bash
+  # macOS
+  APPIUM_HOME="$HOME/Library/Application Support/qawolf-nodejs/appium" \
+    appium driver update uiautomator2
+  # Linux
+  APPIUM_HOME="$HOME/.local/share/qawolf-nodejs/appium" \
+    appium driver update uiautomator2
+  ```
+
+  `qawolf doctor` only checks that a uiautomator2 driver is present, so it passes on 3.7.0 too. To confirm the version, run `appium driver list --installed` with the same `APPIUM_HOME`.
+
+- c213833: `qawolf runner` commands now wait up to 60 seconds for the platform to answer, up from 15. Runner calls are answered by a live runner doing the work — starting a browser, evaluating a snippet, capturing a screen — and the first action on a fresh runner regularly needs longer than 15 seconds, which made the CLI report a timeout for work that was still finishing.
+
 ## 1.9.0
 
 ### Minor Changes
