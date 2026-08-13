@@ -10,6 +10,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { resolveRunner } from "./resolveRunner.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 
 export async function handleRunnerStop(
   ctx: AuthCommandContext,
@@ -32,6 +33,7 @@ export async function handleRunnerStop(
     {
       id: resolved.runnerId,
     },
+    runnerCallOptions,
   );
   if (!result.ok) {
     return { ...failureFields(result), exitCode: exitCodes.network };

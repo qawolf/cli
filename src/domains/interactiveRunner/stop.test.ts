@@ -3,6 +3,7 @@ import { describe, expect, it } from "bun:test";
 
 import { handleRunnerStop } from "./stop.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 
 describe("handleRunnerStop", () => {
   it("stops the runner the flag names", async () => {
@@ -16,9 +17,11 @@ describe("handleRunnerStop", () => {
       await handleRunnerStop(ctx, { runner: "ci" }, makeTestDeps()),
     ).toBeUndefined();
 
-    expect(callPublicApi).toHaveBeenCalledWith(publicContractsV1.runner.stop, {
-      id: "ci",
-    });
+    expect(callPublicApi).toHaveBeenCalledWith(
+      publicContractsV1.runner.stop,
+      { id: "ci" },
+      runnerCallOptions,
+    );
     expect(outputs()[0]?.humanMessage).toContain("Stopped runner ci");
   });
 

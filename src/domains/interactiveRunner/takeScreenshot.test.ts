@@ -3,6 +3,7 @@ import { describe, expect, it } from "bun:test";
 
 import { handleRunnerScreenshot } from "./takeScreenshot.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 
 // Real JPEG magic bytes, so a test can tell a decoded image from its base64.
 const jpegBytes = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
@@ -29,6 +30,7 @@ describe("handleRunnerScreenshot", () => {
     expect(callPublicApi).toHaveBeenCalledWith(
       publicContractsV1.runner.takeScreenshot,
       { id: "ci" },
+      runnerCallOptions,
     );
     expect(deps.written).toEqual([{ bytes: jpegBytes, path: "shot.jpg" }]);
   });

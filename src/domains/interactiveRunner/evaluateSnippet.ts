@@ -15,6 +15,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 
 const stdinArgument = "-";
 
@@ -107,6 +108,7 @@ export async function handleRunnerExec(
       ...(scope.filePath === undefined ? {} : { filePath: scope.filePath }),
       ...(scope.files === undefined ? {} : { files: scope.files }),
     },
+    runnerCallOptions,
   );
   if (!result.ok) {
     return { ...failureFields(result), exitCode: exitCodes.network };

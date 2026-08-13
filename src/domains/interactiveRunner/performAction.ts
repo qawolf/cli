@@ -14,6 +14,7 @@ import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
 
 /** `-` reads a whole action as JSON, which is the forward-a-tool-call path. */
@@ -78,6 +79,7 @@ export async function handleRunnerAct(
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.runner.performAction,
     { action: built.action, id: resolved.runnerId },
+    runnerCallOptions,
   );
   if (!result.ok) {
     // A lost answer at the transport is the same hazard as the unreachable

@@ -18,6 +18,7 @@ import { collectRunFiles } from "./collectFiles.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { followRun } from "./followRun.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 
 export async function handleRunnerRun(
   ctx: AuthCommandContext,
@@ -64,6 +65,7 @@ export async function handleRunnerRun(
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.runner.runFlow,
     { entryPointPath, files, id: resolved.runnerId },
+    runnerCallOptions,
   );
   if (!result.ok) {
     return { ...failureFields(result), exitCode: exitCodes.network };

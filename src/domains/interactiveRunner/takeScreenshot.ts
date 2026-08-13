@@ -10,6 +10,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { resolveRunner } from "./resolveRunner.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 
 /**
  * Takes one screenshot and writes it to a file.
@@ -47,6 +48,7 @@ export async function handleRunnerScreenshot(
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.runner.takeScreenshot,
     { id: resolved.runnerId },
+    runnerCallOptions,
   );
   if (!result.ok) {
     return { ...failureFields(result), exitCode: exitCodes.network };

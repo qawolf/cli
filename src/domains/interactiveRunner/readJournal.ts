@@ -5,6 +5,8 @@ import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
+import { runnerCallOptions } from "./runnerCallOptions.js";
+
 type JournalWindow = {
   entries: JournalEntry<unknown>[];
   hasUnsearchedHistory: boolean;
@@ -65,6 +67,7 @@ export async function readJournal(
         : { sinceSequence: request.sinceSequence }),
       ...(request.tail === undefined ? {} : { tail: request.tail }),
     },
+    runnerCallOptions,
   );
   if (!result.ok) {
     return {
