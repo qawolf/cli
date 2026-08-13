@@ -124,8 +124,12 @@ export async function followRun(
         // Read the mirrors once more before reporting: the settling status entry
         // and the run's last lines are appended to different streams, so the
         // status can win the race and stopping here would cut the output off
-        // short of the very failure being reported.
-        await printAll();
+        // short of the very failure being reported. A warning rather than a
+        // failure when this read does not answer: the settlement is known, and
+        // the run's outcome must not be overridden by a flush of its output.
+        if ((await printAll()) !== undefined) {
+          ctx.ui.warn(interactiveRunnerMessages.followEndCutShort);
+        }
         return reportSettlement(ctx, settlement);
       }
     }

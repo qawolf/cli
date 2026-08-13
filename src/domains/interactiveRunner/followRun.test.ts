@@ -146,6 +146,26 @@ describe("followRun", () => {
     expect(warnings().join(" ")).toContain("3999 entries of run-logs");
   });
 
+  // The settlement is known by then, so a flush of the output must not
+  // override the run's outcome — but silence would misreport a cut-off log.
+  it("warns when the final mirror read fails, and keeps the settlement", async () => {
+    const { callPublicApi, ctx, warnings } = makeAuthCtx();
+    let logReads = 0;
+    const journal = makeJournal({ "run-status": [[passed]] });
+    callPublicApi.mockImplementation((contract, input) => {
+      const stream = (input as { stream: string }).stream;
+      if (stream === "run-logs" && ++logReads === 2) {
+        return Promise.resolve({ error: "HTTP 500", ok: false });
+      }
+      return journal(contract, input);
+    });
+
+    expect(await follow(ctx, { logs: true })).toBeUndefined();
+
+    expect(ctx.ui.success).toHaveBeenCalled();
+    expect(warnings().join(" ")).toContain("missing its final lines");
+  });
+
   it("gives up on a run that never settles, and says the run may still be going", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockImplementation(
