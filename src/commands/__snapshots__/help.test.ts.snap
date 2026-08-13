@@ -335,9 +335,9 @@ Options:
   --run-events         Stream the run's progress events as JSON lines while
                        following. Implies --follow (default: false)
   --recorder-events    Stream the browser actions the runner records as JSON
-                       lines while following, from submission on: the recorder
-                       is runner-wide, not run-scoped. Implies --follow
-                       (default: false)
+                       lines while following, from an anchor taken just before
+                       submission: the recorder is runner-wide, not run-scoped.
+                       Implies --follow (default: false)
   --runner <id>        Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
                        directory's stored runner
   --timeout <seconds>  Give up following after this long. Following keeps the

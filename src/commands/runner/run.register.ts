@@ -67,7 +67,7 @@ export function registerRunnerRunCommands(
     )
     .option(
       "--recorder-events",
-      "Stream the browser actions the runner records as JSON lines while following, from submission on: the recorder is runner-wide, not run-scoped. Implies --follow",
+      "Stream the browser actions the runner records as JSON lines while following, from an anchor taken just before submission: the recorder is runner-wide, not run-scoped. Implies --follow",
       false,
     )
     .option("--runner <id>", runnerFlagDescription)

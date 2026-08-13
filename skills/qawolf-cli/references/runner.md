@@ -173,7 +173,7 @@ the follow, and each implies `--follow` on its own: `--logs` streams every log
 line the run produces, `--run-events` streams the run's progress events as JSON
 lines, and `--recorder-events` streams the browser actions the runner records
 as JSON lines — the recorder is runner-wide rather than run-scoped, so that one
-carries what is recorded from submission on. Whatever mirrors are on, the
+carries whatever is recorded after an anchor taken just before submission. Whatever mirrors are on, the
 follow still ends on the status, never on them, so a run that prints nothing
 still terminates the follow and a run that dies mid-sentence still reports how.
 Combining mirror flags interleaves their lines with nothing saying which stream
