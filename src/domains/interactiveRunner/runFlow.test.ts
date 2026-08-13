@@ -3,6 +3,7 @@ import { describe, expect, it } from "bun:test";
 
 import { handleRunnerRun } from "./runFlow.js";
 import { makeAuthCtx, makeTestDeps, testCwd } from "./deps.testUtils.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 
 const submitted = { outcome: "submitted" as const, runId: "run-a" };
 
@@ -38,12 +39,10 @@ describe("handleRunnerRun", () => {
       publicContractsV1.runner.runFlow,
       {
         entryPointPath: "flow.ts",
-        files: {
-          "flow.ts": "export default {};",
-          "package.json": "{}",
-        },
+        files: { "flow.ts": "export default {};", "package.json": "{}" },
         id: "ci",
       },
+      runnerCallOptions,
     );
   });
 

@@ -5,6 +5,7 @@ import { interactiveRunnerMessages } from "~/core/messages/index.js";
 
 import { resolveRunner } from "./resolveRunner.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 
 const launched = {
   gpuAccelerated: false,
@@ -68,9 +69,8 @@ describe("resolveRunner", () => {
 
     expect(callPublicApi).toHaveBeenCalledWith(
       publicContractsV1.runner.launch,
-      {
-        id: "cli-minted",
-      },
+      { id: "cli-minted" },
+      runnerCallOptions,
     );
     expect(await deps.store.readDefaultRunnerId()).toBe("cli-minted");
   });

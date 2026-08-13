@@ -4,6 +4,7 @@ import { describe, expect, it } from "bun:test";
 import { handleRunnerKeepalive } from "./keepalive.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { makeJournal } from "./journal.testUtils.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 
 describe("handleRunnerKeepalive", () => {
   // There is no keepalive endpoint and this does not want one: every request the
@@ -24,6 +25,7 @@ describe("handleRunnerKeepalive", () => {
     expect(callPublicApi).toHaveBeenCalledWith(
       publicContractsV1.runner.readJournal,
       { id: "ci", stream: "run-status", tail: 1 },
+      runnerCallOptions,
     );
     expect(outputs()[0]?.humanMessage).toContain("is alive");
     expect(outputs()[0]?.data).toEqual({ id: "ci", outcome: "alive" });

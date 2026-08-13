@@ -3,6 +3,7 @@ import { describe, expect, it } from "bun:test";
 
 import { handleRunnerLaunch } from "./launch.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 
 const launched = {
   gpuAccelerated: false,
@@ -23,9 +24,8 @@ describe("handleRunnerLaunch", () => {
 
     expect(callPublicApi).toHaveBeenCalledWith(
       publicContractsV1.runner.launch,
-      {
-        id: "cli-minted",
-      },
+      { id: "cli-minted" },
+      runnerCallOptions,
     );
     expect(await deps.store.readDefaultRunnerId()).toBe("cli-minted");
   });
@@ -45,10 +45,8 @@ describe("handleRunnerLaunch", () => {
 
     expect(callPublicApi).toHaveBeenCalledWith(
       publicContractsV1.runner.launch,
-      {
-        id: "ci",
-        runnerName: "node20WithAndroid",
-      },
+      { id: "ci", runnerName: "node20WithAndroid" },
+      runnerCallOptions,
     );
   });
 

@@ -15,6 +15,7 @@ import {
 } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 import { parseRunnerId, parseRunnerName } from "./runnerIds.js";
 
 type LaunchedRunner = {
@@ -43,6 +44,7 @@ async function launchRunner(
       id: options.id,
       ...(options.runnerName ? { runnerName: options.runnerName } : {}),
     },
+    runnerCallOptions,
   );
   if (!result.ok) {
     return {

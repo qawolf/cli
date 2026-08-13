@@ -8,6 +8,7 @@ import type { BrowserActionFlags } from "~/core/interactiveRunner/browserAction.
 
 import { handleRunnerAct } from "./performAction.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 
 const noFlags: BrowserActionFlags = {
   button: undefined,
@@ -99,6 +100,7 @@ describe("handleRunnerAct", () => {
       expect(callPublicApi).toHaveBeenCalledWith(
         publicContractsV1.runner.performAction,
         { action: shape.action, id: "ci" },
+        runnerCallOptions,
       );
     });
   }

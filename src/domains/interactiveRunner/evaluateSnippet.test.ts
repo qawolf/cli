@@ -3,6 +3,7 @@ import { describe, expect, it } from "bun:test";
 
 import { handleRunnerExec } from "./evaluateSnippet.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
 
 const evaluated = { outcome: "evaluated" as const, result: "success" as const };
 
@@ -21,6 +22,7 @@ describe("handleRunnerExec", () => {
     expect(callPublicApi).toHaveBeenCalledWith(
       publicContractsV1.runner.evaluateSnippet,
       { code: "export default {};", id: "ci" },
+      runnerCallOptions,
     );
   });
 
