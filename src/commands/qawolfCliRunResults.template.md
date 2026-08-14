@@ -12,7 +12,7 @@ trace without opening the trace viewer.
 
 A run holds flows, a flow holds attempts, and artifacts hang off an attempt:
 
-```
+```text
 run
 └── flows[]
     ├── failure          only when the flow failed
@@ -64,9 +64,9 @@ qawolf run get --run-id "$RUN_ID" --json \
 ## Reading the Playwright trace
 
 The usual advice is `npx playwright show-trace trace.zip`, which opens a
-browser window. That is useless in a shell and unnecessary: the zip is
-newline-delimited JSON, and reading it directly is faster than downloading a
-viewer.
+browser window. That is useless in a shell and unnecessary: the zip holds
+newline-delimited JSON files, and reading them directly is faster than
+downloading a viewer.
 
 The zip holds `trace.trace` (the events), `trace.network` (one request and
 response per line) and a `resources/` directory of screencast frames. The
@@ -128,7 +128,7 @@ for e in events:
 
 It prints one line per call, in order:
 
-```
+```text
    0.00s   161.6ms  Frame.goto               https://example.com/
    0.17s    28.3ms  Frame.waitForSelector    #screen
    0.20s     4.2ms  Frame.innerText          #fps_stats

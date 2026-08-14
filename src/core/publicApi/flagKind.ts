@@ -18,6 +18,7 @@ export type JsonSchema = {
   oneOf?: JsonSchema[];
   anyOf?: JsonSchema[];
   const?: unknown;
+  enum?: unknown[];
 };
 
 export function flagKind(

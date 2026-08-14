@@ -58,6 +58,37 @@ describe("buildOutputFieldDocs", () => {
     ]);
   });
 
+  it("documents a field whose branches are bare literals", () => {
+    const schema = z.object({
+      mode: z
+        .union([z.literal("fast"), z.literal("slow")])
+        .describe("How it ran."),
+      bare: z.union([z.literal("a"), z.literal("b")]),
+    });
+
+    expect(buildOutputFieldDocs(schema)).toEqual([
+      { path: "mode", description: "How it ran. One of: fast, slow" },
+      { path: "bare", description: "One of: a, b" },
+    ]);
+  });
+
+  // A flow's status is a literal in one response shape and an enum in another.
+  it("counts enum members among a field's values", () => {
+    const schema = z.object({
+      status: z.union([
+        z.object({ status: z.literal("failed") }),
+        z.object({ status: z.enum(["passed", "canceled"]) }),
+      ]),
+    });
+
+    expect(buildOutputFieldDocs(schema)).toEqual([
+      {
+        path: "status.status",
+        description: "One of: failed, passed, canceled",
+      },
+    ]);
+  });
+
   it("omits fields that carry no description", () => {
     const schema = z.object({
       documented: z.string().describe("Documented."),

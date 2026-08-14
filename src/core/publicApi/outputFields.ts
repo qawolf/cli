@@ -22,20 +22,31 @@ type FieldEntry = {
 const branchesOf = (schema: JsonSchema): JsonSchema[] | undefined =>
   schema.allOf ?? schema.oneOf ?? schema.anyOf;
 
+const literalValues = (schema: JsonSchema): string[] => [
+  ...(typeof schema.const === "string" ? [schema.const] : []),
+  ...(schema.enum ?? []).filter((value) => typeof value === "string"),
+];
+
 function record(
   found: Map<string, FieldEntry>,
   path: string,
   schema: JsonSchema,
 ): void {
   const entry = found.get(path) ?? { description: undefined, constValues: [] };
-  if (entry.description === undefined && schema.description !== undefined) {
+  const values = literalValues(schema);
+  // Only a schema that pins no literal describes the field itself. A branch
+  // that pins one describes that branch, and reading its prose as the field's
+  // meaning is what made an attempt's status read as "terminated without
+  // reaching a verdict".
+  if (
+    values.length === 0 &&
+    entry.description === undefined &&
+    schema.description !== undefined
+  ) {
     entry.description = schema.description;
   }
-  if (
-    typeof schema.const === "string" &&
-    !entry.constValues.includes(schema.const)
-  ) {
-    entry.constValues.push(schema.const);
+  for (const value of values) {
+    if (!entry.constValues.includes(value)) entry.constValues.push(value);
   }
   found.set(path, entry);
 }
@@ -54,7 +65,12 @@ function collect(
   // documented on both the passed and the failed attempt variant.
   const branches = branchesOf(schema);
   if (branches) {
-    for (const branch of branches) collect(branch, path, depth + 1, found);
+    for (const branch of branches) {
+      // A branch that is a bare literal has no properties to walk, so its value
+      // is only seen here. Without this the whole field goes undocumented.
+      record(found, path, branch);
+      collect(branch, path, depth + 1, found);
+    }
     return;
   }
 
@@ -92,12 +108,14 @@ export function buildOutputFieldDocs(
   collect(jsonSchema, "", 0, found);
   return [...found].flatMap(([path, entry]) => {
     // A field the branches pin to different literals is documented by the set
-    // of values it takes. One branch's prose describes that branch, not the
-    // field, so listing it alone would misread as the field's meaning.
-    const description =
+    // of values it takes, after its own description when it has one.
+    const values =
       entry.constValues.length > 1
         ? `One of: ${entry.constValues.join(", ")}`
-        : entry.description;
-    return description === undefined ? [] : [{ path, description }];
+        : undefined;
+    const description = [entry.description, values]
+      .filter((part) => part !== undefined)
+      .join(" ");
+    return description === "" ? [] : [{ path, description }];
   });
 }
