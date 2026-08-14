@@ -122,6 +122,59 @@ describe("buildFlagSpecs", () => {
     });
   });
 
+  it("documents an enum field's values when it has no description", () => {
+    const schema = z.object({ status: z.enum(["pending", "resolved"]) });
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.flags[0]?.description).toBe("One of: pending, resolved");
+  });
+
+  it("appends an enum field's values to its description", () => {
+    const schema = z.object({
+      priority: z.enum(["low", "high"]).describe('Defaults to "low".'),
+    });
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.flags[0]?.description).toBe(
+      'Defaults to "low". One of: low, high',
+    );
+  });
+
+  it("documents the values of an array-of-enum field", () => {
+    const schema = z.object({
+      statuses: z.array(z.enum(["pending", "paused"])).describe("Statuses."),
+    });
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.flags[0]?.description).toBe(
+      "Statuses. One of: pending, paused",
+    );
+  });
+
+  it("documents the published issue.update enum flags", () => {
+    const result = buildFlagSpecs(publicContractsV1.issue.update.input);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const described = (field: string) =>
+      result.flags.find((spec) => spec.field === field)?.description;
+    expect(described("priority")).toBe(
+      "One of: unprioritized, low, medium, high, urgent",
+    );
+    expect(described("status")).toBe(
+      "One of: pending, inProgress, paused, resolved, canceled, archived",
+    );
+  });
+
   it("rejects intersections whose members share a field", () => {
     const schema = z
       .object({ name: z.string() })
