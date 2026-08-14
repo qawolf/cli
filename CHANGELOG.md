@@ -1,5 +1,16 @@
 # @qawolf/cli
 
+## 1.11.0
+
+### Minor Changes
+
+- b802727: The CLI has a new `qawolf issue update` command. It changes the description, name, priority, or status of an issue that the team owns. Fields that you do not give stay unchanged. The command was absent because an earlier contract gave the input as a union of branches, which has no flat set of fields for the command generator to make flags from. The installed contract gives the input as one object, so the generator makes the command from it like the other issue commands.
+- 1109f10: The `qawolf-cli` skill has a new reference file, `references/run-results.md`, for reading what `qawolf run get` returns. It explains the fields that a passing run does not show, such as a flow's failure diagnosis; the rules for the artifact URLs, which expire and can give a 404; and how to read the Playwright trace that `traceUrl` downloads. A trace is newline-delimited JSON, so an agent in a shell can pair each call with its result and find the failure without the trace viewer. The field list is generated from the contract, so it cannot drift from the installed version. Command help is unchanged.
+
+### Patch Changes
+
+- bad54bc: The help for a generated command now lists the permitted values of a flag that accepts a closed set, such as `qawolf issue update --status` or `qawolf issue find --statuses`. Before, these flags showed no values, and a caller found them only from the error message of a rejected command. The values come from the contract, so they cannot disagree with what the API accepts. A flag that already has help text keeps it, and the values come after it.
+
 ## 1.10.0
 
 ### Minor Changes
