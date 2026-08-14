@@ -28,6 +28,20 @@ function flagUsage(field: string, kind: FlagKind): string {
   return `${name} <value>`;
 }
 
+// An enum field accepts nothing but its own values, so --help lists them rather
+// than leaving a caller to learn them from a rejected invocation. The wording
+// matches what objectShape.ts gives a union discriminator, so generated help
+// describes a closed set of choices the same way wherever one appears.
+function describeFlag(schema: JsonSchema): string {
+  const description = schema.description ?? "";
+  // An array field carries its values on the item schema, so a repeatable flag
+  // like --statuses documents the same closed set a scalar one does.
+  const values = schema.enum ?? schema.items?.enum;
+  if (!values?.length) return description;
+  const choices = `One of: ${values.join(", ")}`;
+  return description ? `${description} ${choices}` : choices;
+}
+
 export function buildFlagSpecs(inputSchema: z.ZodType): FlagSpecsResult {
   const jsonSchema = z.toJSONSchema(inputSchema, {
     io: "input",
@@ -43,7 +57,7 @@ export function buildFlagSpecs(inputSchema: z.ZodType): FlagSpecsResult {
     flags.push({
       field,
       flag: flagUsage(field, kind.kind),
-      description: fieldSchema.description ?? "",
+      description: describeFlag(fieldSchema),
       required: result.shape.required.has(field),
       kind: kind.kind,
     });
