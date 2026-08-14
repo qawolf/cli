@@ -72,6 +72,15 @@ each printed line from the payload alone to the whole envelope (`sequence`,
 `recordedAt`, `payload`). Both are JSON. Pass it when you want to page by
 sequence, omit it when you want the payloads themselves.
 
+A `--json` response shows you most of its own shape, so read it first.
+
+`qawolf run get` is the exception worth reading about before you use it. Its
+artifact URLs expire, its failure fields are absent from a passing run, and its
+`traceUrl` downloads a Playwright trace that you can read as JSON without
+opening the trace viewer. **Read
+[`references/run-results.md`](references/run-results.md) before reporting on a
+run's outcome or opening its trace.**
+
 ## Safety: reads vs writes
 
 Read commands do not change team data, but some have operational effects noted
