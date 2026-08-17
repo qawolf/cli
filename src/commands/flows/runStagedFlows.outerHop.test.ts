@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
+import { join } from "node:path";
+
 import { runnerMessages } from "~/core/messages/index.js";
 
 import { runStagedFlows } from "./runStagedFlows.js";
@@ -58,8 +60,11 @@ describe("runStagedFlows outer-hop reporting", () => {
         mode: "install",
         depCount: 1,
         rejected: [
-          { dir: "/proj/node_modules", missing: ["csv-parser"] },
-          { dir: "/host/node_modules", missing: ["csv-parser", "date-fns"] },
+          { dir: join("/proj", "node_modules"), missing: ["csv-parser"] },
+          {
+            dir: join("/host", "node_modules"),
+            missing: ["csv-parser", "date-fns"],
+          },
         ],
         carriedOver: [],
       },
@@ -74,7 +79,7 @@ describe("runStagedFlows outer-hop reporting", () => {
     });
 
     expect(uiWarnMock).toHaveBeenCalledWith(
-      runnerMessages.outerHopFallbackNotice("/proj/node_modules", [
+      runnerMessages.outerHopFallbackNotice(join("/proj", "node_modules"), [
         "csv-parser",
       ]),
     );
@@ -87,7 +92,9 @@ describe("runStagedFlows outer-hop reporting", () => {
       outerHop: {
         mode: "install",
         depCount: 1,
-        rejected: [{ dir: "/proj/node_modules", missing: ["csv-parser"] }],
+        rejected: [
+          { dir: join("/proj", "node_modules"), missing: ["csv-parser"] },
+        ],
         carriedOver: ["date-fns-tz"],
       },
       cleanup: cleanupMock,
@@ -114,7 +121,9 @@ describe("runStagedFlows outer-hop reporting", () => {
       outerHop: {
         mode: "install",
         depCount: 1,
-        rejected: [{ dir: "/host/node_modules", missing: ["csv-parser"] }],
+        rejected: [
+          { dir: join("/host", "node_modules"), missing: ["csv-parser"] },
+        ],
         carriedOver: [],
       },
       cleanup: cleanupMock,
