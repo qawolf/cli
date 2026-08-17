@@ -57,6 +57,8 @@ export type FlowsRunDeps = {
   readonly findFlowStamp: typeof defaultFindFlowStamp;
   readonly warn: (message: string) => void;
   readonly logger?: Logger;
+  /** Flow project dir used in dependency-resolution hints. */
+  readonly projectDir?: string;
   /** Builds the subprocess-backed dispatch for `--workers > 1` (pooled path only). */
   readonly createPooledDispatch?: (opts: {
     webOptions: RunWebFlowOptions;

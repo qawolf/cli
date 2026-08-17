@@ -1,3 +1,4 @@
+import { flowFailureHint } from "~/core/flowFailureHint.js";
 import { createCompositeReporter } from "~/shell/reporter/createCompositeReporter.js";
 import { formatErrorWithCause } from "~/shell/reporter/formatErrorWithCause.js";
 import type { Reporter } from "~/shell/reporter/types.js";
@@ -16,12 +17,19 @@ export type JsonFailureDetails = {
  */
 export function collectJsonFailureDetails(
   reporter: Reporter,
+  projectDir: string | undefined,
 ): JsonFailureDetails {
   const details: string[] = [];
   return {
     reporter: createCompositeReporter([
       reporter,
-      { onFlowFail: ({ err }) => details.push(formatErrorWithCause(err)) },
+      {
+        onFlowFail: ({ err }) => {
+          const detail = formatErrorWithCause(err);
+          const hint = flowFailureHint(detail, projectDir);
+          details.push(hint === undefined ? detail : `${detail}\n\n${hint}`);
+        },
+      },
     ]),
     details,
   };

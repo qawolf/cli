@@ -40,6 +40,27 @@ describe("flowsRun failure detail", () => {
     expect(result.errorBody).toContain("expected title to be 'Dashboard'");
   });
 
+  it("attaches the dependency hint for a resolution failure in json mode", async () => {
+    const ctx = makeCtx("json");
+    const deps = makeDeps({
+      metaByFile: { "/a.flow.ts": { target: "Web - Chrome" } },
+      projectDir: "/proj",
+      runResults: [
+        failResult(
+          new Error("Cannot find package 'date-fns-tz' imported from"),
+        ),
+      ],
+    });
+
+    const result = expectFailure(
+      await flowsRun(ctx, ["/a.flow.ts"], defaultFlags(), deps),
+    );
+
+    expect(result.errorBody).toContain(
+      runnerMessages.moduleNotFoundHint("date-fns-tz", "/proj"),
+    );
+  });
+
   it("joins the detail of every failed flow in json mode", async () => {
     const ctx = makeCtx("json");
     const deps = makeDeps({

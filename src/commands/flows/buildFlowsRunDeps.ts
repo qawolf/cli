@@ -63,6 +63,7 @@ export function buildFlowsRunDeps(args: BuildFlowsRunDepsArgs): FlowsRunDeps {
     findFlowStamp: defaultFindFlowStamp,
     warn: (message) => ctx.ui.warn(message),
     logger: ctx.log("runner"),
+    ...(projectDir !== undefined ? { projectDir } : {}),
     // Route reporter output through ctx.ui so streamed test logs stay inside the run's timeline.
     reporter: buildRunReporter(flags, {
       fs: ctx.fs,

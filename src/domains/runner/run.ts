@@ -94,7 +94,7 @@ export async function flowsRun(
 
   const collected =
     ctx.outputMode === "json"
-      ? collectJsonFailureDetails(deps.reporter)
+      ? collectJsonFailureDetails(deps.reporter, deps.projectDir)
       : undefined;
   const failureDetails = collected?.details ?? [];
   const reporter = collected?.reporter ?? deps.reporter;
