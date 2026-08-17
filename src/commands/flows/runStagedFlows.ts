@@ -1,3 +1,5 @@
+import { join } from "node:path";
+
 import { runnerMessages } from "~/core/messages/index.js";
 import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
 import { createAndroidDeps } from "~/domains/runner/runAndroidFlowDeps.js";
@@ -94,6 +96,20 @@ export async function runStagedFlows(
           candidate.dir,
           candidate.missing,
         ),
+      );
+    }
+    // Only the project's own node_modules is worth naming: the other
+    // candidates are ancestors, which may belong to a repo the user does not
+    // own, and telling them to install there would be wrong.
+    const ownModules =
+      projectDir === undefined ? undefined : join(projectDir, "node_modules");
+    const own = staged.outerHop.rejected.find((c) => c.dir === ownModules);
+    if (own !== undefined) {
+      ctx.ui.warn(runnerMessages.outerHopFallbackNotice(own.dir, own.missing));
+    }
+    if (staged.outerHop.carriedOver.length > 0) {
+      ctx.ui.warn(
+        runnerMessages.outerHopCarriedOver(staged.outerHop.carriedOver),
       );
     }
   }

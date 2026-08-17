@@ -2,6 +2,14 @@ import { pluralize } from "~/core/pluralize.js";
 
 import { packageLoadFailed } from "./toolNotFound.js";
 
+const maxListedNames = 5;
+
+function listNames(names: string[]): string {
+  const shown = names.slice(0, maxListedNames).join(", ");
+  const rest = names.length - maxListedNames;
+  return rest > 0 ? `${shown} and ${rest} more` : shown;
+}
+
 export const runnerMessages = {
   playwrightLoadFailed: (envDir: string, detail: string) =>
     packageLoadFailed("Playwright", envDir, detail),
@@ -45,6 +53,13 @@ export const runnerMessages = {
     ].join("\n"),
   outerHopCandidateRejected: (dir: string, missing: string[]) =>
     `outer-hop candidate rejected: ${dir} missing ${missing.join(", ")}`,
+  outerHopFallbackNotice: (dir: string, missing: string[]) =>
+    [
+      `Not reusing ${dir} — it is missing ${listNames(missing)}.`,
+      `Installing the declared dependencies instead. Run 'npm install' there to reuse it.`,
+    ].join("\n"),
+  outerHopCarriedOver: (names: string[]) =>
+    `Carried over ${pluralize(names.length, "undeclared package")} from the project node_modules: ${listNames(names)}. Declare them in package.json "dependencies".`,
   moduleNotFoundHint: (pkg: string, projectDir: string | undefined) =>
     projectDir === undefined
       ? `Hint: '${pkg}' could not be resolved. Run from within your flows project so its dependencies can be found.`
