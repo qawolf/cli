@@ -49,6 +49,7 @@ describe("populateOuterHop install mode", () => {
       mode: "install",
       depCount: 1,
       rejected: [{ dir: join(root, "node_modules"), missing: ["date-fns"] }],
+      carriedOver: [],
     });
     expect(installMock).toHaveBeenCalledWith(runDir);
 
@@ -56,6 +57,71 @@ describe("populateOuterHop install mode", () => {
       makeDefaultFs().readFileSync(join(runDir, "package.json")),
     ) as { dependencies: Record<string, string> };
     expect(written.dependencies).toEqual({ "date-fns": "2.29.3" });
+  });
+
+  it("carries over a package the project has installed but does not declare", async () => {
+    // The repro from WIZ-11549: an undeclared package resolves while the whole
+    // project node_modules symlinks, then vanishes as soon as one unrelated
+    // declared dep goes missing and the fallback install takes over.
+    const { projectDir, runDir } = await makeProjectTree({
+      tracker,
+      deps: { "date-fns": "2.29.3", "csv-parser": "3.0.0" },
+      seed: { project: ["date-fns", "date-fns-tz"] },
+    });
+    const depsRoot = await tracker.makeTmpDir();
+    await scaffoldManagedRuntime(depsRoot);
+
+    const installMock = makeInstallMock().mockImplementation(async (cwd) => {
+      await seedNodeModules(cwd, ["date-fns", "csv-parser"]);
+      return { exitCode: 0, stderr: "" };
+    });
+
+    const result = await populateOuterHop({
+      projectDir,
+      runDir,
+      depsRoot,
+      fs: makeDefaultFs(),
+      install: installMock,
+    });
+
+    expect(result).toMatchObject({
+      mode: "install",
+      carriedOver: ["date-fns-tz"],
+    });
+    await expectLinkTarget(
+      join(runDir, "node_modules", "date-fns-tz"),
+      join(projectDir, "node_modules", "date-fns-tz"),
+    );
+  });
+
+  it("never carries a package from an ancestor node_modules", async () => {
+    // The ancestor may belong to an unrelated repo the project sits inside.
+    const { root, projectDir, runDir } = await makeProjectTree({
+      tracker,
+      deps: { "date-fns": "2.29.3" },
+      seed: { "": ["unrelated-ancestor-pkg"] },
+    });
+    const depsRoot = await tracker.makeTmpDir();
+    await scaffoldManagedRuntime(depsRoot);
+
+    const result = await populateOuterHop({
+      projectDir,
+      runDir,
+      depsRoot,
+      fs: makeDefaultFs(),
+      install: makeInstallMock().mockImplementation(async (cwd) => {
+        await seedNodeModules(cwd, ["date-fns"]);
+        return { exitCode: 0, stderr: "" };
+      }),
+    });
+
+    expect(result).toMatchObject({ mode: "install", carriedOver: [] });
+    expect(
+      makeDefaultFs().existsSync(
+        join(runDir, "node_modules", "unrelated-ancestor-pkg"),
+      ),
+    ).toBe(false);
+    expect(makeDefaultFs().existsSync(join(root, "node_modules"))).toBe(true);
   });
 
   it("install mode: symlinks every pinned package from depsRoot into the outer hop", async () => {

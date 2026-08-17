@@ -223,6 +223,7 @@ describe("runStagedFlows", () => {
         mode: "install",
         depCount: 1,
         rejected: [{ dir: "/host/node_modules", missing: ["date-fns"] }],
+        carriedOver: [],
       },
       cleanup: cleanupMock,
     });
