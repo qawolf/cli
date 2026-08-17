@@ -1,0 +1,88 @@
+name: Publish to GitHub Packages
+
+# Why we publish the same version twice: docs/releasing.md § GitHub Packages.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        required: true
+        type: string
+
+# Serialize runs per tag: workflow_call and workflow_dispatch can otherwise race
+# on publishing the same version.
+concurrency:
+  group: publish-github-packages-${{ inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]] || {
+            echo "Invalid release tag: $RELEASE_TAG" >&2
+            exit 1
+          }
+
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run build
+
+      - name: Publish to GitHub Packages
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          registry=https://npm.pkg.github.com
+
+          version=$(bun -e "console.log(require('./package.json').version)")
+          [ "v${version}" = "$RELEASE_TAG" ] || {
+            echo "Tag $RELEASE_TAG does not match package version $version" >&2
+            exit 1
+          }
+
+          userconfig=$(mktemp)
+          chmod 600 "$userconfig"
+          trap 'rm -f "$userconfig"' EXIT
+          printf '//npm.pkg.github.com/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > "$userconfig"
+          export NPM_CONFIG_USERCONFIG="$userconfig"
+
+          # Must be the scoped flag. The repo .npmrc pins @qawolf to npmjs, and
+          # npm reads `@scope:registry` ahead of the plain `registry` key, so a
+          # bare --registry publishes to npmjs without complaining.
+          scoped_registry=(--@qawolf:registry="$registry")
+
+          # An unpublished version gives empty output and exit 0; only an unknown
+          # package gives E404. Testing the exit code would skip every publish.
+          published=$(npm view "@qawolf/cli@${version}" version "${scoped_registry[@]}" 2>/dev/null || true)
+          if [ -n "$published" ]; then
+            echo "@qawolf/cli@${version} is already on GitHub Packages."
+            exit 0
+          fi
+
+          # No --access (GitHub Packages rejects the flag; visibility comes from
+          # the repo) and no provenance (attestation is npmjs-only).
+          npm publish "${scoped_registry[@]}"
