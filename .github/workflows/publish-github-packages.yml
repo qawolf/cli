@@ -65,8 +65,9 @@ jobs:
           }
 
           userconfig=$(mktemp)
+          view_log=$(mktemp)
           chmod 600 "$userconfig"
-          trap 'rm -f "$userconfig"' EXIT
+          trap 'rm -f "$userconfig" "$view_log"' EXIT
           printf '//npm.pkg.github.com/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > "$userconfig"
           export NPM_CONFIG_USERCONFIG="$userconfig"
 
@@ -75,12 +76,20 @@ jobs:
           # bare --registry publishes to npmjs without complaining.
           scoped_registry=(--@qawolf:registry="$registry")
 
-          # An unpublished version gives empty output and exit 0; only an unknown
-          # package gives E404. Testing the exit code would skip every publish.
-          published=$(npm view "@qawolf/cli@${version}" version "${scoped_registry[@]}" 2>/dev/null || true)
-          if [ -n "$published" ]; then
-            echo "@qawolf/cli@${version} is already on GitHub Packages."
-            exit 0
+          # An absent package or version answers with E404, so that is the only
+          # failure meaning "not published yet". Anything else — E401 from a bad
+          # token, a network error — must stop the job rather than fall through
+          # to a publish that hides why the query failed. Keep the streams
+          # separate: npm writes warnings to stderr, and merging them into
+          # $published would read as "already published" and skip the publish.
+          if published=$(npm view "@qawolf/cli@${version}" version "${scoped_registry[@]}" 2>"$view_log"); then
+            if [ -n "$published" ]; then
+              echo "@qawolf/cli@${version} is already on GitHub Packages."
+              exit 0
+            fi
+          elif ! grep -q "E404" "$view_log"; then
+            cat "$view_log" >&2
+            exit 1
           fi
 
           # No --access (GitHub Packages rejects the flag; visibility comes from
