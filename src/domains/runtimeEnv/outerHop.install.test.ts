@@ -49,6 +49,7 @@ describe("populateOuterHop install mode", () => {
       mode: "install",
       depCount: 1,
       rejected: [{ dir: join(root, "node_modules"), missing: ["date-fns"] }],
+      carriedOver: [],
     });
     expect(installMock).toHaveBeenCalledWith(runDir);
 

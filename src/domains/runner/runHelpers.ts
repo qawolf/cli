@@ -10,7 +10,7 @@ import type {
   FlowsRunFlags,
   ResolvedFlow,
 } from "./runInternals.js";
-import { dispatchFlow } from "./runInternals.js";
+import { dispatchFlow } from "./dispatchFlow.js";
 
 export type FlowCounts = {
   flowsPassed: number;

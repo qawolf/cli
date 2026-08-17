@@ -1,5 +1,5 @@
 import { styleText } from "node:util";
-import { extractMissingPackage } from "~/core/errors.js";
+import { flowFailureHint } from "~/core/flowFailureHint.js";
 import { runnerMessages } from "~/core/messages/index.js";
 import { formatErrorWithCause } from "./formatErrorWithCause.js";
 import type { Reporter } from "./types.js";
@@ -74,17 +74,9 @@ export function createConsoleReporter(deps: ConsoleDeps): Reporter {
         ...restLines.map((line) => styleText("dim", `${indent}${line}`)),
       ].join("\n");
       deps.stderr.write(`${formatted}\n\n`);
-      const missingPackage = extractMissingPackage(errStr);
-      if (missingPackage !== undefined) {
-        deps.stderr.write(
-          `${styleText(
-            "yellow",
-            `${indent}${runnerMessages.moduleNotFoundHint(
-              missingPackage,
-              deps.projectDir,
-            )}`,
-          )}\n\n`,
-        );
+      const hint = flowFailureHint(errStr, deps.projectDir);
+      if (hint !== undefined) {
+        deps.stderr.write(`${styleText("yellow", `${indent}${hint}`)}\n\n`);
       }
 
       const counts =

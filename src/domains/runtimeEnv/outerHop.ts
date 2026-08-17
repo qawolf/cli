@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 
 import { type Fs } from "~/shell/fs.js";
 
+import { carryOverPackages } from "./carryOverPackages.js";
 import { linkPinnedPackages } from "./linkPinnedPackages.js";
 import { spawnNpmInstall, type SpawnInstallResult } from "./npmInstall.js";
 import { pinnedPackages } from "./pinnedPackages.js";
@@ -16,7 +17,13 @@ type RejectedCandidate = { dir: string; missing: string[] };
 
 export type OuterHopResult =
   | { mode: "symlink"; nodeModulesDir: string }
-  | { mode: "install"; depCount: number; rejected: RejectedCandidate[] }
+  | {
+      mode: "install";
+      depCount: number;
+      rejected: RejectedCandidate[];
+      // Undeclared packages linked from the project's own node_modules.
+      carriedOver: string[];
+    }
   | { mode: "none" };
 
 export type PopulateOuterHopArgs = {
@@ -83,7 +90,14 @@ export async function populateOuterHop(
     nodeModulesDir: join(runDir, "node_modules"),
     fs,
   });
-  return { mode: "install", depCount: depNames.length, rejected };
+  // The install declares only what package.json declares, so a package the
+  // project has on disk but never declared would disappear from the run.
+  const carriedOver = await carryOverPackages({
+    projectModulesDir: join(projectDir, "node_modules"),
+    nodeModulesDir: join(runDir, "node_modules"),
+    fs,
+  });
+  return { mode: "install", depCount: depNames.length, rejected, carriedOver };
 }
 
 type CandidateSearch = {
