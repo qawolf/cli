@@ -1,3 +1,4 @@
+import { lstat } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import { type Fs } from "~/shell/fs.js";
@@ -6,7 +7,6 @@ import { planCarryOver } from "./carryOverPlan.js";
 import { createDirSymlink } from "./symlinkDir.js";
 
 export type CarryOverPackagesArgs = {
-  // The project's own node_modules; packages are linked from here.
   projectModulesDir: string;
   // The outer hop, already populated by the fallback install.
   nodeModulesDir: string;
@@ -31,14 +31,30 @@ export async function carryOverPackages(
     present,
     installed: await listPackageNames(nodeModulesDir, fs),
   });
+  const linked: string[] = [];
   for (const name of names) {
     const segments = name.split("/");
     const target = join(nodeModulesDir, ...segments);
+    // An entry can occupy the path while reading as absent — a broken pinned
+    // link, or an interrupted install. Leave it; a best-effort carry-over must
+    // never overwrite the outer hop, nor fail the run.
+    if (await pathOccupied(target)) continue;
     if (segments.length > 1)
       await fs.mkdir(dirname(target), { recursive: true });
     await createDirSymlink(join(projectModulesDir, ...segments), target);
+    linked.push(name);
   }
-  return names;
+  return linked;
+}
+
+/** True when anything sits at `path`, a broken symlink included. */
+async function pathOccupied(path: string): Promise<boolean> {
+  try {
+    await lstat(path);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**

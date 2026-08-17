@@ -1,5 +1,6 @@
 import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 import { afterEach, describe, expect, it } from "bun:test";
+import { lstat, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 import { makeDefaultFs } from "~/shell/fs.js";
@@ -51,6 +52,39 @@ describe("populateOuterHop carry-over", () => {
       join(runDir, "node_modules", "date-fns-tz"),
       join(projectDir, "node_modules", "date-fns-tz"),
     );
+  });
+
+  it("leaves an outer-hop entry that has no readable package.json alone", async () => {
+    // A broken link or an interrupted install leaves an entry that reads as
+    // absent. Carrying over must never overwrite it, nor fail the run.
+    const { projectDir, runDir } = await makeProjectTree({
+      tracker,
+      deps: { "date-fns": "2.29.3", "csv-parser": "3.0.0" },
+      seed: { project: ["date-fns", "date-fns-tz"] },
+    });
+    const depsRoot = await tracker.makeTmpDir();
+    await scaffoldManagedRuntime(depsRoot);
+
+    const installMock = makeInstallMock().mockImplementation(async (cwd) => {
+      await seedNodeModules(cwd, ["date-fns", "csv-parser"]);
+      // Present on disk, but not recognizable as a package.
+      await mkdir(join(cwd, "node_modules", "date-fns-tz"), {
+        recursive: true,
+      });
+      return { exitCode: 0, stderr: "" };
+    });
+
+    const result = await populateOuterHop({
+      projectDir,
+      runDir,
+      depsRoot,
+      fs: makeDefaultFs(),
+      install: installMock,
+    });
+
+    expect(result).toMatchObject({ mode: "install", carriedOver: [] });
+    const entry = await lstat(join(runDir, "node_modules", "date-fns-tz"));
+    expect(entry.isSymbolicLink()).toBe(false);
   });
 
   it("never carries a package from an ancestor node_modules", async () => {
