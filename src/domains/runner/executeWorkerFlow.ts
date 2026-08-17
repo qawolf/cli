@@ -1,4 +1,4 @@
-import { dispatchFlow } from "./runInternals.js";
+import { dispatchFlow } from "./dispatchFlow.js";
 import type { FlowsRunDeps } from "./runInternals.js";
 import { serializeWorkerResult } from "./workerProtocol.js";
 import type { WorkerInput } from "./workerProtocol.js";

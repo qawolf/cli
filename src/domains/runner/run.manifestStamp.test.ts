@@ -8,7 +8,7 @@ import { findFlowStamp } from "~/shell/manifest/lookup.js";
 import type { Manifest } from "~/shell/manifest/types.js";
 
 import { defaultFlags, makeDeps, passResult } from "./run.fixtures.js";
-import { dispatchFlow } from "./runInternals.js";
+import { dispatchFlow } from "./dispatchFlow.js";
 
 let workDir = "";
 let envDir = "";

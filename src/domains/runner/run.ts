@@ -1,12 +1,11 @@
 import { classifyTarget, flowBasename } from "~/core/flowMeta.js";
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
-import { createCompositeReporter } from "~/shell/reporter/createCompositeReporter.js";
-import { formatErrorWithCause } from "~/shell/reporter/formatErrorWithCause.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
 import { runnerMessages } from "~/core/messages/index.js";
 
+import { collectJsonFailureDetails } from "./jsonFailureDetails.js";
 import { buildRunOptions } from "./runHelpers.js";
 import { executeFlows } from "./dispatchFlows.js";
 import {
@@ -93,19 +92,12 @@ export async function flowsRun(
 
   const { webOptions, androidOptions } = buildRunOptions(flags);
 
-  // In json mode the reporter's streamed output is discarded (ui.write is a
-  // no-op), so collect each failure's detail to attach to the final error.
-  const failureDetails: string[] = [];
-  const reporter =
+  const collected =
     ctx.outputMode === "json"
-      ? createCompositeReporter([
-          deps.reporter,
-          {
-            onFlowFail: ({ err }) =>
-              failureDetails.push(formatErrorWithCause(err)),
-          },
-        ])
-      : deps.reporter;
+      ? collectJsonFailureDetails(deps.reporter)
+      : undefined;
+  const failureDetails = collected?.details ?? [];
+  const reporter = collected?.reporter ?? deps.reporter;
 
   const result = await executeFlows({
     ctx,

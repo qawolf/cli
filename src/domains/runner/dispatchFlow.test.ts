@@ -1,14 +1,8 @@
-import { InvalidArgumentError } from "commander";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import type { Logger } from "~/shell/logger.js";
-import {
-  dispatchFlow,
-  type FlowsRunDeps,
-  type WebResolvedFlow,
-} from "./runInternals.js";
+import { dispatchFlow } from "./dispatchFlow.js";
+import type { FlowsRunDeps, WebResolvedFlow } from "./runInternals.js";
 import { makeDeps, passResult, failResult } from "./run.fixtures.js";
-
-import { parseEnum, parseInteger } from "./runFlagParsers.js";
 
 afterEach(() => {
   mock.restore();
@@ -103,51 +97,5 @@ describe("dispatchFlow logger", () => {
       >[0]["androidOptions"],
     });
     expect(result.run.passed).toBe(true);
-  });
-});
-
-describe("parseInteger", () => {
-  it("returns the integer for a plain decimal string", () => {
-    expect(parseInteger("--retries")("3")).toBe(3);
-    expect(parseInteger("--retries")("0")).toBe(0);
-  });
-
-  it.each(["abc", "1.5", "", "+3", "03", "1e3", "-0"])(
-    "rejects non-integer input %p",
-    (value) => {
-      expect(() => parseInteger("--retries")(value)).toThrow(
-        InvalidArgumentError,
-      );
-    },
-  );
-
-  it("rejects values below the configured min", () => {
-    expect(() => parseInteger("--retries", { min: 0 })("-1")).toThrow(
-      /--retries must be >= 0/,
-    );
-    expect(() => parseInteger("--workers", { min: 1 })("0")).toThrow(
-      /--workers must be >= 1/,
-    );
-  });
-
-  it("accepts negatives when no min is provided", () => {
-    expect(parseInteger("--retries")("-5")).toBe(-5);
-  });
-});
-
-describe("parseEnum", () => {
-  const modes = ["on", "off", "retain-on-failure"] as const;
-
-  it.each([["on"], ["off"], ["retain-on-failure"]] as const)(
-    "returns %p when value matches a known mode",
-    (value) => {
-      expect(parseEnum("--video", modes)(value)).toBe(value);
-    },
-  );
-
-  it("rejects unknown values with the allowed list", () => {
-    expect(() => parseEnum("--video", modes)("maybe")).toThrow(
-      /--video must be one of: on, off, retain-on-failure/,
-    );
   });
 });
