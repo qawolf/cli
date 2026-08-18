@@ -5,6 +5,9 @@ import {
   flowsVersion,
   playwrightVersion,
   testkitVersion,
+  wdioGlobalsVersion,
+  wdioLoggerVersion,
+  webdriverioVersion,
 } from "~/generated/dependencyVersions.js";
 
 export type PinnedPackage = { name: string; version: string };
@@ -27,4 +30,12 @@ export const pinnedPackages: PinnedPackage[] = [
   // Installing it here keeps it out of the consumer's resolution, and this
   // managed install passes --legacy-peer-deps so the cycle is never explored.
   { name: "expect-webdriverio", version: expectWebdriverioVersion },
+  // expect-webdriverio's own peers. The managed install passes --legacy-peer-deps,
+  // which skips peers entirely, so without these `import("expect-webdriverio")`
+  // throws ERR_MODULE_NOT_FOUND on @wdio/logger and every mobile flow dies inside
+  // configureFlowRuntime → initializeMobileExpect. They carry the same
+  // devDependency-only rule as expect-webdriverio above.
+  { name: "webdriverio", version: webdriverioVersion },
+  { name: "@wdio/globals", version: wdioGlobalsVersion },
+  { name: "@wdio/logger", version: wdioLoggerVersion },
 ];
