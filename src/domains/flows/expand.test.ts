@@ -260,4 +260,37 @@ describe("expandPatterns", () => {
       await rm(tmp, { recursive: true, force: true });
     }
   });
+
+  // `.flow.js` is also the Facebook Flow convention for type-annotated source,
+  // so published packages ship files that match the default pattern.
+  it("should not discover flow files inside node_modules", async () => {
+    const tmp = await mkdtemp(join(tmpdir(), "expand-nodemodules-"));
+    const dep = join(tmp, "node_modules", "ssf");
+    await mkdir(dep, { recursive: true });
+    await writeFile(join(dep, "ssf.flow.js"), "// vendored");
+    await writeFile(join(tmp, "mine.flow.ts"), "// mine");
+    try {
+      const result = await expandPatterns([], tmp, undefined, defaultFs);
+      expect(result).toEqual([join(tmp, "mine.flow.ts")]);
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("should not discover flow files in a nested node_modules of a .qawolf env", async () => {
+    const tmp = await mkdtemp(join(tmpdir(), "expand-envnm-"));
+    const env = join(tmp, ".qawolf", "staging");
+    await mkdir(join(env, "node_modules", "cfb"), { recursive: true });
+    await writeFile(
+      join(env, "node_modules", "cfb", "xlscfb.flow.js"),
+      "// vendored",
+    );
+    await writeFile(join(env, "mine.flow.ts"), "// mine");
+    try {
+      const result = await expandPatterns([], tmp, undefined, defaultFs);
+      expect(result).toEqual([join(env, "mine.flow.ts")]);
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
+  });
 });

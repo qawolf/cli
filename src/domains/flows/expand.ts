@@ -43,6 +43,12 @@ export async function expandPatterns(
     const matches = await glob(effectivePatterns, {
       cwd: root,
       absolute: true,
+      // Some packages use `.flow.js` for a different purpose. It is also the
+      // file name convention of the Facebook Flow type checker. For example,
+      // `xlsx` installs two such files. A dependency tree does not contain
+      // the flows of the project. It contains most of the files in a project.
+      // Thus this also makes the search much faster.
+      ignore: ["**/node_modules/**"],
     });
     for (const match of matches) {
       // tinyglobby emits forward slashes even on win32; the rest of the CLI
