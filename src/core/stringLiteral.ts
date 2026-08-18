@@ -26,11 +26,22 @@ export function readStringLiteral(
     const char = source.charAt(i);
 
     if (char === "\\") {
-      // Every escape we need is an identity escape — `\"`, `\'`, `` \` ``, `\\`
-      // — so the character after the backslash stands for itself. Control and
-      // unicode escapes are not decoded because names do not carry them: rather
-      // than escape, the generator picks a delimiter the name does not contain.
-      value += source.charAt(i + 1);
+      const escaped = source.charAt(i + 1);
+
+      // A line continuation lets the literal span lines and contributes
+      // nothing to the value.
+      if (escaped === "\n" || escaped === "\r") {
+        const crlf = escaped === "\r" && source.charAt(i + 2) === "\n";
+        i += crlf ? 3 : 2;
+        continue;
+      }
+
+      // Every other escape we need is an identity escape — `\"`, `\'`,
+      // `` \` ``, `\\` — so the character stands for itself. Control and
+      // unicode escapes are not decoded because names do not carry them:
+      // rather than escape, the generator picks a delimiter the name does not
+      // contain.
+      value += escaped;
       i += 2;
       continue;
     }

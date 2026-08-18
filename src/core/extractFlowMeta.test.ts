@@ -41,6 +41,22 @@ describe("extractFlowMeta — quotes in the flow name", () => {
     ).toEqual({ name: String.raw`C:\Users share`, target: "Web - Chrome" });
   });
 
+  // A backslash before a line break is a line continuation: it lets the source
+  // span lines and contributes nothing to the value.
+  it("should drop a line continuation inside a name", () => {
+    expect(extractFlowMeta('flow("Say \\\nhi", "Web - Chrome", x)')).toEqual({
+      name: "Say hi",
+      target: "Web - Chrome",
+    });
+  });
+
+  it("should drop a CRLF line continuation inside a name", () => {
+    expect(extractFlowMeta('flow("Say \\\r\nhi", "Web - Chrome", x)')).toEqual({
+      name: "Say hi",
+      target: "Web - Chrome",
+    });
+  });
+
   // Only identity escapes are decoded. Names do not carry control or unicode
   // escapes, because the generator avoids escaping altogether by choosing a
   // delimiter the name does not contain.
@@ -91,6 +107,10 @@ describe("extractFlowMeta — callee matching", () => {
     ["workflow(", `workflow("N", "chromium", x)`],
     ["myflow(", `myflow("N", "chromium", x)`],
     ["_flow(", `_flow("N", "chromium", x)`],
+    // `$` and non-ASCII letters are valid in a JS identifier but are not \w,
+    // so a \b-based test reads these as a bare `flow(` call.
+    ["$flow(", `$flow("N", "chromium", x)`],
+    ["πflow(", `πflow("N", "chromium", x)`],
   ])("should not match %s", (_label, source) => {
     expect(extractFlowMeta(source)).toEqual({
       name: undefined,

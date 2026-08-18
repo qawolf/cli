@@ -5,8 +5,10 @@ export type FlowCallMeta = {
   target: string | undefined;
 };
 
-// `\b` keeps `workflow(` and `myflow(` out while still allowing `obj.flow(`.
-const flowCallRe = /\bflow\s*\(\s*/g;
+// Keeps `workflow(`, `_flow(` and `$flow(` out while still allowing
+// `obj.flow(`. `\b` is not enough: it tests \w, which excludes `$` and every
+// non-ASCII letter, so `$flow(` and `πflow(` would read as a bare `flow(` call.
+const flowCallRe = /(?<![$\p{ID_Continue}])flow\s*\(\s*/gu;
 // Sticky, so each is a check at one position rather than a search.
 const argSeparatorRe = /\s*,\s*/y;
 const keyValueRe = /\s*:\s*/y;
@@ -82,7 +84,8 @@ function readTarget(source: string, afterName: number): string | undefined {
  *
  * Name and target are resolved independently: a file whose first call omits the
  * target still reports the target of a later call. That has been the behaviour
- * since these were two separate regexes, and flows in the wild depend on it.
+ * since these were two separate regexes. Resolving both from one call would
+ * silently drop such a file from the run, so the split is deliberate.
  */
 export function parseFlowCall(source: string): FlowCallMeta {
   let name: string | undefined;
