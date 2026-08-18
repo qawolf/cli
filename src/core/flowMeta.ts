@@ -1,5 +1,6 @@
 import { getWebBrowserInfo, parseExecutionTarget } from "@qawolf/flow-targets";
 import { basename } from "node:path";
+import { type FlowCallMeta, parseFlowCall } from "~/core/flowCall.js";
 import type { BrowserName } from "~/core/types.js";
 
 export function flowBasename(file: string): string {
@@ -61,37 +62,16 @@ export function isAndroidTarget(target: string): boolean {
   return classifyTarget(target)?.kind === "android";
 }
 
-// Matches the flow name — the first string literal argument to flow():
-//   flow("My Flow", ...)
-//        ^^^^^^^^^
-const nameRe = /\bflow\s*\(\s*["']([^"'\n]+)["']/;
+export type PeekFlowMetaFn = (filePath: string) => Promise<FlowCallMeta>;
 
-// Matches the browser target, scoped to the flow() call so a `target:` property
-// elsewhere in the file (e.g. in a config object) is not captured.
-// Two alternatives cover both call signatures:
-//
-//   Positional — second arg is a string literal (group 1):
-//     flow("My Flow", "chromium", async () => { ... })
-//                     ^^^^^^^^^
-//
-//   Object arg — second arg is an options object containing target (group 2):
-//     flow("My Flow", { target: "webkit", launch: true }, async () => { ... })
-//                               ^^^^^^^^
-//
-// Dynamic expressions (variables, template literals) produce undefined for that field.
-const flowTargetRe =
-  /\bflow\s*\(\s*["'][^"'\n]*["']\s*,\s*(?:["']([^"'\n]+)["']|\{[^{}]*\btarget\s*:\s*["']([^"'\n]+)["'])/;
-
-export type PeekFlowMetaFn = (
-  filePath: string,
-) => Promise<{ name: string | undefined; target: string | undefined }>;
-
-export function extractFlowMeta(source: string): {
-  name: string | undefined;
-  target: string | undefined;
-} {
-  const name = nameRe.exec(source)?.[1];
-  const flowTargetMatch = flowTargetRe.exec(source);
-  const target = flowTargetMatch?.[1] ?? flowTargetMatch?.[2];
-  return { name, target };
+/**
+ * Reads the name and target a flow declares, from either call shape:
+ *
+ *   flow("My Flow", "chromium", async () => { ... })
+ *   flow("My Flow", { target: "webkit", launch: true }, async () => { ... })
+ *
+ * Either field is undefined when the call does not state it statically.
+ */
+export function extractFlowMeta(source: string): FlowCallMeta {
+  return parseFlowCall(source);
 }
