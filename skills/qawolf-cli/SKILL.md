@@ -1,6 +1,6 @@
 ---
 name: qawolf-cli
-description: Manage QA Wolf through the qawolf CLI. Use when asked which QA Wolf environment variables are available or to list, set, or delete them; manage environments, flows, runs, tags, or issues; authenticate; install; run or list flows; or drive a live cloud browser (launch a runner, screenshot it, click and type on it, read its recorder) from a shell.
+description: Manage QA Wolf through the qawolf CLI. Use when asked to create, update, or list coverage requests, bug reports, or maintenance reports; start a run of flows or tags on the QA Wolf platform or read a run's results; list, set, or delete environment variables; manage environments, flows, or tags; request automation of draft flows; run or list flows locally; authenticate; install the local runtime; or drive a live cloud browser (launch a runner, screenshot it, click and type on it, read its recorder) from a shell.
 license: Apache-2.0
 compatibility: Requires the qawolf CLI on PATH. Install it from @qawolf/cli or use a standalone binary from GitHub Releases.
 ---
