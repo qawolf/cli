@@ -5,6 +5,8 @@ export type StringLiteral = {
   end: number;
 };
 
+const lineTerminator = /[\n\r\u2028\u2029]/;
+
 /**
  * Reads the static string literal opening at `start`.
  *
@@ -29,8 +31,9 @@ export function readStringLiteral(
       const escaped = source.charAt(i + 1);
 
       // A line continuation lets the literal span lines and contributes
-      // nothing to the value.
-      if (escaped === "\n" || escaped === "\r") {
+      // nothing to the value. Every line terminator counts, U+2028 and U+2029
+      // included.
+      if (lineTerminator.test(escaped)) {
         const crlf = escaped === "\r" && source.charAt(i + 2) === "\n";
         i += crlf ? 3 : 2;
         continue;
@@ -52,6 +55,8 @@ export function readStringLiteral(
       if (char === "$" && source.charAt(i + 1) === "{") return undefined;
     } else if (char === "\n" || char === "\r") {
       // A raw line break cannot appear in a quoted literal, so this is not one.
+      // U+2028 and U+2029 are excluded on purpose: they are line terminators,
+      // but ES2019 onwards allows them unescaped inside a quoted literal.
       return undefined;
     }
 

@@ -5,10 +5,10 @@ export type FlowCallMeta = {
   target: string | undefined;
 };
 
-// Keeps `workflow(`, `_flow(` and `$flow(` out while still allowing
-// `obj.flow(`. `\b` is not enough: it tests \w, which excludes `$` and every
-// non-ASCII letter, so `$flow(` and `πflow(` would read as a bare `flow(` call.
-const flowCallRe = /(?<![$\p{ID_Continue}])flow\s*\(\s*/gu;
+// Keeps `workflow(`, `_flow(`, `$flow(` and `this.#flow(` out while still
+// allowing `obj.flow(`. `\b` is not enough: it tests \w, which excludes `$`,
+// `#` and every non-ASCII letter, so those would read as a bare `flow(` call.
+const flowCallRe = /(?<![#$\p{ID_Continue}])flow\s*\(\s*/gu;
 // Sticky, so each is a check at one position rather than a search.
 const argSeparatorRe = /\s*,\s*/y;
 const keyValueRe = /\s*:\s*/y;

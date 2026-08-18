@@ -57,6 +57,27 @@ describe("extractFlowMeta — quotes in the flow name", () => {
     });
   });
 
+  it.each([
+    ["U+2028 line separator", "\u2028"],
+    ["U+2029 paragraph separator", "\u2029"],
+  ])("should drop a %s line continuation inside a name", (_label, sep) => {
+    expect(
+      extractFlowMeta(`flow("Say \\${sep}hi", "Web - Chrome", x)`),
+    ).toEqual({ name: "Say hi", target: "Web - Chrome" });
+  });
+
+  // Unlike a raw line feed, a raw U+2028 or U+2029 is legal inside a quoted
+  // literal from ES2019 on, so it belongs in the value rather than ending it.
+  it.each([
+    ["U+2028", "\u2028"],
+    ["U+2029", "\u2029"],
+  ])("should keep an unescaped %s inside a name", (_label, sep) => {
+    expect(extractFlowMeta(`flow("Say${sep}hi", "Web - Chrome", x)`)).toEqual({
+      name: `Say${sep}hi`,
+      target: "Web - Chrome",
+    });
+  });
+
   // Only identity escapes are decoded. Names do not carry control or unicode
   // escapes, because the generator avoids escaping altogether by choosing a
   // delimiter the name does not contain.
@@ -111,6 +132,8 @@ describe("extractFlowMeta — callee matching", () => {
     // so a \b-based test reads these as a bare `flow(` call.
     ["$flow(", `$flow("N", "chromium", x)`],
     ["πflow(", `πflow("N", "chromium", x)`],
+    // A private method named `flow` is not the `flow()` helper.
+    ["this.#flow(", `this.#flow("N", "chromium", x)`],
   ])("should not match %s", (_label, source) => {
     expect(extractFlowMeta(source)).toEqual({
       name: undefined,
