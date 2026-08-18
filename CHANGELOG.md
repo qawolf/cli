@@ -1,5 +1,23 @@
 # @qawolf/cli
 
+## 1.11.2
+
+### Patch Changes
+
+- 50debf1: `npx @qawolf/cli` and `npm install @qawolf/cli` no longer stop responding.
+
+  The CLI pinned `expect-webdriverio` 5.6.5 as a dependency. `@wdio/globals` 9.31.0 then started to require `expect-webdriverio` 6.0.5 or later. npm cannot obey both rules, and it does not report an error. It searches instead, and the install can run for more than 30 minutes.
+
+  `expect-webdriverio` is now a development dependency. The CLI does not import it, so nothing changes when you run a flow.
+
+- f3c38a8: The CLI no longer finds flow files in `node_modules`.
+
+  The default pattern is `**/*.flow.{ts,js}`. Some packages use `.flow.js` for a different purpose, because it is also the file name convention of the Facebook Flow type checker. The CLI read these files and showed them as flows. `qawolf flows list` showed a flow for each one. The name came from the file name, because the file has no `flow()` call.
+
+  The CLI now ignores `node_modules` when it looks for flow files. The search is also much faster, because a dependency tree contains most of the files in a project.
+
+  This does not change how a flow finds a package. A flow that imports a package continues to work.
+
 ## 1.11.1
 
 ### Patch Changes
