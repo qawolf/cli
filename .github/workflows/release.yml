@@ -94,6 +94,19 @@ jobs:
     with:
       tag: ${{ needs.release.outputs.tag }}
 
+  # A sibling of binaries rather than a step in release: a registry failure must
+  # not skip the binary build, and changeset publish only knows one registry.
+  github-packages:
+    name: GitHub Packages
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish-github-packages.yml
+    with:
+      tag: ${{ needs.release.outputs.tag }}
+
   notify-binaries:
     name: Notify Slack of binaries
     needs: [release, binaries]
