@@ -15,10 +15,13 @@ const config: KnipConfig = {
     "dist/cli.js",
   ],
   ignoreDependencies: [
-    // Installed into the managed runtime dir at runtime by ensureRuntimeEnv; not imported by the CLI.
+    // devDependencies kept only so genDependencyVersions.ts can read their
+    // installed versions. The CLI never imports either: ensureRuntimeEnv
+    // installs appium into the managed runtime dir and spawns its .bin shim,
+    // and `qawolf install android` passes the driver version to
+    // `appium driver install` inside APPIUM_HOME. Listing them as dependencies
+    // would ship their peer graphs to every consumer — see pinnedPackages.ts.
     "appium",
-    // devDependency kept so genDependencyVersions.ts can read the version that
-    // `qawolf install android` pins for `appium driver install` into APPIUM_HOME.
     "appium-uiautomator2-driver",
   ],
   ignore: [
