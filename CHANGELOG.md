@@ -1,5 +1,31 @@
 # @qawolf/cli
 
+## 1.12.0
+
+### Minor Changes
+
+- 47c7ec9: The managed runtime uses Appium 3.6.0 and the UiAutomator2 driver 8.4.0.
+
+  Appium 2.11.3 installed five copies of `axios` before version 1.15.1. These versions have a header injection defect (CVE-2026-42035). Appium 3.6.0 installs one copy of `axios` 1.18.1.
+
+  `appium` becomes a development dependency. The CLI does not import it. It starts Appium from the managed runtime directory. An install of `@qawolf/cli` is thus smaller: 413 packages in place of 797.
+
+  The managed runtime directory has a new name, so the CLI installs the runtime again when you first run a flow.
+
+- fd89edd: The new command `qawolf issue addFlows` adds flows to a coverage request. Flows that the coverage request already covers stay covered.
+
+  You cannot add flows to a bug report or a maintenance report. These reports link to flows through the runs that reproduce them.
+
+### Patch Changes
+
+- b656edf: The CLI now reads flow names that contain quote characters.
+
+  Before this change, the parser stopped the name at the first single quote or double quote. The parser ignored which quote started the name. Thus the name `Shopper's cart` became `Shopper`. The parser also did not find the target of that flow. A flow without a target does not run. Therefore `qawolf flows run` skipped the flow and showed the message `No flows matched.` The command `qawolf flows list` showed the short name.
+
+  The parser now records the quote that starts the name. It also accepts a backslash before a quote. Thus the parser correctly reads the names `"Say \"hi\""` and `'Shopper\'s cart'`. The parser accepts a name in backticks. A name that contains `${...}` stays dynamic, because the value is only available at run time.
+
+  Two more target forms now work. The CLI reads the target from an options object that contains a second object before the `target` key. The CLI also reads a target in backticks.
+
 ## 1.11.2
 
 ### Patch Changes
