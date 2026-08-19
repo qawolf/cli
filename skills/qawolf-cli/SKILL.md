@@ -133,6 +133,7 @@ current branch.
 | `qawolf install android` | local | Install Android system images, AVDs, and the Appium driver used by the project's Android flows |
 | `qawolf install browsers` | local | Install Playwright browsers used by the project's web flows |
 | `qawolf install clear` | local | Remove the managed runtime cache (all installed runtime versions) |
+| `qawolf issue addFlows` | write | Add flows to a coverage request owned by the caller's team. Flows already covered stay covered. Bug and maintenance reports link to flows through the runs that reproduce them, so their flows cannot be set directly. |
 | `qawolf issue create` | write | Create a bug or coverage request issue for the caller's team. Maintenance issues cannot be created through the public API. |
 | `qawolf issue find` | read | List the team's bug reports, maintenance reports, or coverage requests, newest first. |
 | `qawolf issue get` | read | Get an issue by id. |
