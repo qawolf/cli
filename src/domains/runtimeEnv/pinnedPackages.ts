@@ -32,9 +32,12 @@ export const pinnedPackages: PinnedPackage[] = [
   { name: "expect-webdriverio", version: expectWebdriverioVersion },
   // expect-webdriverio's own peers. The managed install passes --legacy-peer-deps,
   // which skips peers entirely, so without these `import("expect-webdriverio")`
-  // throws ERR_MODULE_NOT_FOUND on @wdio/logger and every mobile flow dies inside
-  // configureFlowRuntime → initializeMobileExpect. They carry the same
-  // devDependency-only rule as expect-webdriverio above.
+  // throws ERR_MODULE_NOT_FOUND on @wdio/logger. That import is what
+  // initializeMobileExpect performs, so mobile `expect` cannot work without them.
+  // It does not work with them either yet: runAndroidFlow never calls
+  // initFlowRuntime, and initFlowRuntime hardcodes platform "web", so
+  // configureFlowRuntime skips its mobile branch. This removes the first blocker
+  // only. They carry the same devDependency-only rule as expect-webdriverio above.
   { name: "webdriverio", version: webdriverioVersion },
   { name: "@wdio/globals", version: wdioGlobalsVersion },
   { name: "@wdio/logger", version: wdioLoggerVersion },
