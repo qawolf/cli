@@ -17,8 +17,10 @@ async function createSession(
   port: number,
   serial: string,
 ): Promise<AppiumDriver> {
-  // Dynamic import prevents the bundler from statically tracing webdriverio,
-  // which has optional native deps that would break the binary build if inlined.
+  // Deferred so web-only runs never pay to load webdriverio. It is still a
+  // build-time dep, not a published one: Bun inlines this static specifier into
+  // dist/cli.js, so the shipped bundle carries webdriverio and never resolves it
+  // from node_modules. That is why it is a devDependency — see pinnedPackages.ts.
   const { remote } = (await import("webdriverio")) as unknown as {
     remote: (opts: Record<string, unknown>) => Promise<WdioRemote>;
   };
