@@ -185,6 +185,38 @@ describe("buildFlagSpecs union inputs", () => {
     });
   });
 
+  it("rejects union branches whose shared field has conflicting object schemas", () => {
+    const schema = z.union([
+      z.object({ environment: z.strictObject({ id: z.string() }) }),
+      z.object({ environment: z.strictObject({ name: z.string() }) }),
+    ]);
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result).toEqual({
+      ok: false,
+      field: "environment",
+      reason: "field has conflicting object schemas across union branches",
+    });
+  });
+
+  it("merges a nested object field that is identical in every branch", () => {
+    const metadata = z.strictObject({ commitSha: z.string() });
+    const schema = z.discriminatedUnion("type", [
+      z.object({ type: z.literal("a"), metadata }),
+      z.object({ type: z.literal("b"), metadata }),
+    ]);
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.flags.map((spec) => spec.flag)).toEqual([
+      "--type <value>",
+      "--metadata-commit-sha <value>",
+    ]);
+  });
+
   it("rejects union branches that disagree on a field's flag kind", () => {
     const schema = z.discriminatedUnion("type", [
       z.object({ type: z.literal("a"), value: z.string() }),

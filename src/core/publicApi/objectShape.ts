@@ -65,11 +65,25 @@ function mergeUnion(branches: JsonSchema[]): ShapeResult {
         continue;
       }
       const kinds = [flagKind(existing), flagKind(fieldSchema)];
-      if (kinds[0]?.ok && kinds[1]?.ok && kinds[0].kind !== kinds[1].kind) {
+      if (kinds[0]?.ok && kinds[1]?.ok) {
+        if (kinds[0].kind !== kinds[1].kind) {
+          return {
+            ok: false,
+            field,
+            reason: "field has conflicting types across union branches",
+          };
+        }
+      } else if (
+        JSON.stringify({ ...existing, description: undefined }) !==
+        JSON.stringify({ ...fieldSchema, description: undefined })
+      ) {
+        // A non-leaf field (nested object) merges only when every branch
+        // agrees on its schema; keeping one branch's version would silently
+        // drop the other branches' flags.
         return {
           ok: false,
           field,
-          reason: "field has conflicting types across union branches",
+          reason: "field has conflicting object schemas across union branches",
         };
       }
       if (!existing.description && fieldSchema.description) {
