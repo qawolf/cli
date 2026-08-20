@@ -21,7 +21,7 @@ describe("buildCommandSpecs", () => {
       publicContractsV1.run.create.description,
     );
     expect(runCreate?.contract).toBe(publicContractsV1.run.create);
-    expect(runCreate?.flags.map((flag) => flag.field)).toEqual([
+    expect(runCreate?.flags.map((flag) => flag.path.join("."))).toEqual([
       "aiTaskId",
       "environmentId",
       "environmentVariables",
@@ -38,7 +38,7 @@ describe("buildCommandSpecs", () => {
     // hand-written contract never has to be expressible as generated flags.
     const skipped = {
       description: "Hand-written elsewhere",
-      input: z.object({ config: z.object({ nested: z.string() }) }),
+      input: z.object({ config: z.object({ counts: z.array(z.number()) }) }),
       kind: "read",
       name: "flow.list",
       output: z.object({}),
@@ -76,14 +76,14 @@ describe("buildCommandSpecs", () => {
   it("throws when a contract input cannot be expressed as flags", () => {
     const contract = {
       description: "Unmappable",
-      input: z.object({ config: z.object({ nested: z.string() }) }),
+      input: z.object({ config: z.object({ counts: z.array(z.number()) }) }),
       kind: "read",
       name: "run.inspect",
       output: z.object({}),
     } as const;
 
     expect(() => buildCommandSpecs({ run: { inspect: contract } })).toThrow(
-      'Contract "run.inspect" field "config"',
+      'Contract "run.inspect" input "config.counts"',
     );
   });
 });

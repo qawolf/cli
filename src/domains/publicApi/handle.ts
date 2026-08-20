@@ -37,15 +37,39 @@ function parseKeyValueRecord(
   return { ok: true, record };
 }
 
-// Commander camelizes flag names, which round-trips kebab-cased flags back
-// to the contract's camelCase field names — so options are keyed by field.
-function assembleInput(
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+// Writes `value` at `path`, creating the objects the path walks through so
+// several leaves of one nested field land in the same object.
+function setAtPath(
+  input: Record<string, unknown>,
+  path: string[],
+  value: unknown,
+): void {
+  const leaf = path[path.length - 1];
+  if (leaf === undefined) return;
+  const target = path
+    .slice(0, -1)
+    .reduce<Record<string, unknown>>((node, segment) => {
+      const existing = node[segment];
+      const next = isRecord(existing) ? existing : {};
+      node[segment] = next;
+      return next;
+    }, input);
+  target[leaf] = value;
+}
+
+// Commander camelizes flag names, so a nested leaf arrives under the
+// flattened key its flag produced, e.g. `--metadata-commit-sha` under
+// `metadataCommitSha`. FlagSpec.path puts it back where the contract wants it.
+export function assembleInput(
   flags: FlagSpec[],
   options: Record<string, unknown>,
 ): AssembledInput {
   const input: Record<string, unknown> = {};
   for (const flag of flags) {
-    const value = options[flag.field];
+    const value = options[flag.optionKey];
     if (value === undefined) continue;
     if (flag.kind === "key-value-record") {
       if (!isStringArray(value)) {
@@ -56,11 +80,11 @@ function assembleInput(
       }
       const parsed = parseKeyValueRecord(flag, value);
       if (!parsed.ok) return parsed;
-      input[flag.field] = parsed.record;
+      setAtPath(input, flag.path, parsed.record);
     } else if (flag.kind === "number") {
-      input[flag.field] = Number(value);
+      setAtPath(input, flag.path, Number(value));
     } else {
-      input[flag.field] = value;
+      setAtPath(input, flag.path, value);
     }
   }
   return { ok: true, input };

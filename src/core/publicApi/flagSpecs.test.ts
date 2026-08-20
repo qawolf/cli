@@ -20,35 +20,40 @@ describe("buildFlagSpecs", () => {
       ok: true,
       flags: [
         {
-          field: "environmentId",
+          path: ["environmentId"],
+          optionKey: "environmentId",
           flag: "--environment-id <value>",
           description: "Environment to run in",
           required: true,
           kind: "string",
         },
         {
-          field: "environmentVariables",
+          path: ["environmentVariables"],
+          optionKey: "environmentVariables",
           flag: "--environment-variables <KEY=VALUE...>",
           description: "",
           required: false,
           kind: "key-value-record",
         },
         {
-          field: "flowIds",
+          path: ["flowIds"],
+          optionKey: "flowIds",
           flag: "--flow-ids <values...>",
           description: "",
           required: true,
           kind: "string-array",
         },
         {
-          field: "ignoreRules",
+          path: ["ignoreRules"],
+          optionKey: "ignoreRules",
           flag: "--ignore-rules",
           description: "",
           required: false,
           kind: "boolean",
         },
         {
-          field: "maxRetries",
+          path: ["maxRetries"],
+          optionKey: "maxRetries",
           flag: "--max-retries <value>",
           description: "",
           required: false,
@@ -98,21 +103,24 @@ describe("buildFlagSpecs", () => {
       ok: true,
       flags: [
         {
-          field: "environmentId",
+          path: ["environmentId"],
+          optionKey: "environmentId",
           flag: "--environment-id <value>",
           description: "Environment id",
           required: true,
           kind: "string",
         },
         {
-          field: "flowIds",
+          path: ["flowIds"],
+          optionKey: "flowIds",
           flag: "--flow-ids <values...>",
           description: "",
           required: false,
           kind: "string-array",
         },
         {
-          field: "tagNames",
+          path: ["tagNames"],
+          optionKey: "tagNames",
           flag: "--tag-names <values...>",
           description: "",
           required: false,
@@ -166,7 +174,7 @@ describe("buildFlagSpecs", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const described = (field: string) =>
-      result.flags.find((spec) => spec.field === field)?.description;
+      result.flags.find((spec) => spec.path.join(".") === field)?.description;
     expect(described("priority")).toBe(
       "One of: unprioritized, low, medium, high, urgent",
     );
@@ -186,20 +194,6 @@ describe("buildFlagSpecs", () => {
       ok: false,
       field: "name",
       reason: "field appears in multiple intersection members",
-    });
-  });
-
-  it("rejects nested object fields", () => {
-    const schema = z.object({
-      config: z.object({ nested: z.string() }),
-    });
-
-    const result = buildFlagSpecs(schema);
-
-    expect(result).toEqual({
-      ok: false,
-      field: "config",
-      reason: "nested objects cannot be expressed as flags",
     });
   });
 

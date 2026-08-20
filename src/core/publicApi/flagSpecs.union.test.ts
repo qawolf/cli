@@ -23,7 +23,7 @@ describe("buildFlagSpecs union inputs", () => {
       { flag: "--type <value>", required: true },
       { flag: "--estimated-due-date <value>", required: false },
     ]);
-    const type = result.flags.find((spec) => spec.field === "type");
+    const type = result.flags.find((spec) => spec.optionKey === "type");
     expect(type?.description).toBe("One of: bug, coverageRequest");
   });
 
@@ -48,28 +48,32 @@ describe("buildFlagSpecs union inputs", () => {
       ok: true,
       flags: [
         {
-          field: "type",
+          path: ["type"],
+          optionKey: "type",
           flag: "--type <value>",
           description: "One of: bug, coverageRequest",
           required: true,
           kind: "string",
         },
         {
-          field: "name",
+          path: ["name"],
+          optionKey: "name",
           flag: "--name <value>",
           description: "",
           required: true,
           kind: "string",
         },
         {
-          field: "priority",
+          path: ["priority"],
+          optionKey: "priority",
           flag: "--priority <value>",
           description: "",
           required: false,
           kind: "string",
         },
         {
-          field: "estimatedDueDate",
+          path: ["estimatedDueDate"],
+          optionKey: "estimatedDueDate",
           flag: "--estimated-due-date <value>",
           description: "Due date",
           required: false,
@@ -89,11 +93,11 @@ describe("buildFlagSpecs union inputs", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const name = result.flags.find((spec) => spec.field === "name");
+    const name = result.flags.find((spec) => spec.optionKey === "name");
     expect(name?.required).toBe(false);
   });
 
-  it("rejects unions without a shared literal discriminator", () => {
+  it("maps a union without a shared literal discriminator by exposing every branch's fields", () => {
     const schema = z.union([
       z.object({ flowIds: z.array(z.string()) }),
       z.object({ tagNames: z.array(z.string()) }),
@@ -101,14 +105,15 @@ describe("buildFlagSpecs union inputs", () => {
 
     const result = buildFlagSpecs(schema);
 
-    expect(result).toEqual({
-      ok: false,
-      field: "",
-      reason: "union branches must share a literal discriminator field",
-    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.flags.map((spec) => spec.optionKey)).toEqual([
+      "flowIds",
+      "tagNames",
+    ]);
   });
 
-  it("rejects unions whose literal values do not distinguish the branches", () => {
+  it("maps a union whose literal values do not distinguish the branches without a discriminator description", () => {
     const schema = z.union([
       z.object({ version: z.literal("v1"), a: z.string() }),
       z.object({ version: z.literal("v1"), b: z.string() }),
@@ -117,10 +122,99 @@ describe("buildFlagSpecs union inputs", () => {
     const result = buildFlagSpecs(schema);
 
     expect(result).toEqual({
-      ok: false,
-      field: "",
-      reason: "union branches must share a literal discriminator field",
+      ok: true,
+      flags: [
+        {
+          path: ["version"],
+          optionKey: "version",
+          flag: "--version <value>",
+          description: "",
+          required: true,
+          kind: "string",
+        },
+        {
+          path: ["a"],
+          optionKey: "a",
+          flag: "--a <value>",
+          description: "",
+          required: false,
+          kind: "string",
+        },
+        {
+          path: ["b"],
+          optionKey: "b",
+          flag: "--b <value>",
+          description: "",
+          required: false,
+          kind: "string",
+        },
+      ],
     });
+  });
+
+  it("maps a union of object branches that share no discriminator", () => {
+    const input = z.object({
+      environment: z.union([
+        z.strictObject({ id: z.string() }),
+        z.strictObject({ name: z.string() }),
+      ]),
+    });
+
+    const result = buildFlagSpecs(input);
+
+    expect(result).toEqual({
+      ok: true,
+      flags: [
+        {
+          path: ["environment", "id"],
+          optionKey: "environmentId",
+          flag: "--environment-id <value>",
+          description: "",
+          required: false,
+          kind: "string",
+        },
+        {
+          path: ["environment", "name"],
+          optionKey: "environmentName",
+          flag: "--environment-name <value>",
+          description: "",
+          required: false,
+          kind: "string",
+        },
+      ],
+    });
+  });
+
+  it("rejects union branches whose shared field has conflicting object schemas", () => {
+    const schema = z.union([
+      z.object({ environment: z.strictObject({ id: z.string() }) }),
+      z.object({ environment: z.strictObject({ name: z.string() }) }),
+    ]);
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result).toEqual({
+      ok: false,
+      field: "environment",
+      reason: "field has conflicting object schemas across union branches",
+    });
+  });
+
+  it("merges a nested object field that is identical in every branch", () => {
+    const metadata = z.strictObject({ commitSha: z.string() });
+    const schema = z.discriminatedUnion("type", [
+      z.object({ type: z.literal("a"), metadata }),
+      z.object({ type: z.literal("b"), metadata }),
+    ]);
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.flags.map((spec) => spec.flag)).toEqual([
+      "--type <value>",
+      "--metadata-commit-sha <value>",
+    ]);
   });
 
   it("rejects union branches that disagree on a field's flag kind", () => {
