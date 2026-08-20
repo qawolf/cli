@@ -34,11 +34,12 @@ const optionEnvironmentVariables = new Map([
 
 function optionEnvironmentVariable(
   spec: CommandSpec,
-  field: string,
+  path: string[],
 ): string | undefined {
+  const dotted = path.join(".");
   return (
-    optionEnvironmentVariables.get(`${spec.trpcPath}.${field}`) ??
-    optionEnvironmentVariables.get(field)
+    optionEnvironmentVariables.get(`${spec.trpcPath}.${dotted}`) ??
+    optionEnvironmentVariables.get(dotted)
   );
 }
 
@@ -82,7 +83,7 @@ function registerSpec(
     spec.kind,
   ).description(spec.description);
   for (const flag of spec.flags) {
-    const environmentVariable = optionEnvironmentVariable(spec, flag.field);
+    const environmentVariable = optionEnvironmentVariable(spec, flag.path);
     if (environmentVariable) {
       const option = new Option(flag.flag, flag.description).env(
         environmentVariable,

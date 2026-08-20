@@ -42,7 +42,7 @@ function buildSpec(
   const flags = buildFlagSpecs(contract.input);
   if (!flags.ok) {
     throw new Error(
-      `Contract "${contract.name}" field "${flags.field}" cannot be mapped to a CLI flag: ${flags.reason}`,
+      `Contract "${contract.name}" input "${flags.field}" cannot be mapped to a CLI flag: ${flags.reason}`,
     );
   }
 
