@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { Command } from "commander";
 import { z } from "zod";
 
@@ -10,8 +10,16 @@ import { createSignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { registerPublicApiCommands } from "./index.js";
 
+// `process.exitCode` is global state and persists across tests; reset to 0
+// (not undefined — bun ignores an undefined assignment) so leftover state
+// cannot leak into these tests or out to other test files (bun's runner
+// reads exitCode at process exit).
+beforeEach(() => {
+  process.exitCode = 0;
+});
+
 afterEach(() => {
-  process.exitCode = undefined;
+  process.exitCode = 0;
 });
 
 // Exercises the whole flag round-trip through a real Commander parse: the
