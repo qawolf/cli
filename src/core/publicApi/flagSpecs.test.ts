@@ -281,6 +281,24 @@ describe("buildFlagSpecs", () => {
     });
   });
 
+  it("refuses two fields of different kinds that kebab to one flag name", () => {
+    // flowIds (string-array) and flow.ids (key-value-record) both kebab to
+    // --flow-ids, but their full usage strings differ ("<values...>" vs
+    // "<KEY=VALUE...>"). Collision detection must key on the bare name, not
+    // the full usage string, or Commander sees one option registered twice
+    // and throws at program construction instead of this friendly error.
+    const input = z.object({
+      flowIds: z.array(z.string()),
+      flow: z.object({ ids: z.record(z.string(), z.string()) }),
+    });
+
+    expect(buildFlagSpecs(input)).toEqual({
+      ok: false,
+      field: "flow.ids",
+      reason: "flag --flow-ids collides with field flowIds",
+    });
+  });
+
   it("rejects a nested field whose leaf cannot be expressed as a flag", () => {
     const schema = z.object({
       config: z.object({ counts: z.array(z.number()) }),

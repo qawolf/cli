@@ -32,8 +32,18 @@ const optionKeyOf = (path: string[]): string =>
     .map((segment, index) => (index === 0 ? segment : capitalize(segment)))
     .join("");
 
+// The bare flag name, e.g. "--environment-id". `flagUsage` appends a
+// kind-specific value placeholder ("", " <value>", " <values...>", or
+// " <KEY=VALUE...>") on top of this, so two fields of different kinds that
+// share a name produce different `flag` strings even though Commander
+// registers them under the same option. Collision detection keys on this
+// name, not on `flag`, so it still catches that case.
+function flagNameOf(path: string[]): string {
+  return `--${path.map(kebabCase).join("-")}`;
+}
+
 function flagUsage(path: string[], kind: FlagKind): string {
-  const name = `--${path.map(kebabCase).join("-")}`;
+  const name = flagNameOf(path);
   if (kind === "boolean") return name;
   if (kind === "string-array") return `${name} <values...>`;
   if (kind === "key-value-record") return `${name} <KEY=VALUE...>`;
@@ -105,19 +115,23 @@ function collectFlags(
 }
 
 // `environmentId` and `environment.id` kebab to one flag name. Commander would
-// bind both to a single option and the losing field would never be sent.
+// bind both to a single option and the losing field would never be sent. Keyed
+// on the bare name rather than the full `flag` usage string, since two fields
+// of different kinds (e.g. a string-array and a key-value-record) that kebab
+// to the same name still collide even though their usage strings differ.
 function findFlagCollision(flags: FlagSpec[]): FlagSpecsResult | undefined {
   const claimed = new Map<string, string[]>();
   for (const flag of flags) {
-    const owner = claimed.get(flag.flag);
+    const name = flagNameOf(flag.path);
+    const owner = claimed.get(name);
     if (owner) {
       return {
         ok: false,
         field: flag.path.join("."),
-        reason: `flag ${flag.flag.split(" ", 1)[0] ?? flag.flag} collides with field ${owner.join(".")}`,
+        reason: `flag ${name} collides with field ${owner.join(".")}`,
       };
     }
-    claimed.set(flag.flag, flag.path);
+    claimed.set(name, flag.path);
   }
   return undefined;
 }
