@@ -49,15 +49,14 @@ function setAtPath(
 ): void {
   const leaf = path[path.length - 1];
   if (leaf === undefined) return;
-  const target = path.slice(0, -1).reduce<Record<string, unknown>>(
-    (node, segment) => {
+  const target = path
+    .slice(0, -1)
+    .reduce<Record<string, unknown>>((node, segment) => {
       const existing = node[segment];
       const next = isRecord(existing) ? existing : {};
       node[segment] = next;
       return next;
-    },
-    input,
-  );
+    }, input);
   target[leaf] = value;
 }
 
