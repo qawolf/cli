@@ -77,9 +77,11 @@ function mergeUnion(branches: JsonSchema[]): ShapeResult {
       }
     }
   }
-  // The discriminator is a field required in every branch whose literal
-  // values are distinct, so passing it selects exactly one branch. Without
-  // one, flags cannot express which branch an invocation targets.
+  // A union does not need a discriminator. `handlePublicApiCommand` validates
+  // the assembled input against the contract before sending, so a caller who
+  // passes flags from two branches gets a field-level error from the contract
+  // rather than a silently accepted request. When a union does have a
+  // discriminator, its values still go into --help below.
   const discriminator = Object.keys(shape.properties).find((field) => {
     const values = shapes.map((branch) => branch.properties[field]?.const);
     return (
@@ -88,13 +90,6 @@ function mergeUnion(branches: JsonSchema[]): ShapeResult {
       shapes.every((branch) => branch.required.has(field))
     );
   });
-  if (discriminator === undefined) {
-    return {
-      ok: false,
-      field: "",
-      reason: "union branches must share a literal discriminator field",
-    };
-  }
 
   for (const [field, fieldSchema] of Object.entries(shape.properties)) {
     const occurrences = shapes.filter((branch) => field in branch.properties);
