@@ -1,8 +1,8 @@
 import { flagKind, type JsonSchema } from "./flagKind.js";
 
 // A root schema flattened to a single object shape, whatever combinator
-// (intersection, discriminated union) it was expressed with.
-type ObjectShape = {
+// (intersection, union) it was expressed with.
+export type ObjectShape = {
   properties: Record<string, JsonSchema>;
   required: Set<string>;
 };

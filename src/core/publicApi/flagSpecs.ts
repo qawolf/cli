@@ -1,11 +1,15 @@
 import { z } from "zod";
 
 import { flagKind, type FlagKind, type JsonSchema } from "./flagKind.js";
-import { toObjectShape } from "./objectShape.js";
+import { type ObjectShape, toObjectShape } from "./objectShape.js";
 
 export type FlagSpec = {
-  // Contract input field this flag maps to, e.g. "environmentId".
-  field: string;
+  // Contract input path this flag maps to, e.g. ["environment", "id"].
+  path: string[];
+  // Commander's camelized key for `flag`, e.g. "environmentId". Commander
+  // derives it from the flag name, not from the path, so a nested leaf is
+  // read back under the flattened key rather than under its path.
+  optionKey: string;
   // Commander usage string, e.g. "--environment-id <value>".
   flag: string;
   description: string;
@@ -17,11 +21,19 @@ export type FlagSpecsResult =
   | { ok: true; flags: FlagSpec[] }
   | { ok: false; field: string; reason: string };
 
-const kebabCase = (field: string): string =>
-  field.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
+const kebabCase = (segment: string): string =>
+  segment.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
 
-function flagUsage(field: string, kind: FlagKind): string {
-  const name = `--${kebabCase(field)}`;
+const capitalize = (segment: string): string =>
+  `${segment.slice(0, 1).toUpperCase()}${segment.slice(1)}`;
+
+const optionKeyOf = (path: string[]): string =>
+  path
+    .map((segment, index) => (index === 0 ? segment : capitalize(segment)))
+    .join("");
+
+function flagUsage(path: string[], kind: FlagKind): string {
+  const name = `--${path.map(kebabCase).join("-")}`;
   if (kind === "boolean") return name;
   if (kind === "string-array") return `${name} <values...>`;
   if (kind === "key-value-record") return `${name} <KEY=VALUE...>`;
@@ -42,25 +54,84 @@ function describeFlag(schema: JsonSchema): string {
   return description ? `${description} ${choices}` : choices;
 }
 
+// A property that flattens to an object shape contributes one flag per leaf
+// instead of one flag for itself. Reusing toObjectShape means a union nested
+// inside a property merges the same way a union at the root does, which is
+// what lets `environment: { id } | { name }` become two flags.
+//
+// A record has `type: "object"` with `additionalProperties` and no
+// `properties`, so it falls through to flagKind and stays one KEY=VALUE flag.
+function walkableShape(schema: JsonSchema): ObjectShape | undefined {
+  const isCombinator = Boolean(schema.allOf ?? schema.oneOf ?? schema.anyOf);
+  if (!schema.properties && !isCombinator) return undefined;
+  const result = toObjectShape(schema);
+  return result.ok ? result.shape : undefined;
+}
+
+function collectFlags(
+  shape: ObjectShape,
+  path: string[],
+  parentRequired: boolean,
+): FlagSpecsResult {
+  const flags: FlagSpec[] = [];
+  for (const [field, fieldSchema] of Object.entries(shape.properties)) {
+    const fieldPath = [...path, field];
+    // A leaf under an optional parent cannot be mandatory: the caller may omit
+    // the whole object.
+    const required = parentRequired && shape.required.has(field);
+
+    const nested = walkableShape(fieldSchema);
+    if (nested) {
+      const result = collectFlags(nested, fieldPath, required);
+      if (!result.ok) return result;
+      flags.push(...result.flags);
+      continue;
+    }
+
+    const kind = flagKind(fieldSchema);
+    if (!kind.ok) {
+      return { ok: false, field: fieldPath.join("."), reason: kind.reason };
+    }
+    flags.push({
+      path: fieldPath,
+      optionKey: optionKeyOf(fieldPath),
+      flag: flagUsage(fieldPath, kind.kind),
+      description: describeFlag(fieldSchema),
+      required,
+      kind: kind.kind,
+    });
+  }
+  return { ok: true, flags };
+}
+
+// `environmentId` and `environment.id` kebab to one flag name. Commander would
+// bind both to a single option and the losing field would never be sent.
+function findFlagCollision(flags: FlagSpec[]): FlagSpecsResult | undefined {
+  const claimed = new Map<string, string[]>();
+  for (const flag of flags) {
+    const owner = claimed.get(flag.flag);
+    if (owner) {
+      return {
+        ok: false,
+        field: flag.path.join("."),
+        reason: `flag ${flag.flag.split(" ", 1)[0] ?? flag.flag} collides with field ${owner.join(".")}`,
+      };
+    }
+    claimed.set(flag.flag, flag.path);
+  }
+  return undefined;
+}
+
 export function buildFlagSpecs(inputSchema: z.ZodType): FlagSpecsResult {
   const jsonSchema = z.toJSONSchema(inputSchema, {
     io: "input",
   }) as JsonSchema;
 
-  const result = toObjectShape(jsonSchema);
-  if (!result.ok) return result;
+  const root = toObjectShape(jsonSchema);
+  if (!root.ok) return root;
 
-  const flags: FlagSpec[] = [];
-  for (const [field, fieldSchema] of Object.entries(result.shape.properties)) {
-    const kind = flagKind(fieldSchema);
-    if (!kind.ok) return { ok: false, field, reason: kind.reason };
-    flags.push({
-      field,
-      flag: flagUsage(field, kind.kind),
-      description: describeFlag(fieldSchema),
-      required: result.shape.required.has(field),
-      kind: kind.kind,
-    });
-  }
-  return { ok: true, flags };
+  const collected = collectFlags(root.shape, [], true);
+  if (!collected.ok) return collected;
+
+  return findFlagCollision(collected.flags) ?? collected;
 }

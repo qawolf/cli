@@ -23,7 +23,7 @@ describe("buildFlagSpecs union inputs", () => {
       { flag: "--type <value>", required: true },
       { flag: "--estimated-due-date <value>", required: false },
     ]);
-    const type = result.flags.find((spec) => spec.field === "type");
+    const type = result.flags.find((spec) => spec.optionKey === "type");
     expect(type?.description).toBe("One of: bug, coverageRequest");
   });
 
@@ -48,28 +48,32 @@ describe("buildFlagSpecs union inputs", () => {
       ok: true,
       flags: [
         {
-          field: "type",
+          path: ["type"],
+          optionKey: "type",
           flag: "--type <value>",
           description: "One of: bug, coverageRequest",
           required: true,
           kind: "string",
         },
         {
-          field: "name",
+          path: ["name"],
+          optionKey: "name",
           flag: "--name <value>",
           description: "",
           required: true,
           kind: "string",
         },
         {
-          field: "priority",
+          path: ["priority"],
+          optionKey: "priority",
           flag: "--priority <value>",
           description: "",
           required: false,
           kind: "string",
         },
         {
-          field: "estimatedDueDate",
+          path: ["estimatedDueDate"],
+          optionKey: "estimatedDueDate",
           flag: "--estimated-due-date <value>",
           description: "Due date",
           required: false,
@@ -89,7 +93,7 @@ describe("buildFlagSpecs union inputs", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const name = result.flags.find((spec) => spec.field === "name");
+    const name = result.flags.find((spec) => spec.optionKey === "name");
     expect(name?.required).toBe(false);
   });
 
@@ -103,7 +107,7 @@ describe("buildFlagSpecs union inputs", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.flags.map((spec) => spec.field)).toEqual([
+    expect(result.flags.map((spec) => spec.optionKey)).toEqual([
       "flowIds",
       "tagNames",
     ]);
@@ -121,21 +125,24 @@ describe("buildFlagSpecs union inputs", () => {
       ok: true,
       flags: [
         {
-          field: "version",
+          path: ["version"],
+          optionKey: "version",
           flag: "--version <value>",
           description: "",
           required: true,
           kind: "string",
         },
         {
-          field: "a",
+          path: ["a"],
+          optionKey: "a",
           flag: "--a <value>",
           description: "",
           required: false,
           kind: "string",
         },
         {
-          field: "b",
+          path: ["b"],
+          optionKey: "b",
           flag: "--b <value>",
           description: "",
           required: false,
