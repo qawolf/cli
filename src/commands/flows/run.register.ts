@@ -106,6 +106,11 @@ export function registerFlowsRunCommand(
       "Use this prepared dependency directory instead of auto-installing the runtime; or set QAWOLF_RUNTIME_DIR to relocate the managed runtime",
     )
     .option(
+      "--allow-no-match",
+      "Exit 0 instead of 2 when the pattern selects no runnable flow",
+      false,
+    )
+    .option(
       "--no-browser-deps",
       "Skip installing OS-level browser dependencies (Linux --with-deps, which needs root); requires the system libraries to already be present",
     )

@@ -40,6 +40,8 @@ export type FlowsRunFlags = {
   readonly deps?: string;
   // --no-browser-deps: skip Playwright's OS dependency install (Linux --with-deps).
   readonly browserDeps: boolean;
+  // --allow-no-match: exit 0 when the pattern selects no runnable flow.
+  readonly allowNoMatch: boolean;
 };
 
 export type FlowsRunDeps = {

@@ -16,6 +16,12 @@ export const runnerMessages = {
   androidWorkersUnsupported:
     "Android flows are not yet supported with --workers > 1; rerun Android flows with --workers 1.",
   noFlowsMatched: "No flows matched.",
+  noFlowsMatchedPattern: (pattern: string | undefined) =>
+    pattern === undefined
+      ? "No flows found. Run 'qawolf flows run --allow-no-match' to exit 0 instead."
+      : `No flows matched '${pattern}'. Run 'qawolf flows run --allow-no-match' to exit 0 instead.`,
+  noRunnableFlows:
+    "No runnable flows matched — every match has a target the CLI cannot run locally. Run with --allow-no-match to exit 0 instead.",
   androidBootFailed: "Android boot failed",
   preparingEnvironment: "Preparing environment",
   environmentReady: "Environment ready",
