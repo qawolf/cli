@@ -1,7 +1,6 @@
 import { classifyTarget, flowBasename } from "~/core/flowMeta.js";
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
-import { exitCodes } from "~/shell/exit.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
 import { runnerMessages } from "~/core/messages/index.js";
@@ -9,6 +8,7 @@ import { runnerMessages } from "~/core/messages/index.js";
 import { collectJsonFailureDetails } from "./jsonFailureDetails.js";
 import { buildRunOptions } from "./runHelpers.js";
 import { executeFlows } from "./dispatchFlows.js";
+import { noMatchResult } from "./noMatch.js";
 import {
   type AndroidResolvedFlow,
   type FlowsRunDeps,
@@ -62,19 +62,15 @@ export async function flowsRun(
   flows.sort((a, b) => a.file.localeCompare(b.file));
 
   if (flows.length === 0) {
-    if (flags.allowNoMatch) {
-      if (skippedByType.size === 0) {
-        ctx.ui.info(runnerMessages.noFlowsMatched);
-      }
-      return;
-    }
-    return {
-      error:
-        skippedByType.size === 0
-          ? runnerMessages.noTargetedFlows
-          : runnerMessages.noRunnableFlows,
-      exitCode: exitCodes.invalidArgs,
-    };
+    const skipped = skippedByType.size > 0;
+    return noMatchResult(ctx, {
+      allowNoMatch: flags.allowNoMatch,
+      error: skipped
+        ? runnerMessages.noRunnableFlows
+        : runnerMessages.noTargetedFlows,
+      // The per-type skip warnings above already explain an empty selection.
+      notice: skipped ? undefined : runnerMessages.noFlowsMatched,
+    });
   }
 
   const webFlows = flows.filter((f): f is WebResolvedFlow => f.kind === "web");

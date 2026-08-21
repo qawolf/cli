@@ -3,11 +3,11 @@ import { runnerMessages } from "~/core/messages/index.js";
 import { pluralize } from "~/core/pluralize.js";
 import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
 import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
+import { noMatchResult } from "~/domains/runner/noMatch.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
 import { prepareRunDir as defaultPrepareRunDir } from "~/domains/runtimeEnv/prepareRunDir.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
-import { exitCodes } from "~/shell/exit.js";
 import type { Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
@@ -56,14 +56,11 @@ export async function handleFlowsRun(
     .debug(`discovered ${pluralize(expandedFiles.length, "flow")}`);
 
   if (expandedFiles.length === 0) {
-    if (flags.allowNoMatch) {
-      ctx.ui.info(runnerMessages.noFlowsMatched);
-      return;
-    }
-    return {
+    return noMatchResult(ctx, {
+      allowNoMatch: flags.allowNoMatch,
       error: runnerMessages.noFlowsMatchedPattern(pattern),
-      exitCode: exitCodes.invalidArgs,
-    };
+      notice: runnerMessages.noFlowsMatched,
+    });
   }
 
   return runStagedFlows({
