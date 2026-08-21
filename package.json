@@ -73,6 +73,7 @@
     "superjson": "2.2.6",
     "tar": "7.5.21",
     "tinyglobby": "0.2.17",
+    "typescript": "6.0.3",
     "zod": "4.4.3"
   },
   "devDependencies": {
@@ -90,7 +91,6 @@
     "oxfmt": "0.54.0",
     "oxlint": "1.69.0",
     "oxlint-tsgolint": "0.23.0",
-    "typescript": "6.0.3",
     "webdriverio": "9.27.1"
   },
   "engines": {

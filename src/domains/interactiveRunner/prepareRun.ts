@@ -47,7 +47,16 @@ export async function prepareRun(
   },
   deps: InteractiveRunnerDeps,
 ): Promise<PreparedRun> {
-  const collected = await collectRunFiles(deps);
+  const linesFilePath =
+    options.linesFile === undefined
+      ? undefined
+      : toCollectedPath(deps.cwd, options.linesFile);
+  const roots =
+    linesFilePath === undefined || linesFilePath === options.entryPointPath
+      ? [options.entryPointPath]
+      : [options.entryPointPath, linesFilePath];
+
+  const collected = await collectRunFiles(deps, roots);
   if (!collected.ok) return refused(collected.error, exitCodes.config);
 
   const files = collected.files;
@@ -71,10 +80,7 @@ export async function prepareRun(
         );
   }
 
-  const path =
-    options.linesFile === undefined
-      ? options.entryPointPath
-      : toCollectedPath(deps.cwd, options.linesFile);
+  const path = linesFilePath ?? options.entryPointPath;
   if (!Object.hasOwn(files, path)) {
     return refused(
       interactiveRunnerMessages.fileNotCollected(path),

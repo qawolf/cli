@@ -35,9 +35,12 @@ async function runWith(options: {
     },
     makeTestDeps({
       collectRunFiles: async () => ({
-        "flow.ts": "export default {};",
-        "package.json": "{}",
-        "pages/login.ts": "export const login = () => {};",
+        files: {
+          "flow.ts": "export default {};",
+          "package.json": "{}",
+          "pages/login.ts": "export const login = () => {};",
+        },
+        unresolvedImports: [],
       }),
     }),
   );

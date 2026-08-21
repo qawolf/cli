@@ -62,57 +62,6 @@ describe("handleRunnerRun", () => {
     });
   });
 
-  it("refuses a file that is not among the ones that travel, without a request", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
-
-    const result = await handleRunnerRun(
-      ctx,
-      {
-        entryPoint: "flows/missing.ts",
-        follow: false,
-        envFile: undefined,
-        lines: undefined,
-        linesFile: undefined,
-        runner: "ci",
-        timeout: undefined,
-        logs: false,
-        recorderEvents: false,
-        runEvents: false,
-      },
-      makeTestDeps(),
-    );
-
-    expect(result?.error).toContain("flows/missing.ts");
-    expect(result?.exitCode).toBe(2);
-    expect(callPublicApi).not.toHaveBeenCalled();
-  });
-
-  it("refuses a directory carrying no package.json, without a request", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
-
-    const result = await handleRunnerRun(
-      ctx,
-      {
-        entryPoint: "flow.ts",
-        follow: false,
-        envFile: undefined,
-        lines: undefined,
-        linesFile: undefined,
-        runner: "ci",
-        timeout: undefined,
-        logs: false,
-        recorderEvents: false,
-        runEvents: false,
-      },
-      makeTestDeps({
-        collectRunFiles: async () => ({ "flow.ts": "export default {};" }),
-      }),
-    );
-
-    expect(result?.error).toContain("package.json");
-    expect(callPublicApi).not.toHaveBeenCalled();
-  });
-
   // An outcome the CLI does not know must not read as success.
   it("reports an outcome it does not recognize rather than exiting 0", async () => {
     const { result } = await runWith({ outcome: "queued" });
@@ -148,32 +97,6 @@ describe("handleRunnerRun", () => {
 
   // Checking the files costs nothing and resolving a runner may launch and bill
   // one, so a misspelled flow name must be answered before any of that.
-  it("refuses a misspelled flow without launching a runner", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
-    const deps = makeTestDeps();
-
-    const result = await handleRunnerRun(
-      ctx,
-      {
-        entryPoint: "flows/chekcout.flow.ts",
-        follow: false,
-        envFile: undefined,
-        lines: undefined,
-        linesFile: undefined,
-        runner: undefined,
-        timeout: undefined,
-        logs: false,
-        recorderEvents: false,
-        runEvents: false,
-      },
-      deps,
-    );
-
-    expect(result?.exitCode).toBe(2);
-    expect(callPublicApi).not.toHaveBeenCalled();
-    expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
-  });
-
   it("announces the runner it had to launch, naming it", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi

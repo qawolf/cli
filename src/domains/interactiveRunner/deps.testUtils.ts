@@ -80,7 +80,7 @@ export function makeTestDeps(
     },
   };
   return {
-    collectRunFiles: async () => files,
+    collectRunFiles: async () => ({ files, unresolvedImports: [] }),
     cwd: testCwd,
     env: {},
     makeRunnerId: () => "cli-minted",

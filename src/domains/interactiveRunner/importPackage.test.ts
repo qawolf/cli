@@ -12,7 +12,10 @@ const manifest = JSON.stringify({
 
 function depsWithManifest(content = manifest) {
   return makeTestDeps({
-    collectRunFiles: async () => ({ "package.json": content }),
+    collectRunFiles: async () => ({
+      files: { "package.json": content },
+      unresolvedImports: [],
+    }),
     readFile: async () => content,
   });
 }

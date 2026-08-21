@@ -153,14 +153,20 @@ so the snippet can use your own page objects and helpers.
 
 ## Running a flow
 
-`qawolf runner run <flowFile>` ships the current directory's runnable files with the
-request. The runner holds no copy of your project, so what runs is exactly what
-is on disk at that moment, uncommitted edits included. A `package.json` has to
-be there, since the run reads its npm dependencies from it, and the files may
-carry at most 30 MiB in total: run from a directory holding the flow and what it
-imports rather than from the root of a large monorepo. A missing file, a missing
-`package.json` and files over the cap are all refused before any runner is
-resolved or launched, so a typo costs nothing.
+`qawolf runner run <flowFile>` ships the flow file, everything it imports, and
+your `package.json` and `tsconfig.json`. Nothing else travels, so you can run
+from the root of a large project without sending it. The runner holds no copy of
+your project, so what runs is exactly what is on disk at that moment,
+uncommitted edits included.
+
+Imports are followed the same way a run from the QA Wolf app follows them:
+relative paths and `tsconfig.json` path aliases, resolving `.ts` and `.js`. An
+`export ... from` re-export is not followed, and neither is `require()`, so a
+barrel file does not pull in what it re-exports. A `package.json` has to be
+there, since the run reads its npm dependencies from it, and the files may carry
+at most 30 MiB in total. A missing file, a missing `package.json` and files over
+the cap are all refused before any runner is resolved or launched, so a typo
+costs nothing.
 
 The call answers with a run id as soon as the run is accepted. **The outcome is
 not in that answer**, it is in the `run-status` stream, whose entries carry

@@ -37,7 +37,7 @@ async function resolveScope(
     return { filePath: undefined, files: undefined, ok: true };
   }
   const filePath = toCollectedPath(deps.cwd, contextFile);
-  const files = await deps.collectRunFiles();
+  const { files } = await deps.collectRunFiles([filePath]);
   const check = checkSnippetFiles(files, filePath);
   if (check.type !== "ok") {
     return { error: describeRunFilesCheck(check), ok: false };

@@ -10,8 +10,11 @@ describe("handleRunnerRun with --env-file", () => {
   const envFileDeps = (content: string) =>
     makeTestDeps({
       collectRunFiles: async () => ({
-        "flow.ts": "export default {};",
-        "package.json": "{}",
+        files: {
+          "flow.ts": "export default {};",
+          "package.json": "{}",
+        },
+        unresolvedImports: [],
       }),
       readFile: async (path) => {
         if (basename(path) === ".env") return content;

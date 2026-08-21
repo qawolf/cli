@@ -75,7 +75,10 @@ describe("handleRunnerExec", () => {
       ctx,
       { contextFile: "flow.ts", runner: "ci", source: "-" },
       makeTestDeps({
-        collectRunFiles: async () => ({ "flow.ts": "export default {};" }),
+        collectRunFiles: async () => ({
+          files: { "flow.ts": "export default {};" },
+          unresolvedImports: [],
+        }),
         readStdin: async () => "await signIn()",
       }),
     );

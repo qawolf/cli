@@ -15,16 +15,16 @@ import { collectRunFiles } from "./collectRunFiles.js";
 
 // A real directory rather than the in-memory Fs: the walk is tinyglobby's, and
 // what is under test is exactly which real paths it hands to the predicate.
-const roots: string[] = [];
+const workspaces: string[] = [];
 
 afterEach(() => {
-  for (const root of roots.splice(0))
+  for (const root of workspaces.splice(0))
     rmSync(root, { recursive: true, force: true });
 });
 
 function makeWorkspace(files: Record<string, string>): string {
   const root = mkdtempSync(join(tmpdir(), "qawolf-collect-"));
-  roots.push(root);
+  workspaces.push(root);
   for (const [path, content] of Object.entries(files)) {
     const absolute = join(root, path);
     mkdirSync(dirname(absolute), { recursive: true });
@@ -33,100 +33,195 @@ function makeWorkspace(files: Record<string, string>): string {
   return root;
 }
 
-async function collect(files: Record<string, string>): Promise<string[]> {
-  const collected = await collectRunFiles({
+const flowPath = "src/flows/checkout.flow.ts";
+
+async function collect(
+  files: Record<string, string>,
+  roots: readonly string[] = [flowPath],
+) {
+  return collectRunFiles({
     cwd: makeWorkspace(files),
     fs: makeDefaultFs(),
+    roots,
   });
-  return Object.keys(collected);
 }
 
+const pathsOf = async (
+  files: Record<string, string>,
+  roots?: readonly string[],
+) => Object.keys((await collect(files, roots)).files).sort();
+
 describe("collectRunFiles", () => {
-  it("collects source and configuration, with contents", async () => {
-    const cwd = makeWorkspace({
-      "flows/checkout.flow.ts": "export default {};",
-      "package.json": '{"name":"project"}',
-      "tsconfig.json": "{}",
-    });
-
-    const collected = await collectRunFiles({ cwd, fs: makeDefaultFs() });
-
-    expect(collected).toEqual({
-      "flows/checkout.flow.ts": "export default {};",
-      "package.json": '{"name":"project"}',
-      "tsconfig.json": "{}",
-    });
-  });
-
-  it("leaves behind what the travel rule refuses", async () => {
+  it("collects the entry point, what it imports, and the two fixed files", async () => {
     expect(
-      await collect({
-        ".env": "SECRET=1",
-        ".qawolf/staging/cached.ts": "export default {};",
-        "README.md": "docs",
-        "flow.ts": "export default {};",
-        "node_modules/left-pad/index.js": "module.exports = 1;",
+      await pathsOf({
         "package.json": "{}",
-        "screenshot.png": "binary",
+        "src/flows/checkout.flow.ts": 'import "../pages/login";',
+        "src/pages/login.ts": "export const login = 1;",
+        "tsconfig.json": "{}",
       }),
-    ).toEqual(["flow.ts", "package.json"]);
+    ).toEqual([
+      "package.json",
+      "src/flows/checkout.flow.ts",
+      "src/pages/login.ts",
+      "tsconfig.json",
+    ]);
   });
 
-  it("collects every extension a runner can read", async () => {
+  it("leaves behind a file the flow does not reach", async () => {
     expect(
-      await collect({
-        "a.cjs": "1",
-        "b.js": "1",
-        "c.json": "1",
-        "d.mjs": "1",
-        "e.ts": "1",
-        "f.tsx": "1",
+      await pathsOf({
+        "package.json": "{}",
+        "src/flows/checkout.flow.ts": "export default {};",
+        "src/flows/unrelated.flow.ts": "export default {};",
+        "src/pages/never.ts": "export const never = 1;",
       }),
-    ).toEqual(["a.cjs", "b.js", "c.json", "d.mjs", "e.ts", "f.tsx"]);
+    ).toEqual(["package.json", "src/flows/checkout.flow.ts"]);
   });
 
-  // Everything else the travel rule refuses is refused by the glob first, so this
-  // is the case that proves the predicate is what decides. A control character in
-  // a name is matched by `**/*.ts` and rejected only by `isShippableRunFilePath`.
-  //
-  // Windows filenames cannot hold a control character at all, so there the file
-  // cannot be written to test with. Every other path the predicate alone refuses
-  // is likewise unwritable there — a backslash separates, `.` and `..` name
-  // directories — which leaves nothing to assert on that platform.
-  it.skipIf(process.platform === "win32")(
-    "leaves behind a path only the predicate refuses",
-    async () => {
-      expect(
-        await collect({
-          [`bad${String.fromCharCode(1)}name.ts`]: "export default {};",
-          "flow.ts": "export default {};",
+  it("follows a tsconfig path alias", async () => {
+    expect(
+      await pathsOf({
+        "package.json": "{}",
+        "src/flows/checkout.flow.ts": 'import "~/pages/login";',
+        "src/pages/login.ts": "export const login = 1;",
+        "tsconfig.json": '{"compilerOptions":{"paths":{"~/*":["src/*"]}}}',
+      }),
+    ).toEqual([
+      "package.json",
+      "src/flows/checkout.flow.ts",
+      "src/pages/login.ts",
+      "tsconfig.json",
+    ]);
+  });
+
+  it("terminates on a cycle", async () => {
+    expect(
+      await pathsOf({
+        "package.json": "{}",
+        "src/flows/checkout.flow.ts": 'import "../pages/a";',
+        "src/pages/a.ts": 'import "./b";',
+        "src/pages/b.ts": 'import "./a";',
+      }),
+    ).toEqual([
+      "package.json",
+      "src/flows/checkout.flow.ts",
+      "src/pages/a.ts",
+      "src/pages/b.ts",
+    ]);
+  });
+
+  it("walks past the first level", async () => {
+    expect(
+      await pathsOf({
+        "package.json": "{}",
+        "src/flows/checkout.flow.ts": 'import "../pages/one";',
+        "src/pages/one.ts": 'import "./two";',
+        "src/pages/three.ts": "export const three = 3;",
+        "src/pages/two.ts": 'import "./three";',
+      }),
+    ).toEqual([
+      "package.json",
+      "src/flows/checkout.flow.ts",
+      "src/pages/one.ts",
+      "src/pages/three.ts",
+      "src/pages/two.ts",
+    ]);
+  });
+
+  it("resolves an import written with the other supported extension", async () => {
+    expect(
+      await pathsOf({
+        "package.json": "{}",
+        "src/flows/checkout.flow.ts": 'import "../pages/login.js";',
+        "src/pages/login.ts": "export const login = 1;",
+      }),
+    ).toEqual([
+      "package.json",
+      "src/flows/checkout.flow.ts",
+      "src/pages/login.ts",
+    ]);
+  });
+
+  it("leaves npm packages to the runner to install", async () => {
+    expect(
+      await pathsOf({
+        "package.json": "{}",
+        "src/flows/checkout.flow.ts":
+          'import "playwright";\nimport "@qawolf/flows";',
+      }),
+    ).toEqual(["package.json", "src/flows/checkout.flow.ts"]);
+  });
+
+  it("reports an import it could not resolve rather than dropping it", async () => {
+    const collected = await collect({
+      "package.json": "{}",
+      "src/flows/checkout.flow.ts": 'import "../pages/missing";',
+    });
+
+    expect(collected.unresolvedImports).toEqual([
+      {
+        importPath: "../pages/missing",
+        importingFilePath: "src/flows/checkout.flow.ts",
+      },
+    ]);
+  });
+
+  it("fails when a file the graph reaches cannot be read", async () => {
+    expect(
+      collect({ "package.json": "{}" }, ["src/flows/gone.flow.ts"]),
+    ).rejects.toThrow();
+  });
+
+  it("takes more than one root, for a range in another file", async () => {
+    expect(
+      await pathsOf(
+        {
           "package.json": "{}",
-        }),
-      ).toEqual(["flow.ts", "package.json"]);
-    },
-  );
-
-  it("collects nothing from an empty directory", async () => {
-    expect(await collect({})).toEqual([]);
+          "src/flows/checkout.flow.ts": "export default {};",
+          "src/pages/login.ts": "export const login = 1;",
+        },
+        [flowPath, "src/pages/login.ts"],
+      ),
+    ).toEqual([
+      "package.json",
+      "src/flows/checkout.flow.ts",
+      "src/pages/login.ts",
+    ]);
   });
 
-  // A symlink reads as whatever it points at, which can be outside the working
-  // directory entirely. A run must not ship files from elsewhere on the machine.
-  it.skipIf(process.platform === "win32")(
-    "leaves behind a symbolic link to a file outside the directory",
-    async () => {
-      const outside = mkdtempSync(join(tmpdir(), "qawolf-outside-"));
-      roots.push(outside);
-      writeFileSync(join(outside, "secret.ts"), "export const secret = 1;");
-      const cwd = makeWorkspace({
-        "flow.ts": "export default {};",
-        "package.json": "{}",
-      });
-      symlinkSync(join(outside, "secret.ts"), join(cwd, "linked.ts"));
+  it("leaves node_modules and dot directories out of the path set", async () => {
+    const collected = await collect({
+      ".hidden/secret.ts": "export const secret = 1;",
+      "node_modules/dep/index.ts": "export const dep = 1;",
+      "package.json": "{}",
+      "src/flows/checkout.flow.ts": 'import "../../node_modules/dep";',
+    });
 
-      const collected = await collectRunFiles({ cwd, fs: makeDefaultFs() });
+    expect(Object.keys(collected.files).sort()).toEqual([
+      "package.json",
+      "src/flows/checkout.flow.ts",
+    ]);
+    expect(collected.unresolvedImports).toHaveLength(1);
+  });
 
-      expect(Object.keys(collected)).toEqual(["flow.ts", "package.json"]);
-    },
-  );
+  it("does not follow a symbolic link out of the working directory", async () => {
+    const outside = makeWorkspace({
+      "outside.ts": "export const outside = 1;",
+    });
+    const root = makeWorkspace({
+      "package.json": "{}",
+      "src/flows/checkout.flow.ts": 'import "../pages/linked";',
+    });
+    mkdirSync(join(root, "src/pages"), { recursive: true });
+    symlinkSync(join(outside, "outside.ts"), join(root, "src/pages/linked.ts"));
+
+    const collected = await collectRunFiles({
+      cwd: root,
+      fs: makeDefaultFs(),
+      roots: [flowPath],
+    });
+
+    expect(Object.keys(collected.files)).not.toContain("src/pages/linked.ts");
+  });
 });
