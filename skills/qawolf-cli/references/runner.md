@@ -71,7 +71,7 @@ Retry on the exit code, not on the message text:
   persists past a few tries, relaunch the id.
 - `2` will not clear on its own. Either nothing has run on this runner yet, so
   run a flow, or the runner has no browser at all, so launch with
-  `--name node20WithPlaywright` instead. The message says which.
+  `--name playwright` instead. The message says which.
 
 The one exception is `exec`, which reports both as `4`; read its message to tell
 them apart.

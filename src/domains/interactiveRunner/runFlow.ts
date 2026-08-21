@@ -18,7 +18,7 @@ import { resolveRecorderAnchor } from "./followPrinters.js";
 import { followRun } from "./followRun.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
-import { compatRunFlowContract } from "./runnerNameCompat.js";
+import { runFlowContract } from "./runnerNames.js";
 
 export async function handleRunnerRun(
   ctx: AuthCommandContext,
@@ -73,7 +73,7 @@ export async function handleRunnerRun(
   }
 
   const result = await ctx.platformClient.callPublicApi(
-    compatRunFlowContract,
+    runFlowContract,
     { entryPointPath, files, id: resolved.runnerId },
     runnerCallOptions,
   );

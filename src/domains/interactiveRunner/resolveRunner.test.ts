@@ -5,13 +5,13 @@ import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import { resolveRunner } from "./resolveRunner.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
-import { compatLaunchContract } from "./runnerNameCompat.js";
+import { launchContract } from "./runnerNames.js";
 
 const launched = {
   gpuAccelerated: false,
   id: "cli-minted",
   outcome: "launched" as const,
-  runnerName: "node20WithPlaywright" as const,
+  runnerName: "playwright" as const,
 };
 
 describe("resolveRunner", () => {
@@ -68,7 +68,7 @@ describe("resolveRunner", () => {
     ).toEqual({ runnerId: "cli-minted", type: "launched" });
 
     expect(callPublicApi).toHaveBeenCalledWith(
-      compatLaunchContract,
+      launchContract,
       { id: "cli-minted" },
       runnerCallOptions,
     );
@@ -170,7 +170,7 @@ describe("resolveRunner", () => {
     callPublicApi.mockResolvedValue({
       error: "QA Wolf API runner.launch request failed (HTTP 409).",
       errorBody:
-        "runner cli-minted is already running node20Basic; stop it before launching node20WithAndroid",
+        "runner cli-minted is already running basic; stop it before launching android",
       ok: false,
     });
 
@@ -182,7 +182,7 @@ describe("resolveRunner", () => {
 
     expect(
       resolved.type === "failed" ? resolved.errorBody : undefined,
-    ).toContain("already running node20Basic");
+    ).toContain("already running basic");
     expect(resolved).toMatchObject({ exitCode: 4, type: "failed" });
   });
 

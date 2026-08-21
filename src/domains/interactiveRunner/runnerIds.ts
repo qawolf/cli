@@ -1,7 +1,7 @@
 import { runnerIdSchema } from "@qawolf/api-contracts/v1";
 import { z } from "zod";
 
-import { compatRunnerNameSchema, type RunnerName } from "./runnerNameCompat.js";
+import { runnerNameSchema, type RunnerName } from "./runnerNames.js";
 
 /**
  * Validates a runner id against the published schema before it reaches the wire,
@@ -16,15 +16,11 @@ export function parseRunnerId(
   return { id: parsed.data, ok: true };
 }
 
-/**
- * The same, for the image name a runner is launched from. Both the old and
- * the new vocabulary are accepted while the platform migrates from one to
- * the other; see `runnerNameCompat`.
- */
+/** The same, for the image name a runner is launched from. */
 export function parseRunnerName(
   runnerName: string,
 ): { ok: true; runnerName: RunnerName } | { ok: false; error: string } {
-  const parsed = compatRunnerNameSchema.safeParse(runnerName);
+  const parsed = runnerNameSchema.safeParse(runnerName);
   if (!parsed.success)
     return { error: z.prettifyError(parsed.error), ok: false };
   return { ok: true, runnerName: parsed.data };

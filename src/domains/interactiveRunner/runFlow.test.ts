@@ -3,7 +3,7 @@ import { describe, expect, it } from "bun:test";
 import { handleRunnerRun } from "./runFlow.js";
 import { makeAuthCtx, makeTestDeps, testCwd } from "./deps.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
-import { compatRunFlowContract } from "./runnerNameCompat.js";
+import { runFlowContract } from "./runnerNames.js";
 
 const submitted = { outcome: "submitted" as const, runId: "run-a" };
 
@@ -39,7 +39,7 @@ describe("handleRunnerRun", () => {
 
     expect(result).toBeUndefined();
     expect(callPublicApi).toHaveBeenCalledWith(
-      compatRunFlowContract,
+      runFlowContract,
       {
         entryPointPath: "flow.ts",
         files: { "flow.ts": "export default {};", "package.json": "{}" },
@@ -115,20 +115,6 @@ describe("handleRunnerRun", () => {
   it("names both images when the runner is the wrong one for the flow", async () => {
     const { result } = await runWith({
       outcome: "runner-target-mismatch",
-      requiredRunnerName: "node20WithAndroid",
-      runnerName: "node20WithPlaywright",
-    });
-
-    expect(result?.error).toContain("node20WithAndroid");
-    expect(result?.error).toContain("node20WithPlaywright");
-    expect(result?.exitCode).toBe(2);
-  });
-
-  // A mismatch answered in the new vocabulary must still parse: it is the
-  // whole point of accepting both vocabularies through the migration.
-  it("names both images when the mismatch names them in the new vocabulary", async () => {
-    const { result } = await runWith({
-      outcome: "runner-target-mismatch",
       requiredRunnerName: "android",
       runnerName: "playwright",
     });
@@ -181,7 +167,7 @@ describe("handleRunnerRun", () => {
           gpuAccelerated: false,
           id: "cli-minted",
           outcome: "launched",
-          runnerName: "node20WithPlaywright",
+          runnerName: "playwright",
         },
       })
       .mockResolvedValueOnce({ ok: true, value: submitted });

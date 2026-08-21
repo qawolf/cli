@@ -12,7 +12,7 @@ import {
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 import { parseRunnerId, parseRunnerName } from "./runnerIds.js";
-import { compatLaunchContract, type RunnerName } from "./runnerNameCompat.js";
+import { launchContract, type RunnerName } from "./runnerNames.js";
 
 type LaunchedRunner = {
   gpuAccelerated: boolean;
@@ -35,7 +35,7 @@ async function launchRunner(
   options: { id: string; runnerName: RunnerName | undefined },
 ): Promise<LaunchResult> {
   const result = await ctx.platformClient.callPublicApi(
-    compatLaunchContract,
+    launchContract,
     {
       id: options.id,
       ...(options.runnerName ? { runnerName: options.runnerName } : {}),

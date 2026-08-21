@@ -140,7 +140,7 @@ describe("handleRunnerRun --follow", () => {
           gpuAccelerated: false,
           id: "cli-minted",
           outcome: "launched",
-          runnerName: "node20WithPlaywright",
+          runnerName: "playwright",
         },
       })
       .mockImplementation((contract, input) =>

@@ -67,7 +67,7 @@ export const interactiveRunnerMessages = {
     `The runner answered the submission with "${outcome}", which this version of the CLI does not recognize. Upgrade to read it.`,
   runSubmitted: (runId: string) => `Submitted run ${runId}.`,
   runnerHasNoScreen:
-    "This runner does not run a browser on a virtual desktop, so there is nothing about it to see or drive. Retrying will never help: launch a node20WithPlaywright runner instead.",
+    "This runner does not run a browser on a virtual desktop, so there is nothing about it to see or drive. Retrying will never help: launch a playwright runner instead.",
   runnerHasNoScreenToEvaluate:
     "The runner could not evaluate the snippet. This covers a runner that is still starting or busy, and also one with no live page to evaluate against: a freshly launched runner has no page until a run opens one, so run a flow on it with qawolf runner run first. If it is not a runner that runs a browser at all, this will never clear. It is not proof the snippet did not run, so do not resubmit one that mutates the page without reading qawolf runner events console first.",
   runnerUnreachable:

@@ -299,12 +299,12 @@ Launch an interactive runner and make it this directory's default
 
 Options:
   --id <id>       Id to launch under. Relaunching an id attaches to that runner
-  --name <image>  Runner image to run, e.g. node20WithPlaywright
+  --name <image>  Runner image to run, e.g. playwright
   -h, --help      display help for command
 
 Examples:
   $ qawolf runner launch
-  $ qawolf runner launch --name node20WithAndroid
+  $ qawolf runner launch --name android
   $ qawolf runner launch --id ci
 "
 `;

@@ -12,7 +12,7 @@ import { runnerDeps, runnerFlagDescription } from "./context.js";
 const launchExamples = `
 Examples:
   $ qawolf runner launch
-  $ qawolf runner launch --name node20WithAndroid
+  $ qawolf runner launch --name android
   $ qawolf runner launch --id ci`;
 
 const keepaliveExamples = `
@@ -32,7 +32,7 @@ export function registerRunnerLifecycleCommands(
       "--id <id>",
       "Id to launch under. Relaunching an id attaches to that runner",
     )
-    .option("--name <image>", "Runner image to run, e.g. node20WithPlaywright")
+    .option("--name <image>", "Runner image to run, e.g. playwright")
     .addHelpText("after", launchExamples)
     .action((opts: { id?: string; name?: string }, command: Command) =>
       withAuthContext(signals, (ctx) =>

@@ -68,7 +68,7 @@ describe("handleRunnerAct outcomes", () => {
     const { result } = await actWith({ outcome: "runner-has-no-screen" });
 
     expect(result?.error).toContain("Retrying will never help");
-    expect(result?.error).toContain("node20WithPlaywright");
+    expect(result?.error).toContain("playwright");
     expect(result?.exitCode).toBe(2);
   });
 
