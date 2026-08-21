@@ -1,3 +1,4 @@
+import { sep } from "node:path";
 import type { Mock } from "bun:test";
 import type { RunFiles } from "@qawolf/api-contracts/v1";
 
@@ -85,10 +86,8 @@ export function makeTestDeps(
     makeRunnerId: () => "cli-minted",
     readFile: async (path) => {
       // Handlers that build an absolute path from `cwd` and ones that pass a
-      // collected path through both land here.
-      const collected = path.startsWith(`${testCwd}/`)
-        ? path.slice(testCwd.length + 1)
-        : path;
+      // collected path through both land here, on either platform's separator.
+      const collected = path.split(sep).join("/").replace(`${testCwd}/`, "");
       const content = files[collected];
       if (content === undefined) throw Error(`no such file: ${path}`);
       return content;

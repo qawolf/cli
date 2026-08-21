@@ -1,3 +1,4 @@
+import { basename } from "node:path";
 import { describe, expect, it } from "bun:test";
 
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
@@ -13,7 +14,7 @@ describe("handleRunnerRun with --env-file", () => {
         "package.json": "{}",
       }),
       readFile: async (path) => {
-        if (path.endsWith("/.env")) return content;
+        if (basename(path) === ".env") return content;
         throw Error(`no such file: ${path}`);
       },
     });
