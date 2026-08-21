@@ -2,7 +2,6 @@ import type { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import type { z } from "zod";
 
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
-import type { CommandResult } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
 
 type RunSubmitFailure = Extract<
@@ -11,9 +10,15 @@ type RunSubmitFailure = Extract<
 >;
 
 /** Why a submission was refused, and what the caller should do about it. */
+export type RunSubmitRefusal = {
+  error: string;
+  errorBody?: string;
+  exitCode: number;
+};
+
 export function describeRunSubmitFailure(
   failure: RunSubmitFailure,
-): CommandResult {
+): RunSubmitRefusal {
   const { failureReason } = failure;
   switch (failureReason) {
     case "runner-target-mismatch":

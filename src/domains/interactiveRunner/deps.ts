@@ -6,6 +6,10 @@ import {
 } from "~/shell/interactiveRunner/collectRunFiles.js";
 import { makeRunnerId } from "~/shell/interactiveRunner/makeRunnerId.js";
 import {
+  type RunFilesManifestStore,
+  makeRunFilesManifestStore,
+} from "~/shell/interactiveRunner/runFilesManifest.js";
+import {
   type RunnerStore,
   makeRunnerStore,
 } from "~/shell/interactiveRunner/runnerStore.js";
@@ -27,6 +31,7 @@ export type InteractiveRunnerDeps = {
   makeRunnerId: () => string;
   readFile: (path: string) => Promise<string>;
   readStdin: () => Promise<string>;
+  runFilesManifest: RunFilesManifestStore;
   sleep: (ms: number) => Promise<void>;
   store: RunnerStore;
   writeScreenshot: (options: {
@@ -48,6 +53,10 @@ export function makeInteractiveRunnerDeps(options: {
     makeRunnerId,
     readFile: (path) => options.fs.readFile(path),
     readStdin,
+    runFilesManifest: makeRunFilesManifestStore({
+      cwd: options.cwd,
+      fs: options.fs,
+    }),
     sleep: defaultSleep,
     store: makeRunnerStore({ cwd: options.cwd, fs: options.fs }),
     writeScreenshot: (screenshot) =>

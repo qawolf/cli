@@ -28,6 +28,10 @@ export const runMessages = {
     "The run settled, but the last window of its followed streams could not be read, so the output above may be missing its final lines.",
   followTimedOut: (runId: string, runnerId: string, seconds: number) =>
     `Stopped following run ${runId} after ${formatSeconds(seconds * 1000)}. The run may still be going: read it with qawolf runner events run-status --run ${runId}, and terminate the runner with qawolf runner terminate --runner ${runnerId} when you are done. Pass --timeout to wait longer.`,
+  fullSyncTwice:
+    "The runner asked for every file even after being sent every file. Nothing is stale on this side, so this is worth reporting.",
+  shippedDelta:
+    "Sent only the files that changed since this runner's last run.",
   needsFullSync: (missingPaths: readonly string[]) =>
     `The runner does not hold ${missingPaths.join(", ")}, so it refused a run that referenced them without sending them. Run the flow again to ship every file it needs.`,
   missingPackageJson:

@@ -168,6 +168,13 @@ at most 30 MiB in total. A missing file, a missing `package.json` and files over
 the cap are all refused before any runner is resolved or launched, so a typo
 costs nothing.
 
+After the first run on a runner, later runs send only the files whose content
+changed, so iterating on one flow costs a small request rather than the whole
+graph again. `--json` reports which happened as `fileSync`, `delta` or `full`.
+Nothing about this needs managing: the baseline lives in `.qawolf/runner-files.json`,
+a switch to another runner ignores it, and a runner that turns out not to hold
+what was claimed gets the whole set resent automatically.
+
 The call answers with a run id as soon as the run is accepted. **The outcome is
 not in that answer**, it is in the `run-status` stream, whose entries carry
 `runId`, `status` and an `errorMessage` when there is one.

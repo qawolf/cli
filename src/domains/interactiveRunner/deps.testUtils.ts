@@ -10,6 +10,7 @@ import {
   makeCallPublicApiMock,
   makeMockPlatformClient,
 } from "~/shell/platform/createPlatformClient.testUtils.js";
+import { makeRunFilesManifestStore } from "~/shell/interactiveRunner/runFilesManifest.js";
 import { makeRunnerStore } from "~/shell/interactiveRunner/runnerStore.js";
 import type {
   AuthCommandContext,
@@ -93,6 +94,10 @@ export function makeTestDeps(
       return content;
     },
     readStdin: async () => "",
+    runFilesManifest: makeRunFilesManifestStore({
+      cwd: testCwd,
+      fs: makeMemoryFs(),
+    }),
     sleep: async () => {},
     store: makeRunnerStore({ cwd: testCwd, fs: makeMemoryFs() }),
     writeScreenshot: (screenshot) =>

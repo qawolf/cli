@@ -1,5 +1,3 @@
-import { publicContractsV1 } from "@qawolf/api-contracts/v1";
-
 import { parseFollowTimeout } from "~/core/interactiveRunner/followTimeout.js";
 import { toCollectedPath } from "~/core/interactiveRunner/runFiles.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
@@ -12,11 +10,10 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { resolveRecorderAnchor } from "./followPrinters.js";
-import { describeRunSubmitFailure } from "./runSubmitFailure.js";
 import { followRun } from "./followRun.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
 import { prepareRun } from "./prepareRun.js";
-import { runnerCallOptions } from "./runnerCallOptions.js";
+import { submitRun } from "./submitRun.js";
 
 export async function handleRunnerRun(
   ctx: AuthCommandContext,
@@ -73,49 +70,26 @@ export async function handleRunnerRun(
     recorderSinceSequence = anchor.sinceSequence;
   }
 
-  const result = await ctx.platformClient.callPublicApi(
-    publicContractsV1.runner.runFlow,
+  const submitted = await submitRun(
+    ctx,
     {
       entryPointPath,
+      environment: prepared.environment,
       files: prepared.files,
-      id: resolved.runnerId,
-      ...(prepared.environment === undefined
-        ? {}
-        : { env: prepared.environment }),
-      ...(prepared.selection === undefined
-        ? {}
-        : { selection: prepared.selection }),
+      resolved,
+      selection: prepared.selection,
     },
-    runnerCallOptions,
+    deps,
   );
-  if (!result.ok) {
-    return { ...failureFields(result), exitCode: exitCodes.network };
+  if (!submitted.ok) {
+    const { ok: _ok, ...failure } = submitted;
+    return failure;
   }
-
-  const { outcome } = result.value;
-  switch (outcome) {
-    case "failure":
-      return describeRunSubmitFailure(result.value);
-    case "success":
-      break;
-    // An outcome added to the contract must not fall through to exit 0: today
-    // the response schema refuses one this version does not know, and this keeps
-    // a future contracts bump a compile error rather than a silent pass.
-    default:
-      outcome satisfies never;
-      return {
-        error: interactiveRunnerMessages.runSubmitAnsweredUnknown(outcome),
-        exitCode: exitCodes.network,
-      };
-  }
-
-  // Absent means false. The pod and apex halves of this field land later, so a
-  // runner that did bootstrap may still say nothing.
-  if (result.value.bootstrappedRunner === true) {
+  if (submitted.bootstrappedRunner) {
     ctx.ui.info(interactiveRunnerMessages.bootstrappedForSelection);
   }
 
-  const runId = result.value.runId;
+  const runId = submitted.runId;
   // The stream flags imply --follow: each only chooses what a follow prints, so
   // alone it can only mean "follow, with that stream".
   const follow =
@@ -125,7 +99,7 @@ export async function handleRunnerRun(
     options.recorderEvents;
   if (!follow) {
     ctx.ui.output(
-      { runId, runnerId: resolved.runnerId },
+      { fileSync: submitted.fileSync, runId, runnerId: resolved.runnerId },
       interactiveRunnerMessages.runSubmitted(runId),
     );
     return undefined;
@@ -134,6 +108,9 @@ export async function handleRunnerRun(
   // then is the run's journal entries, and a differently shaped object among
   // them leaves a reader of the stream sniffing keys to tell which lines are log
   // entries.
+  if (submitted.fileSync === "delta") {
+    ctx.ui.info(interactiveRunnerMessages.shippedDelta);
+  }
   ctx.ui.info(interactiveRunnerMessages.runSubmitted(runId));
   return followRun(
     ctx,
