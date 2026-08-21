@@ -191,6 +191,17 @@ The lines-file has to be one of the files that travel, so it lives under the
 directory you run from. A range whose file is not collected is refused before a
 runner is addressed, naming the path.
 
+### Giving the run environment variables
+
+`--env-file .env` gives the run the variables in a dotenv file, in the format
+`qawolf flows pull` writes. It is `--env-file` and not `--env`, which on
+`qawolf flows` means a QA Wolf environment by id or slug.
+
+A run may carry at most 100 variables, each value at most 8 KiB. Names follow
+what a shell accepts, and `QAWOLF_TEAM_ID` is reserved because QA Wolf sets it
+from the key you authenticated with. All of that is refused before a runner is
+addressed, naming the variable at fault.
+
 If the runner had no browser, one is started before your lines run, and the
 command says so on stderr. Those lines then ran against a fresh page rather than
 the one an earlier run left, which is worth reading before you act on what you

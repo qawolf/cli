@@ -1,6 +1,11 @@
 import type { RunFiles, RunSelection } from "@qawolf/api-contracts/v1";
+import { resolve } from "node:path";
 
 import { buildRunSelection } from "~/core/interactiveRunner/lineSelection.js";
+import {
+  type BuiltRunEnvironment,
+  buildRunEnvironment,
+} from "~/core/interactiveRunner/runEnvironment.js";
 import {
   checkRunFiles,
   describeRunFilesCheck,
@@ -13,7 +18,12 @@ import { collectRunFiles } from "./collectFiles.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
 
 export type PreparedRun =
-  | { ok: true; files: RunFiles; selection: RunSelection | undefined }
+  | {
+      ok: true;
+      environment: Record<string, string> | undefined;
+      files: RunFiles;
+      selection: RunSelection | undefined;
+    }
   | { ok: false; error: string; exitCode: number };
 
 const refused = (error: string, exitCode: number): PreparedRun => ({
@@ -31,6 +41,7 @@ const refused = (error: string, exitCode: number): PreparedRun => ({
 export async function prepareRun(
   options: {
     entryPointPath: string;
+    envFile: string | undefined;
     lines: string | undefined;
     linesFile: string | undefined;
   },
@@ -45,9 +56,15 @@ export async function prepareRun(
     return refused(describeRunFilesCheck(check), exitCodes.invalidArgs);
   }
 
+  const environment = await readEnvironment(options.envFile, deps);
+  if (environment !== undefined && !environment.ok) {
+    return refused(environment.error, exitCodes.config);
+  }
+  const given = environment?.ok === true ? environment.environment : undefined;
+
   if (options.lines === undefined) {
     return options.linesFile === undefined
-      ? { files, ok: true, selection: undefined }
+      ? { environment: given, files, ok: true, selection: undefined }
       : refused(
           interactiveRunnerMessages.linesFileWithoutLines,
           exitCodes.invalidArgs,
@@ -67,6 +84,19 @@ export async function prepareRun(
 
   const built = buildRunSelection({ lines: options.lines, path });
   return built.ok
-    ? { files, ok: true, selection: built.selection }
+    ? { environment: given, files, ok: true, selection: built.selection }
     : refused(built.error, exitCodes.invalidArgs);
+}
+
+async function readEnvironment(
+  envFile: string | undefined,
+  deps: InteractiveRunnerDeps,
+): Promise<BuiltRunEnvironment | undefined> {
+  if (envFile === undefined) return undefined;
+  const content = await deps
+    .readFile(resolve(deps.cwd, envFile))
+    .catch(() => undefined);
+  return content === undefined
+    ? { error: interactiveRunnerMessages.envFileUnreadable(envFile), ok: false }
+    : buildRunEnvironment(content);
 }

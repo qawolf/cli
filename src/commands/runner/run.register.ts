@@ -17,6 +17,7 @@ Examples:
   $ qawolf runner run flows/checkout.flow.ts --lines 4-9 --lines-file pages/login.ts`;
 
 type RunFlags = {
+  envFile?: string;
   follow: boolean;
   lines?: string;
   linesFile?: string;
@@ -58,6 +59,10 @@ export function registerRunCommand(
       false,
     )
     .option(
+      "--env-file <path>",
+      "Dotenv file whose variables the run is given. Not --env, which on qawolf flows names a QA Wolf environment",
+    )
+    .option(
       "--lines <start-end>",
       "Run only these 1-indexed lines against the browser as it stands, instead of the whole flow from a fresh one",
     )
@@ -78,6 +83,7 @@ export function registerRunCommand(
           ctx,
           {
             entryPoint: flowFile,
+            envFile: opts.envFile,
             follow: opts.follow,
             lines: opts.lines,
             linesFile: opts.linesFile,

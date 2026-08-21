@@ -22,6 +22,7 @@ const runFollowing = (
     {
       entryPoint: "flow.ts",
       follow: options.follow ?? true,
+      envFile: undefined,
       lines: undefined,
       linesFile: undefined,
       logs: options.logs ?? false,

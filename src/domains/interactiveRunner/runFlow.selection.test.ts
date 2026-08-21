@@ -24,6 +24,7 @@ async function runWith(options: {
     {
       entryPoint: options.entryPoint ?? "flow.ts",
       follow: false,
+      envFile: undefined,
       lines: options.lines,
       linesFile: options.linesFile,
       logs: false,

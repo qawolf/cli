@@ -22,6 +22,7 @@ async function runWith(
     {
       entryPoint: options.entryPoint ?? "flow.ts",
       follow: false,
+      envFile: undefined,
       lines: options.lines,
       linesFile: options.linesFile,
       runner: "ci",
@@ -69,6 +70,7 @@ describe("handleRunnerRun", () => {
       {
         entryPoint: "flows/missing.ts",
         follow: false,
+        envFile: undefined,
         lines: undefined,
         linesFile: undefined,
         runner: "ci",
@@ -93,6 +95,7 @@ describe("handleRunnerRun", () => {
       {
         entryPoint: "flow.ts",
         follow: false,
+        envFile: undefined,
         lines: undefined,
         linesFile: undefined,
         runner: "ci",
@@ -154,6 +157,7 @@ describe("handleRunnerRun", () => {
       {
         entryPoint: "flows/chekcout.flow.ts",
         follow: false,
+        envFile: undefined,
         lines: undefined,
         linesFile: undefined,
         runner: undefined,
@@ -190,6 +194,7 @@ describe("handleRunnerRun", () => {
       {
         entryPoint: "flow.ts",
         follow: false,
+        envFile: undefined,
         lines: undefined,
         linesFile: undefined,
         runner: undefined,
@@ -226,6 +231,7 @@ describe("handleRunnerRun", () => {
       {
         entryPoint: "flow.ts",
         follow: false,
+        envFile: undefined,
         lines: undefined,
         linesFile: undefined,
         runner: "ci",

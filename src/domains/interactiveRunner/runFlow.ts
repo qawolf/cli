@@ -22,6 +22,7 @@ export async function handleRunnerRun(
   ctx: AuthCommandContext,
   options: {
     entryPoint: string;
+    envFile: string | undefined;
     follow: boolean;
     lines: string | undefined;
     linesFile: string | undefined;
@@ -43,7 +44,12 @@ export async function handleRunnerRun(
   // name should not be answered with a pod.
   const entryPointPath = toCollectedPath(deps.cwd, options.entryPoint);
   const prepared = await prepareRun(
-    { entryPointPath, lines: options.lines, linesFile: options.linesFile },
+    {
+      entryPointPath,
+      envFile: options.envFile,
+      lines: options.lines,
+      linesFile: options.linesFile,
+    },
     deps,
   );
   if (!prepared.ok) {
@@ -73,6 +79,9 @@ export async function handleRunnerRun(
       entryPointPath,
       files: prepared.files,
       id: resolved.runnerId,
+      ...(prepared.environment === undefined
+        ? {}
+        : { env: prepared.environment }),
       ...(prepared.selection === undefined
         ? {}
         : { selection: prepared.selection }),

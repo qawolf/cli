@@ -356,6 +356,8 @@ Options:
                        lines while following, from an anchor taken just before
                        submission: the recorder is runner-wide, not run-scoped.
                        Implies --follow (default: false)
+  --env-file <path>    Dotenv file whose variables the run is given. Not --env,
+                       which on qawolf flows names a QA Wolf environment
   --lines <start-end>  Run only these 1-indexed lines against the browser as it
                        stands, instead of the whole flow from a fresh one
   --lines-file <path>  File the --lines range lives in. Defaults to <flowFile>;
