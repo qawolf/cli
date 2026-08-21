@@ -1,6 +1,7 @@
 import { classifyTarget, flowBasename } from "~/core/flowMeta.js";
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
+import { exitCodes } from "~/shell/exit.js";
 import type { RunSummary } from "~/shell/reporter/types.js";
 import type { BrowserName } from "~/core/types.js";
 import { runnerMessages } from "~/core/messages/index.js";
@@ -61,10 +62,19 @@ export async function flowsRun(
   flows.sort((a, b) => a.file.localeCompare(b.file));
 
   if (flows.length === 0) {
-    if (skippedByType.size === 0) {
-      ctx.ui.info(runnerMessages.noFlowsMatched);
+    if (flags.allowNoMatch) {
+      if (skippedByType.size === 0) {
+        ctx.ui.info(runnerMessages.noFlowsMatched);
+      }
+      return;
     }
-    return;
+    return {
+      error:
+        skippedByType.size === 0
+          ? runnerMessages.noTargetedFlows
+          : runnerMessages.noRunnableFlows,
+      exitCode: exitCodes.invalidArgs,
+    };
   }
 
   const webFlows = flows.filter((f): f is WebResolvedFlow => f.kind === "web");

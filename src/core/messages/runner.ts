@@ -20,6 +20,8 @@ export const runnerMessages = {
     pattern === undefined
       ? "No flows found. Run 'qawolf flows run --allow-no-match' to exit 0 instead."
       : `No flows matched '${pattern}'. Run 'qawolf flows run --allow-no-match' to exit 0 instead.`,
+  noTargetedFlows:
+    "No matched flow declares a target. Add a target to the flow, or run with --allow-no-match to exit 0 instead.",
   noRunnableFlows:
     "No runnable flows matched — every match has a target the CLI cannot run locally. Run with --allow-no-match to exit 0 instead.",
   androidBootFailed: "Android boot failed",
