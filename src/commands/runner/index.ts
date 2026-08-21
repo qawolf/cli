@@ -2,6 +2,7 @@ import type { Command } from "commander";
 
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
+import { registerRunnerInspectCommands } from "./inspect.register.js";
 import { registerRunnerInteractCommands } from "./interact.register.js";
 import { registerRunnerLifecycleCommands } from "./lifecycle.register.js";
 import { registerRunnerRunCommands } from "./run.register.js";
@@ -17,4 +18,5 @@ export function registerRunnerCommand(
   registerRunnerLifecycleCommands(runner, signals);
   registerRunnerRunCommands(runner, signals);
   registerRunnerInteractCommands(runner, signals);
+  registerRunnerInspectCommands(runner, signals);
 }

@@ -291,6 +291,7 @@ Commands:
                              JSON from stdin
   exec [options] <file>      Evaluate a snippet against a runner's live page.
                              Use - to read the snippet from stdin
+  inspect                    Read one thing off a runner's live page
   help [command]             display help for command
 "
 `;
@@ -455,6 +456,67 @@ Examples:
   $ qawolf runner act navigate --url https://example.com
   $ qawolf runner act drag --path '[{"x":10,"y":20},{"x":80,"y":90}]'
   $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act -
+"
+`;
+
+exports[`--help output qawolf runner inspect 1`] = `
+"Usage: qawolf runner inspect [options] [command]
+
+Read one thing off a runner's live page
+
+Options:
+  -h, --help              display help for command
+
+Commands:
+  element-html [options]  Print the HTML of the first element a selector matches
+  page-html [options]     Print the page's HTML, simplified for a model to read
+  variable [options]      Print a top-level variable's value from the running
+                          workflow
+  help [command]          display help for command
+
+Examples:
+  $ qawolf runner inspect element-html --selector "#email"
+  $ qawolf runner inspect page-html > page.html
+  $ qawolf runner inspect variable --name cart | jq .total
+"
+`;
+
+exports[`--help output qawolf runner inspect element-html 1`] = `
+"Usage: qawolf runner inspect element-html [options]
+
+Print the HTML of the first element a selector matches
+
+Options:
+  --selector <selector>  Playwright selector to inspect
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then
+                         this directory's stored runner
+  -h, --help             display help for command
+"
+`;
+
+exports[`--help output qawolf runner inspect page-html 1`] = `
+"Usage: qawolf runner inspect page-html [options]
+
+Print the page's HTML, simplified for a model to read
+
+Options:
+  --selector <selector>  Limit the output to this subtree
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then
+                         this directory's stored runner
+  -h, --help             display help for command
+"
+`;
+
+exports[`--help output qawolf runner inspect variable 1`] = `
+"Usage: qawolf runner inspect variable [options]
+
+Print a top-level variable's value from the running workflow
+
+Options:
+  --name <name>  Name of the variable to read
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
+                 directory's stored runner
+  -h, --help     display help for command
 "
 `;
 

@@ -54,6 +54,7 @@ export const interactiveRunnerMessages = {
     `The runner does not hold ${missingPaths.join(", ")}, so it refused a run that referenced them without sending them. Run the flow again to ship every file it needs.`,
   missingPackageJson:
     "No package.json in the current directory. A run reads its npm dependencies from one, so it has to travel with the flow.",
+  noRunnerIdForInspect: `${noRunnerId} Inspecting also needs a page, which a runner gets from its first run: run a flow on it with qawolf runner run.`,
   noRunnerIdForScreenshot: `${noRunnerId} A screenshot also needs a screen, which a runner gets from its first run: run a flow on it with qawolf runner run.`,
   noRunnerId,
   wasNotRunning: (id: string) => `Runner ${id} was not running.`,
@@ -78,6 +79,10 @@ export const interactiveRunnerMessages = {
     "The runner could not evaluate the snippet. This covers a runner that is still starting or busy, and also one with no live page to evaluate against: a freshly launched runner has no page until a run opens one, so run a flow on it with qawolf runner run first. If it is not a runner that runs a browser at all, this will never clear. It is not proof the snippet did not run, so do not resubmit one that mutates the page without reading qawolf runner events console first.",
   runStopped: (id: string) =>
     `Stopped the run on runner ${id}. The runner is still up, on whatever page the run reached.`,
+  nothingToInspect: (errorMessage: string | undefined) =>
+    `The runner had nothing to inspect${errorMessage === undefined ? "" : `: ${errorMessage}`}. There is no live page, nothing matched the selector, or no variable has that name; a runner cannot tell those apart. Run a flow on it first, or check the selector or name.`,
+  inspectAnsweredUnknown: (failureReason: string) =>
+    `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
   nothingToStop: (id: string) =>
     `Runner ${id} had nothing to stop. The run had already finished, or none had been submitted.`,
   runnerUnreachable:
