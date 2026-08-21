@@ -114,6 +114,10 @@ describe("--help output", () => {
     expect(helpFor("runner", "act")).toMatchSnapshot();
   });
 
+  it("qawolf runner import-package", () => {
+    expect(helpFor("runner", "import-package")).toMatchSnapshot();
+  });
+
   it("qawolf runner inspect", () => {
     expect(helpFor("runner", "inspect")).toMatchSnapshot();
   });
@@ -157,6 +161,7 @@ describe("--help output", () => {
       ["runner", "screenshot"],
       ["runner", "act"],
       ["runner", "exec"],
+      ["runner", "import-package"],
       ["runner", "inspect"],
       ["runner", "inspect", "element-html"],
       ["runner", "inspect", "page-html"],

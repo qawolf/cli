@@ -54,6 +54,9 @@ export const interactiveRunnerMessages = {
     `The runner does not hold ${missingPaths.join(", ")}, so it refused a run that referenced them without sending them. Run the flow again to ship every file it needs.`,
   missingPackageJson:
     "No package.json in the current directory. A run reads its npm dependencies from one, so it has to travel with the flow.",
+  missingPackageJsonForImport:
+    "No package.json in the current directory. The install resolves against the run's own dependencies, which are read from one.",
+  noRunnerIdForImport: `${noRunnerId} An install also needs a live run to go into, which a runner gets from qawolf runner run.`,
   noRunnerIdForInspect: `${noRunnerId} Inspecting also needs a page, which a runner gets from its first run: run a flow on it with qawolf runner run.`,
   noRunnerIdForScreenshot: `${noRunnerId} A screenshot also needs a screen, which a runner gets from its first run: run a flow on it with qawolf runner run.`,
   noRunnerId,
@@ -114,6 +117,18 @@ export const interactiveRunnerMessages = {
   stdinEmptySnippet:
     'Nothing arrived on stdin. Pipe the snippet in, or name a file instead of "-".',
   terminated: (id: string) => `Terminated runner ${id}.`,
+  packageInstalled: (name: string, version: string) =>
+    `Installed ${name}@${version} into the runner's live run.`,
+  packageJsonUnreadable: (reason: string) =>
+    `package.json could not be read because ${reason}. Fix it and try again.`,
+  installFailed: (
+    name: string,
+    version: string,
+    errorMessage: string | undefined,
+  ) =>
+    `npm could not install ${name}@${version}${errorMessage === undefined ? "" : `. ${errorMessage}`}. Check the name and the version; waiting will not change this.`,
+  importAnsweredUnknown: (failureReason: string) =>
+    `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
   requestTooLarge: (byteLength: number, maxByteLength: number) =>
     `The run request encodes to ${String(byteLength)} bytes, over the ${String(maxByteLength)} a runner accepts. Escaping inflates file content, so a set of files inside the content cap can still encode to more than this. Run from a directory holding only the flow and what it imports.`,
   unknownStream: (stream: string, known: readonly string[]) =>

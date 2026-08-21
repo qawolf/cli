@@ -84,7 +84,12 @@ export function makeTestDeps(
     env: {},
     makeRunnerId: () => "cli-minted",
     readFile: async (path) => {
-      const content = files[path];
+      // Handlers that build an absolute path from `cwd` and ones that pass a
+      // collected path through both land here.
+      const collected = path.startsWith(`${testCwd}/`)
+        ? path.slice(testCwd.length + 1)
+        : path;
+      const content = files[collected];
       if (content === undefined) throw Error(`no such file: ${path}`);
       return content;
     },

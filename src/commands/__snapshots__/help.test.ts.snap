@@ -267,32 +267,34 @@ exports[`--help output qawolf runner 1`] = `
 Drive an interactive runner on the QA Wolf platform
 
 Options:
-  -h, --help                 display help for command
+  -h, --help                       display help for command
 
 Commands:
-  launch [options]           Launch an interactive runner and make it this
-                             directory's default
-  terminate [options]        End an interactive runner, and the pod it runs on
-                             with it
-  stop-run [options]         Stop what a runner is currently executing, leaving
-                             the runner up
-  keepalive [options]        Reset a runner's inactivity clock, for a caller
-                             that pauses between actions
-  run [options] <file>       Run a flow on an interactive runner, shipping the
-                             current directory's files with it
-  events [options] <stream>  Print a runner's journal, one entry per line. QA
-                             Wolf writes console, recorder, run-events,
-                             run-logs, run-status
-  screenshot [options]       Save a JPEG of an interactive runner's screen to a
-                             file
-  act [options] <action>     Perform one raw action on a runner's screen: click,
-                             double_click, scroll, move, drag, keypress,
-                             navigate or type. Use - to read a whole action as
-                             JSON from stdin
-  exec [options] <file>      Evaluate a snippet against a runner's live page.
-                             Use - to read the snippet from stdin
-  inspect                    Read one thing off a runner's live page
-  help [command]             display help for command
+  launch [options]                 Launch an interactive runner and make it this
+                                   directory's default
+  terminate [options]              End an interactive runner, and the pod it
+                                   runs on with it
+  stop-run [options]               Stop what a runner is currently executing,
+                                   leaving the runner up
+  keepalive [options]              Reset a runner's inactivity clock, for a
+                                   caller that pauses between actions
+  run [options] <file>             Run a flow on an interactive runner, shipping
+                                   the current directory's files with it
+  events [options] <stream>        Print a runner's journal, one entry per line.
+                                   QA Wolf writes console, recorder, run-events,
+                                   run-logs, run-status
+  screenshot [options]             Save a JPEG of an interactive runner's screen
+                                   to a file
+  act [options] <action>           Perform one raw action on a runner's screen:
+                                   click, double_click, scroll, move, drag,
+                                   keypress, navigate or type. Use - to read a
+                                   whole action as JSON from stdin
+  exec [options] <file>            Evaluate a snippet against a runner's live
+                                   page. Use - to read the snippet from stdin
+  inspect                          Read one thing off a runner's live page
+  import-package [options] <name>  Install a package into a runner's live run,
+                                   so a snippet or a selection can import it
+  help [command]                   display help for command
 "
 `;
 
@@ -456,6 +458,24 @@ Examples:
   $ qawolf runner act navigate --url https://example.com
   $ qawolf runner act drag --path '[{"x":10,"y":20},{"x":80,"y":90}]'
   $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act -
+"
+`;
+
+exports[`--help output qawolf runner import-package 1`] = `
+"Usage: qawolf runner import-package [options] <name>
+
+Install a package into a runner's live run, so a snippet or a selection can
+import it
+
+Options:
+  --package-version <version>  Version to install (default: "latest")
+  --runner <id>                Runner to target. Defaults to QAWOLF_RUNNER_ID,
+                               then this directory's stored runner
+  -h, --help                   display help for command
+
+Examples:
+  $ qawolf runner import-package dayjs
+  $ qawolf runner import-package dayjs --package-version 1.11.13
 "
 `;
 
