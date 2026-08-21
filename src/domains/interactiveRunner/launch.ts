@@ -2,6 +2,7 @@ import {
   type RunnerNameForPublicApi,
   publicContractsV1,
 } from "@qawolf/api-contracts/v1";
+import type { z } from "zod";
 
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
@@ -18,12 +19,7 @@ import type { InteractiveRunnerDeps } from "./deps.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 import { parseRunnerId, parseRunnerName } from "./runnerIds.js";
 
-type LaunchedRunner = {
-  gpuAccelerated: boolean;
-  id: string;
-  outcome: "launched" | "already-running";
-  runnerName: RunnerNameForPublicApi;
-};
+type LaunchedRunner = z.output<typeof publicContractsV1.runner.launch.output>;
 
 type LaunchFailure = PlatformFailure & { ok: false; exitCode: number };
 
@@ -31,8 +27,8 @@ type LaunchResult = { ok: true; value: LaunchedRunner } | LaunchFailure;
 
 /**
  * Launches a runner under `id`, or attaches to the one already running there.
- * The distinction is in `outcome`, and every caller passes it on: an agent about
- * to drive a browser needs to know whether it is looking at a fresh one.
+ * `alreadyRunning` tells them apart, and every caller passes it on: an agent
+ * driving a browser needs to know whether it is looking at a fresh one.
  */
 async function launchRunner(
   ctx: AuthCommandContext,
@@ -142,9 +138,9 @@ export async function handleRunnerLaunch(
 
   ctx.ui.output(
     launched.value,
-    launched.value.outcome === "launched"
-      ? interactiveRunnerMessages.launched(launched.value.id)
-      : interactiveRunnerMessages.alreadyRunning(launched.value.id),
+    launched.value.alreadyRunning
+      ? interactiveRunnerMessages.alreadyRunning(launched.value.id)
+      : interactiveRunnerMessages.launched(launched.value.id),
   );
   return undefined;
 }

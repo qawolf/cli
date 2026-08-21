@@ -4,7 +4,7 @@ import { handleRunnerRun } from "./runFlow.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { makeJournal } from "./journal.testUtils.js";
 
-const submitted = { outcome: "submitted" as const, runId: "run-a" };
+const submitted = { outcome: "success" as const, runId: "run-a" };
 
 const runFollowing = (
   ctx: ReturnType<typeof makeAuthCtx>["ctx"],
@@ -139,8 +139,9 @@ describe("handleRunnerRun --follow", () => {
         value: {
           gpuAccelerated: false,
           id: "cli-minted",
-          outcome: "launched",
-          runnerName: "node20WithPlaywright",
+          alreadyRunning: false,
+          outcome: "success",
+          runnerName: "playwright",
         },
       })
       .mockImplementation((contract, input) =>
@@ -176,7 +177,13 @@ describe("handleRunnerRun --follow", () => {
         anchorReads++;
         return Promise.resolve(
           anchorReads === 1
-            ? { ok: true, value: { outcome: "runner-unreachable" } }
+            ? {
+                ok: true,
+                value: {
+                  failureReason: "runner-unreachable",
+                  outcome: "failure",
+                },
+              }
             : {
                 ok: true,
                 value: {
@@ -206,7 +213,7 @@ describe("handleRunnerRun --follow", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { outcome: "runner-unreachable" },
+      value: { failureReason: "runner-unreachable", outcome: "failure" },
     });
 
     const result = await runFollowing(ctx, { recorderEvents: true });

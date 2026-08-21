@@ -100,7 +100,7 @@ describe("followRun", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { outcome: "runner-unreachable" },
+      value: { failureReason: "runner-unreachable", outcome: "failure" },
     });
 
     const result = await follow(ctx);

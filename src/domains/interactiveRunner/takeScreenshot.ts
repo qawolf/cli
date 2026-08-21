@@ -54,34 +54,36 @@ export async function handleRunnerScreenshot(
     return { ...failureFields(result), exitCode: exitCodes.network };
   }
 
-  switch (result.value.outcome) {
-    case "captured": {
-      const written = await deps.writeScreenshot({
-        imageJpegBase64: result.value.imageJpegBase64,
-        path: options.out,
-      });
-      // A payload that is not an image is the API's to fix, not the caller's;
-      // a path that cannot be written is the other way round.
-      if (!written.ok) {
-        return written.reason === "not-a-jpeg"
-          ? {
-              error: interactiveRunnerMessages.screenshotNotAnImage,
-              exitCode: exitCodes.network,
-            }
-          : {
-              error: interactiveRunnerMessages.screenshotUnwritable(
-                options.out,
-                written.detail,
-              ),
-              exitCode: exitCodes.invalidArgs,
-            };
-      }
-      ctx.ui.output(
-        { outcome: "captured", path: options.out },
-        interactiveRunnerMessages.screenshotWritten(options.out),
-      );
-      return undefined;
+  if (result.value.outcome === "success") {
+    const written = await deps.writeScreenshot({
+      imageJpegBase64: result.value.imageJpegBase64,
+      path: options.out,
+    });
+    // A payload that is not an image is the API's to fix, not the caller's;
+    // a path that cannot be written is the other way round.
+    if (!written.ok) {
+      return written.reason === "not-a-jpeg"
+        ? {
+            error: interactiveRunnerMessages.screenshotNotAnImage,
+            exitCode: exitCodes.network,
+          }
+        : {
+            error: interactiveRunnerMessages.screenshotUnwritable(
+              options.out,
+              written.detail,
+            ),
+            exitCode: exitCodes.invalidArgs,
+          };
     }
+    ctx.ui.output(
+      { outcome: "success", path: options.out },
+      interactiveRunnerMessages.screenshotWritten(options.out),
+    );
+    return undefined;
+  }
+
+  const { failureReason } = result.value;
+  switch (failureReason) {
     // Permanent until the caller acts, so not a retry: only a run starts the
     // desktop, and waiting is what a caller does with `screen-not-ready`.
     case "screen-needs-a-run":
@@ -107,5 +109,13 @@ export async function handleRunnerScreenshot(
         error: interactiveRunnerMessages.runnerUnreachable,
         exitCode: exitCodes.network,
       };
+    default: {
+      failureReason satisfies never;
+      return {
+        error:
+          interactiveRunnerMessages.screenshotAnsweredUnknown(failureReason),
+        exitCode: exitCodes.network,
+      };
+    }
   }
 }

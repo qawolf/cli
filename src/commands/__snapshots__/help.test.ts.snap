@@ -272,7 +272,8 @@ Options:
 Commands:
   launch [options]           Launch an interactive runner and make it this
                              directory's default
-  stop [options]             Stop an interactive runner
+  terminate [options]        End an interactive runner, and the pod it runs on
+                             with it
   keepalive [options]        Reset a runner's inactivity clock, for a caller
                              that pauses between actions
   run [options] <file>       Run a flow on an interactive runner, shipping the
@@ -298,21 +299,21 @@ exports[`--help output qawolf runner launch 1`] = `
 Launch an interactive runner and make it this directory's default
 
 Options:
-  --id <id>       Id to launch under. Relaunching an id attaches to that runner
-  --name <image>  Runner image to run, e.g. node20WithPlaywright
-  -h, --help      display help for command
+  --id <id>        Id to launch under. Relaunching an id attaches to that runner
+  --name <family>  Runner family to run, e.g. playwright
+  -h, --help       display help for command
 
 Examples:
   $ qawolf runner launch
-  $ qawolf runner launch --name node20WithAndroid
+  $ qawolf runner launch --name android
   $ qawolf runner launch --id ci
 "
 `;
 
-exports[`--help output qawolf runner stop 1`] = `
-"Usage: qawolf runner stop [options]
+exports[`--help output qawolf runner terminate 1`] = `
+"Usage: qawolf runner terminate [options]
 
-Stop an interactive runner
+End an interactive runner, and the pod it runs on with it
 
 Options:
   --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this

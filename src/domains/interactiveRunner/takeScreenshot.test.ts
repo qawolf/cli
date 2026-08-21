@@ -16,7 +16,7 @@ describe("handleRunnerScreenshot", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { imageJpegBase64, outcome: "captured" },
+      value: { imageJpegBase64, outcome: "success" },
     });
     const deps = makeTestDeps();
 
@@ -39,7 +39,7 @@ describe("handleRunnerScreenshot", () => {
     const { callPublicApi, ctx, outputs } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { imageJpegBase64, outcome: "captured" },
+      value: { imageJpegBase64, outcome: "success" },
     });
 
     await handleRunnerScreenshot(
@@ -50,7 +50,7 @@ describe("handleRunnerScreenshot", () => {
 
     expect(outputs()[0]?.humanMessage).toContain("screens/step-3.jpg");
     expect(outputs()[0]?.data).toEqual({
-      outcome: "captured",
+      outcome: "success",
       path: "screens/step-3.jpg",
     });
   });
@@ -60,7 +60,7 @@ describe("handleRunnerScreenshot", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { outcome: "screen-needs-a-run" },
+      value: { failureReason: "screen-needs-a-run", outcome: "failure" },
     });
     const deps = makeTestDeps();
 
@@ -80,7 +80,7 @@ describe("handleRunnerScreenshot", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { outcome: "screen-not-ready" },
+      value: { failureReason: "screen-not-ready", outcome: "failure" },
     });
     const deps = makeTestDeps();
 
@@ -100,7 +100,7 @@ describe("handleRunnerScreenshot", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { outcome: "runner-has-no-screen" },
+      value: { failureReason: "runner-has-no-screen", outcome: "failure" },
     });
 
     const result = await handleRunnerScreenshot(
@@ -136,7 +136,7 @@ describe("handleRunnerScreenshot", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { imageJpegBase64, outcome: "captured" },
+      value: { imageJpegBase64, outcome: "success" },
     });
     const deps = makeTestDeps();
     await deps.store.writeDefaultRunnerId("from-store");
@@ -154,7 +154,7 @@ describe("handleRunnerScreenshot", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { outcome: "runner-unreachable" },
+      value: { failureReason: "runner-unreachable", outcome: "failure" },
     });
     const deps = makeTestDeps();
 
@@ -174,7 +174,7 @@ describe("handleRunnerScreenshot", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { imageJpegBase64, outcome: "captured" },
+      value: { imageJpegBase64, outcome: "success" },
     });
 
     const result = await handleRunnerScreenshot(
@@ -199,7 +199,7 @@ describe("handleRunnerScreenshot", () => {
     const { callPublicApi, ctx, outputs } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { imageJpegBase64: "", outcome: "captured" },
+      value: { imageJpegBase64: "", outcome: "success" },
     });
     const deps = makeTestDeps();
 

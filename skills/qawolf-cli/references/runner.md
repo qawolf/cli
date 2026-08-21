@@ -9,7 +9,7 @@ plain request to one host, so there is no connection to hold open.
 Runner ids are yours to choose and are scoped to your team, so `agent-1` is a
 fine id. Launching an id that is already running attaches to that runner instead
 of starting and billing a second one, and the answer says which happened: read
-`outcome` for `launched` or `already-running`. Reusing one id is therefore the
+`alreadyRunning`. Reusing one id is therefore the
 cheap and safe pattern, and the same id with a different `--name` is refused
 rather than silently ignored.
 
@@ -38,8 +38,8 @@ nothing is signed in, and no page is open. Acting as though your earlier setup
 survived is the single most likely way to drive the wrong page.
 
 No `read` command ever launches a runner. `screenshot`, `events` and `keepalive`
-tell you there is no runner rather than quietly billing one, and so does `stop`,
-since starting a pod in order to stop it would be absurd.
+tell you there is no runner rather than quietly billing one, and so does
+`terminate`, since starting a pod in order to end it would be absurd.
 
 ## The order that matters
 
@@ -71,7 +71,7 @@ Retry on the exit code, not on the message text:
   persists past a few tries, relaunch the id.
 - `2` will not clear on its own. Either nothing has run on this runner yet, so
   run a flow, or the runner has no browser at all, so launch with
-  `--name node20WithPlaywright` instead. The message says which.
+  `--name playwright` instead. The message says which.
 
 The one exception is `exec`, which reports both as `4`; read its message to tell
 them apart.
@@ -157,7 +157,7 @@ so the snippet can use your own page objects and helpers.
 request. The runner holds no copy of your project, so what runs is exactly what
 is on disk at that moment, uncommitted edits included. A `package.json` has to
 be there, since the run reads its npm dependencies from it, and the files may
-carry at most 4 MiB in total: run from a directory holding the flow and what it
+carry at most 30 MiB in total: run from a directory holding the flow and what it
 imports rather than from the root of a large monorepo. A missing file, a missing
 `package.json` and files over the cap are all refused before any runner is
 resolved or launched, so a typo costs nothing.
@@ -264,7 +264,7 @@ pod that is gone. It resets the clock and tells you the runner is still there.
 
 It is listed as a `read`, but it is the one read with a cost: keeping the clock
 reset keeps a billed pod alive. Call it while you are genuinely still working, not
-on a timer you forget, and call `qawolf runner stop` when you are done rather
+on a timer you forget, and call `qawolf runner terminate` when you are done rather
 than leaving a pod to time out. A loop that keeps a runner alive and never stops
 it bills until someone notices.
 
@@ -277,7 +277,7 @@ the screen, so it is not optional even though the goal here is to drive by hand.
 export QAWOLF_API_KEY=...          # the only credential
 export QAWOLF_RUNNER_ID=agent-1    # so no command below needs --runner
 
-qawolf runner launch --id agent-1 --json          # --id, not the variable; read .outcome
+qawolf runner launch --id agent-1 --json          # --id, not the variable; read .alreadyRunning
 qawolf runner run flows/smoke.flow.ts --follow    # starts the screen; exit 1 if it failed
 
 qawolf runner act navigate --url https://example.com/login
@@ -286,5 +286,5 @@ qawolf runner act click --button left --x 480 --y 260
 qawolf runner act type --text "someone@example.com"
 
 qawolf runner events recorder --tail 5 | jq -r '[.locator] + (.alternates // []) | @tsv'
-qawolf runner stop
+qawolf runner terminate
 ```

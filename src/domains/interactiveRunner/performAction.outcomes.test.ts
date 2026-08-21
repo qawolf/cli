@@ -28,18 +28,19 @@ async function actWith(value: unknown) {
 
 describe("handleRunnerAct outcomes", () => {
   it("reports the action it performed", async () => {
-    const { outputs, result } = await actWith({ outcome: "performed" });
+    const { outputs, result } = await actWith({ outcome: "success" });
 
     expect(result).toBeUndefined();
     expect(outputs()[0]?.humanMessage).toBe("Performed click.");
-    expect(outputs()[0]?.data).toMatchObject({ outcome: "performed" });
+    expect(outputs()[0]?.data).toMatchObject({ outcome: "success" });
   });
 
   // Attempted and did not take effect: an answer, not a fault on our side.
   it("reports what stopped an action that reached the runner", async () => {
     const { result } = await actWith({
       errorMessage: "the page navigated away",
-      outcome: "action-failed",
+      failureReason: "action-failed",
+      outcome: "failure",
     });
 
     expect(result?.error).toContain("the page navigated away");
@@ -49,7 +50,10 @@ describe("handleRunnerAct outcomes", () => {
   // Not a wait: only a run starts the desktop, so a caller that retries this one
   // retries for ever.
   it("reads a screen that has never started as needing a run, not a retry", async () => {
-    const { result } = await actWith({ outcome: "screen-needs-a-run" });
+    const { result } = await actWith({
+      failureReason: "screen-needs-a-run",
+      outcome: "failure",
+    });
 
     expect(result?.error).toContain("qawolf runner run");
     expect(result?.exitCode).toBe(2);
@@ -57,7 +61,10 @@ describe("handleRunnerAct outcomes", () => {
 
   // Transient, and worth trying again in a second or two.
   it("reads a screen that is not up yet as worth retrying", async () => {
-    const { result } = await actWith({ outcome: "screen-not-ready" });
+    const { result } = await actWith({
+      failureReason: "screen-not-ready",
+      outcome: "failure",
+    });
 
     expect(result?.error).toContain("Retry in a second or two");
     expect(result?.exitCode).toBe(4);
@@ -65,17 +72,23 @@ describe("handleRunnerAct outcomes", () => {
 
   // Permanent, and the caller's to fix by launching a different image.
   it("reads a runner with no screen as never going to work", async () => {
-    const { result } = await actWith({ outcome: "runner-has-no-screen" });
+    const { result } = await actWith({
+      failureReason: "runner-has-no-screen",
+      outcome: "failure",
+    });
 
     expect(result?.error).toContain("Retrying will never help");
-    expect(result?.error).toContain("node20WithPlaywright");
+    expect(result?.error).toContain("playwright");
     expect(result?.exitCode).toBe(2);
   });
 
   // Alone among these verbs, this one may have taken effect before its answer was
   // lost, so the message must not read as an invitation to repeat the click.
   it("does not invite a bare repeat when the answer was lost", async () => {
-    const { result } = await actWith({ outcome: "runner-unreachable" });
+    const { result } = await actWith({
+      failureReason: "runner-unreachable",
+      outcome: "failure",
+    });
 
     expect(result?.error).toContain(
       "does not mean the action was not performed",

@@ -50,11 +50,13 @@ export const interactiveRunnerMessages = {
     "The run settled, but the last window of its followed streams could not be read, so the output above may be missing its final lines.",
   followTimedOut: (runId: string, runnerId: string, seconds: number) =>
     `Stopped following run ${runId} after ${formatSeconds(seconds * 1000)}. The run may still be going: read it with qawolf runner events run-status --run ${runId}, and stop the runner with qawolf runner stop --runner ${runnerId} when you are done. Pass --timeout to wait longer.`,
+  needsFullSync: (missingPaths: readonly string[]) =>
+    `The runner does not hold ${missingPaths.join(", ")}, so it refused a run that referenced them without sending them. Run the flow again to ship every file it needs.`,
   missingPackageJson:
     "No package.json in the current directory. A run reads its npm dependencies from one, so it has to travel with the flow.",
   noRunnerIdForScreenshot: `${noRunnerId} A screenshot also needs a screen, which a runner gets from its first run: run a flow on it with qawolf runner run.`,
   noRunnerId,
-  notRunning: (id: string) => `Runner ${id} was not running.`,
+  wasNotRunning: (id: string) => `Runner ${id} was not running.`,
   runFailed: (errorMessage: string | undefined) =>
     errorMessage === undefined
       ? "The run failed and reported no reason."
@@ -63,11 +65,15 @@ export const interactiveRunnerMessages = {
   runPassed: "The run passed.",
   runSettledUnknown: (status: string) =>
     `The run settled as "${status}", which this version of the CLI does not recognize. Upgrade to read it.`,
+  actionAnsweredUnknown: (failureReason: string) =>
+    `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
+  screenshotAnsweredUnknown: (failureReason: string) =>
+    `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
   runSubmitAnsweredUnknown: (outcome: string) =>
     `The runner answered the submission with "${outcome}", which this version of the CLI does not recognize. Upgrade to read it.`,
   runSubmitted: (runId: string) => `Submitted run ${runId}.`,
   runnerHasNoScreen:
-    "This runner does not run a browser on a virtual desktop, so there is nothing about it to see or drive. Retrying will never help: launch a node20WithPlaywright runner instead.",
+    "This runner does not run a browser on a virtual desktop, so there is nothing about it to see or drive. Retrying will never help: launch a playwright runner instead.",
   runnerHasNoScreenToEvaluate:
     "The runner could not evaluate the snippet. This covers a runner that is still starting or busy, and also one with no live page to evaluate against: a freshly launched runner has no page until a run opens one, so run a flow on it with qawolf runner run first. If it is not a runner that runs a browser at all, this will never clear. It is not proof the snippet did not run, so do not resubmit one that mutates the page without reading qawolf runner events console first.",
   runnerUnreachable:
@@ -98,7 +104,7 @@ export const interactiveRunnerMessages = {
     'Nothing arrived on stdin. Pipe the action in, or name the action type instead of "-".',
   stdinEmptySnippet:
     'Nothing arrived on stdin. Pipe the snippet in, or name a file instead of "-".',
-  stopped: (id: string) => `Stopped runner ${id}.`,
+  terminated: (id: string) => `Terminated runner ${id}.`,
   requestTooLarge: (byteLength: number, maxByteLength: number) =>
     `The run request encodes to ${String(byteLength)} bytes, over the ${String(maxByteLength)} a runner accepts. Escaping inflates file content, so a set of files inside the content cap can still encode to more than this. Run from a directory holding only the flow and what it imports.`,
   unknownStream: (stream: string, known: readonly string[]) =>

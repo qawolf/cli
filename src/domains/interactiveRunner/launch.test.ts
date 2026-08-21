@@ -8,8 +8,9 @@ import { runnerCallOptions } from "./runnerCallOptions.js";
 const launched = {
   gpuAccelerated: false,
   id: "cli-minted",
-  outcome: "launched" as const,
-  runnerName: "node20WithPlaywright" as const,
+  alreadyRunning: false as const,
+  outcome: "success" as const,
+  runnerName: "playwright" as const,
 };
 
 describe("handleRunnerLaunch", () => {
@@ -34,18 +35,18 @@ describe("handleRunnerLaunch", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { ...launched, id: "ci", runnerName: "node20WithAndroid" },
+      value: { ...launched, id: "ci", runnerName: "android" },
     });
 
     await handleRunnerLaunch(
       ctx,
-      { id: "ci", name: "node20WithAndroid" },
+      { id: "ci", name: "android" },
       makeTestDeps(),
     );
 
     expect(callPublicApi).toHaveBeenCalledWith(
       publicContractsV1.runner.launch,
-      { id: "ci", runnerName: "node20WithAndroid" },
+      { id: "ci", runnerName: "android" },
       runnerCallOptions,
     );
   });
@@ -56,7 +57,12 @@ describe("handleRunnerLaunch", () => {
     const { callPublicApi, ctx, outputs } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { ...launched, id: "ci", outcome: "already-running" },
+      value: {
+        ...launched,
+        id: "ci",
+        alreadyRunning: true,
+        outcome: "success",
+      },
     });
 
     await handleRunnerLaunch(
@@ -127,7 +133,7 @@ describe("handleRunnerLaunch", () => {
   it("forgets the id and gives no relaunch advice when the launch was refused", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
-      error: "runner ci is already running node20Basic",
+      error: "runner ci is already running basic",
       ok: false,
     });
     const deps = makeTestDeps();
@@ -138,7 +144,7 @@ describe("handleRunnerLaunch", () => {
       deps,
     );
 
-    expect(result?.error).toContain("already running node20Basic");
+    expect(result?.error).toContain("already running basic");
     expect(result?.error).not.toContain("relaunch");
     expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
   });
@@ -151,17 +157,17 @@ describe("handleRunnerLaunch", () => {
     callPublicApi.mockResolvedValue({
       error: "QA Wolf API runner.launch request failed (HTTP 409).",
       errorBody:
-        "runner ci is already running node20Basic; stop it before launching node20WithAndroid",
+        "runner ci is already running basic; stop it before launching android",
       ok: false,
     });
 
     const result = await handleRunnerLaunch(
       ctx,
-      { id: "ci", name: "node20WithAndroid" },
+      { id: "ci", name: "android" },
       makeTestDeps(),
     );
 
-    expect(result?.errorBody).toContain("already running node20Basic");
+    expect(result?.errorBody).toContain("already running basic");
     expect(result?.exitCode).toBe(4);
   });
 

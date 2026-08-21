@@ -17,6 +17,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import { collectRunFiles } from "./collectFiles.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { resolveRecorderAnchor } from "./followPrinters.js";
+import { describeRunSubmitFailure } from "./runSubmitFailure.js";
 import { followRun } from "./followRun.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
@@ -82,67 +83,53 @@ export async function handleRunnerRun(
     return { ...failureFields(result), exitCode: exitCodes.network };
   }
 
-  switch (result.value.outcome) {
-    case "runner-target-mismatch":
-      return {
-        error: interactiveRunnerMessages.targetMismatch(
-          result.value.runnerName,
-          result.value.requiredRunnerName,
-        ),
-        exitCode: exitCodes.invalidArgs,
-      };
-    case "runner-unreachable":
-      // Never a retry suggestion: the run may have started and been too slow to
-      // say so, and running the flow again would bill a second one.
-      return {
-        error: interactiveRunnerMessages.submitMayHaveStarted,
-        exitCode: exitCodes.network,
-      };
-    case "submitted": {
-      const runId = result.value.runId;
-      // The stream flags imply --follow: each only chooses what a follow
-      // prints, so alone it can only mean "follow, with that stream".
-      const follow =
-        options.follow ||
-        options.logs ||
-        options.runEvents ||
-        options.recorderEvents;
-      if (!follow) {
-        ctx.ui.output(
-          { runId, runnerId: resolved.runnerId },
-          interactiveRunnerMessages.runSubmitted(runId),
-        );
-        return undefined;
-      }
-      // A diagnostic while following, not the command's output: what stdout
-      // carries then is the run's journal entries, and a differently shaped
-      // object among them leaves a reader of the stream sniffing keys to tell
-      // which lines are log entries.
-      ctx.ui.info(interactiveRunnerMessages.runSubmitted(runId));
-      return followRun(
-        ctx,
-        {
-          logs: options.logs,
-          recorderSinceSequence,
-          runEvents: options.runEvents,
-          runId,
-          runnerId: resolved.runnerId,
-          timeoutSeconds: timeout.seconds,
-        },
-        deps,
-      );
-    }
+  const { outcome } = result.value;
+  switch (outcome) {
+    case "failure":
+      return describeRunSubmitFailure(result.value);
+    case "success":
+      break;
     // An outcome added to the contract must not fall through to exit 0: today
-    // the response schema refuses one this version does not know, and this
-    // keeps a future contracts bump a compile error rather than a silent pass.
-    default: {
-      result.value satisfies never;
+    // the response schema refuses one this version does not know, and this keeps
+    // a future contracts bump a compile error rather than a silent pass.
+    default:
+      outcome satisfies never;
       return {
-        error: interactiveRunnerMessages.runSubmitAnsweredUnknown(
-          String((result.value as { outcome: string }).outcome),
-        ),
+        error: interactiveRunnerMessages.runSubmitAnsweredUnknown(outcome),
         exitCode: exitCodes.network,
       };
-    }
   }
+
+  const runId = result.value.runId;
+  // The stream flags imply --follow: each only chooses what a follow prints, so
+  // alone it can only mean "follow, with that stream".
+  const follow =
+    options.follow ||
+    options.logs ||
+    options.runEvents ||
+    options.recorderEvents;
+  if (!follow) {
+    ctx.ui.output(
+      { runId, runnerId: resolved.runnerId },
+      interactiveRunnerMessages.runSubmitted(runId),
+    );
+    return undefined;
+  }
+  // A diagnostic while following, not the command's output: what stdout carries
+  // then is the run's journal entries, and a differently shaped object among
+  // them leaves a reader of the stream sniffing keys to tell which lines are log
+  // entries.
+  ctx.ui.info(interactiveRunnerMessages.runSubmitted(runId));
+  return followRun(
+    ctx,
+    {
+      logs: options.logs,
+      recorderSinceSequence,
+      runEvents: options.runEvents,
+      runId,
+      runnerId: resolved.runnerId,
+      timeoutSeconds: timeout.seconds,
+    },
+    deps,
+  );
 }

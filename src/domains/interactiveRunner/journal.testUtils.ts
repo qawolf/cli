@@ -48,7 +48,7 @@ export function makeJournal(
     if (scripted === "unreachable") {
       return Promise.resolve({
         ok: true,
-        value: { outcome: "runner-unreachable" },
+        value: { failureReason: "runner-unreachable", outcome: "failure" },
       });
     }
 

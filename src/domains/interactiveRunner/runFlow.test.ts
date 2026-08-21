@@ -5,7 +5,7 @@ import { handleRunnerRun } from "./runFlow.js";
 import { makeAuthCtx, makeTestDeps, testCwd } from "./deps.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
-const submitted = { outcome: "submitted" as const, runId: "run-a" };
+const submitted = { outcome: "success" as const, runId: "run-a" };
 
 async function runWith(
   value: unknown,
@@ -114,20 +114,24 @@ describe("handleRunnerRun", () => {
 
   it("names both images when the runner is the wrong one for the flow", async () => {
     const { result } = await runWith({
-      outcome: "runner-target-mismatch",
-      requiredRunnerName: "node20WithAndroid",
-      runnerName: "node20WithPlaywright",
+      failureReason: "runner-target-mismatch",
+      outcome: "failure",
+      requiredRunnerName: "android",
+      runnerName: "playwright",
     });
 
-    expect(result?.error).toContain("node20WithAndroid");
-    expect(result?.error).toContain("node20WithPlaywright");
+    expect(result?.error).toContain("android");
+    expect(result?.error).toContain("playwright");
     expect(result?.exitCode).toBe(2);
   });
 
   // Resubmitting would bill a second run, so the message says to read the
   // journal rather than to retry.
   it("does not invite a retry when the submission answer was lost", async () => {
-    const { result } = await runWith({ outcome: "runner-unreachable" });
+    const { result } = await runWith({
+      failureReason: "runner-unreachable",
+      outcome: "failure",
+    });
 
     expect(result?.error).toContain("does not mean the run did not start");
     expect(result?.exitCode).toBe(4);
@@ -166,8 +170,9 @@ describe("handleRunnerRun", () => {
         value: {
           gpuAccelerated: false,
           id: "cli-minted",
-          outcome: "launched",
-          runnerName: "node20WithPlaywright",
+          alreadyRunning: false,
+          outcome: "success",
+          runnerName: "playwright",
         },
       })
       .mockResolvedValueOnce({ ok: true, value: submitted });

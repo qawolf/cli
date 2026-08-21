@@ -1,50 +1,50 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
-import { handleRunnerStop } from "./stop.js";
+import { handleRunnerTerminate } from "./terminate.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
-describe("handleRunnerStop", () => {
-  it("stops the runner the flag names", async () => {
+describe("handleRunnerTerminate", () => {
+  it("terminates the runner the flag names", async () => {
     const { callPublicApi, ctx, outputs } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { id: "ci", outcome: "stopped" },
+      value: { id: "ci", outcome: "success", wasRunning: true },
     });
 
     expect(
-      await handleRunnerStop(ctx, { runner: "ci" }, makeTestDeps()),
+      await handleRunnerTerminate(ctx, { runner: "ci" }, makeTestDeps()),
     ).toBeUndefined();
 
     expect(callPublicApi).toHaveBeenCalledWith(
-      publicContractsV1.runner.stop,
+      publicContractsV1.runner.terminate,
       { id: "ci" },
       runnerCallOptions,
     );
-    expect(outputs()[0]?.humanMessage).toContain("Stopped runner ci");
+    expect(outputs()[0]?.humanMessage).toContain("Terminated runner ci");
   });
 
-  // A retried stop should read as plainly as the first, which is why the
+  // A retried terminate should read as plainly as the first, which is why the
   // contract answers rather than raises.
   it("reports a runner that was not running without failing", async () => {
     const { callPublicApi, ctx, outputs } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { id: "ci", outcome: "not-running" },
+      value: { id: "ci", outcome: "success", wasRunning: false },
     });
 
     expect(
-      await handleRunnerStop(ctx, { runner: "ci" }, makeTestDeps()),
+      await handleRunnerTerminate(ctx, { runner: "ci" }, makeTestDeps()),
     ).toBeUndefined();
     expect(outputs()[0]?.humanMessage).toContain("was not running");
   });
 
-  // Launching a runner in order to stop it would bill one for nothing.
+  // Launching a runner in order to terminate it would bill one for nothing.
   it("never launches a runner, and says what to do instead", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
 
-    const result = await handleRunnerStop(
+    const result = await handleRunnerTerminate(
       ctx,
       { runner: undefined },
       makeTestDeps(),
@@ -55,45 +55,45 @@ describe("handleRunnerStop", () => {
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 
-  it("stops the stored default, and stops sending later commands to it", async () => {
+  it("terminates the stored default, and stops sending later commands to it", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { id: "ci", outcome: "stopped" },
+      value: { id: "ci", outcome: "success", wasRunning: true },
     });
     const deps = makeTestDeps();
     await deps.store.writeDefaultRunnerId("ci");
 
-    await handleRunnerStop(ctx, { runner: undefined }, deps);
+    await handleRunnerTerminate(ctx, { runner: undefined }, deps);
 
     expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
   });
 
-  it("leaves the stored default alone when it stopped a different runner", async () => {
+  it("leaves the stored default alone when it terminated a different runner", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { id: "other", outcome: "stopped" },
+      value: { id: "other", outcome: "success", wasRunning: true },
     });
     const deps = makeTestDeps();
     await deps.store.writeDefaultRunnerId("ci");
 
-    await handleRunnerStop(ctx, { runner: "other" }, deps);
+    await handleRunnerTerminate(ctx, { runner: "other" }, deps);
 
     expect(await deps.store.readDefaultRunnerId()).toBe("ci");
   });
 
-  // The pod is what costs money, and by this point it is already stopped. A
+  // The pod is what costs money, and by this point it is already gone. A
   // directory the CLI cannot write to must not turn that into a failed command.
-  it("still reports the stop when the stored default cannot be cleared", async () => {
+  it("still reports the terminate when the stored default cannot be cleared", async () => {
     const { callPublicApi, ctx, outputs } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { id: "ci", outcome: "stopped" },
+      value: { id: "ci", outcome: "success", wasRunning: true },
     });
     const deps = makeTestDeps();
 
-    const result = await handleRunnerStop(
+    const result = await handleRunnerTerminate(
       ctx,
       { runner: "ci" },
       {
@@ -106,7 +106,7 @@ describe("handleRunnerStop", () => {
     );
 
     expect(result).toBeUndefined();
-    expect(outputs()[0]?.humanMessage).toContain("Stopped runner ci");
+    expect(outputs()[0]?.humanMessage).toContain("Terminated runner ci");
     expect(ctx.ui.warn).toHaveBeenCalled();
   });
 });

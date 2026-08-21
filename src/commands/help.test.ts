@@ -86,8 +86,8 @@ describe("--help output", () => {
     expect(helpFor("runner", "launch")).toMatchSnapshot();
   });
 
-  it("qawolf runner stop", () => {
-    expect(helpFor("runner", "stop")).toMatchSnapshot();
+  it("qawolf runner terminate", () => {
+    expect(helpFor("runner", "terminate")).toMatchSnapshot();
   });
 
   it("qawolf runner run", () => {
@@ -129,7 +129,7 @@ describe("--help output", () => {
       ["flows", "pull"],
       ["runner"],
       ["runner", "launch"],
-      ["runner", "stop"],
+      ["runner", "terminate"],
       ["runner", "run"],
       ["runner", "events"],
       ["runner", "keepalive"],

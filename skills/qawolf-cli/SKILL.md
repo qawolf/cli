@@ -148,7 +148,7 @@ current branch.
 | `qawolf runner launch` | write | Launch an interactive runner and make it this directory's default |
 | `qawolf runner run` | write | Run a flow on an interactive runner, shipping the current directory's files with it |
 | `qawolf runner screenshot` | read | Save a JPEG of an interactive runner's screen to a file |
-| `qawolf runner stop` | write | Stop an interactive runner |
+| `qawolf runner terminate` | write | End an interactive runner, and the pod it runs on with it |
 | `qawolf tag create` | write | Create a tag on the caller's team. Tags select flows in run.create. |
 | `qawolf tag list` | read | List the team's tags, alphabetical by name. Tag names select flows in run.create. |
 

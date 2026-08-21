@@ -4,7 +4,7 @@ import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext } from "~/commands/context.js";
 import { handleRunnerKeepalive } from "~/domains/interactiveRunner/keepalive.js";
 import { handleRunnerLaunch } from "~/domains/interactiveRunner/launch.js";
-import { handleRunnerStop } from "~/domains/interactiveRunner/stop.js";
+import { handleRunnerTerminate } from "~/domains/interactiveRunner/terminate.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { runnerDeps, runnerFlagDescription } from "./context.js";
@@ -12,7 +12,7 @@ import { runnerDeps, runnerFlagDescription } from "./context.js";
 const launchExamples = `
 Examples:
   $ qawolf runner launch
-  $ qawolf runner launch --name node20WithAndroid
+  $ qawolf runner launch --name android
   $ qawolf runner launch --id ci`;
 
 const keepaliveExamples = `
@@ -32,7 +32,7 @@ export function registerRunnerLifecycleCommands(
       "--id <id>",
       "Id to launch under. Relaunching an id attaches to that runner",
     )
-    .option("--name <image>", "Runner image to run, e.g. node20WithPlaywright")
+    .option("--name <family>", "Runner family to run, e.g. playwright")
     .addHelpText("after", launchExamples)
     .action((opts: { id?: string; name?: string }, command: Command) =>
       withAuthContext(signals, (ctx) =>
@@ -44,12 +44,12 @@ export function registerRunnerLifecycleCommands(
       )(opts, command),
     );
 
-  declareCommandKind(runner.command("stop"), "write")
-    .description("Stop an interactive runner")
+  declareCommandKind(runner.command("terminate"), "write")
+    .description("End an interactive runner, and the pod it runs on with it")
     .option("--runner <id>", runnerFlagDescription)
     .action((opts: { runner?: string }, command: Command) =>
       withAuthContext(signals, (ctx) =>
-        handleRunnerStop(ctx, { runner: opts.runner }, runnerDeps(ctx)),
+        handleRunnerTerminate(ctx, { runner: opts.runner }, runnerDeps(ctx)),
       )(opts, command),
     );
 

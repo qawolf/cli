@@ -26,8 +26,12 @@ describe("checkRunFiles", () => {
   // still encode to more than a runner accepts. Refused here so the caller is told
   // which cap it broke rather than handed an opaque transport failure.
   it("refuses files that encode to more than a runner accepts", () => {
+    // A fifth of the content cap, so the six-fold inflation lands past the
+    // encoded cap whatever the two caps are set to.
     const escapeHeavy = {
-      "data.json": String.fromCharCode(1).repeat(2 * 1024 * 1024),
+      "data.json": String.fromCharCode(1).repeat(
+        Math.ceil(maxRunFilesByteLength / 5),
+      ),
     };
     const files = { ...packageJson, ...flow, ...escapeHeavy };
 
