@@ -34,7 +34,7 @@ export function registerRunCommand(
 ): void {
   declareCommandKind(runner.command("run <flowFile>"), "write")
     .description(
-      "Run a flow on an interactive runner, shipping the current directory's files with it",
+      "Run a flow on an interactive runner, shipping the flow and what it imports",
     )
     .option(
       "--follow",

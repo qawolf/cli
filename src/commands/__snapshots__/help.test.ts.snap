@@ -279,7 +279,7 @@ Commands:
   keepalive [options]              Reset a runner's inactivity clock, for a
                                    caller that pauses between actions
   run [options] <flowFile>         Run a flow on an interactive runner, shipping
-                                   the current directory's files with it
+                                   the flow and what it imports
   events [options] <stream>        Print a runner's journal, one entry per line.
                                    QA Wolf writes console, recorder, run-events,
                                    run-logs, run-status
@@ -342,8 +342,7 @@ Options:
 exports[`--help output qawolf runner run 1`] = `
 "Usage: qawolf runner run [options] <flowFile>
 
-Run a flow on an interactive runner, shipping the current directory's files with
-it
+Run a flow on an interactive runner, shipping the flow and what it imports
 
 Options:
   --follow             Report the run's status until it settles: in progress,

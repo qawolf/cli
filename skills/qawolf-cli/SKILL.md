@@ -150,7 +150,7 @@ current branch.
 | `qawolf runner inspect variable` | read | Print a top-level variable's value from the running workflow |
 | `qawolf runner keepalive` | read | Reset a runner's inactivity clock, for a caller that pauses between actions |
 | `qawolf runner launch` | write | Launch an interactive runner and make it this directory's default |
-| `qawolf runner run` | write | Run a flow on an interactive runner, shipping the current directory's files with it |
+| `qawolf runner run` | write | Run a flow on an interactive runner, shipping the flow and what it imports |
 | `qawolf runner screenshot` | read | Save a JPEG of an interactive runner's screen to a file |
 | `qawolf runner stop-run` | write | Stop what a runner is currently executing, leaving the runner up |
 | `qawolf runner terminate` | write | End an interactive runner, and the pod it runs on with it |

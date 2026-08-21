@@ -57,10 +57,15 @@ None of that is a fault, and none of it clears on its own. **Only
 `qawolf runner run <flow>` starts the screen.** A bare navigate does not: it
 fails until the first run, however long you wait.
 
-So the first call on a new runner has to be a run. That means a flow file and a
-`package.json` on disk, even if all you want is to drive the browser by hand;
-there is no "just give me a screen" call. Once one run has happened, the
-screenshot-and-act loop below works for the rest of the runner's life.
+So the first thing you do to a new runner has to put a browser on it. That means
+a flow file and a `package.json` on disk, even if all you want is to drive the
+browser by hand; there is no "just give me a screen" call. Once one run has
+happened, the screenshot-and-act loop below works for the rest of the runner's
+life.
+
+A `--lines` selection is the one call that does not need a run first. Sent to a
+runner with no browser, the runner starts one and runs your lines against it,
+and says so on stderr. Everything else on this page waits for a run.
 
 Retry on the exit code, not on the message text:
 
@@ -127,6 +132,50 @@ the element you meant rather than near it. The stream is empty until the session
 has a browser context, so an early empty answer means "not yet", not "broken".
 Do not add `--json` here: it wraps each line in an envelope and these field paths
 stop matching.
+
+## Reading the page: `inspect`
+
+`qawolf runner inspect` answers one question about the live page and prints the
+answer on stdout by itself, so you can redirect or pipe it:
+
+```sh
+qawolf runner inspect element-html --selector "#email"
+qawolf runner inspect page-html > page.html
+qawolf runner inspect page-html --selector "#cart"      # just that subtree
+qawolf runner inspect variable --name cart | jq .total
+```
+
+`page-html` is simplified for a model to read rather than being the browser's
+exact markup. `variable` reads a top-level variable of the running workflow and
+prints it as JSON, which is how you see what your own code computed rather than
+what the page shows.
+
+One failure covers three causes, because a runner cannot tell them apart: no
+live page, no element matching the selector, no variable under that name. All
+three exit `2` and none clears by waiting, so read the message, which carries
+whatever the runner said. An unreachable runner exits `4` and is worth retrying.
+
+Use `inspect` before reaching for `exec`. Reading a value through a snippet
+means printing it and then fishing it back out of the `console` stream, which is
+two calls and a marker; `inspect variable` is one call and the value.
+
+## Installing a package mid-session
+
+`qawolf runner import-package <name>` installs a package into the runner's live
+run, so a snippet or a selection can import it without a whole run to reinstall
+dependencies:
+
+```sh
+qawolf runner import-package dayjs
+qawolf runner import-package dayjs --package-version 1.11.13
+```
+
+The version defaults to `latest`, and the flag is `--package-version` because
+`--version` belongs to the CLI itself. The install resolves against your
+project's own dependencies, read from `package.json`, so it needs a run already
+going: there is no live run on a runner that has not run anything. npm's own
+refusal comes back verbatim on an exit `2`, which is a name or a version to
+correct rather than something to retry.
 
 ## Reading the page: `exec`
 
@@ -322,6 +371,21 @@ on a timer you forget, and call `qawolf runner terminate` when you are done rath
 than leaving a pod to time out. A loop that keeps a runner alive and never stops
 it bills until someone notices.
 
+## Stopping a run vs ending a runner
+
+Two different things, and the names are the only warning you get:
+
+- `qawolf runner stop-run` stops what the runner is executing and leaves the
+  runner up, its browser on whatever page the run reached. The run settles as
+  stopped rather than passed or failed. Use it to abandon a run and keep the
+  browser you were working against.
+- `qawolf runner terminate` ends the runner and the pod with it. Everything on
+  it is gone, and the next command under that id launches and bills a new one.
+
+Both succeed when there was nothing to do, and say which: `wasRunning` is
+`false` when no run was going, and when no runner was running. Neither is an
+error, so a retry needs no special handling.
+
 ## End to end
 
 Run from a directory holding a flow and a `package.json`. The run is what starts
@@ -339,6 +403,10 @@ qawolf runner screenshot --out page.jpg           # then read page.jpg yourself
 qawolf runner act click --button left --x 480 --y 260
 qawolf runner act type --text "someone@example.com"
 
+qawolf runner inspect element-html --selector "#email"
+qawolf runner inspect variable --name cart | jq .total
+
+qawolf runner run flows/smoke.flow.ts --lines 12-40 --follow   # just those lines
 qawolf runner events recorder --tail 5 | jq -r '[.locator] + (.alternates // []) | @tsv'
 qawolf runner terminate
 ```
