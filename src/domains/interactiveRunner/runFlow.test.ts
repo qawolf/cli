@@ -9,7 +9,7 @@ const submitted = { outcome: "success" as const, runId: "run-a" };
 
 async function runWith(
   value: unknown,
-  options: { entryPoint?: string } = {},
+  options: { entryPoint?: string; lines?: string; linesFile?: string } = {},
 ): Promise<{
   ctx: ReturnType<typeof makeAuthCtx>["ctx"];
   callPublicApi: ReturnType<typeof makeAuthCtx>["callPublicApi"];
@@ -22,6 +22,8 @@ async function runWith(
     {
       entryPoint: options.entryPoint ?? "flow.ts",
       follow: false,
+      lines: options.lines,
+      linesFile: options.linesFile,
       runner: "ci",
       timeout: undefined,
       logs: false,
@@ -67,6 +69,8 @@ describe("handleRunnerRun", () => {
       {
         entryPoint: "flows/missing.ts",
         follow: false,
+        lines: undefined,
+        linesFile: undefined,
         runner: "ci",
         timeout: undefined,
         logs: false,
@@ -89,6 +93,8 @@ describe("handleRunnerRun", () => {
       {
         entryPoint: "flow.ts",
         follow: false,
+        lines: undefined,
+        linesFile: undefined,
         runner: "ci",
         timeout: undefined,
         logs: false,
@@ -148,6 +154,8 @@ describe("handleRunnerRun", () => {
       {
         entryPoint: "flows/chekcout.flow.ts",
         follow: false,
+        lines: undefined,
+        linesFile: undefined,
         runner: undefined,
         timeout: undefined,
         logs: false,
@@ -182,6 +190,8 @@ describe("handleRunnerRun", () => {
       {
         entryPoint: "flow.ts",
         follow: false,
+        lines: undefined,
+        linesFile: undefined,
         runner: undefined,
         timeout: undefined,
         logs: false,
@@ -216,6 +226,8 @@ describe("handleRunnerRun", () => {
       {
         entryPoint: "flow.ts",
         follow: false,
+        lines: undefined,
+        linesFile: undefined,
         runner: "ci",
         timeout: undefined,
         logs: false,

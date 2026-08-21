@@ -1,11 +1,7 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
 import { parseFollowTimeout } from "~/core/interactiveRunner/followTimeout.js";
-import {
-  checkRunFiles,
-  describeRunFilesCheck,
-  toCollectedPath,
-} from "~/core/interactiveRunner/runFiles.js";
+import { toCollectedPath } from "~/core/interactiveRunner/runFiles.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
   AuthCommandContext,
@@ -14,12 +10,12 @@ import type {
 import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
-import { collectRunFiles } from "./collectFiles.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { resolveRecorderAnchor } from "./followPrinters.js";
 import { describeRunSubmitFailure } from "./runSubmitFailure.js";
 import { followRun } from "./followRun.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
+import { prepareRun } from "./prepareRun.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
 export async function handleRunnerRun(
@@ -27,6 +23,8 @@ export async function handleRunnerRun(
   options: {
     entryPoint: string;
     follow: boolean;
+    lines: string | undefined;
+    linesFile: string | undefined;
     logs: boolean;
     recorderEvents: boolean;
     runEvents: boolean;
@@ -44,17 +42,12 @@ export async function handleRunnerRun(
   // nothing and resolving a runner may launch and bill one. A misspelled flow
   // name should not be answered with a pod.
   const entryPointPath = toCollectedPath(deps.cwd, options.entryPoint);
-  const collected = await collectRunFiles(deps);
-  if (!collected.ok) {
-    return { error: collected.error, exitCode: exitCodes.config };
-  }
-  const files = collected.files;
-  const check = checkRunFiles(files, entryPointPath);
-  if (check.type !== "ok") {
-    return {
-      error: describeRunFilesCheck(check),
-      exitCode: exitCodes.invalidArgs,
-    };
+  const prepared = await prepareRun(
+    { entryPointPath, lines: options.lines, linesFile: options.linesFile },
+    deps,
+  );
+  if (!prepared.ok) {
+    return { error: prepared.error, exitCode: prepared.exitCode };
   }
 
   const resolved = await resolveRunner(
@@ -76,7 +69,14 @@ export async function handleRunnerRun(
 
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.runner.runFlow,
-    { entryPointPath, files, id: resolved.runnerId },
+    {
+      entryPointPath,
+      files: prepared.files,
+      id: resolved.runnerId,
+      ...(prepared.selection === undefined
+        ? {}
+        : { selection: prepared.selection }),
+    },
     runnerCallOptions,
   );
   if (!result.ok) {
@@ -98,6 +98,12 @@ export async function handleRunnerRun(
         error: interactiveRunnerMessages.runSubmitAnsweredUnknown(outcome),
         exitCode: exitCodes.network,
       };
+  }
+
+  // Absent means false. The pod and apex halves of this field land later, so a
+  // runner that did bootstrap may still say nothing.
+  if (result.value.bootstrappedRunner === true) {
+    ctx.ui.info(interactiveRunnerMessages.bootstrappedForSelection);
   }
 
   const runId = result.value.runId;

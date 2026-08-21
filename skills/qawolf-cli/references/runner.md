@@ -153,7 +153,7 @@ so the snippet can use your own page objects and helpers.
 
 ## Running a flow
 
-`qawolf runner run <file>` ships the current directory's runnable files with the
+`qawolf runner run <flowFile>` ships the current directory's runnable files with the
 request. The runner holds no copy of your project, so what runs is exactly what
 is on disk at that moment, uncommitted edits included. A `package.json` has to
 be there, since the run reads its npm dependencies from it, and the files may
@@ -165,6 +165,36 @@ resolved or launched, so a typo costs nothing.
 The call answers with a run id as soon as the run is accepted. **The outcome is
 not in that answer**, it is in the `run-status` stream, whose entries carry
 `runId`, `status` and an `errorMessage` when there is one.
+
+### Running part of a flow
+
+`--lines 12-40` runs those lines against the browser as it stands, so nothing is
+re-navigated and nothing is signed in again. Use it to iterate on a step without
+paying for the whole flow to reach it again.
+
+The two file paths are the thing to get right, because getting them backwards
+runs the wrong code and nothing reports it:
+
+- the positional is **always the flow file**. It is the run's entry point, and it
+  is required for every run, selection or not.
+- `--lines-file` is **where the lines live**. It defaults to the positional, so
+  pass it only when the range is in another file, typically a page object whose
+  method you want to run against the instance your last run left alive.
+
+```sh
+qawolf runner run flows/checkout.flow.ts --lines 12-40          # lines in the flow file
+qawolf runner run flows/checkout.flow.ts --lines 4-9 \
+  --lines-file pages/login.ts                                   # lines in a page object
+```
+
+The lines-file has to be one of the files that travel, so it lives under the
+directory you run from. A range whose file is not collected is refused before a
+runner is addressed, naming the path.
+
+If the runner had no browser, one is started before your lines run, and the
+command says so on stderr. Those lines then ran against a fresh page rather than
+the one an earlier run left, which is worth reading before you act on what you
+see.
 
 **Pass `--follow` to `run` and let it wait for you.** It reports the run's
 status — in progress, then passed or failed — and ends on the settled status.

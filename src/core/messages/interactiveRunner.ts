@@ -54,6 +54,12 @@ export const interactiveRunnerMessages = {
     `The runner does not hold ${missingPaths.join(", ")}, so it refused a run that referenced them without sending them. Run the flow again to ship every file it needs.`,
   missingPackageJson:
     "No package.json in the current directory. A run reads its npm dependencies from one, so it has to travel with the flow.",
+  malformedLineRange: (lines: string) =>
+    `"${lines}" is not a line range. Pass --lines as two 1-indexed line numbers joined by a dash, e.g. --lines 12-40.`,
+  linesFileWithoutLines:
+    "--lines-file names where a line range lives, so it only means something with --lines. Pass --lines, or drop --lines-file to run the whole flow.",
+  bootstrappedForSelection:
+    "This runner had no browser, so one was started before your lines ran. They ran against a fresh page, not the one an earlier run left: nothing is signed in and nothing was set up.",
   missingPackageJsonForImport:
     "No package.json in the current directory. The install resolves against the run's own dependencies, which are read from one.",
   noRunnerIdForImport: `${noRunnerId} An install also needs a live run to go into, which a runner gets from qawolf runner run.`,

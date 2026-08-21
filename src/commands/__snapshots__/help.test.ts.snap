@@ -278,7 +278,7 @@ Commands:
                                    leaving the runner up
   keepalive [options]              Reset a runner's inactivity clock, for a
                                    caller that pauses between actions
-  run [options] <file>             Run a flow on an interactive runner, shipping
+  run [options] <flowFile>         Run a flow on an interactive runner, shipping
                                    the current directory's files with it
   events [options] <stream>        Print a runner's journal, one entry per line.
                                    QA Wolf writes console, recorder, run-events,
@@ -340,7 +340,7 @@ Options:
 `;
 
 exports[`--help output qawolf runner run 1`] = `
-"Usage: qawolf runner run [options] <file>
+"Usage: qawolf runner run [options] <flowFile>
 
 Run a flow on an interactive runner, shipping the current directory's files with
 it
@@ -356,6 +356,11 @@ Options:
                        lines while following, from an anchor taken just before
                        submission: the recorder is runner-wide, not run-scoped.
                        Implies --follow (default: false)
+  --lines <start-end>  Run only these 1-indexed lines against the browser as it
+                       stands, instead of the whole flow from a fresh one
+  --lines-file <path>  File the --lines range lives in. Defaults to <flowFile>;
+                       pass it only when the lines are in another file, such as
+                       a page object
   --runner <id>        Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
                        directory's stored runner
   --timeout <seconds>  Give up following after this long. Following keeps the
@@ -367,6 +372,8 @@ Examples:
   $ qawolf runner run flows/checkout.flow.ts
   $ qawolf runner run flows/checkout.flow.ts --follow
   $ qawolf runner run flows/checkout.flow.ts --follow --logs
+  $ qawolf runner run flows/checkout.flow.ts --lines 12-40
+  $ qawolf runner run flows/checkout.flow.ts --lines 4-9 --lines-file pages/login.ts
 "
 `;
 
