@@ -274,6 +274,8 @@ Commands:
                              directory's default
   terminate [options]        End an interactive runner, and the pod it runs on
                              with it
+  stop-run [options]         Stop what a runner is currently executing, leaving
+                             the runner up
   keepalive [options]        Reset a runner's inactivity clock, for a caller
                              that pauses between actions
   run [options] <file>       Run a flow on an interactive runner, shipping the
@@ -314,6 +316,18 @@ exports[`--help output qawolf runner terminate 1`] = `
 "Usage: qawolf runner terminate [options]
 
 End an interactive runner, and the pod it runs on with it
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
+                 directory's stored runner
+  -h, --help     display help for command
+"
+`;
+
+exports[`--help output qawolf runner stop-run 1`] = `
+"Usage: qawolf runner stop-run [options]
+
+Stop what a runner is currently executing, leaving the runner up
 
 Options:
   --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this

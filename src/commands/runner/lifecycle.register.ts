@@ -4,6 +4,7 @@ import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext } from "~/commands/context.js";
 import { handleRunnerKeepalive } from "~/domains/interactiveRunner/keepalive.js";
 import { handleRunnerLaunch } from "~/domains/interactiveRunner/launch.js";
+import { handleRunnerStopRun } from "~/domains/interactiveRunner/stopRun.js";
 import { handleRunnerTerminate } from "~/domains/interactiveRunner/terminate.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
@@ -50,6 +51,17 @@ export function registerRunnerLifecycleCommands(
     .action((opts: { runner?: string }, command: Command) =>
       withAuthContext(signals, (ctx) =>
         handleRunnerTerminate(ctx, { runner: opts.runner }, runnerDeps(ctx)),
+      )(opts, command),
+    );
+
+  declareCommandKind(runner.command("stop-run"), "write")
+    .description(
+      "Stop what a runner is currently executing, leaving the runner up",
+    )
+    .option("--runner <id>", runnerFlagDescription)
+    .action((opts: { runner?: string }, command: Command) =>
+      withAuthContext(signals, (ctx) =>
+        handleRunnerStopRun(ctx, { runner: opts.runner }, runnerDeps(ctx)),
       )(opts, command),
     );
 
