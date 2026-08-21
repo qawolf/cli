@@ -86,8 +86,12 @@ describe("--help output", () => {
     expect(helpFor("runner", "launch")).toMatchSnapshot();
   });
 
-  it("qawolf runner stop", () => {
-    expect(helpFor("runner", "stop")).toMatchSnapshot();
+  it("qawolf runner terminate", () => {
+    expect(helpFor("runner", "terminate")).toMatchSnapshot();
+  });
+
+  it("qawolf runner stop-run", () => {
+    expect(helpFor("runner", "stop-run")).toMatchSnapshot();
   });
 
   it("qawolf runner run", () => {
@@ -110,6 +114,26 @@ describe("--help output", () => {
     expect(helpFor("runner", "act")).toMatchSnapshot();
   });
 
+  it("qawolf runner import-package", () => {
+    expect(helpFor("runner", "import-package")).toMatchSnapshot();
+  });
+
+  it("qawolf runner inspect", () => {
+    expect(helpFor("runner", "inspect")).toMatchSnapshot();
+  });
+
+  it("qawolf runner inspect element-html", () => {
+    expect(helpFor("runner", "inspect", "element-html")).toMatchSnapshot();
+  });
+
+  it("qawolf runner inspect page-html", () => {
+    expect(helpFor("runner", "inspect", "page-html")).toMatchSnapshot();
+  });
+
+  it("qawolf runner inspect variable", () => {
+    expect(helpFor("runner", "inspect", "variable")).toMatchSnapshot();
+  });
+
   it("qawolf runner exec", () => {
     expect(helpFor("runner", "exec")).toMatchSnapshot();
   });
@@ -129,13 +153,19 @@ describe("--help output", () => {
       ["flows", "pull"],
       ["runner"],
       ["runner", "launch"],
-      ["runner", "stop"],
+      ["runner", "terminate"],
+      ["runner", "stop-run"],
       ["runner", "run"],
       ["runner", "events"],
       ["runner", "keepalive"],
       ["runner", "screenshot"],
       ["runner", "act"],
       ["runner", "exec"],
+      ["runner", "import-package"],
+      ["runner", "inspect"],
+      ["runner", "inspect", "element-html"],
+      ["runner", "inspect", "page-html"],
+      ["runner", "inspect", "variable"],
     ];
     for (const path of paths) {
       expect(helpFor(...path)).not.toContain("—");

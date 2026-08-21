@@ -5,23 +5,27 @@
 // serves it, and until then stays out and lets the generator report what it
 // cannot express.
 //
-// The whole `runner.*` family is hand-written as `qawolf runner`. Three of its
-// inputs carry a file list or an action union and have no flag shape at all, and
-// the four that do need UX the generator cannot give them: an optional
-// `--runner` resolved from flag, environment and stored default; a runner
-// launched on demand and announced; a screenshot decoded into a file. Half the
-// group generated beside the other half hand-written would read as two unrelated
-// command sets sharing a prefix. The group is claimed as a whole here, so the
-// contracts whose commands land in a later change are absent rather than
-// generated in a shape the rest of the group does not match.
+// The whole `runner.*` family is hand-written as `qawolf runner`, and the whole
+// family is listed. Some of these inputs carry a file list or an action union and
+// have no flag shape at all; the ones that do need UX the generator cannot give
+// them, such as an optional `--runner` resolved from flag, environment and stored
+// default, a runner launched on demand and announced, a screenshot decoded into a
+// file, and one verb served as three subcommands. Half the group generated beside
+// the other half hand-written would read as two unrelated command sets sharing a
+// prefix. The group is claimed as a whole here, so the contracts whose commands
+// land in a later change are absent rather than generated in a shape the rest of
+// the group does not match.
 /** Every contract the generator passes over. */
 export const skippedContractNames: ReadonlySet<string> = new Set([
   "flow.list",
   "runner.evaluateSnippet",
+  "runner.importPackage",
+  "runner.inspect",
   "runner.launch",
   "runner.performAction",
   "runner.readJournal",
   "runner.runFlow",
-  "runner.stop",
+  "runner.stopRun",
   "runner.takeScreenshot",
+  "runner.terminate",
 ]);

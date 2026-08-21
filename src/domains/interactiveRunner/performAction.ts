@@ -97,19 +97,21 @@ export async function handleRunnerAct(
     };
   }
 
-  switch (result.value.outcome) {
-    case "performed":
-      ctx.ui.output(
-        { action: built.action, outcome: "performed" },
-        interactiveRunnerMessages.actionPerformed(built.action.type),
-      );
-      return undefined;
+  if (result.value.outcome === "success") {
+    ctx.ui.output(
+      { action: built.action, outcome: "success" },
+      interactiveRunnerMessages.actionPerformed(built.action.type),
+    );
+    return undefined;
+  }
+
+  const failure = result.value;
+  const { failureReason } = failure;
+  switch (failureReason) {
     // Attempted and did not take effect, which is an answer rather than a fault.
     case "action-failed":
       return {
-        error: interactiveRunnerMessages.actionFailed(
-          result.value.errorMessage,
-        ),
+        error: interactiveRunnerMessages.actionFailed(failure.errorMessage),
         exitCode: exitCodes.testFailure,
       };
     case "screen-needs-a-run":
@@ -134,5 +136,12 @@ export async function handleRunnerAct(
         error: interactiveRunnerMessages.actionMayHaveHappened,
         exitCode: exitCodes.network,
       };
+    default: {
+      failureReason satisfies never;
+      return {
+        error: interactiveRunnerMessages.actionAnsweredUnknown(failureReason),
+        exitCode: exitCodes.network,
+      };
+    }
   }
 }

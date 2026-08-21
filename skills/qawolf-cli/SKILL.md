@@ -53,7 +53,7 @@ An interactive runner is a live pod holding a browser, and it is billed while it
 runs. `qawolf runner launch` starts one; `qawolf runner run` starts one too when
 no runner is already available, and says so when it does. Reading a runner
 counts as activity, so `qawolf runner events --follow` left open keeps it alive
-and billing. `qawolf runner stop` is what ends it, so stop a runner you launched
+and billing. `qawolf runner terminate` is what ends it, so terminate a runner you launched
 rather than leaving it to time out.
 
 `qawolf runner launch` remembers its runner as this directory's default, so the
@@ -144,11 +144,16 @@ current branch.
 | `qawolf runner act` | write | Perform one raw action on a runner's screen: click, double_click, scroll, move, drag, keypress, navigate or type. Use - to read a whole action as JSON from stdin |
 | `qawolf runner events` | read | Print a runner's journal, one entry per line. QA Wolf writes console, recorder, run-events, run-logs, run-status |
 | `qawolf runner exec` | write | Evaluate a snippet against a runner's live page. Use - to read the snippet from stdin |
+| `qawolf runner import-package` | write | Install a package into a runner's live run, so a snippet or a selection can import it |
+| `qawolf runner inspect element-html` | read | Print the HTML of the first element a selector matches |
+| `qawolf runner inspect page-html` | read | Print the page's HTML, simplified for a model to read |
+| `qawolf runner inspect variable` | read | Print a top-level variable's value from the running workflow |
 | `qawolf runner keepalive` | read | Reset a runner's inactivity clock, for a caller that pauses between actions |
 | `qawolf runner launch` | write | Launch an interactive runner and make it this directory's default |
-| `qawolf runner run` | write | Run a flow on an interactive runner, shipping the current directory's files with it |
+| `qawolf runner run` | write | Run a flow on an interactive runner, shipping the flow and what it imports |
 | `qawolf runner screenshot` | read | Save a JPEG of an interactive runner's screen to a file |
-| `qawolf runner stop` | write | Stop an interactive runner |
+| `qawolf runner stop-run` | write | Stop what a runner is currently executing, leaving the runner up |
+| `qawolf runner terminate` | write | End an interactive runner, and the pod it runs on with it |
 | `qawolf tag create` | write | Create a tag on the caller's team. Tags select flows in run.create. |
 | `qawolf tag list` | read | List the team's tags, alphabetical by name. Tag names select flows in run.create. |
 
@@ -164,7 +169,8 @@ call the QA Wolf API and require auth.
 The `runner` commands drive a live cloud browser: `launch` one, `screenshot` to
 see it, `act` to click and type, `run` a flow on it, `exec` a snippet against its
 page, `events` to read its journal (including the `recorder` stream, which turns
-your actions into Playwright locators), `keepalive` to hold it open, and `stop`
+your actions into Playwright locators), `keepalive` to hold it open, and
+`terminate`
 when done. Everything is a plain request to one host, so a shell with an API key
 and its own vision model can close the see-and-act loop with no other tooling.
 

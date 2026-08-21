@@ -76,7 +76,8 @@ export async function readJournal(
       type: "failed",
     };
   }
-  if (result.value.outcome === "runner-unreachable") {
+  if (result.value.outcome === "failure") {
+    result.value.failureReason satisfies "runner-unreachable";
     return { type: "unreachable" };
   }
   return { type: "read", value: result.value };

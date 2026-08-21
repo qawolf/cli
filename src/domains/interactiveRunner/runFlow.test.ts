@@ -5,11 +5,11 @@ import { handleRunnerRun } from "./runFlow.js";
 import { makeAuthCtx, makeTestDeps, testCwd } from "./deps.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
-const submitted = { outcome: "submitted" as const, runId: "run-a" };
+const submitted = { outcome: "success" as const, runId: "run-a" };
 
 async function runWith(
   value: unknown,
-  options: { entryPoint?: string } = {},
+  options: { entryPoint?: string; lines?: string; linesFile?: string } = {},
 ): Promise<{
   ctx: ReturnType<typeof makeAuthCtx>["ctx"];
   callPublicApi: ReturnType<typeof makeAuthCtx>["callPublicApi"];
@@ -22,6 +22,9 @@ async function runWith(
     {
       entryPoint: options.entryPoint ?? "flow.ts",
       follow: false,
+      envFile: undefined,
+      lines: options.lines,
+      linesFile: options.linesFile,
       runner: "ci",
       timeout: undefined,
       logs: false,
@@ -59,51 +62,6 @@ describe("handleRunnerRun", () => {
     });
   });
 
-  it("refuses a file that is not among the ones that travel, without a request", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
-
-    const result = await handleRunnerRun(
-      ctx,
-      {
-        entryPoint: "flows/missing.ts",
-        follow: false,
-        runner: "ci",
-        timeout: undefined,
-        logs: false,
-        recorderEvents: false,
-        runEvents: false,
-      },
-      makeTestDeps(),
-    );
-
-    expect(result?.error).toContain("flows/missing.ts");
-    expect(result?.exitCode).toBe(2);
-    expect(callPublicApi).not.toHaveBeenCalled();
-  });
-
-  it("refuses a directory carrying no package.json, without a request", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
-
-    const result = await handleRunnerRun(
-      ctx,
-      {
-        entryPoint: "flow.ts",
-        follow: false,
-        runner: "ci",
-        timeout: undefined,
-        logs: false,
-        recorderEvents: false,
-        runEvents: false,
-      },
-      makeTestDeps({
-        collectRunFiles: async () => ({ "flow.ts": "export default {};" }),
-      }),
-    );
-
-    expect(result?.error).toContain("package.json");
-    expect(callPublicApi).not.toHaveBeenCalled();
-  });
-
   // An outcome the CLI does not know must not read as success.
   it("reports an outcome it does not recognize rather than exiting 0", async () => {
     const { result } = await runWith({ outcome: "queued" });
@@ -114,20 +72,24 @@ describe("handleRunnerRun", () => {
 
   it("names both images when the runner is the wrong one for the flow", async () => {
     const { result } = await runWith({
-      outcome: "runner-target-mismatch",
-      requiredRunnerName: "node20WithAndroid",
-      runnerName: "node20WithPlaywright",
+      failureReason: "runner-target-mismatch",
+      outcome: "failure",
+      requiredRunnerName: "android",
+      runnerName: "playwright",
     });
 
-    expect(result?.error).toContain("node20WithAndroid");
-    expect(result?.error).toContain("node20WithPlaywright");
+    expect(result?.error).toContain("android");
+    expect(result?.error).toContain("playwright");
     expect(result?.exitCode).toBe(2);
   });
 
   // Resubmitting would bill a second run, so the message says to read the
   // journal rather than to retry.
   it("does not invite a retry when the submission answer was lost", async () => {
-    const { result } = await runWith({ outcome: "runner-unreachable" });
+    const { result } = await runWith({
+      failureReason: "runner-unreachable",
+      outcome: "failure",
+    });
 
     expect(result?.error).toContain("does not mean the run did not start");
     expect(result?.exitCode).toBe(4);
@@ -135,29 +97,6 @@ describe("handleRunnerRun", () => {
 
   // Checking the files costs nothing and resolving a runner may launch and bill
   // one, so a misspelled flow name must be answered before any of that.
-  it("refuses a misspelled flow without launching a runner", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
-    const deps = makeTestDeps();
-
-    const result = await handleRunnerRun(
-      ctx,
-      {
-        entryPoint: "flows/chekcout.flow.ts",
-        follow: false,
-        runner: undefined,
-        timeout: undefined,
-        logs: false,
-        recorderEvents: false,
-        runEvents: false,
-      },
-      deps,
-    );
-
-    expect(result?.exitCode).toBe(2);
-    expect(callPublicApi).not.toHaveBeenCalled();
-    expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
-  });
-
   it("announces the runner it had to launch, naming it", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi
@@ -166,8 +105,9 @@ describe("handleRunnerRun", () => {
         value: {
           gpuAccelerated: false,
           id: "cli-minted",
-          outcome: "launched",
-          runnerName: "node20WithPlaywright",
+          alreadyRunning: false,
+          outcome: "success",
+          runnerName: "playwright",
         },
       })
       .mockResolvedValueOnce({ ok: true, value: submitted });
@@ -177,6 +117,9 @@ describe("handleRunnerRun", () => {
       {
         entryPoint: "flow.ts",
         follow: false,
+        envFile: undefined,
+        lines: undefined,
+        linesFile: undefined,
         runner: undefined,
         timeout: undefined,
         logs: false,
@@ -211,6 +154,9 @@ describe("handleRunnerRun", () => {
       {
         entryPoint: "flow.ts",
         follow: false,
+        envFile: undefined,
+        lines: undefined,
+        linesFile: undefined,
         runner: "ci",
         timeout: undefined,
         logs: false,

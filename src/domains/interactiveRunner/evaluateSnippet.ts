@@ -37,7 +37,7 @@ async function resolveScope(
     return { filePath: undefined, files: undefined, ok: true };
   }
   const filePath = toCollectedPath(deps.cwd, contextFile);
-  const files = await deps.collectRunFiles();
+  const { files } = await deps.collectRunFiles([filePath]);
   const check = checkSnippetFiles(files, filePath);
   if (check.type !== "ok") {
     return { error: describeRunFilesCheck(check), ok: false };
@@ -114,7 +114,8 @@ export async function handleRunnerExec(
     return { ...failureFields(result), exitCode: exitCodes.network };
   }
 
-  if (result.value.outcome === "runner-unreachable") {
+  if (result.value.outcome === "failure") {
+    result.value.failureReason satisfies "runner-unreachable";
     return {
       error: interactiveRunnerMessages.runnerHasNoScreenToEvaluate,
       exitCode: exitCodes.network,

@@ -83,7 +83,7 @@ describe("handleRunnerAct", () => {
       const { callPublicApi, ctx } = makeAuthCtx();
       callPublicApi.mockResolvedValue({
         ok: true,
-        value: { outcome: "performed" },
+        value: { outcome: "success" },
       });
 
       const result = await handleRunnerAct(
@@ -166,7 +166,7 @@ describe("handleRunnerAct", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { outcome: "performed" },
+      value: { outcome: "success" },
     });
 
     await handleRunnerAct(

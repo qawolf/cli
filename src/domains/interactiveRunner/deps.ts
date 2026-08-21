@@ -1,9 +1,14 @@
-import type { RunFiles } from "@qawolf/api-contracts/v1";
-
 import { sleep as defaultSleep } from "~/core/sleep.js";
 import type { Fs } from "~/shell/fs.js";
-import { collectRunFiles } from "~/shell/interactiveRunner/collectRunFiles.js";
+import {
+  type CollectedRunFiles,
+  collectRunFiles,
+} from "~/shell/interactiveRunner/collectRunFiles.js";
 import { makeRunnerId } from "~/shell/interactiveRunner/makeRunnerId.js";
+import {
+  type RunFilesManifestStore,
+  makeRunFilesManifestStore,
+} from "~/shell/interactiveRunner/runFilesManifest.js";
 import {
   type RunnerStore,
   makeRunnerStore,
@@ -20,12 +25,13 @@ import { readStdin } from "~/shell/stdin.js";
  * input it chose and a sleep that does not wait.
  */
 export type InteractiveRunnerDeps = {
-  collectRunFiles: () => Promise<RunFiles>;
+  collectRunFiles: (roots: readonly string[]) => Promise<CollectedRunFiles>;
   cwd: string;
   env: Record<string, string | undefined>;
   makeRunnerId: () => string;
   readFile: (path: string) => Promise<string>;
   readStdin: () => Promise<string>;
+  runFilesManifest: RunFilesManifestStore;
   sleep: (ms: number) => Promise<void>;
   store: RunnerStore;
   writeScreenshot: (options: {
@@ -40,13 +46,17 @@ export function makeInteractiveRunnerDeps(options: {
   fs: Fs;
 }): InteractiveRunnerDeps {
   return {
-    collectRunFiles: () =>
-      collectRunFiles({ cwd: options.cwd, fs: options.fs }),
+    collectRunFiles: (roots) =>
+      collectRunFiles({ cwd: options.cwd, fs: options.fs, roots }),
     cwd: options.cwd,
     env: options.env,
     makeRunnerId,
     readFile: (path) => options.fs.readFile(path),
     readStdin,
+    runFilesManifest: makeRunFilesManifestStore({
+      cwd: options.cwd,
+      fs: options.fs,
+    }),
     sleep: defaultSleep,
     store: makeRunnerStore({ cwd: options.cwd, fs: options.fs }),
     writeScreenshot: (screenshot) =>

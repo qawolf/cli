@@ -267,28 +267,34 @@ exports[`--help output qawolf runner 1`] = `
 Drive an interactive runner on the QA Wolf platform
 
 Options:
-  -h, --help                 display help for command
+  -h, --help                       display help for command
 
 Commands:
-  launch [options]           Launch an interactive runner and make it this
-                             directory's default
-  stop [options]             Stop an interactive runner
-  keepalive [options]        Reset a runner's inactivity clock, for a caller
-                             that pauses between actions
-  run [options] <file>       Run a flow on an interactive runner, shipping the
-                             current directory's files with it
-  events [options] <stream>  Print a runner's journal, one entry per line. QA
-                             Wolf writes console, recorder, run-events,
-                             run-logs, run-status
-  screenshot [options]       Save a JPEG of an interactive runner's screen to a
-                             file
-  act [options] <action>     Perform one raw action on a runner's screen: click,
-                             double_click, scroll, move, drag, keypress,
-                             navigate or type. Use - to read a whole action as
-                             JSON from stdin
-  exec [options] <file>      Evaluate a snippet against a runner's live page.
-                             Use - to read the snippet from stdin
-  help [command]             display help for command
+  launch [options]                 Launch an interactive runner and make it this
+                                   directory's default
+  terminate [options]              End an interactive runner, and the pod it
+                                   runs on with it
+  stop-run [options]               Stop what a runner is currently executing,
+                                   leaving the runner up
+  keepalive [options]              Reset a runner's inactivity clock, for a
+                                   caller that pauses between actions
+  run [options] <flowFile>         Run a flow on an interactive runner, shipping
+                                   the flow and what it imports
+  events [options] <stream>        Print a runner's journal, one entry per line.
+                                   QA Wolf writes console, recorder, run-events,
+                                   run-logs, run-status
+  screenshot [options]             Save a JPEG of an interactive runner's screen
+                                   to a file
+  act [options] <action>           Perform one raw action on a runner's screen:
+                                   click, double_click, scroll, move, drag,
+                                   keypress, navigate or type. Use - to read a
+                                   whole action as JSON from stdin
+  exec [options] <file>            Evaluate a snippet against a runner's live
+                                   page. Use - to read the snippet from stdin
+  inspect                          Read one thing off a runner's live page
+  import-package [options] <name>  Install a package into a runner's live run,
+                                   so a snippet or a selection can import it
+  help [command]                   display help for command
 "
 `;
 
@@ -298,21 +304,33 @@ exports[`--help output qawolf runner launch 1`] = `
 Launch an interactive runner and make it this directory's default
 
 Options:
-  --id <id>       Id to launch under. Relaunching an id attaches to that runner
-  --name <image>  Runner image to run, e.g. node20WithPlaywright
-  -h, --help      display help for command
+  --id <id>        Id to launch under. Relaunching an id attaches to that runner
+  --name <family>  Runner family to run, e.g. playwright
+  -h, --help       display help for command
 
 Examples:
   $ qawolf runner launch
-  $ qawolf runner launch --name node20WithAndroid
+  $ qawolf runner launch --name android
   $ qawolf runner launch --id ci
 "
 `;
 
-exports[`--help output qawolf runner stop 1`] = `
-"Usage: qawolf runner stop [options]
+exports[`--help output qawolf runner terminate 1`] = `
+"Usage: qawolf runner terminate [options]
 
-Stop an interactive runner
+End an interactive runner, and the pod it runs on with it
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
+                 directory's stored runner
+  -h, --help     display help for command
+"
+`;
+
+exports[`--help output qawolf runner stop-run 1`] = `
+"Usage: qawolf runner stop-run [options]
+
+Stop what a runner is currently executing, leaving the runner up
 
 Options:
   --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
@@ -322,10 +340,9 @@ Options:
 `;
 
 exports[`--help output qawolf runner run 1`] = `
-"Usage: qawolf runner run [options] <file>
+"Usage: qawolf runner run [options] <flowFile>
 
-Run a flow on an interactive runner, shipping the current directory's files with
-it
+Run a flow on an interactive runner, shipping the flow and what it imports
 
 Options:
   --follow             Report the run's status until it settles: in progress,
@@ -338,6 +355,13 @@ Options:
                        lines while following, from an anchor taken just before
                        submission: the recorder is runner-wide, not run-scoped.
                        Implies --follow (default: false)
+  --env-file <path>    Dotenv file whose variables the run is given. Not --env,
+                       which on qawolf flows names a QA Wolf environment
+  --lines <start-end>  Run only these 1-indexed lines against the browser as it
+                       stands, instead of the whole flow from a fresh one
+  --lines-file <path>  File the --lines range lives in. Defaults to <flowFile>;
+                       pass it only when the lines are in another file, such as
+                       a page object
   --runner <id>        Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
                        directory's stored runner
   --timeout <seconds>  Give up following after this long. Following keeps the
@@ -349,6 +373,8 @@ Examples:
   $ qawolf runner run flows/checkout.flow.ts
   $ qawolf runner run flows/checkout.flow.ts --follow
   $ qawolf runner run flows/checkout.flow.ts --follow --logs
+  $ qawolf runner run flows/checkout.flow.ts --lines 12-40
+  $ qawolf runner run flows/checkout.flow.ts --lines 4-9 --lines-file pages/login.ts
 "
 `;
 
@@ -440,6 +466,85 @@ Examples:
   $ qawolf runner act navigate --url https://example.com
   $ qawolf runner act drag --path '[{"x":10,"y":20},{"x":80,"y":90}]'
   $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act -
+"
+`;
+
+exports[`--help output qawolf runner import-package 1`] = `
+"Usage: qawolf runner import-package [options] <name>
+
+Install a package into a runner's live run, so a snippet or a selection can
+import it
+
+Options:
+  --package-version <version>  Version to install (default: "latest")
+  --runner <id>                Runner to target. Defaults to QAWOLF_RUNNER_ID,
+                               then this directory's stored runner
+  -h, --help                   display help for command
+
+Examples:
+  $ qawolf runner import-package dayjs
+  $ qawolf runner import-package dayjs --package-version 1.11.13
+"
+`;
+
+exports[`--help output qawolf runner inspect 1`] = `
+"Usage: qawolf runner inspect [options] [command]
+
+Read one thing off a runner's live page
+
+Options:
+  -h, --help              display help for command
+
+Commands:
+  element-html [options]  Print the HTML of the first element a selector matches
+  page-html [options]     Print the page's HTML, simplified for a model to read
+  variable [options]      Print a top-level variable's value from the running
+                          workflow
+  help [command]          display help for command
+
+Examples:
+  $ qawolf runner inspect element-html --selector "#email"
+  $ qawolf runner inspect page-html > page.html
+  $ qawolf runner inspect variable --name cart | jq .total
+"
+`;
+
+exports[`--help output qawolf runner inspect element-html 1`] = `
+"Usage: qawolf runner inspect element-html [options]
+
+Print the HTML of the first element a selector matches
+
+Options:
+  --selector <selector>  Playwright selector to inspect
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then
+                         this directory's stored runner
+  -h, --help             display help for command
+"
+`;
+
+exports[`--help output qawolf runner inspect page-html 1`] = `
+"Usage: qawolf runner inspect page-html [options]
+
+Print the page's HTML, simplified for a model to read
+
+Options:
+  --selector <selector>  Limit the output to this subtree
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then
+                         this directory's stored runner
+  -h, --help             display help for command
+"
+`;
+
+exports[`--help output qawolf runner inspect variable 1`] = `
+"Usage: qawolf runner inspect variable [options]
+
+Print a top-level variable's value from the running workflow
+
+Options:
+  --name <name>  Name of the variable to read
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
+                 directory's stored runner
+  -h, --help     display help for command
 "
 `;
 

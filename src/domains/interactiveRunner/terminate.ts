@@ -12,13 +12,13 @@ import type { InteractiveRunnerDeps } from "./deps.js";
 import { resolveRunner } from "./resolveRunner.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
-export async function handleRunnerStop(
+export async function handleRunnerTerminate(
   ctx: AuthCommandContext,
   options: { runner: string | undefined },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
-  // Never launches: starting a runner in order to stop it would bill one for
-  // nothing, so a caller with no runner is told rather than served.
+  // Never launches: starting a runner in order to terminate it would bill one
+  // for nothing, so a caller with no runner is told rather than served.
   const resolved = await resolveRunner(
     ctx,
     { autoLaunch: false, runner: options.runner },
@@ -29,7 +29,7 @@ export async function handleRunnerStop(
   }
 
   const result = await ctx.platformClient.callPublicApi(
-    publicContractsV1.runner.stop,
+    publicContractsV1.runner.terminate,
     {
       id: resolved.runnerId,
     },
@@ -58,9 +58,9 @@ export async function handleRunnerStop(
 
   ctx.ui.output(
     result.value,
-    result.value.outcome === "stopped"
-      ? interactiveRunnerMessages.stopped(result.value.id)
-      : interactiveRunnerMessages.notRunning(result.value.id),
+    result.value.wasRunning
+      ? interactiveRunnerMessages.terminated(result.value.id)
+      : interactiveRunnerMessages.wasNotRunning(result.value.id),
   );
   return undefined;
 }

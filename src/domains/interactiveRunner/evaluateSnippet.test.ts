@@ -75,7 +75,10 @@ describe("handleRunnerExec", () => {
       ctx,
       { contextFile: "flow.ts", runner: "ci", source: "-" },
       makeTestDeps({
-        collectRunFiles: async () => ({ "flow.ts": "export default {};" }),
+        collectRunFiles: async () => ({
+          files: { "flow.ts": "export default {};" },
+          unresolvedImports: [],
+        }),
         readStdin: async () => "await signIn()",
       }),
     );
@@ -222,7 +225,7 @@ describe("handleRunnerExec", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { outcome: "runner-unreachable" },
+      value: { failureReason: "runner-unreachable", outcome: "failure" },
     });
 
     const result = await handleRunnerExec(
@@ -232,7 +235,7 @@ describe("handleRunnerExec", () => {
     );
 
     expect(result?.error).toContain("no live page");
-    // A fresh node20WithPlaywright runner does run a browser, so telling the
+    // A fresh playwright runner does run a browser, so telling the
     // caller to check the image would send them after the wrong thing.
     expect(result?.error).toContain("run a flow on it with qawolf runner run");
     expect(result?.error).toContain("not proof the snippet did not run");

@@ -1,3 +1,4 @@
+import { sep } from "node:path";
 import type { Mock } from "bun:test";
 import type { RunFiles } from "@qawolf/api-contracts/v1";
 
@@ -9,6 +10,7 @@ import {
   makeCallPublicApiMock,
   makeMockPlatformClient,
 } from "~/shell/platform/createPlatformClient.testUtils.js";
+import { makeRunFilesManifestStore } from "~/shell/interactiveRunner/runFilesManifest.js";
 import { makeRunnerStore } from "~/shell/interactiveRunner/runnerStore.js";
 import type {
   AuthCommandContext,
@@ -79,16 +81,23 @@ export function makeTestDeps(
     },
   };
   return {
-    collectRunFiles: async () => files,
+    collectRunFiles: async () => ({ files, unresolvedImports: [] }),
     cwd: testCwd,
     env: {},
     makeRunnerId: () => "cli-minted",
     readFile: async (path) => {
-      const content = files[path];
+      // Handlers that build an absolute path from `cwd` and ones that pass a
+      // collected path through both land here, on either platform's separator.
+      const collected = path.split(sep).join("/").replace(`${testCwd}/`, "");
+      const content = files[collected];
       if (content === undefined) throw Error(`no such file: ${path}`);
       return content;
     },
     readStdin: async () => "",
+    runFilesManifest: makeRunFilesManifestStore({
+      cwd: testCwd,
+      fs: makeMemoryFs(),
+    }),
     sleep: async () => {},
     store: makeRunnerStore({ cwd: testCwd, fs: makeMemoryFs() }),
     writeScreenshot: (screenshot) =>

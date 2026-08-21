@@ -53,7 +53,7 @@ An interactive runner is a live pod holding a browser, and it is billed while it
 runs. `qawolf runner launch` starts one; `qawolf runner run` starts one too when
 no runner is already available, and says so when it does. Reading a runner
 counts as activity, so `qawolf runner events --follow` left open keeps it alive
-and billing. `qawolf runner stop` is what ends it, so stop a runner you launched
+and billing. `qawolf runner terminate` is what ends it, so terminate a runner you launched
 rather than leaving it to time out.
 
 `qawolf runner launch` remembers its runner as this directory's default, so the
@@ -119,7 +119,8 @@ call the QA Wolf API and require auth.
 The `runner` commands drive a live cloud browser: `launch` one, `screenshot` to
 see it, `act` to click and type, `run` a flow on it, `exec` a snippet against its
 page, `events` to read its journal (including the `recorder` stream, which turns
-your actions into Playwright locators), `keepalive` to hold it open, and `stop`
+your actions into Playwright locators), `keepalive` to hold it open, and
+`terminate`
 when done. Everything is a plain request to one host, so a shell with an API key
 and its own vision model can close the see-and-act loop with no other tooling.
 
