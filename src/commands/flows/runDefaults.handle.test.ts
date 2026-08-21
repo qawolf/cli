@@ -138,7 +138,24 @@ describe("handleFlowsRun", () => {
     expect(flowsRunMock).toHaveBeenCalledTimes(1);
   });
 
-  it("returns early and skips all setup when no flows match", async () => {
+  it("exits 2 and skips all setup when no flows match", async () => {
+    const result = await handleFlowsRun(
+      makeCtx(),
+      "does-not-match",
+      defaultFlags(),
+      makeDeps(),
+    );
+
+    expect(result).toEqual({
+      error: runnerMessages.noFlowsMatchedPattern("does-not-match"),
+      exitCode: 2,
+    });
+    expect(resolveDepsRootMock).not.toHaveBeenCalled();
+    expect(configureTestkitMock).not.toHaveBeenCalled();
+    expect(flowsRunMock).not.toHaveBeenCalled();
+  });
+
+  it("names no pattern in the no-match error when the argument is omitted", async () => {
     const result = await handleFlowsRun(
       makeCtx(),
       undefined,
@@ -146,10 +163,22 @@ describe("handleFlowsRun", () => {
       makeDeps(),
     );
 
+    expect(result).toEqual({
+      error: runnerMessages.noFlowsMatchedPattern(undefined),
+      exitCode: 2,
+    });
+  });
+
+  it("exits 0 with an info notice when no flows match under --allow-no-match", async () => {
+    const result = await handleFlowsRun(
+      makeCtx(),
+      "does-not-match",
+      { ...defaultFlags(), allowNoMatch: true },
+      makeDeps(),
+    );
+
     expect(result).toBeUndefined();
     expect(uiInfoMock).toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
-    expect(resolveDepsRootMock).not.toHaveBeenCalled();
-    expect(configureTestkitMock).not.toHaveBeenCalled();
     expect(flowsRunMock).not.toHaveBeenCalled();
   });
 

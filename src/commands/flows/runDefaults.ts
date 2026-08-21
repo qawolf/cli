@@ -7,6 +7,7 @@ import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
 import { prepareRunDir as defaultPrepareRunDir } from "~/domains/runtimeEnv/prepareRunDir.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
+import { exitCodes } from "~/shell/exit.js";
 import type { Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js";
@@ -55,8 +56,14 @@ export async function handleFlowsRun(
     .debug(`discovered ${pluralize(expandedFiles.length, "flow")}`);
 
   if (expandedFiles.length === 0) {
-    ctx.ui.info(runnerMessages.noFlowsMatched);
-    return;
+    if (flags.allowNoMatch) {
+      ctx.ui.info(runnerMessages.noFlowsMatched);
+      return;
+    }
+    return {
+      error: runnerMessages.noFlowsMatchedPattern(pattern),
+      exitCode: exitCodes.invalidArgs,
+    };
   }
 
   return runStagedFlows({
