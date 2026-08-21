@@ -8,6 +8,7 @@ import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
+import { runnerMessages } from "~/core/messages/index.js";
 import { runStagingRoot } from "~/domains/runtimeEnv/index.js";
 import {
   handleHybridFlowsRun,
@@ -289,6 +290,24 @@ describe("handleHybridFlowsRun", () => {
       error: "No flows matched '**/missing.flow.ts' in env 'my-env'",
       exitCode: 2,
     });
+    expect(flowsRunMock).not.toHaveBeenCalled();
+  });
+
+  it("exits 0 with an info notice when no flows match after pull under --allow-no-match", async () => {
+    const ctx = makeCtx();
+    const deps = makeDeps();
+    expandPatternsMock.mockResolvedValue([]);
+    pullEnvMock.mockResolvedValue(undefined);
+
+    const result = await handleHybridFlowsRun(
+      ctx,
+      "**/missing.flow.ts",
+      { ...defaultFlags(), env: "my-env", allowNoMatch: true },
+      deps,
+    );
+
+    expect(result).toBeUndefined();
+    expect(ctx.ui.info).toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
     expect(flowsRunMock).not.toHaveBeenCalled();
   });
 

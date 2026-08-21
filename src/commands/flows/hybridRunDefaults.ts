@@ -1,6 +1,7 @@
 import { join, resolve } from "node:path";
 
 import { buildPatternArgs } from "~/core/patternArgs.js";
+import { runnerMessages } from "~/core/messages/index.js";
 import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
 import { handleFlowsPull } from "~/domains/flows/pull/handler.js";
 import { validateEnvId } from "~/domains/flows/pull/pull.js";
@@ -63,6 +64,10 @@ export async function handleHybridFlowsRun(
 
     files = await globFlows();
     if (files.length === 0) {
+      if (flags.allowNoMatch) {
+        ctx.ui.info(runnerMessages.noFlowsMatched);
+        return;
+      }
       return {
         error:
           pattern !== undefined
