@@ -1,8 +1,3 @@
-import {
-  type RunnerNameForPublicApi,
-  publicContractsV1,
-} from "@qawolf/api-contracts/v1";
-
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
   AuthCommandContext,
@@ -17,12 +12,13 @@ import {
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 import { parseRunnerId, parseRunnerName } from "./runnerIds.js";
+import { compatLaunchContract, type RunnerName } from "./runnerNameCompat.js";
 
 type LaunchedRunner = {
   gpuAccelerated: boolean;
   id: string;
   outcome: "launched" | "already-running";
-  runnerName: RunnerNameForPublicApi;
+  runnerName: RunnerName;
 };
 
 type LaunchFailure = PlatformFailure & { ok: false; exitCode: number };
@@ -36,10 +32,10 @@ type LaunchResult = { ok: true; value: LaunchedRunner } | LaunchFailure;
  */
 async function launchRunner(
   ctx: AuthCommandContext,
-  options: { id: string; runnerName: RunnerNameForPublicApi | undefined },
+  options: { id: string; runnerName: RunnerName | undefined },
 ): Promise<LaunchResult> {
   const result = await ctx.platformClient.callPublicApi(
-    publicContractsV1.runner.launch,
+    compatLaunchContract,
     {
       id: options.id,
       ...(options.runnerName ? { runnerName: options.runnerName } : {}),
@@ -81,7 +77,7 @@ async function launchRunner(
  */
 export async function launchAndRemember(
   ctx: AuthCommandContext,
-  options: { id: string; runnerName: RunnerNameForPublicApi | undefined },
+  options: { id: string; runnerName: RunnerName | undefined },
   deps: InteractiveRunnerDeps,
 ): Promise<LaunchResult> {
   const priorDefault = await deps.store

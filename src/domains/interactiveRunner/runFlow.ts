@@ -1,5 +1,3 @@
-import { publicContractsV1 } from "@qawolf/api-contracts/v1";
-
 import { parseFollowTimeout } from "~/core/interactiveRunner/followTimeout.js";
 import {
   checkRunFiles,
@@ -20,6 +18,7 @@ import { resolveRecorderAnchor } from "./followPrinters.js";
 import { followRun } from "./followRun.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
+import { compatRunFlowContract } from "./runnerNameCompat.js";
 
 export async function handleRunnerRun(
   ctx: AuthCommandContext,
@@ -74,7 +73,7 @@ export async function handleRunnerRun(
   }
 
   const result = await ctx.platformClient.callPublicApi(
-    publicContractsV1.runner.runFlow,
+    compatRunFlowContract,
     { entryPointPath, files, id: resolved.runnerId },
     runnerCallOptions,
   );

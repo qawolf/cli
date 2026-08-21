@@ -1,4 +1,3 @@
-import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
@@ -6,6 +5,7 @@ import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import { resolveRunner } from "./resolveRunner.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
+import { compatLaunchContract } from "./runnerNameCompat.js";
 
 const launched = {
   gpuAccelerated: false,
@@ -68,7 +68,7 @@ describe("resolveRunner", () => {
     ).toEqual({ runnerId: "cli-minted", type: "launched" });
 
     expect(callPublicApi).toHaveBeenCalledWith(
-      publicContractsV1.runner.launch,
+      compatLaunchContract,
       { id: "cli-minted" },
       runnerCallOptions,
     );

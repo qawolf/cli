@@ -1,9 +1,9 @@
-import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
 import { handleRunnerRun } from "./runFlow.js";
 import { makeAuthCtx, makeTestDeps, testCwd } from "./deps.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
+import { compatRunFlowContract } from "./runnerNameCompat.js";
 
 const submitted = { outcome: "submitted" as const, runId: "run-a" };
 
@@ -39,7 +39,7 @@ describe("handleRunnerRun", () => {
 
     expect(result).toBeUndefined();
     expect(callPublicApi).toHaveBeenCalledWith(
-      publicContractsV1.runner.runFlow,
+      compatRunFlowContract,
       {
         entryPointPath: "flow.ts",
         files: { "flow.ts": "export default {};", "package.json": "{}" },
@@ -121,6 +121,20 @@ describe("handleRunnerRun", () => {
 
     expect(result?.error).toContain("node20WithAndroid");
     expect(result?.error).toContain("node20WithPlaywright");
+    expect(result?.exitCode).toBe(2);
+  });
+
+  // A mismatch answered in the new vocabulary must still parse: it is the
+  // whole point of accepting both vocabularies through the migration.
+  it("names both images when the mismatch names them in the new vocabulary", async () => {
+    const { result } = await runWith({
+      outcome: "runner-target-mismatch",
+      requiredRunnerName: "android",
+      runnerName: "playwright",
+    });
+
+    expect(result?.error).toContain("android");
+    expect(result?.error).toContain("playwright");
     expect(result?.exitCode).toBe(2);
   });
 

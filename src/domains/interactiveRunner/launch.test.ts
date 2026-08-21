@@ -1,9 +1,9 @@
-import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
 import { handleRunnerLaunch } from "./launch.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
+import { compatLaunchContract } from "./runnerNameCompat.js";
 
 const launched = {
   gpuAccelerated: false,
@@ -23,7 +23,7 @@ describe("handleRunnerLaunch", () => {
     ).toBeUndefined();
 
     expect(callPublicApi).toHaveBeenCalledWith(
-      publicContractsV1.runner.launch,
+      compatLaunchContract,
       { id: "cli-minted" },
       runnerCallOptions,
     );
@@ -44,8 +44,32 @@ describe("handleRunnerLaunch", () => {
     );
 
     expect(callPublicApi).toHaveBeenCalledWith(
-      publicContractsV1.runner.launch,
+      compatLaunchContract,
       { id: "ci", runnerName: "node20WithAndroid" },
+      runnerCallOptions,
+    );
+  });
+
+  // The platform is migrating the runner-image vocabulary and the two forms
+  // are not accepted by the same server. The CLI has to admit both and send
+  // whatever the caller chose so this migration does not need a new CLI.
+  it("accepts a new-vocabulary image and sends it verbatim", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { ...launched, id: "ci", runnerName: "playwright" },
+    });
+
+    const result = await handleRunnerLaunch(
+      ctx,
+      { id: "ci", name: "playwright" },
+      makeTestDeps(),
+    );
+
+    expect(result).toBeUndefined();
+    expect(callPublicApi).toHaveBeenCalledWith(
+      compatLaunchContract,
+      { id: "ci", runnerName: "playwright" },
       runnerCallOptions,
     );
   });
