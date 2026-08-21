@@ -287,7 +287,7 @@ describe("handleHybridFlowsRun", () => {
     );
 
     expect(result).toEqual({
-      error: "No flows matched '**/missing.flow.ts' in env 'my-env'",
+      error: runnerMessages.noFlowsMatchedInEnv("my-env", "**/missing.flow.ts"),
       exitCode: 2,
     });
     expect(flowsRunMock).not.toHaveBeenCalled();
@@ -381,7 +381,7 @@ describe("handleHybridFlowsRun", () => {
     );
 
     expect(result).toEqual({
-      error: "No flows found in env 'my-env'",
+      error: runnerMessages.noFlowsMatchedInEnv("my-env", undefined),
       exitCode: 2,
     });
     expect(flowsRunMock).not.toHaveBeenCalled();

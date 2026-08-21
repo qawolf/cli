@@ -4,6 +4,8 @@ import { packageLoadFailed } from "./toolNotFound.js";
 
 const maxListedNames = 5;
 
+const allowNoMatchHint = "Pass --allow-no-match to exit 0 instead.";
+
 function listNames(names: string[]): string {
   const shown = names.slice(0, maxListedNames).join(", ");
   const rest = names.length - maxListedNames;
@@ -18,12 +20,14 @@ export const runnerMessages = {
   noFlowsMatched: "No flows matched.",
   noFlowsMatchedPattern: (pattern: string | undefined) =>
     pattern === undefined
-      ? "No flows found. Run 'qawolf flows run --allow-no-match' to exit 0 instead."
-      : `No flows matched '${pattern}'. Run 'qawolf flows run --allow-no-match' to exit 0 instead.`,
-  noTargetedFlows:
-    "No matched flow declares a target. Add a target to the flow, or run with --allow-no-match to exit 0 instead.",
-  noRunnableFlows:
-    "No runnable flows matched — every match has a target the CLI cannot run locally. Run with --allow-no-match to exit 0 instead.",
+      ? `No flows found. ${allowNoMatchHint}`
+      : `No flows matched '${pattern}'. ${allowNoMatchHint}`,
+  noFlowsMatchedInEnv: (env: string, pattern: string | undefined) =>
+    pattern === undefined
+      ? `No flows found in env '${env}'. ${allowNoMatchHint}`
+      : `No flows matched '${pattern}' in env '${env}'. ${allowNoMatchHint}`,
+  noTargetedFlows: `No matched flow declares a target. ${allowNoMatchHint}`,
+  noRunnableFlows: `No matched flow has a target the CLI can run locally. ${allowNoMatchHint}`,
   androidBootFailed: "Android boot failed",
   preparingEnvironment: "Preparing environment",
   environmentReady: "Environment ready",

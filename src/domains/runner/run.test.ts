@@ -1,3 +1,4 @@
+// oxlint-disable eslint/max-lines -- the no-match exit-code cases pushed this past 250; splitting the flowsRun pre-flight suite would fragment coverage
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import { runnerMessages } from "~/core/messages/index.js";
@@ -109,6 +110,7 @@ describe("flowsRun pre-flight", () => {
     expect(ctx.ui.warn).toHaveBeenCalledWith(
       runnerMessages.flowsSkipped("iOS", 1),
     );
+    expect(ctx.ui.info).not.toHaveBeenCalledWith(runnerMessages.noFlowsMatched);
   });
 
   it("groups multiple same-type unsupported flows into one warning", async () => {
