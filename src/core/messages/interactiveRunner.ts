@@ -18,7 +18,7 @@ export const interactiveRunnerMessages = {
   defaultNotRemembered: (id: string) =>
     `Runner ${id} could not be written to .qawolf as this directory's default, so later commands will not find it on their own. Pass --runner ${id}, or set QAWOLF_RUNNER_ID=${id}.`,
   defaultNotForgotten: (id: string) =>
-    `Runner ${id} was stopped, but it could not be removed from .qawolf as this directory's default, so later commands will still be sent to it. Pass --runner, or launch a new runner.`,
+    `Runner ${id} was terminated, but it could not be removed from .qawolf as this directory's default, so later commands will still be sent to it. Pass --runner, or launch a new runner.`,
   fileNotCollected: (path: string) =>
     `"${path}" is not one of the files that travel to a runner. It must be inside the current directory and end in .ts, .tsx, .js, .mjs, .cjs or .json.`,
   fileUnreadable: (path: string, reason: string) =>
@@ -40,16 +40,16 @@ export const interactiveRunnerMessages = {
   launchFailed: (id: string, error: string) =>
     `Launching runner ${id} failed. ${error}`,
   launchLost: (id: string, error: string) =>
-    `Launching runner ${id} failed. ${error}. The request may still have reached QA Wolf and started a runner, so relaunch the same id with qawolf runner launch --id ${id} to attach to it rather than start a second one, or stop it with qawolf runner stop --runner ${id}.`,
+    `Launching runner ${id} failed. ${error}. The request may still have reached QA Wolf and started a runner, so relaunch the same id with qawolf runner launch --id ${id} to attach to it rather than start a second one, or terminate it with qawolf runner terminate --runner ${id}.`,
   launched: (id: string) => `Launched runner ${id}.`,
   launchedForCommand: (id: string) =>
-    `No runner was given, so launched ${id} for this command. Its browser is fresh: nothing has been run on it and nothing is signed in. It bills until it is stopped or idles out, so stop it with qawolf runner stop --runner ${id} when you are done.`,
+    `No runner was given, so launched ${id} for this command. Its browser is fresh: nothing has been run on it and nothing is signed in. It bills until it is terminated or idles out, so terminate it with qawolf runner terminate --runner ${id} when you are done.`,
   followEventsTimedOut: (stream: string, seconds: number) =>
     `Stopped following ${stream} after ${formatSeconds(seconds * 1000)}: reading keeps the runner alive and billing, so a follow does not run unbounded. Pass --timeout to wait longer, or follow again to continue.`,
   followEndCutShort:
     "The run settled, but the last window of its followed streams could not be read, so the output above may be missing its final lines.",
   followTimedOut: (runId: string, runnerId: string, seconds: number) =>
-    `Stopped following run ${runId} after ${formatSeconds(seconds * 1000)}. The run may still be going: read it with qawolf runner events run-status --run ${runId}, and stop the runner with qawolf runner stop --runner ${runnerId} when you are done. Pass --timeout to wait longer.`,
+    `Stopped following run ${runId} after ${formatSeconds(seconds * 1000)}. The run may still be going: read it with qawolf runner events run-status --run ${runId}, and terminate the runner with qawolf runner terminate --runner ${runnerId} when you are done. Pass --timeout to wait longer.`,
   needsFullSync: (missingPaths: readonly string[]) =>
     `The runner does not hold ${missingPaths.join(", ")}, so it refused a run that referenced them without sending them. Run the flow again to ship every file it needs.`,
   missingPackageJson:
