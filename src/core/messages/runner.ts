@@ -4,6 +4,8 @@ import { packageLoadFailed } from "./toolNotFound.js";
 
 const maxListedNames = 5;
 
+const allowNoMatchHint = "Pass --allow-no-match to exit 0 instead.";
+
 function listNames(names: string[]): string {
   const shown = names.slice(0, maxListedNames).join(", ");
   const rest = names.length - maxListedNames;
@@ -16,6 +18,16 @@ export const runnerMessages = {
   androidWorkersUnsupported:
     "Android flows are not yet supported with --workers > 1; rerun Android flows with --workers 1.",
   noFlowsMatched: "No flows matched.",
+  noFlowsMatchedPattern: (pattern: string | undefined) =>
+    pattern === undefined
+      ? `No flows found. ${allowNoMatchHint}`
+      : `No flows matched '${pattern}'. ${allowNoMatchHint}`,
+  noFlowsMatchedInEnv: (env: string, pattern: string | undefined) =>
+    pattern === undefined
+      ? `No flows found in env '${env}'. ${allowNoMatchHint}`
+      : `No flows matched '${pattern}' in env '${env}'. ${allowNoMatchHint}`,
+  noTargetedFlows: `No matched flow declares a target. ${allowNoMatchHint}`,
+  noRunnableFlows: `No matched flow has a target the CLI can run locally. ${allowNoMatchHint}`,
   androidBootFailed: "Android boot failed",
   preparingEnvironment: "Preparing environment",
   environmentReady: "Environment ready",

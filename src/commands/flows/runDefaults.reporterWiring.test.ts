@@ -33,6 +33,7 @@ function defaultFlags(): FlowsRunFlags {
     outputDir: "/tmp",
     headed: false,
     browserDeps: true,
+    allowNoMatch: false,
   };
 }
 

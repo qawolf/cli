@@ -1,10 +1,12 @@
 import { join, resolve } from "node:path";
 
 import { buildPatternArgs } from "~/core/patternArgs.js";
+import { runnerMessages } from "~/core/messages/index.js";
 import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
 import { handleFlowsPull } from "~/domains/flows/pull/handler.js";
 import { validateEnvId } from "~/domains/flows/pull/pull.js";
 import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
+import { noMatchResult } from "~/domains/runner/noMatch.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
 import { prepareRunDir as defaultPrepareRunDir } from "~/domains/runtimeEnv/prepareRunDir.js";
@@ -63,13 +65,11 @@ export async function handleHybridFlowsRun(
 
     files = await globFlows();
     if (files.length === 0) {
-      return {
-        error:
-          pattern !== undefined
-            ? `No flows matched '${pattern}' in env '${flags.env}'`
-            : `No flows found in env '${flags.env}'`,
-        exitCode: 2,
-      };
+      return noMatchResult(ctx, {
+        allowNoMatch: flags.allowNoMatch,
+        error: runnerMessages.noFlowsMatchedInEnv(flags.env, pattern),
+        notice: runnerMessages.noFlowsMatched,
+      });
     }
   }
 

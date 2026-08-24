@@ -8,6 +8,7 @@ import { runnerMessages } from "~/core/messages/index.js";
 import { collectJsonFailureDetails } from "./jsonFailureDetails.js";
 import { buildRunOptions } from "./runHelpers.js";
 import { executeFlows } from "./dispatchFlows.js";
+import { noMatchResult } from "./noMatch.js";
 import {
   type AndroidResolvedFlow,
   type FlowsRunDeps,
@@ -61,10 +62,15 @@ export async function flowsRun(
   flows.sort((a, b) => a.file.localeCompare(b.file));
 
   if (flows.length === 0) {
-    if (skippedByType.size === 0) {
-      ctx.ui.info(runnerMessages.noFlowsMatched);
-    }
-    return;
+    const skipped = skippedByType.size > 0;
+    return noMatchResult(ctx, {
+      allowNoMatch: flags.allowNoMatch,
+      error: skipped
+        ? runnerMessages.noRunnableFlows
+        : runnerMessages.noTargetedFlows,
+      // The per-type skip warnings above already explain an empty selection.
+      notice: skipped ? undefined : runnerMessages.noFlowsMatched,
+    });
   }
 
   const webFlows = flows.filter((f): f is WebResolvedFlow => f.kind === "web");

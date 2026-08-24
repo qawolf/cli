@@ -3,6 +3,7 @@ import { runnerMessages } from "~/core/messages/index.js";
 import { pluralize } from "~/core/pluralize.js";
 import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
 import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
+import { noMatchResult } from "~/domains/runner/noMatch.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 import { defaultRunWebFlowDeps } from "~/domains/runner/runWebFlowDeps.js";
 import { prepareRunDir as defaultPrepareRunDir } from "~/domains/runtimeEnv/prepareRunDir.js";
@@ -55,8 +56,11 @@ export async function handleFlowsRun(
     .debug(`discovered ${pluralize(expandedFiles.length, "flow")}`);
 
   if (expandedFiles.length === 0) {
-    ctx.ui.info(runnerMessages.noFlowsMatched);
-    return;
+    return noMatchResult(ctx, {
+      allowNoMatch: flags.allowNoMatch,
+      error: runnerMessages.noFlowsMatchedPattern(pattern),
+      notice: runnerMessages.noFlowsMatched,
+    });
   }
 
   return runStagedFlows({
