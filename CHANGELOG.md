@@ -1,5 +1,19 @@
 # @qawolf/cli
 
+## 1.14.0
+
+### Minor Changes
+
+- 6bf56f9: `qawolf flows run` now exits 2 when the pattern selects nothing runnable. It previously exited 0, so a typo'd pattern or a mis-scoped CI shard reported success with no flow executed. Three cases changed: the pattern matches no file, the matched files declare no `target`, and every matched flow has a target the CLI cannot run locally (iOS, Basic, Electron). The `--env` path already exited 2 for its own no-match case.
+
+  Pass `--allow-no-match` to keep the old exit-0 behavior where an empty selection is expected.
+
+### Patch Changes
+
+- b5673eb: Exit with code 3 when the API rejects the key with HTTP 401.
+
+  Before this change, a command that sent an invalid `QAWOLF_API_KEY` exited with code 1, which the documented contract reserves for flow failures. Only a missing key exited with code 3. Now the public API commands and `qawolf auth whoami` exit with code 3 for a missing key and for an invalid key. A CI wrapper that branches on the exit status can now tell an auth failure from a test failure.
+
 ## 1.13.0
 
 ### Minor Changes
