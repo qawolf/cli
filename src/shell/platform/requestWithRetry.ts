@@ -9,10 +9,14 @@ import type { WireError, WireResult } from "./createTrpcClient.js";
  * server answered by refusing it. Only the first leaves a caller unable to say
  * whether the action happened, which for a write is the difference between
  * "retry the same id" and "that will fail the same way again".
+ *
+ * `exitCode` is set when the failure kind maps to a documented CLI exit code
+ * (auth = 3); commands surface it so callers can branch on exit status.
  */
 export type PlatformFailure = {
   error: string;
   errorBody?: string;
+  exitCode?: number;
   mayHaveArrived?: boolean;
 };
 
@@ -22,13 +26,15 @@ export type PlatformResult<T> =
 
 /**
  * Narrows a failed result to just its error fields, so a caller can rebuild
- * it as its own result type. Omits `errorBody` entirely when the server gave
- * no reason, rather than setting it to undefined.
+ * it as its own result type. Omits `errorBody` and `exitCode` entirely when
+ * absent, rather than setting them to undefined.
  */
 export function failureFields(failure: PlatformFailure): PlatformFailure {
-  return failure.errorBody
-    ? { error: failure.error, errorBody: failure.errorBody }
-    : { error: failure.error };
+  return {
+    error: failure.error,
+    ...(failure.errorBody ? { errorBody: failure.errorBody } : {}),
+    ...(failure.exitCode === undefined ? {} : { exitCode: failure.exitCode }),
+  };
 }
 
 type RequestWithRetryArgs<T> = {

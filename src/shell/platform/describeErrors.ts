@@ -1,5 +1,6 @@
 import { formatSeconds } from "~/core/formatSeconds.js";
 import { authMessages } from "~/core/messages/index.js";
+import { exitCodes } from "~/shell/exit.js";
 import type { WireError } from "./createTrpcClient.js";
 import { parseErrorBody } from "./parseErrorBody.js";
 import type { PlatformFailure } from "./requestWithRetry.js";
@@ -12,7 +13,13 @@ const inlineReasonMaxLength = 200;
 export function describeIdentityError(err: WireError): PlatformFailure {
   if (err.kind === "http") {
     if (err.status === 401 || err.status === 403) {
-      return { error: m.identity.invalidOrUnauthorized };
+      // Exit 3 is documented as "QAWOLF_API_KEY is missing or invalid". Only a
+      // 401 proves the key was rejected; a 403 means it authenticated but
+      // lacks permission, which stays on the default exit code.
+      return {
+        error: m.identity.invalidOrUnauthorized,
+        ...(err.status === 401 ? { exitCode: exitCodes.auth } : {}),
+      };
     }
     return {
       error: m.identity.couldNotVerify(
@@ -40,8 +47,14 @@ export function describeRequestError(
   if (err.kind === "http") {
     const reason = parseErrorBody(err.body);
     const body = reason ? { errorBody: reason } : {};
+    // A 401 means the key itself was rejected, which the exit-code contract
+    // maps to auth (3); a 403 is a permission problem with a valid key.
     if (err.status === 401)
-      return { error: m.request.rejected401(noun), ...body };
+      return {
+        error: m.request.rejected401(noun),
+        exitCode: exitCodes.auth,
+        ...body,
+      };
     if (err.status === 403)
       return { error: m.request.rejected403(noun), ...body };
     if (err.status === 404)

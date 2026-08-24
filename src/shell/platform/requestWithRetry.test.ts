@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
 import type { WireError } from "./createTrpcClient.js";
-import { requestWithRetry } from "./requestWithRetry.js";
+import { failureFields, requestWithRetry } from "./requestWithRetry.js";
 
 const noSleep = async (): Promise<void> => {};
 
@@ -49,5 +49,18 @@ describe("requestWithRetry", () => {
       mayHaveArrived: true,
       ok: false,
     });
+  });
+});
+
+describe("failureFields", () => {
+  it("preserves the exit code", () => {
+    expect(failureFields({ error: "rejected", exitCode: 3 })).toEqual({
+      error: "rejected",
+      exitCode: 3,
+    });
+  });
+
+  it("omits the exit code entirely when unset", () => {
+    expect("exitCode" in failureFields({ error: "rejected" })).toBe(false);
   });
 });
