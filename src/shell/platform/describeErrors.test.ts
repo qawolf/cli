@@ -1,7 +1,9 @@
 import { describe, expect, it } from "bun:test";
 
+import { exitCodes } from "~/shell/exit.js";
 import {
   describeBundleDownloadError,
+  describeIdentityError,
   describeRequestError,
   describeTeamStorageDownloadError,
 } from "./describeErrors.js";
@@ -43,6 +45,29 @@ describe("describeRequestError", () => {
     },
   );
 
+  it("maps HTTP 401 to the auth exit code", () => {
+    const described = describeRequestError(
+      httpError(401),
+      baseUrl,
+      "run.create",
+    );
+
+    expect(described.exitCode).toBe(exitCodes.auth);
+  });
+
+  it.each([403, 404, 500])(
+    "leaves the exit code unset on HTTP %i",
+    (status) => {
+      const described = describeRequestError(
+        httpError(status),
+        baseUrl,
+        "run.create",
+      );
+
+      expect("exitCode" in described).toBe(false);
+    },
+  );
+
   it("omits the body for a network failure", () => {
     const described = describeRequestError(
       { kind: "network", cause: new Error("connection reset") },
@@ -69,6 +94,20 @@ describe("describeRequestError", () => {
     );
 
     expect("errorBody" in described).toBe(false);
+  });
+});
+
+describe("describeIdentityError", () => {
+  it("maps HTTP 401 to the auth exit code", () => {
+    const described = describeIdentityError(httpError(401));
+
+    expect(described.exitCode).toBe(exitCodes.auth);
+  });
+
+  it("leaves the exit code unset on HTTP 403", () => {
+    const described = describeIdentityError(httpError(403));
+
+    expect("exitCode" in described).toBe(false);
   });
 });
 

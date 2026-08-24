@@ -64,6 +64,19 @@ describe("callPublicApi", () => {
     expect(result).toEqual({ ok: true, value: { runId, url } });
   });
 
+  it("sets the auth exit code when the server rejects the key with HTTP 401", async () => {
+    const result = await createPlatformClient(apiKey, {
+      fetch: mockFetch(new Response("", { status: 401 })),
+      baseUrl,
+    }).callPublicApi(publicContractsV1.run.create, {
+      environmentId: "environment-id",
+      flowIds: ["flow-id"],
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.exitCode).toBe(3);
+  });
+
   it("does not retry write contracts on network errors", async () => {
     const f = mock<typeof fetch>().mockRejectedValue(
       new Error("connection reset"),

@@ -1,56 +1,18 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
-import { z } from "zod";
 
-import type { AuthCommandContext } from "~/shell/commandContext.js";
-import { makeCtx, makeFakeUI } from "~/shell/commandContext.testUtils.js";
-import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
+import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import {
   makeCallPublicApiMock,
   makeMockPlatformClient,
 } from "~/shell/platform/createPlatformClient.testUtils.js";
-import type { UI } from "~/shell/ui/index.js";
 
-import { buildCommandSpecs, type CommandSpec } from "./commandSpecs.js";
 import { handlePublicApiCommand } from "./handle.js";
+import { countSpec, ctxWith, runCreateSpec } from "./handle.testUtils.js";
 
 afterEach(() => {
   mock.restore();
 });
-
-const runCreateSpec = (): CommandSpec => {
-  const spec = buildCommandSpecs({
-    run: { create: publicContractsV1.run.create },
-  }).find((candidate) => candidate.trpcPath === "public.run.create");
-  if (!spec) throw new Error("run.create spec missing");
-  return spec;
-};
-
-// Synthetic contract exercising the number flag kind, which no real public
-// contract uses yet.
-const countSpec = (): CommandSpec => {
-  const contract = {
-    name: "fake.count",
-    kind: "write" as const,
-    description: "synthetic number-flag contract",
-    input: z.object({ count: z.number() }),
-    output: z.object({ ok: z.boolean() }),
-  };
-  const spec = buildCommandSpecs({ fake: { count: contract } }).find(
-    (candidate) => candidate.trpcPath === "public.fake.count",
-  );
-  if (!spec) throw new Error("fake.count spec missing");
-  return spec;
-};
-
-function ctxWith(ui: UI, platformClient: PlatformClient): AuthCommandContext {
-  return {
-    ...makeCtx("human"),
-    ui,
-    apiKeySource: "env",
-    platformClient,
-  };
-}
 
 describe("handlePublicApiCommand", () => {
   it("assembles the input, calls the contract, and outputs the result", async () => {
@@ -209,6 +171,28 @@ describe("handlePublicApiCommand", () => {
     });
 
     expect(result).toEqual({ error: "run.create failed (500)." });
+  });
+
+  it("carries the platform failure's exit code into the command result", async () => {
+    const callPublicApi = makeCallPublicApiMock().mockResolvedValue({
+      ok: false,
+      error: "QA Wolf API rejected the run.create request (HTTP 401).",
+      exitCode: 3,
+    });
+    const ctx = ctxWith(
+      makeFakeUI(),
+      makeMockPlatformClient({ callPublicApi }),
+    );
+
+    const result = await handlePublicApiCommand(ctx, runCreateSpec(), {
+      environmentId: "environment-id",
+      flowIds: ["flow-id"],
+    });
+
+    expect(result).toEqual({
+      error: "QA Wolf API rejected the run.create request (HTTP 401).",
+      exitCode: 3,
+    });
   });
 
   it("passes the server's reason through as the error body", async () => {

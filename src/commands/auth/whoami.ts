@@ -1,5 +1,6 @@
 import { errorMessage } from "~/core/errors.js";
 import { authMessages } from "~/core/messages/index.js";
+import { exitCodes } from "~/shell/exit.js";
 import { requireApiKey } from "~/domains/auth/index.js";
 import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
@@ -31,7 +32,7 @@ export async function handleWhoami(
         authMessages.notAuthenticated,
       );
     }
-    return { error: "not authenticated" };
+    return { error: "not authenticated", exitCode: exitCodes.auth };
   }
 
   const platformClient = (deps.createPlatform ?? createPlatformClient)(
@@ -63,7 +64,12 @@ export async function handleWhoami(
         authMessages.whoami.authFailed(resolved.source, identity.error),
       );
     }
-    return { error: "invalid key" };
+    return {
+      error: "invalid key",
+      ...(identity.exitCode === undefined
+        ? {}
+        : { exitCode: identity.exitCode }),
+    };
   }
 
   const { value } = identity;
