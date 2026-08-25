@@ -47,7 +47,7 @@ describe("callPublicApi", () => {
   it("sends a write contract as a mutation and returns the value", async () => {
     const runId = "run-id";
     const url = "https://app.qawolf.com/runs/run-id";
-    const f = mockFetch(json(trpcWrapped({ runId, url })));
+    const f = mockFetch(json(trpcWrapped({ excludedFlows: [], runId, url })));
 
     const result = await createPlatformClient(apiKey, {
       fetch: f,
@@ -61,7 +61,10 @@ describe("callPublicApi", () => {
     expect(req.url).toBe(`${baseUrl}/api/trpc/public.run.create`);
     expect(req.method).toBe("POST");
     expect(req.auth).toBe(`Bearer ${apiKey}`);
-    expect(result).toEqual({ ok: true, value: { runId, url } });
+    expect(result).toEqual({
+      ok: true,
+      value: { excludedFlows: [], runId, url },
+    });
   });
 
   it("sets the auth exit code when the server rejects the key with HTTP 401", async () => {
