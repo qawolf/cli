@@ -27,9 +27,9 @@ PRs that do not affect the published package (CI config, internal tooling, docs)
 ## Release flow
 
 1. One or more PRs with changeset files merge to `main`.
-2. The [Release workflow](../.github/workflows/release.yml) detects the pending changesets and creates (or updates) a **"Version Packages"** PR. This PR bumps `package.json` version and updates `CHANGELOG.md`.
+2. The [Release workflow](../.github/workflows/release.yml) finds the pending changesets. Its `Version PR` job creates or updates a **"Version Packages"** PR. That PR bumps the `package.json` version and updates `CHANGELOG.md`. The job needs no approval.
 3. Review the Version Packages PR and merge it when ready to ship.
-4. The Release workflow runs again. It detects no pending changesets, builds the package, and runs:
+4. The workflow runs again and starts its `Publish` job. That job waits for approval of the `release` environment. To approve it, go to Actions → the run → "Review deployments". The job then builds the package and runs:
 
    ```bash
    bunx changeset publish
@@ -38,6 +38,8 @@ PRs that do not affect the published package (CI config, internal tooling, docs)
    `changeset publish` publishes to npm and creates a git tag for the new version. The changesets action pushes that tag and creates a GitHub Release from it, which triggers the binary build pipeline. npm [provenance](https://docs.npmjs.com/generating-provenance-statements) is enabled via the `NPM_CONFIG_PROVENANCE: true` env var on the publish step.
 
 5. Two jobs then run in parallel from the new tag. The first job builds the binaries. The second job publishes to [GitHub Packages](#github-packages).
+
+Approval applies to the `Publish` job only. The `Detect release mode` job examines each merge first. If the merge has no pending changesets, and the version in `package.json` already has a tag, the workflow starts neither the `Version PR` job nor the `Publish` job. Merges of docs and CI changes are of this type, and they ask for no approval.
 
 ## GitHub Packages
 
@@ -70,6 +72,8 @@ npm view @qawolf/cli version --@qawolf:registry=https://npm.pkg.github.com
 
 ## Re-running a failed publish
 
-If the publish step fails (e.g. network issue after the version PR was merged), re-run the Release workflow from the GitHub Actions UI (Actions → Release → Re-run jobs). If the version was already partially published, npm will return an error indicating the version exists — in that case, cut a patch release with a new changeset rather than attempting to re-publish the same version.
+If the publish step fails (e.g. network issue after the version PR was merged), re-run the Release workflow from the GitHub Actions UI (Actions → Release → Re-run jobs). The `Publish` job asks for approval again. Use "Re-run failed jobs" to keep the result of the `Detect release mode` job. If the version was already partially published, npm will return an error indicating the version exists — in that case, cut a patch release with a new changeset rather than attempting to re-publish the same version.
+
+Do this before you merge more changesets. A new changeset starts a new version bump, and the version that failed then gets no publish.
 
 If only the GitHub Packages job failed, run that job again. The job makes no change to npmjs, and a second run is safe.
