@@ -21,8 +21,14 @@ import { runnerCallOptions } from "./runnerCallOptions.js";
 type InspectMobileOutput = z.infer<
   typeof publicContractsV1.runner.inspectMobile.output
 >;
-type InspectMobileRead = Extract<InspectMobileOutput, { outcome: "read" }>;
-type SessionStatus = Extract<InspectMobileRead, { what: "session" }>["session"];
+type InspectMobileSuccess = Extract<
+  InspectMobileOutput,
+  { outcome: "success" }
+>;
+type SessionStatus = Extract<
+  InspectMobileSuccess,
+  { what: "session" }
+>["session"];
 
 /** A one-line summary of `--what session`, one branch per session state. */
 function describeSession(session: SessionStatus): string {
@@ -40,8 +46,8 @@ function describeSession(session: SessionStatus): string {
   }
 }
 
-/** A one-line summary of a `read` answer, one branch per `what`. */
-function describeRead(value: InspectMobileRead): string {
+/** A one-line summary of a successful answer, one branch per `what`. */
+function describeSuccess(value: InspectMobileSuccess): string {
   switch (value.what) {
     case "session":
       return describeSession(value.session);
@@ -92,23 +98,26 @@ export async function handleRunnerInspectMobile(
     return { ...failureFields(result), exitCode: exitCodes.network };
   }
 
-  switch (result.value.outcome) {
-    case "read":
-      ctx.ui.output(result.value, describeRead(result.value));
-      return undefined;
+  if (result.value.outcome === "success") {
+    ctx.ui.output(result.value, describeSuccess(result.value));
+    return undefined;
+  }
+
+  const { failureReason } = result.value;
+  switch (failureReason) {
     case "runner-is-not-mobile":
       return {
         error: interactiveRunnerMessages.runnerIsNotMobile,
         exitCode: exitCodes.invalidArgs,
       };
-    case "no-live-session":
+    case "screen-needs-a-run":
       return {
-        error: interactiveRunnerMessages.noLiveSession,
+        error: interactiveRunnerMessages.screenNeedsARun,
         exitCode: exitCodes.invalidArgs,
       };
-    case "session-not-ready":
+    case "screen-not-ready":
       return {
-        error: interactiveRunnerMessages.sessionNotReady,
+        error: interactiveRunnerMessages.screenNotReady,
         exitCode: exitCodes.network,
       };
     case "runner-unreachable":
@@ -116,5 +125,13 @@ export async function handleRunnerInspectMobile(
         error: interactiveRunnerMessages.runnerUnreachable,
         exitCode: exitCodes.network,
       };
+    default: {
+      failureReason satisfies never;
+      return {
+        error:
+          interactiveRunnerMessages.inspectMobileAnsweredUnknown(failureReason),
+        exitCode: exitCodes.network,
+      };
+    }
   }
 }

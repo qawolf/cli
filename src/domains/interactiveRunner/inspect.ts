@@ -86,6 +86,11 @@ export async function handleRunnerInspect(
           error: interactiveRunnerMessages.runnerUnreachable,
           exitCode: exitCodes.network,
         };
+      case "runner-is-not-a-browser":
+        return {
+          error: interactiveRunnerMessages.runnerIsNotABrowser,
+          exitCode: exitCodes.invalidArgs,
+        };
       default: {
         failureReason satisfies never;
         return {
