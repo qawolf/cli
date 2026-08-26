@@ -18,6 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
+          fetch-depth: 2 # HEAD^ for the version-bump comparison
           persist-credentials: false
 
       - name: Detect pending changesets and unpublished version
@@ -32,13 +33,17 @@ jobs:
             fi
           done
 
-          # Publish only when the current version has no tag yet. Without this
-          # check every docs-only merge finds no changesets, reads that as
-          # "publish time", and parks a run on the approval gate. The repo is
+          # Publish only when this push bumped the version and that version has
+          # no tag yet. The bump check stops a merge that lands while a publish
+          # waits for approval from raising a second prompt. The tag check stops
+          # a re-run after a successful publish from publishing twice. An
+          # unreadable parent leaves the tag check to decide. The repo is
           # public, so the anonymous ls-remote needs no token.
+          version=$(jq -r .version package.json)
+          previous=$(git show HEAD^:package.json 2>/dev/null | jq -r .version || true)
+
           needs_publish=false
-          if [[ "$has_changesets" == "false" ]]; then
-            version=$(jq -r .version package.json)
+          if [[ "$has_changesets" == "false" && "$version" != "$previous" ]]; then
             if [[ -z "$(git ls-remote --tags origin "refs/tags/v${version}")" ]]; then
               needs_publish=true
             fi
@@ -80,6 +85,8 @@ jobs:
         with:
           client-id: ${{ secrets.QA_WOLF_OPS_CLIENT_ID }}
           private-key: ${{ secrets.QA_WOLF_OPS_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Create or update Version Packages PR
         uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1.8.0
@@ -126,6 +133,7 @@ jobs:
         with:
           client-id: ${{ secrets.QA_WOLF_OPS_CLIENT_ID }}
           private-key: ${{ secrets.QA_WOLF_OPS_PRIVATE_KEY }}
+          permission-contents: write
 
       - name: Publish to npm
         id: changesets
