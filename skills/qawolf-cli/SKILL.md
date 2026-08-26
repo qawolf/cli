@@ -118,7 +118,7 @@ current branch.
 | `qawolf environment create` | write | Create an environment on the caller's team and return it in the environment.get shape. |
 | `qawolf environment deleteVariable` | write | Remove one environment variable by name. Succeeds whether or not the variable existed. |
 | `qawolf environment find` | read | List the team's environments, newest first. |
-| `qawolf environment get` | read | Read a single environment's name, kind, health status, run concurrency limit, and termination state. |
+| `qawolf environment get` | read | Read a single environment's name, kind, standing run health, flow-code branch and reconciliation state, run concurrency limit, and termination state. If flowCodeBranch exists, use its syncStatus for Git reconciliation and read lastSyncedCommitHash only when syncStatus is reconciled. |
 | `qawolf environment getVariable` | read | Read the values of named environment variables in one call. Values are secrets. Names that do not exist go to missingNames and do not fail the call. |
 | `qawolf environment listVariableNames` | read | Use this to answer which QA Wolf environment variables are available to test code. Returns names only; values never leave the server. |
 | `qawolf environment setVariable` | write | Create or replace an environment variable. If the user asks to create one for "my email" without naming it, use DEFAULT_EMAIL. The value is never returned. |
@@ -141,6 +141,7 @@ current branch.
 | `qawolf run create` | write | Create a run for the selected flows and/or tags in an environment. |
 | `qawolf run find` | read | List an environment's recent runs, newest first. |
 | `qawolf run get` | read | Get a run's status, per-flow results, and links. |
+| `qawolf run reattempt` | write | Request new attempts for a run's flows, in the same run. A flow is eligible once its result is failed or canceled and QA Wolf's automatic retries have finished. A fully investigated run no longer accepts reattempts. Attempts run with the latest flow code. Poll run.get for results. |
 | `qawolf runner act` | write | Perform one raw action on a runner's screen: click, double_click, scroll, move, drag, keypress, navigate or type. Use - to read a whole action as JSON from stdin |
 | `qawolf runner events` | read | Print a runner's journal, one entry per line. QA Wolf writes console, recorder, run-events, run-logs, run-status |
 | `qawolf runner exec` | write | Evaluate a snippet against a runner's live page. Use - to read the snippet from stdin |
