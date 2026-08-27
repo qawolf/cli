@@ -57,6 +57,9 @@ jobs:
     name: Version PR
     needs: mode
     if: needs.mode.outputs.has_changesets == 'true'
+    # The qa-wolf-ops credentials are environment secrets. This environment
+    # holds a copy with no reviewers, so the job reads them without a prompt.
+    environment: release-version
     runs-on: ubuntu-latest
     # Two version runs would race on force-pushing changeset-release/main.
     concurrency:
