@@ -1,5 +1,21 @@
 # @qawolf/cli
 
+## 1.16.0
+
+### Minor Changes
+
+- 20d56c3: A run may now carry up to 200 environment variables, up from 100. The CLI checks the cap locally before any round trip, so it refused at 100 whatever the platform accepted.
+
+  Upgrades `@qawolf/api-contracts` to `0.32.0`, which also adds two runner failure reasons. `qawolf runner inspect` against a mobile runner now says so instead of reporting an unknown answer, and `qawolf runner act` says what a touchscreen does instead when it cannot perform the action as asked.
+
+### Patch Changes
+
+- b278e7d: `qawolf runner run --lines <lines> --lines-file <path>` no longer fails when the named file has not changed since the last run on that runner.
+
+  Delta shipping withholds a file whose content hash matches what the runner already holds, so an untouched page object was dropped from the payload and the platform refused the run with `A selection must name a file carried in files.` The selection's file now always travels in full, alongside the entry point and `package.json`.
+
+- 7960eb0: Runner calls now wait 90 seconds instead of 60, so the first action on a fresh runner outlives the platform's browser-start wait instead of timing out client-side.
+
 ## 1.15.0
 
 ### Minor Changes
