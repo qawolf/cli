@@ -1,13 +1,21 @@
 import { describe, expect, it } from "bun:test";
 
+import { toRunFilesManifest } from "~/core/interactiveRunner/fileDelta.js";
+
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { handleRunnerRun } from "./runFlow.js";
 
 const submitted = { outcome: "success" as const, runId: "run-a" };
+const files = {
+  "flow.ts": "export default {};",
+  "package.json": "{}",
+  "pages/login.ts": "export const login = () => {};",
+};
 
 async function runWith(options: {
   bootstrappedRunner?: boolean | undefined;
   entryPoint?: string;
+  heldByRunner?: Record<string, string>;
   lines?: string;
   linesFile?: string;
 }) {
@@ -19,6 +27,14 @@ async function runWith(options: {
         ? submitted
         : { ...submitted, bootstrappedRunner: options.bootstrappedRunner },
   });
+  const deps = makeTestDeps({
+    collectRunFiles: async () => ({ files, unresolvedImports: [] }),
+  });
+  if (options.heldByRunner !== undefined) {
+    await deps.runFilesManifest.write(
+      toRunFilesManifest({ files: options.heldByRunner, runnerId: "ci" }),
+    );
+  }
   const result = await handleRunnerRun(
     ctx,
     {
@@ -33,26 +49,30 @@ async function runWith(options: {
       runner: "ci",
       timeout: undefined,
     },
-    makeTestDeps({
-      collectRunFiles: async () => ({
-        files: {
-          "flow.ts": "export default {};",
-          "package.json": "{}",
-          "pages/login.ts": "export const login = () => {};",
-        },
-        unresolvedImports: [],
-      }),
-    }),
+    deps,
   );
   return { callPublicApi, ctx, result };
+}
+
+function requestField(options: {
+  callPublicApi: ReturnType<typeof makeAuthCtx>["callPublicApi"];
+  field: string;
+}): unknown {
+  const [request] = options.callPublicApi.mock.calls[0]?.slice(1) ?? [];
+  if (request === null || typeof request !== "object") return undefined;
+  return Reflect.get(request, options.field);
 }
 
 function selectionOf(
   callPublicApi: ReturnType<typeof makeAuthCtx>["callPublicApi"],
 ): unknown {
-  const [request] = callPublicApi.mock.calls[0]?.slice(1) ?? [];
-  if (request === null || typeof request !== "object") return undefined;
-  return Reflect.get(request, "selection");
+  return requestField({ callPublicApi, field: "selection" });
+}
+
+function filesOf(
+  callPublicApi: ReturnType<typeof makeAuthCtx>["callPublicApi"],
+): unknown {
+  return requestField({ callPublicApi, field: "files" });
 }
 
 describe("handleRunnerRun with --lines", () => {
@@ -75,6 +95,18 @@ describe("handleRunnerRun with --lines", () => {
 
     expect(selectionOf(callPublicApi)).toMatchObject({
       path: "pages/login.ts",
+    });
+  });
+
+  it("sends the lines-file even when the runner already holds it unchanged", async () => {
+    const { callPublicApi } = await runWith({
+      heldByRunner: files,
+      lines: "4-9",
+      linesFile: "pages/login.ts",
+    });
+
+    expect(filesOf(callPublicApi)).toMatchObject({
+      "pages/login.ts": files["pages/login.ts"],
     });
   });
 

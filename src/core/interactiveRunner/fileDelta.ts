@@ -33,15 +33,17 @@ export function toRunFilesManifest(options: {
 }
 
 /**
- * The entry point and `package.json` always travel in full. The server reads an
- * execution target from one and dependencies from the other, and neither can be
- * satisfied from a hash.
+ * The entry point, `package.json` and a selection's file always travel in full.
+ * The server reads an execution target from the first and dependencies from the
+ * second, and it refuses a selection naming a file the request left out. None of
+ * the three can be satisfied from a hash.
  */
 export function buildRunFileDelta(options: {
   entryPointPath: string;
   files: RunFiles;
   held: RunFilesManifest | undefined;
   runnerId: string;
+  selectionPath: string | undefined;
 }): RunFileDelta {
   const { held } = options;
   if (held === undefined || held.runnerId !== options.runnerId) {
@@ -52,6 +54,9 @@ export function buildRunFileDelta(options: {
     held.files.map((entry) => [entry.path, entry.contentHash]),
   );
   const alwaysSent = new Set([options.entryPointPath, runPackageJsonPath]);
+  if (options.selectionPath !== undefined) {
+    alwaysSent.add(options.selectionPath);
+  }
 
   const files: RunFiles = {};
   const unchangedFiles: Record<string, string> = {};
