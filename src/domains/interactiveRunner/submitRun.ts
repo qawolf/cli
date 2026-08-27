@@ -48,6 +48,7 @@ export async function submitRun(
     files: options.files,
     held,
     runnerId: options.resolved.runnerId,
+    selectionPath: options.selection?.path,
   });
 
   const first = await sendRunFlowRequest(ctx, options, delta);

@@ -19,7 +19,14 @@ const manifestFor = (from: Record<string, string>, runnerId = "ci") =>
 const delta = (
   held: ReturnType<typeof manifestFor> | undefined,
   runnerId = "ci",
-) => buildRunFileDelta({ entryPointPath: flowPath, files, held, runnerId });
+) =>
+  buildRunFileDelta({
+    entryPointPath: flowPath,
+    files,
+    held,
+    runnerId,
+    selectionPath: undefined,
+  });
 
 describe("hashRunFile", () => {
   it("hashes content, not the path it came from", () => {
@@ -60,6 +67,25 @@ describe("buildRunFileDelta", () => {
     ]);
     expect(built.unchangedFiles).toEqual({
       "src/pages/login.ts": hashRunFile(files["src/pages/login.ts"]),
+    });
+  });
+
+  it("keeps a selection's file in full even when unchanged", () => {
+    const withHelper = {
+      ...files,
+      "src/pages/cart.ts": "export const cart = 1;",
+    };
+    const built = buildRunFileDelta({
+      entryPointPath: flowPath,
+      files: withHelper,
+      held: manifestFor(withHelper),
+      runnerId: "ci",
+      selectionPath: "src/pages/login.ts",
+    });
+
+    expect(built.files["src/pages/login.ts"]).toBe(files["src/pages/login.ts"]);
+    expect(built.unchangedFiles).toEqual({
+      "src/pages/cart.ts": hashRunFile(withHelper["src/pages/cart.ts"]),
     });
   });
 
