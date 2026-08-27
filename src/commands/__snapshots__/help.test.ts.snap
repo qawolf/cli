@@ -357,8 +357,12 @@ Options:
                        lines while following, from an anchor taken just before
                        submission: the recorder is runner-wide, not run-scoped.
                        Implies --follow (default: false)
-  --env-file <path>    Dotenv file whose variables the run is given. Not --env,
-                       which on qawolf flows names a QA Wolf environment
+  --env-id <env>       QA Wolf environment whose variables the run is given, by
+                       id or alias. QA Wolf reads and decrypts them itself, so
+                       they never leave the server and no size limit applies to
+                       them
+  --env-file <path>    Dotenv file on this machine whose variables the run is
+                       given. Pass this or --env-id, not both
   --lines <start-end>  Run only these 1-indexed lines against the browser as it
                        stands, instead of the whole flow from a fresh one
   --lines-file <path>  File the --lines range lives in. Defaults to <flowFile>;
@@ -377,6 +381,7 @@ Examples:
   $ qawolf runner run flows/checkout.flow.ts --follow --logs
   $ qawolf runner run flows/checkout.flow.ts --lines 12-40
   $ qawolf runner run flows/checkout.flow.ts --lines 4-9 --lines-file pages/login.ts
+  $ qawolf runner run flows/checkout.flow.ts --env-id staging
 "
 `;
 

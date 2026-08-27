@@ -14,10 +14,12 @@ Examples:
   $ qawolf runner run flows/checkout.flow.ts --follow
   $ qawolf runner run flows/checkout.flow.ts --follow --logs
   $ qawolf runner run flows/checkout.flow.ts --lines 12-40
-  $ qawolf runner run flows/checkout.flow.ts --lines 4-9 --lines-file pages/login.ts`;
+  $ qawolf runner run flows/checkout.flow.ts --lines 4-9 --lines-file pages/login.ts
+  $ qawolf runner run flows/checkout.flow.ts --env-id staging`;
 
 type RunFlags = {
   envFile?: string;
+  envId?: string;
   follow: boolean;
   lines?: string;
   linesFile?: string;
@@ -59,8 +61,12 @@ export function registerRunCommand(
       false,
     )
     .option(
+      "--env-id <env>",
+      "QA Wolf environment whose variables the run is given, by id or alias. QA Wolf reads and decrypts them itself, so they never leave the server and no size limit applies to them",
+    )
+    .option(
       "--env-file <path>",
-      "Dotenv file whose variables the run is given. Not --env, which on qawolf flows names a QA Wolf environment",
+      "Dotenv file on this machine whose variables the run is given. Pass this or --env-id, not both",
     )
     .option(
       "--lines <start-end>",
@@ -84,6 +90,7 @@ export function registerRunCommand(
           {
             entryPoint: flowFile,
             envFile: opts.envFile,
+            envId: opts.envId,
             follow: opts.follow,
             lines: opts.lines,
             linesFile: opts.linesFile,

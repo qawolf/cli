@@ -255,14 +255,29 @@ runner is addressed, naming the path.
 
 ### Giving the run environment variables
 
+There are two ways, and a run takes one of them. `--env-id` names a QA Wolf
+environment by id or alias, the same reference `qawolf flows` takes as `--env`.
 `--env-file .env` gives the run the variables in a dotenv file, in the format
-`qawolf flows pull` writes. It is `--env-file` and not `--env`, which on
-`qawolf flows` means a QA Wolf environment by id or slug.
+`qawolf flows pull` writes.
 
-A run may carry at most 100 variables, each value at most 8 KiB. Names follow
-what a shell accepts, and `QAWOLF_TEAM_ID` is reserved because QA Wolf sets it
-from the key you authenticated with. All of that is refused before a runner is
-addressed, naming the variable at fault.
+```sh
+qawolf runner run flows/checkout.flow.ts --env-id staging
+qawolf runner run flows/checkout.flow.ts --env-file .env
+```
+
+**Prefer `--env-id`.** QA Wolf reads and decrypts the environment itself, so the
+values never leave the server, nothing has to be pulled to disk first, and no
+size limit applies to them. It is the only way to run a flow whose environment
+holds something large, such as a session cookie.
+
+A run that sends its own variables with `--env-file` may carry at most 200 of
+them, each value at most 16 KiB. Names follow what a shell accepts, and
+`QAWOLF_TEAM_ID` is reserved because QA Wolf sets it from the key you
+authenticated with. All of that is refused before a runner is addressed, naming
+the variable at fault.
+
+Passing both flags is refused. They each give the run its whole environment, so
+there is no order in which they would combine.
 
 If the runner had no browser, one is started before your lines run, and the
 command says so on stderr. Those lines then ran against a fresh page rather than
