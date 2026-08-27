@@ -156,6 +156,25 @@ describe("handleRunnerInspect", () => {
     expect(result?.error).toContain("no live page");
   });
 
+  // Element and page HTML are a browser's shapes, so this never clears by
+  // retrying. The caller has to ask a different verb.
+  it("says a mobile runner has no browser HTML to inspect", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { failureReason: "runner-is-not-a-browser", outcome: "failure" },
+    });
+
+    const result = await handleRunnerInspect(
+      ctx,
+      { flags: noFlags, runner: "ci", what: "page-html" },
+      makeTestDeps(),
+    );
+
+    expect(result?.error).toContain("mobile device");
+    expect(result?.exitCode).toBe(2);
+  });
+
   it("reads an unreachable runner as worth retrying", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({

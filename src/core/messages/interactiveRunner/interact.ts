@@ -7,6 +7,8 @@ export const interactMessages = {
     "The runner could not be reached, which does not mean the action was not performed: it may have stopped answering mid-action. Take a screenshot before repeating it.",
   actionNotJson:
     'Stdin did not hold a JSON action. Pipe one object, for example \'{"type":"click","button":"left","x":480,"y":260}\'.',
+  actionNotSupportedOnMobile: (type: string) =>
+    `A mobile runner has a touchscreen, which has no equivalent of ${type}. It taps with click, swipes with drag, and types into whatever the last tap focused.`,
   actionPerformed: (type: string) => `Performed ${type}.`,
   actionAnsweredUnknown: (failureReason: string) =>
     `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
@@ -16,6 +18,8 @@ export const interactMessages = {
     "This runner does not run a browser on a virtual desktop, so there is nothing about it to see or drive. Retrying will never help: launch a playwright runner instead.",
   runnerHasNoScreenToEvaluate:
     "The runner could not evaluate the snippet. This covers a runner that is still starting or busy, and also one with no live page to evaluate against: a freshly launched runner has no page until a run opens one, so run a flow on it with qawolf runner run first. If it is not a runner that runs a browser at all, this will never clear. It is not proof the snippet did not run, so do not resubmit one that mutates the page without reading qawolf runner events console first.",
+  inspectNeedsABrowserRunner:
+    "This runner is a mobile device, and element and page HTML are a browser's shapes. Retrying will never help. Launch a playwright runner to inspect one.",
   nothingToInspect: (errorMessage: string | undefined) =>
     `The runner had nothing to inspect${errorMessage === undefined ? "" : `: ${errorMessage}`}. There is no live page, nothing matched the selector, or no variable has that name; a runner cannot tell those apart. Run a flow on it first, or check the selector or name.`,
   inspectAnsweredUnknown: (failureReason: string) =>

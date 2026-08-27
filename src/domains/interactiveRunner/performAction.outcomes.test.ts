@@ -35,6 +35,18 @@ describe("handleRunnerAct outcomes", () => {
     expect(outputs()[0]?.data).toMatchObject({ outcome: "success" });
   });
 
+  // A touchscreen has no equivalent, so retrying never helps and the message
+  // has to name the action the caller asked for.
+  it("names the action a touchscreen cannot perform", async () => {
+    const { result } = await actWith({
+      failureReason: "action-not-supported-on-mobile",
+      outcome: "failure",
+    });
+
+    expect(result?.error).toContain("click");
+    expect(result?.exitCode).toBe(2);
+  });
+
   // Attempted and did not take effect: an answer, not a fault on our side.
   it("reports what stopped an action that reached the runner", async () => {
     const { result } = await actWith({
