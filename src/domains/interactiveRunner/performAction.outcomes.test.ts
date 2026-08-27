@@ -35,15 +35,26 @@ describe("handleRunnerAct outcomes", () => {
     expect(outputs()[0]?.data).toMatchObject({ outcome: "success" });
   });
 
-  // A touchscreen has no equivalent, so retrying never helps and the message
-  // has to name the action the caller asked for.
-  it("names the action a touchscreen cannot perform", async () => {
-    const { result } = await actWith({
-      failureReason: "action-not-supported-on-mobile",
-      outcome: "failure",
+  // The runner answers this for a click whose button is not left, so the message
+  // must not deny the one action a touchscreen does support.
+  it("names the action and the tap a touchscreen does support", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: {
+        failureReason: "action-not-supported-on-mobile",
+        outcome: "failure",
+      },
     });
 
-    expect(result?.error).toContain("click");
+    const result = await handleRunnerAct(
+      ctx,
+      { ...click, flags: { ...click.flags, button: "right" } },
+      makeTestDeps(),
+    );
+
+    expect(result?.error).toContain("cannot perform click");
+    expect(result?.error).toContain("left-button click");
     expect(result?.exitCode).toBe(2);
   });
 

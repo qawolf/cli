@@ -8,7 +8,7 @@ export const interactMessages = {
   actionNotJson:
     'Stdin did not hold a JSON action. Pipe one object, for example \'{"type":"click","button":"left","x":480,"y":260}\'.',
   actionNotSupportedOnMobile: (type: string) =>
-    `A mobile runner has a touchscreen, which has no equivalent of ${type}. It taps with click, swipes with drag, and types into whatever the last tap focused.`,
+    `A mobile runner has a touchscreen, so it cannot perform ${type} as asked. It taps with a left-button click, swipes with drag, and types into whatever the last tap focused.`,
   actionPerformed: (type: string) => `Performed ${type}.`,
   actionAnsweredUnknown: (failureReason: string) =>
     `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
