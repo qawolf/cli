@@ -42,13 +42,21 @@ describe("buildRunEnvironment", () => {
     expect(buildRunEnvironment('QAWOLF_DEBUG="1"\n').ok).toBe(true);
   });
 
-  it("refuses more variables than a run may carry", () => {
-    const many = Array.from(
-      { length: 101 },
+  const variables = (count: number) =>
+    Array.from(
+      { length: count },
       (_unused, index) => `VAR_${String(index)}="x"`,
     ).join("\n");
 
-    expect(buildRunEnvironment(`${many}\n`).ok).toBe(false);
+  it("carries as many variables as a run may hold", () => {
+    expect(buildRunEnvironment(`${variables(200)}\n`).ok).toBe(true);
+  });
+
+  it("refuses more variables than a run may carry", () => {
+    const refused = buildRunEnvironment(`${variables(201)}\n`);
+
+    expect(refused.ok).toBe(false);
+    expect(refused.ok ? "" : refused.error).toContain("At most 200");
   });
 
   it("refuses a value over the published length", () => {

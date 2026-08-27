@@ -35,6 +35,29 @@ describe("handleRunnerAct outcomes", () => {
     expect(outputs()[0]?.data).toMatchObject({ outcome: "success" });
   });
 
+  // The runner answers this for a click whose button is not left, so the message
+  // must not deny the one action a touchscreen does support.
+  it("names the action and the tap a touchscreen does support", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: {
+        failureReason: "action-not-supported-on-mobile",
+        outcome: "failure",
+      },
+    });
+
+    const result = await handleRunnerAct(
+      ctx,
+      { ...click, flags: { ...click.flags, button: "right" } },
+      makeTestDeps(),
+    );
+
+    expect(result?.error).toContain("cannot perform click");
+    expect(result?.error).toContain("left-button click");
+    expect(result?.exitCode).toBe(2);
+  });
+
   // Attempted and did not take effect: an answer, not a fault on our side.
   it("reports what stopped an action that reached the runner", async () => {
     const { result } = await actWith({

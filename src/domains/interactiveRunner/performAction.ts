@@ -14,6 +14,7 @@ import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
+import { describePerformActionFailure } from "./performActionFailure.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
 
@@ -105,43 +106,8 @@ export async function handleRunnerAct(
     return undefined;
   }
 
-  const failure = result.value;
-  const { failureReason } = failure;
-  switch (failureReason) {
-    // Attempted and did not take effect, which is an answer rather than a fault.
-    case "action-failed":
-      return {
-        error: interactiveRunnerMessages.actionFailed(failure.errorMessage),
-        exitCode: exitCodes.testFailure,
-      };
-    case "screen-needs-a-run":
-      return {
-        error: interactiveRunnerMessages.screenNeedsARun,
-        exitCode: exitCodes.invalidArgs,
-      };
-    case "screen-not-ready":
-      return {
-        error: interactiveRunnerMessages.screenNotReady,
-        exitCode: exitCodes.network,
-      };
-    case "runner-has-no-screen":
-      return {
-        error: interactiveRunnerMessages.runnerHasNoScreen,
-        exitCode: exitCodes.invalidArgs,
-      };
-    // Alone among these verbs, this one may have taken effect before its answer
-    // was lost, so the message must not invite a bare repeat.
-    case "runner-unreachable":
-      return {
-        error: interactiveRunnerMessages.actionMayHaveHappened,
-        exitCode: exitCodes.network,
-      };
-    default: {
-      failureReason satisfies never;
-      return {
-        error: interactiveRunnerMessages.actionAnsweredUnknown(failureReason),
-        exitCode: exitCodes.network,
-      };
-    }
-  }
+  return describePerformActionFailure({
+    actionType: built.action.type,
+    failure: result.value,
+  });
 }
