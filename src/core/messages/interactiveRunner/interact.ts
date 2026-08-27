@@ -28,8 +28,6 @@ export const interactMessages = {
     `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
   inspectMobileAnsweredUnknown: (failureReason: string) =>
     `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
-  runnerIsNotABrowser:
-    "This runner is a mobile device, so there is no page or browser variable to inspect. Retrying will never help: use qawolf runner inspect session, contexts, page-source, or elements instead.",
   runnerIsNotMobile:
     "This runner is not a mobile device, so there is nothing here to inspect. Retrying will never help: launch a node20WithAndroid or node20WithIos runner instead.",
   screenNeedsARun:
