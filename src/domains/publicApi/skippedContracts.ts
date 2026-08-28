@@ -19,10 +19,13 @@
 export const skippedContractNames: ReadonlySet<string> = new Set([
   "flow.list",
   "runner.evaluateSnippet",
+  "runner.highlightSelector",
   "runner.importPackage",
   "runner.inspect",
+  "runner.inspectMobile",
   "runner.launch",
   "runner.performAction",
+  "runner.promoteSnapshot",
   "runner.readJournal",
   "runner.runFlow",
   "runner.stopRun",

@@ -17,7 +17,9 @@ export const lifecycleMessages = {
   launchedForCommand: (id: string) =>
     `No runner was given, so launched ${id} for this command. Its browser is fresh: nothing has been run on it and nothing is signed in. It bills until it is terminated or idles out, so terminate it with qawolf runner terminate --runner ${id} when you are done.`,
   noRunnerIdForImport: `${noRunnerId} An install also needs a live run to go into, which a runner gets from qawolf runner run.`,
+  noRunnerIdForHighlight: `${noRunnerId} Highlighting also needs a live page to draw on, which a runner gets from its first run: run a flow on it with qawolf runner run.`,
   noRunnerIdForInspect: `${noRunnerId} Inspecting also needs a page, which a runner gets from its first run: run a flow on it with qawolf runner run.`,
+  noRunnerIdForPromoteSnapshot: `${noRunnerId} A baseline is replaced on the runner that produced the screenshot, so it has to be the runner the diff came from.`,
   noRunnerIdForScreenshot: `${noRunnerId} A screenshot also needs a screen, which a runner gets from its first run: run a flow on it with qawolf runner run.`,
   noRunnerId,
   wasNotRunning: (id: string) => `Runner ${id} was not running.`,

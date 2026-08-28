@@ -145,12 +145,14 @@ current branch.
 | `qawolf runner act` | write | Perform one raw action on a runner's screen: click, double_click, scroll, move, drag, keypress, navigate or type. Use - to read a whole action as JSON from stdin |
 | `qawolf runner events` | read | Print a runner's journal, one entry per line. QA Wolf writes console, recorder, run-events, run-logs, run-status |
 | `qawolf runner exec` | write | Evaluate a snippet against a runner's live page. Use - to read the snippet from stdin |
+| `qawolf runner highlight-selector` | write | Highlight what a selector matches on a runner's live page, so the next screenshot shows it. Omit the selector to clear the highlight |
 | `qawolf runner import-package` | write | Install a package into a runner's live run, so a snippet or a selection can import it |
 | `qawolf runner inspect element-html` | read | Print the HTML of the first element a selector matches |
 | `qawolf runner inspect page-html` | read | Print the page's HTML, simplified for a model to read |
 | `qawolf runner inspect variable` | read | Print a top-level variable's value from the running workflow |
 | `qawolf runner keepalive` | read | Reset a runner's inactivity clock, for a caller that pauses between actions |
 | `qawolf runner launch` | write | Launch an interactive runner and make it this directory's default |
+| `qawolf runner promote-snapshot` | write | Accept a run's screenshot as the new baseline for an image diff, on the runner that produced it |
 | `qawolf runner run` | write | Run a flow on an interactive runner, shipping the flow and what it imports |
 | `qawolf runner screenshot` | read | Save a JPEG of an interactive runner's screen to a file |
 | `qawolf runner stop-run` | write | Stop what a runner is currently executing, leaving the runner up |

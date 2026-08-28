@@ -269,34 +269,23 @@ exports[`--help output qawolf runner 1`] = `
 Drive an interactive runner on the QA Wolf platform
 
 Options:
-  -h, --help                       display help for command
+  -h, --help                               display help for command
 
 Commands:
-  launch [options]                 Launch an interactive runner and make it this
-                                   directory's default
-  terminate [options]              End an interactive runner, and the pod it
-                                   runs on with it
-  stop-run [options]               Stop what a runner is currently executing,
-                                   leaving the runner up
-  keepalive [options]              Reset a runner's inactivity clock, for a
-                                   caller that pauses between actions
-  run [options] <flowFile>         Run a flow on an interactive runner, shipping
-                                   the flow and what it imports
-  events [options] <stream>        Print a runner's journal, one entry per line.
-                                   QA Wolf writes console, recorder, run-events,
-                                   run-logs, run-status
-  screenshot [options]             Save a JPEG of an interactive runner's screen
-                                   to a file
-  act [options] <action>           Perform one raw action on a runner's screen:
-                                   click, double_click, scroll, move, drag,
-                                   keypress, navigate or type. Use - to read a
-                                   whole action as JSON from stdin
-  exec [options] <file>            Evaluate a snippet against a runner's live
-                                   page. Use - to read the snippet from stdin
-  inspect                          Read one thing off a runner's live page
-  import-package [options] <name>  Install a package into a runner's live run,
-                                   so a snippet or a selection can import it
-  help [command]                   display help for command
+  launch [options]                         Launch an interactive runner and make it this directory's default
+  terminate [options]                      End an interactive runner, and the pod it runs on with it
+  stop-run [options]                       Stop what a runner is currently executing, leaving the runner up
+  keepalive [options]                      Reset a runner's inactivity clock, for a caller that pauses between actions
+  run [options] <flowFile>                 Run a flow on an interactive runner, shipping the flow and what it imports
+  events [options] <stream>                Print a runner's journal, one entry per line. QA Wolf writes console, recorder, run-events, run-logs, run-status
+  screenshot [options]                     Save a JPEG of an interactive runner's screen to a file
+  act [options] <action>                   Perform one raw action on a runner's screen: click, double_click, scroll, move, drag, keypress, navigate or type. Use - to read a whole action as JSON from stdin
+  exec [options] <file>                    Evaluate a snippet against a runner's live page. Use - to read the snippet from stdin
+  inspect                                  Read one thing off a runner's live page
+  import-package [options] <name>          Install a package into a runner's live run, so a snippet or a selection can import it
+  highlight-selector [options] [selector]  Highlight what a selector matches on a runner's live page, so the next screenshot shows it. Omit the selector to clear the highlight
+  promote-snapshot [options]               Accept a run's screenshot as the new baseline for an image diff, on the runner that produced it
+  help [command]                           display help for command
 "
 `;
 

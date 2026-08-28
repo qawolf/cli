@@ -59,8 +59,15 @@ describe("buildRunEnvironment", () => {
     expect(refused.ok ? "" : refused.error).toContain("At most 200");
   });
 
+  // A session cookie is routinely longer than the 8 KiB this used to allow.
+  it("carries a value as long as the published length", () => {
+    const long = "a".repeat(16 * 1024);
+
+    expect(buildRunEnvironment(`BIG="${long}"\n`).ok).toBe(true);
+  });
+
   it("refuses a value over the published length", () => {
-    const long = "a".repeat(8 * 1024 + 1);
+    const long = "a".repeat(16 * 1024 + 1);
 
     expect(buildRunEnvironment(`BIG="${long}"\n`).ok).toBe(false);
   });
