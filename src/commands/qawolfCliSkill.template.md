@@ -38,7 +38,9 @@ is set; otherwise select an id or alias from
 `qawolf --json environment find` and reuse it. Shell invocations may not share
 exported variables, so pass the selected environment explicitly instead of
 rediscovering it. Check the command's help for its environment flag: variable
-commands use `--environment-id`; `qawolf flows run` uses `--env`.
+commands use `--environment-id`; `qawolf flows run` uses `--env`; and
+`qawolf runner run` uses `--env-id`, which falls back to `QAWOLF_ENVIRONMENT`
+when neither it nor `--env-file` is passed.
 
 If multiple environments are returned and the task context does not identify
 the target, ask instead of guessing. Do not default to the newest environment.

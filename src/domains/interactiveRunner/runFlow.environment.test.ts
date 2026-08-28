@@ -7,8 +7,9 @@ import { handleRunnerRun } from "./runFlow.js";
 const submitted = { outcome: "success" as const, runId: "run-a" };
 
 describe("handleRunnerRun with --env-file and --env-id", () => {
-  const envFileDeps = (content: string) =>
+  const envFileDeps = (content: string, env: Record<string, string> = {}) =>
     makeTestDeps({
+      env,
       collectRunFiles: async () => ({
         files: {
           "flow.ts": "export default {};",
@@ -24,14 +25,16 @@ describe("handleRunnerRun with --env-file and --env-id", () => {
 
   const run = async ({
     content = 'A="1"\n',
+    env,
     envFile,
     envId,
   }: {
     content?: string;
+    env?: Record<string, string>;
     envFile?: string;
     envId?: string;
   }) => {
-    const { callPublicApi, ctx } = makeAuthCtx();
+    const { callPublicApi, ctx, infos } = makeAuthCtx();
     callPublicApi.mockResolvedValue({ ok: true, value: submitted });
     const result = await handleRunnerRun(
       ctx,
@@ -48,9 +51,9 @@ describe("handleRunnerRun with --env-file and --env-id", () => {
         runner: "ci",
         timeout: undefined,
       },
-      envFileDeps(content),
+      envFileDeps(content, env),
     );
-    return { callPublicApi, result };
+    return { callPublicApi, infos, result };
   };
 
   const sentRequest = (callPublicApi: { mock: { calls: unknown[][] } }) =>
@@ -104,6 +107,52 @@ describe("handleRunnerRun with --env-file and --env-id", () => {
     expect(sentRequest(callPublicApi)).toMatchObject({
       environmentId: "staging",
     });
+  });
+
+  it("falls back to QAWOLF_ENVIRONMENT when neither flag is passed", async () => {
+    const { callPublicApi, infos, result } = await run({
+      env: { QAWOLF_ENVIRONMENT: "staging" },
+    });
+
+    expect(result).toBeUndefined();
+    expect(sentRequest(callPublicApi)).toMatchObject({
+      environmentId: "staging",
+    });
+    // Those variables reach the flow's code, so the run says where they came from.
+    expect(infos().join("\n")).toContain("QAWOLF_ENVIRONMENT");
+  });
+
+  it("prefers an explicit --env-id over QAWOLF_ENVIRONMENT", async () => {
+    const { callPublicApi, infos } = await run({
+      env: { QAWOLF_ENVIRONMENT: "staging" },
+      envId: "production",
+    });
+
+    expect(sentRequest(callPublicApi)).toMatchObject({
+      environmentId: "production",
+    });
+    expect(infos().join("\n")).not.toContain("QAWOLF_ENVIRONMENT");
+  });
+
+  // The file is the whole environment the caller asked for, so it is not given
+  // a second one on top.
+  it("ignores QAWOLF_ENVIRONMENT when --env-file is passed", async () => {
+    const { callPublicApi } = await run({
+      env: { QAWOLF_ENVIRONMENT: "staging" },
+      envFile: ".env",
+    });
+    const request = sentRequest(callPublicApi);
+
+    expect(request).toMatchObject({ env: { A: "1" } });
+    expect(Object.hasOwn(request, "environmentId")).toBe(false);
+  });
+
+  it("treats a blank QAWOLF_ENVIRONMENT as unset", async () => {
+    const { callPublicApi } = await run({ env: { QAWOLF_ENVIRONMENT: "  " } });
+
+    expect(Object.hasOwn(sentRequest(callPublicApi), "environmentId")).toBe(
+      false,
+    );
   });
 
   it("refuses an --env-id given nothing", async () => {

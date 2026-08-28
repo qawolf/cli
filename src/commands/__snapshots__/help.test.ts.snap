@@ -347,9 +347,9 @@ Options:
                        submission: the recorder is runner-wide, not run-scoped.
                        Implies --follow (default: false)
   --env-id <env>       QA Wolf environment whose variables the run is given, by
-                       id or alias. QA Wolf reads and decrypts them itself, so
-                       they never leave the server and no size limit applies to
-                       them
+                       id or alias. Defaults to QAWOLF_ENVIRONMENT. QA Wolf
+                       reads and decrypts them itself, so they never leave the
+                       server and no size limit applies to them
   --env-file <path>    Dotenv file on this machine whose variables the run is
                        given. Pass this or --env-id, not both
   --lines <start-end>  Run only these 1-indexed lines against the browser as it

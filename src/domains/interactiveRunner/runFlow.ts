@@ -1,6 +1,9 @@
 import { parseFollowTimeout } from "~/core/interactiveRunner/followTimeout.js";
 import { toCollectedPath } from "~/core/interactiveRunner/runFiles.js";
-import { interactiveRunnerMessages } from "~/core/messages/index.js";
+import {
+  environmentsMessages,
+  interactiveRunnerMessages,
+} from "~/core/messages/index.js";
 import type {
   AuthCommandContext,
   CommandResult,
@@ -53,6 +56,10 @@ export async function handleRunnerRun(
   );
   if (!prepared.ok) {
     return { error: prepared.error, exitCode: prepared.exitCode };
+  }
+
+  if (options.envId === undefined && prepared.environmentId !== undefined) {
+    ctx.ui.info(environmentsMessages.usingFromEnvVar(prepared.environmentId));
   }
 
   const resolved = await resolveRunner(

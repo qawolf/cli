@@ -312,6 +312,18 @@ qawolf runner run flows/checkout.flow.ts --env-id staging
 qawolf runner run flows/checkout.flow.ts --env-file .env
 ```
 
+**A run with neither flag falls back to `QAWOLF_ENVIRONMENT`**, the same
+variable `qawolf flows` reads, so one export covers both. The run says on
+stderr which environment it picked up, because those variables reach your flow's
+code and a run should never be given an environment silently. `--env-id` wins
+over it, and `--env-file` suppresses it, so a run reading a dotenv file is not
+handed a second environment on top.
+
+```sh
+export QAWOLF_ENVIRONMENT=staging
+qawolf runner run flows/checkout.flow.ts     # runs against staging
+```
+
 **Prefer `--env-id`.** QA Wolf reads and decrypts the environment itself, so the
 values never leave the server, nothing has to be pulled to disk first, and no
 size limit applies to them. It is the only way to run a flow whose environment
