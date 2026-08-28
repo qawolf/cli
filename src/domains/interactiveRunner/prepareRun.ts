@@ -21,6 +21,7 @@ export type PreparedRun =
   | {
       ok: true;
       environment: Record<string, string> | undefined;
+      environmentId: string | undefined;
       files: RunFiles;
       selection: RunSelection | undefined;
     }
@@ -42,11 +43,23 @@ export async function prepareRun(
   options: {
     entryPointPath: string;
     envFile: string | undefined;
+    envId: string | undefined;
     lines: string | undefined;
     linesFile: string | undefined;
   },
   deps: InteractiveRunnerDeps,
 ): Promise<PreparedRun> {
+  const environmentId = options.envId?.trim();
+  if (environmentId !== undefined && options.envFile !== undefined) {
+    return refused(
+      interactiveRunnerMessages.envIdWithEnvFile,
+      exitCodes.invalidArgs,
+    );
+  }
+  if (environmentId === "") {
+    return refused(interactiveRunnerMessages.envIdBlank, exitCodes.invalidArgs);
+  }
+
   const linesFilePath =
     options.linesFile === undefined
       ? undefined
@@ -73,7 +86,13 @@ export async function prepareRun(
 
   if (options.lines === undefined) {
     return options.linesFile === undefined
-      ? { environment: given, files, ok: true, selection: undefined }
+      ? {
+          environment: given,
+          environmentId,
+          files,
+          ok: true,
+          selection: undefined,
+        }
       : refused(
           interactiveRunnerMessages.linesFileWithoutLines,
           exitCodes.invalidArgs,
@@ -90,7 +109,13 @@ export async function prepareRun(
 
   const built = buildRunSelection({ lines: options.lines, path });
   return built.ok
-    ? { environment: given, files, ok: true, selection: built.selection }
+    ? {
+        environment: given,
+        environmentId,
+        files,
+        ok: true,
+        selection: built.selection,
+      }
     : refused(built.error, exitCodes.invalidArgs);
 }
 

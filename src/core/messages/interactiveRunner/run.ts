@@ -6,6 +6,10 @@ export const runMessages = {
     `The --env-file could not be read. ${reason}`,
   envFileUnreadable: (path: string) =>
     `No env file at ${path}. Pass a path that exists, or drop --env-file to send no environment.`,
+  envIdBlank:
+    "--env-id was given nothing. Pass the id or alias of a QA Wolf environment, or drop the flag to send no environment.",
+  envIdWithEnvFile:
+    "--env-id and --env-file both give the run its environment, so only one may be passed. Use --env-id for a QA Wolf environment, which QA Wolf reads itself, or --env-file for a dotenv file on this machine.",
   fileNotCollected: (path: string) =>
     `"${path}" is not one of the files that travel to a runner. It must be inside the current directory and end in .ts, .tsx, .js, .mjs, .cjs or .json.`,
   fileUnreadable: (path: string, reason: string) =>

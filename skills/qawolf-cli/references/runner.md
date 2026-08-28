@@ -159,6 +159,53 @@ Use `inspect` before reaching for `exec`. Reading a value through a snippet
 means printing it and then fishing it back out of the `console` stream, which is
 two calls and a marker; `inspect variable` is one call and the value.
 
+## Checking a selector: `highlight-selector`
+
+`inspect element-html` tells you what a selector matched. `highlight-selector`
+shows you _where_ it is, by drawing on the page itself:
+
+```sh
+qawolf runner highlight-selector "text=Sign in"
+qawolf runner screenshot                          # the highlight is in this
+qawolf runner highlight-selector                  # omit the selector to clear
+```
+
+The highlight stays until it is replaced or cleared, which is the point: you
+cannot see the runner's screen, so the only way to read the result is the next
+screenshot.
+
+Three answers are worth telling apart. A selector that matched prints how many
+elements it hit and exits `0`. A selector the page read fine but that matched
+nothing also exits `0`, because the call did what was asked and the count is the
+answer; the message says the syntax was fine so you look at the page, not the
+locator. A selector the page could not read at all exits `2`, because that one
+is yours to correct and retrying will not change it.
+
+`runner-cannot-highlight-selectors` exits `2` and means the runner has no
+browser to draw on. `no-answer` exits `4`: a highlight runs inside the page, so
+a page that is gone or mid-navigation does not answer at all rather than
+answering slowly.
+
+## Accepting a new baseline: `promote-snapshot`
+
+When a run's image diff fails and the new screenshot is the one you want, this
+replaces the baseline on the runner that produced it:
+
+```sh
+qawolf runner events run-events --tail 20 | jq 'select(.type == "image-diff-artifact")'
+qawolf runner promote-snapshot --screenshot checkout-1-actual.png --baseline checkout-1.png
+```
+
+Both paths are the ones the diff reported, and both are named rather than
+positional, because two paths with one unlabelled is easy to get backwards and
+swapping them promotes the wrong image. They are paths inside the run's own
+screenshot storage, not files on your machine.
+
+`snapshot-not-found` exits `2` and means the run wrote no screenshot at that
+path, which nearly always means the paths did not come from a diff this run
+produced. Nothing is changed, so correcting the path and repeating is safe.
+Promoting twice is also safe, so an unreachable runner is worth retrying.
+
 ## Installing a package mid-session
 
 `qawolf runner import-package <name>` installs a package into the runner's live
@@ -255,14 +302,29 @@ runner is addressed, naming the path.
 
 ### Giving the run environment variables
 
+There are two ways, and a run takes one of them. `--env-id` names a QA Wolf
+environment by id or alias, the same reference `qawolf flows` takes as `--env`.
 `--env-file .env` gives the run the variables in a dotenv file, in the format
-`qawolf flows pull` writes. It is `--env-file` and not `--env`, which on
-`qawolf flows` means a QA Wolf environment by id or slug.
+`qawolf flows pull` writes.
 
-A run may carry at most 100 variables, each value at most 8 KiB. Names follow
-what a shell accepts, and `QAWOLF_TEAM_ID` is reserved because QA Wolf sets it
-from the key you authenticated with. All of that is refused before a runner is
-addressed, naming the variable at fault.
+```sh
+qawolf runner run flows/checkout.flow.ts --env-id staging
+qawolf runner run flows/checkout.flow.ts --env-file .env
+```
+
+**Prefer `--env-id`.** QA Wolf reads and decrypts the environment itself, so the
+values never leave the server, nothing has to be pulled to disk first, and no
+size limit applies to them. It is the only way to run a flow whose environment
+holds something large, such as a session cookie.
+
+A run that sends its own variables with `--env-file` may carry at most 200 of
+them, each value at most 16 KiB. Names follow what a shell accepts, and
+`QAWOLF_TEAM_ID` is reserved because QA Wolf sets it from the key you
+authenticated with. All of that is refused before a runner is addressed, naming
+the variable at fault.
+
+Passing both flags is refused. They each give the run its whole environment, so
+there is no order in which they would combine.
 
 If the runner had no browser, one is started before your lines run, and the
 command says so on stderr. Those lines then ran against a fresh page rather than

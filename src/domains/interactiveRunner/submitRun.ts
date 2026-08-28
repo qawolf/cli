@@ -31,6 +31,7 @@ export async function submitRun(
   options: {
     entryPointPath: string;
     environment: Record<string, string> | undefined;
+    environmentId: string | undefined;
     files: RunFiles;
     resolved: Runner;
     selection: RunSelection | undefined;

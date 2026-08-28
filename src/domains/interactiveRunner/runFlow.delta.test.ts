@@ -34,6 +34,7 @@ async function run(
     {
       entryPoint: "flow.ts",
       envFile: undefined,
+      envId: undefined,
       follow: false,
       lines: undefined,
       linesFile: undefined,
@@ -171,6 +172,7 @@ describe("handleRunnerRun file delta", () => {
       {
         entryPoint: "flow.ts",
         envFile: undefined,
+        envId: undefined,
         follow: false,
         lines: undefined,
         linesFile: undefined,

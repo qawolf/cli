@@ -1,3 +1,5 @@
+import { pluralize } from "~/core/pluralize.js";
+
 export const interactMessages = {
   actionFailed: (errorMessage: string) =>
     `The action reached the runner and did not take effect: ${errorMessage}`,
@@ -61,5 +63,27 @@ export const interactMessages = {
   ) =>
     `npm could not install ${name}@${version}${errorMessage === undefined ? "" : `. ${errorMessage}`}. Check the name and the version; waiting will not change this.`,
   importAnsweredUnknown: (failureReason: string) =>
+    `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
+  highlightCleared:
+    "Cleared the runner's highlight. Its next screenshot shows the page undrawn on.",
+  highlightMatched: (matchCount: number, targetPage: string | undefined) =>
+    `Highlighted ${pluralize(matchCount, "element", "elements")}${targetPage === undefined ? "" : ` on ${targetPage}`}. The highlight stays until it is replaced or cleared, so take a screenshot to see it.`,
+  highlightMatchedNothing: (selector: string) =>
+    `The page read "${selector}" as a selector and nothing matched it, so nothing is highlighted. The selector is well formed, so this is the page rather than the syntax: check what is actually on it with qawolf runner inspect page-html.`,
+  highlightSelectorInvalid: (selector: string) =>
+    `The page could not read "${selector}" as a selector, so nothing was highlighted. This is the syntax rather than the page, and retrying will not change it.`,
+  highlightNoAnswer:
+    "The page did not answer, so nothing is highlighted. A highlight runs inside the page, so a page that is gone or part-way through navigating does not answer at all rather than answering slowly. Take a screenshot to see where the runner is, then try again.",
+  runnerCannotHighlightSelectors:
+    "This runner has no browser to draw on, so there is nothing to highlight. Retrying will never help: launch a playwright runner instead.",
+  highlightAnsweredUnknown: (failureReason: string) =>
+    `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
+  snapshotPromoted: (screenshotPath: string, baselinePath: string) =>
+    `Promoted ${screenshotPath} to the baseline at ${baselinePath}.`,
+  snapshotNotFound: (screenshotPath: string) =>
+    `The run wrote no screenshot at "${screenshotPath}", so nothing was changed. The two paths have to be the ones an image diff reported: read them from the image-diff-artifact entry on qawolf runner events run-events.`,
+  runnerCannotPromoteSnapshots:
+    "This runner stores no screenshots, so it holds no baseline to replace. Retrying will never help.",
+  promoteSnapshotAnsweredUnknown: (failureReason: string) =>
     `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
 } as const;
