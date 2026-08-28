@@ -16,6 +16,7 @@ type RemoteListItem = {
   name: string;
   tags: readonly string[];
   target: string;
+  url: string;
 };
 
 export type FlowsListRemoteOptions = {
@@ -49,6 +50,7 @@ export async function flowsListRemote(
         typeof f.executionTarget === "string"
           ? f.executionTarget
           : JSON.stringify(f.executionTarget),
+      url: f.url,
     }));
 
   if (ctx.ui.mode === "json") {
