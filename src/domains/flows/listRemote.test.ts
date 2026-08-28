@@ -29,6 +29,7 @@ type SampleFlow = {
   name: string;
   path: string;
   tags: string[];
+  url: string;
 };
 
 const sampleFlows: SampleFlow[] = [
@@ -38,6 +39,7 @@ const sampleFlows: SampleFlow[] = [
     name: "Login",
     path: "src/flows/login.flow.ts",
     tags: [],
+    url: "https://app.qawolf.com/team/environments/environment-id/flows/flow-id-1",
   },
   {
     executionTarget: "Web - Firefox",
@@ -45,6 +47,7 @@ const sampleFlows: SampleFlow[] = [
     name: "Checkout",
     path: "src/flows/sub/checkout.flow.ts",
     tags: ["smoke"],
+    url: "https://app.qawolf.com/team/environments/environment-id/flows/flow-id-2",
   },
 ];
 
@@ -147,6 +150,7 @@ describe("flowsListRemote success paths", () => {
         name: "Login",
         tags: [],
         target: "Web - Chrome",
+        url: "https://app.qawolf.com/team/environments/environment-id/flows/flow-id-1",
       },
       {
         flowId: "flow-id-2",
@@ -154,6 +158,7 @@ describe("flowsListRemote success paths", () => {
         name: "Checkout",
         tags: ["smoke"],
         target: "Web - Firefox",
+        url: "https://app.qawolf.com/team/environments/environment-id/flows/flow-id-2",
       },
     ]);
     expect(ui.write).not.toHaveBeenCalled();
@@ -186,6 +191,7 @@ describe("flowsListRemote pattern filtering", () => {
         name: "Checkout",
         tags: ["smoke"],
         target: "Web - Firefox",
+        url: "https://app.qawolf.com/team/environments/environment-id/flows/flow-id-2",
       },
     ]);
   });
@@ -209,6 +215,7 @@ describe("flowsListRemote executionTarget shapes", () => {
           name: "Custom Android",
           path: "src/flows/mobile/custom-android.flow.ts",
           tags: [],
+          url: "https://app.qawolf.com/team/environments/environment-id/flows/flow-id-3",
         },
       ],
     });
@@ -220,6 +227,7 @@ describe("flowsListRemote executionTarget shapes", () => {
         name: "Custom Android",
         tags: [],
         target: '{"runner":"android","device":"Pixel 7"}',
+        url: "https://app.qawolf.com/team/environments/environment-id/flows/flow-id-3",
       },
     ]);
   });
