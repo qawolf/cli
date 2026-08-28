@@ -49,16 +49,21 @@ export async function prepareRun(
   },
   deps: InteractiveRunnerDeps,
 ): Promise<PreparedRun> {
-  const environmentId = options.envId?.trim();
-  if (environmentId !== undefined && options.envFile !== undefined) {
+  const explicitEnvId = options.envId?.trim();
+  if (explicitEnvId !== undefined && options.envFile !== undefined) {
     return refused(
       interactiveRunnerMessages.envIdWithEnvFile,
       exitCodes.invalidArgs,
     );
   }
-  if (environmentId === "") {
+  if (explicitEnvId === "") {
     return refused(interactiveRunnerMessages.envIdBlank, exitCodes.invalidArgs);
   }
+
+  const fromEnvVar = deps.env["QAWOLF_ENVIRONMENT"]?.trim();
+  const environmentId =
+    explicitEnvId ??
+    (options.envFile === undefined && fromEnvVar ? fromEnvVar : undefined);
 
   const linesFilePath =
     options.linesFile === undefined

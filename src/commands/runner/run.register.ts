@@ -62,7 +62,7 @@ export function registerRunCommand(
     )
     .option(
       "--env-id <env>",
-      "QA Wolf environment whose variables the run is given, by id or alias. QA Wolf reads and decrypts them itself, so they never leave the server and no size limit applies to them",
+      "QA Wolf environment whose variables the run is given, by id or alias. Defaults to QAWOLF_ENVIRONMENT. QA Wolf reads and decrypts them itself, so they never leave the server and no size limit applies to them",
     )
     .option(
       "--env-file <path>",

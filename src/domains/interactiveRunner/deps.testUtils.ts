@@ -25,6 +25,7 @@ export const testCwd = "/workspace";
 export function makeAuthCtx(mode: OutputMode = "human"): {
   callPublicApi: ReturnType<typeof makeCallPublicApiMock>;
   ctx: AuthCommandContext;
+  infos: () => string[];
   outputs: () => { data: unknown; humanMessage: string }[];
   streamed: () => string[];
   streamedData: () => unknown[];
@@ -39,6 +40,10 @@ export function makeAuthCtx(mode: OutputMode = "human"): {
       apiKeySource: "env",
       platformClient: makeMockPlatformClient({ callPublicApi }),
     },
+    infos: () =>
+      (base.ui.info as Mock<(message: string) => void>).mock.calls.map(
+        ([message]) => message,
+      ),
     outputs: () =>
       (
         base.ui.output as Mock<(data: unknown, humanMessage: string) => void>
