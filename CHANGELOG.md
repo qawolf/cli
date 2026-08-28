@@ -1,5 +1,21 @@
 # @qawolf/cli
 
+## 1.17.0
+
+### Minor Changes
+
+- 1ae524c: An environment variable a run sends with `--env-file` may now be up to 16 KiB, up from 8 KiB. The CLI checks the cap locally before any round trip, so it refused at 8 KiB whatever the platform accepted.
+
+  Upgrades `@qawolf/api-contracts` to `0.34.0`, which carries the raised cap and the `environmentId` field `--env-id` sends.
+
+- 1ae524c: `qawolf runner highlight-selector [selector]` draws on a runner's live page so the next screenshot shows what a selector matches. Omit the selector to clear it. A selector the page read but that matched nothing exits `0` and reports the count, while one the page could not read at all exits `2`, so a bad locator is told apart from a locator pointing at nothing.
+
+  `qawolf runner promote-snapshot --screenshot <path> --baseline <path>` accepts a run's screenshot as the new baseline for an image diff, on the runner that produced it. Both paths are the ones the diff reported on the `run-events` journal stream.
+
+- 54b5912: `qawolf runner run --env-id <id-or-alias>` gives a run the variables of a QA Wolf environment. QA Wolf reads and decrypts them itself, so the values never leave the server, nothing has to be pulled to disk first, and the caps that bound `--env-file` do not apply to them. That makes it the only way to run a flow whose environment holds something large, such as a session cookie.
+
+  `--env-id` and `--env-file` each give the run its whole environment, so passing both is refused before a runner is addressed rather than one silently winning.
+
 ## 1.16.0
 
 ### Minor Changes
