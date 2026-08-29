@@ -6,6 +6,7 @@ import { registerDoctorCommand } from "./doctor/index.js";
 import { registerFlowsCommand } from "./flows/index.js";
 import { registerInitCommand } from "./init/index.js";
 import { registerInstallCommand } from "./install/index.js";
+import { registerLintCommand } from "./lint/index.js";
 import { registerPublicApiCommands } from "./publicApi/index.js";
 import { registerRunnerCommand } from "./runner/index.js";
 import { exitCodes, exit } from "~/shell/exit.js";
@@ -32,6 +33,7 @@ export function createProgram({
   registerFlowsCommand(program, signals);
   registerInitCommand(program, signals);
   registerInstallCommand(program, signals);
+  registerLintCommand(program, signals);
   registerRunnerCommand(program, signals);
   registerPublicApiCommands(program, signals);
 

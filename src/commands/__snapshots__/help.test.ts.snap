@@ -20,6 +20,8 @@ Commands:
                                directory
   install [options] [pattern]  Install every runtime dependency the project's
                                flows need
+  lint <files...>              Lint flow files with QA Wolf's rules, honoring
+                               the project's .eslintrc.json
   runner                       Drive an interactive runner on the QA Wolf
                                platform
   automate [options]           Request automation for draft flows. First create

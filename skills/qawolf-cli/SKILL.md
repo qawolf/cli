@@ -153,6 +153,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf issue find` | read | List the team's bug reports, maintenance reports, or coverage requests, newest first. |
 | `qawolf issue get` | read | Get an issue by id. |
 | `qawolf issue update` | write | Update an issue owned by the caller's team. Omitted fields remain unchanged. |
+| `qawolf lint` | local | Lint flow files with QA Wolf's rules, honoring the project's .eslintrc.json |
 | `qawolf run create` | write | Create a run for the selected flows and/or tags in an environment. |
 | `qawolf run find` | read | List an environment's recent runs, newest first. |
 | `qawolf run get` | read | Get a run's status, per-flow results, and links. |
