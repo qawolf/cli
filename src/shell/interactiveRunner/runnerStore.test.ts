@@ -1,6 +1,5 @@
 import { describe, expect, it } from "bun:test";
 
-import { sleep } from "~/core/sleep.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { makeRunnerStore } from "./runnerStore.js";
@@ -55,39 +54,6 @@ describe("makeRunnerStore", () => {
 
   it("forgetting from a store that has nothing in it is not an error", async () => {
     await makeStore().forgetRunner("ci");
-  });
-
-  it("makes a second write wait for the one already in flight", async () => {
-    const fs = makeMemoryFs();
-    let releaseFirstWrite: (() => void) | undefined;
-    const overlappingFs: typeof fs = {
-      ...fs,
-      async writeFile(path, data, options) {
-        await fs.writeFile(path, data, options);
-        if (releaseFirstWrite === undefined && path.endsWith(".tmp")) {
-          await new Promise<void>((resolve) => {
-            releaseFirstWrite = resolve;
-          });
-        }
-      },
-    };
-    const store = makeRunnerStore({ cwd, fs: overlappingFs });
-
-    const first = store.writeDefaultRunnerId("first");
-    await sleep(10);
-    const second = store.writeDefaultRunnerId("second");
-
-    expect(
-      await Promise.race([
-        second.then(() => "finished" as const),
-        sleep(50).then(() => "still waiting" as const),
-      ]),
-    ).toBe("still waiting");
-
-    releaseFirstWrite?.();
-    await Promise.all([first, second]);
-
-    expect(await store.readDefaultRunnerId()).toBe("second");
   });
 
   // A stale cache file is not a reason to refuse to run: the caller's next step

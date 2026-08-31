@@ -44,23 +44,6 @@ describe("makeRunnerStore under concurrent commands", () => {
     expect(ids).toEqual(["beta"]);
   });
 
-  it("takes over a lock a dead process left behind", async () => {
-    const fs = makeMemoryFs();
-    const store = makeRunnerStore({ cwd, fs });
-    await fs.mkdir("/workspace/.qawolf", { recursive: true });
-    await fs.mkdir("/workspace/.qawolf/runner.json.lock");
-    await fs.writeFile(
-      "/workspace/.qawolf/runner.json.lock/heldSince",
-      String(Date.now() - 60_000),
-    );
-
-    await store.rememberLaunch({ id: "alpha" });
-
-    expect((await store.readRunners()).map((runner) => runner.id)).toEqual([
-      "alpha",
-    ]);
-  });
-
   it("keeps every runner when many launches land together", async () => {
     const fs = makeMemoryFs();
     const ids = ["a", "b", "c", "d", "e"];
@@ -73,5 +56,29 @@ describe("makeRunnerStore under concurrent commands", () => {
       .map((runner) => runner.id)
       .sort();
     expect(stored).toEqual(ids);
+  });
+
+  it("drops a runner file that will not parse rather than failing the read", async () => {
+    const fs = makeMemoryFs();
+    const store = makeRunnerStore({ cwd, fs });
+    await store.rememberLaunch({ id: "alpha" });
+    await fs.mkdir("/workspace/.qawolf/runners", { recursive: true });
+    await fs.writeFile("/workspace/.qawolf/runners/broken.json", "{ truncated");
+
+    expect((await store.readRunners()).map((runner) => runner.id)).toEqual([
+      "alpha",
+    ]);
+  });
+
+  it("keeps only the runners retained when many are stored", async () => {
+    const fs = makeMemoryFs();
+    const store = makeRunnerStore({ cwd, fs });
+    for (const id of ["a", "b", "c"]) await store.rememberLaunch({ id });
+
+    await store.retainRunners(["a", "c"]);
+
+    expect(
+      (await store.readRunners()).map((runner) => runner.id).sort(),
+    ).toEqual(["a", "c"]);
   });
 });

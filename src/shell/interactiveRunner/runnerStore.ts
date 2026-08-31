@@ -4,8 +4,6 @@ import { z } from "zod";
 import { qawolfDir } from "~/core/paths.js";
 import type { Fs } from "~/shell/fs.js";
 
-import { makeStoreLock } from "./runnerStoreLock.js";
-
 /**
  * The runners a workspace has launched, and which one its commands go back to
  * when no flag and no environment variable names one.
@@ -15,6 +13,7 @@ import { makeStoreLock } from "./runnerStoreLock.js";
  * side by side must not silently share one browser.
  */
 const storeFileName = "runner.json";
+const runnersDirName = "runners";
 
 const storedRunnerSchema = z.object({
   id: z.string(),
@@ -23,15 +22,9 @@ const storedRunnerSchema = z.object({
 
 const storeSchema = z.object({
   defaultRunnerId: z.string().optional(),
-  runners: z.array(storedRunnerSchema).optional(),
 });
 
 export type StoredRunner = z.output<typeof storedRunnerSchema>;
-
-type StoreContents = {
-  defaultRunnerId: string | undefined;
-  runners: StoredRunner[];
-};
 
 function parseJson(text: string): unknown {
   try {
@@ -55,84 +48,100 @@ let pendingWrites = 0;
 export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
   const directory = join(options.cwd, qawolfDir);
   const path = join(directory, storeFileName);
+  const runnersDir = join(directory, runnersDirName);
   // Unique per write: two commands writing at once must not share a temp file,
   // or one rename pulls the other's out from under it.
-  const nextPendingPath = () => `${path}.${process.pid}.${++pendingWrites}.tmp`;
+  const nextPendingPath = (target: string) =>
+    `${target}.${process.pid}.${++pendingWrites}.tmp`;
 
-  const withLock = makeStoreLock({
-    directory,
-    fs: options.fs,
-    lockPath: `${path}.lock`,
-  });
+  const runnerPath = (runnerId: string) =>
+    join(runnersDir, `${encodeURIComponent(runnerId)}.json`);
 
-  const read = async (): Promise<StoreContents> => {
-    const contents = await options.fs.readFile(path).catch(() => undefined);
-    const parsed =
-      contents === undefined
-        ? undefined
-        : storeSchema.safeParse(parseJson(contents));
-    if (!parsed?.success) return { defaultRunnerId: undefined, runners: [] };
-    return {
-      defaultRunnerId: parsed.data.defaultRunnerId,
-      runners: parsed.data.runners ?? [],
-    };
-  };
-
-  const write = async (contents: StoreContents): Promise<void> => {
-    const pendingPath = nextPendingPath();
-    await options.fs.mkdir(directory, { recursive: true });
+  const writeAtomically = async (
+    target: string,
+    contents: unknown,
+  ): Promise<void> => {
+    const pendingPath = nextPendingPath(target);
     await options.fs.writeFile(
       pendingPath,
       `${JSON.stringify(contents, undefined, 2)}\n`,
     );
-    await options.fs.rename(pendingPath, path);
+    await options.fs.rename(pendingPath, target);
   };
 
-  const update = async (
-    change: (contents: StoreContents) => StoreContents,
+  const readDefaultRunnerId = async (): Promise<string | undefined> => {
+    const contents = await options.fs.readFile(path).catch(() => undefined);
+    if (contents === undefined) return undefined;
+    const parsed = storeSchema.safeParse(parseJson(contents));
+    return parsed.success ? parsed.data.defaultRunnerId : undefined;
+  };
+
+  const writeDefaultRunnerId = async (
+    runnerId: string | undefined,
   ): Promise<void> => {
-    await withLock(async () => write(change(await read())));
+    await options.fs.mkdir(directory, { recursive: true });
+    await writeAtomically(path, { defaultRunnerId: runnerId });
+  };
+
+  const readRunnerFileNames = async (): Promise<string[]> => {
+    try {
+      const names = await options.fs.readdir(runnersDir);
+      return names.filter((name) => name.endsWith(".json"));
+    } catch {
+      return [];
+    }
   };
 
   return {
     async forgetRunner(runnerId) {
-      await update((contents) => ({
-        defaultRunnerId:
-          contents.defaultRunnerId === runnerId
-            ? undefined
-            : contents.defaultRunnerId,
-        runners: contents.runners.filter((runner) => runner.id !== runnerId),
-      }));
+      await options.fs.rm(runnerPath(runnerId), { force: true });
+      if ((await readDefaultRunnerId()) === runnerId)
+        await writeDefaultRunnerId(undefined);
     },
 
-    async readDefaultRunnerId() {
-      return (await read()).defaultRunnerId;
-    },
+    readDefaultRunnerId,
 
     async readRunners() {
-      return (await read()).runners;
+      const runners = await Promise.all(
+        (await readRunnerFileNames()).map(async (name) => {
+          const contents = await options.fs
+            .readFile(join(runnersDir, name))
+            .catch(() => undefined);
+          if (contents === undefined) return undefined;
+          const parsed = storedRunnerSchema.safeParse(parseJson(contents));
+          return parsed.success ? parsed.data : undefined;
+        }),
+      );
+      return runners.filter((runner): runner is StoredRunner => !!runner);
     },
 
     async rememberLaunch(runner) {
-      await update((contents) => ({
-        defaultRunnerId: runner.id,
-        runners: [
-          ...contents.runners.filter((held) => held.id !== runner.id),
-          runner,
-        ],
-      }));
+      await options.fs.mkdir(runnersDir, { recursive: true });
+      await writeAtomically(runnerPath(runner.id), runner);
+      await writeDefaultRunnerId(runner.id);
     },
 
     async retainRunners(runnerIds) {
       const running = new Set(runnerIds);
-      await update((contents) => ({
-        ...contents,
-        runners: contents.runners.filter((runner) => running.has(runner.id)),
-      }));
+      const names = await readRunnerFileNames();
+      await Promise.all(
+        names.map(async (name) => {
+          const runnerFile = join(runnersDir, name);
+          const contents = await options.fs
+            .readFile(runnerFile)
+            .catch(() => undefined);
+          const parsed =
+            contents === undefined
+              ? undefined
+              : storedRunnerSchema.safeParse(parseJson(contents));
+          if (parsed?.success && running.has(parsed.data.id)) return;
+          await options.fs.rm(runnerFile, { force: true });
+        }),
+      );
     },
 
     async writeDefaultRunnerId(runnerId) {
-      await update((contents) => ({ ...contents, defaultRunnerId: runnerId }));
+      await writeDefaultRunnerId(runnerId);
     },
   };
 }
