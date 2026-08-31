@@ -1,15 +1,8 @@
-import type { InspectMobileRequest } from "@qawolf/api-contracts/v1";
-import * as apiContractsV1 from "@qawolf/api-contracts/v1";
+import {
+  type InspectMobileRequest,
+  inspectMobileRequestSchema,
+} from "@qawolf/api-contracts/v1";
 import { z } from "zod";
-
-// Not published yet (ARC-556): a named import of `inspectMobileRequestSchema`
-// would crash `bun run generate` today, since ESM validates named imports at
-// load time even for code that never runs. Reading it off the namespace
-// defers that to whenever this actually gets called, same as everything else
-// this depends on.
-const inspectMobileRequestSchema: z.ZodType | undefined = (
-  apiContractsV1 as { inspectMobileRequestSchema?: z.ZodType }
-).inspectMobileRequestSchema;
 
 /** The mobile inspect flags as the command line hands them over. */
 export type InspectMobileFlags = {
@@ -39,6 +32,28 @@ export function buildInspectMobileRequest(
   what: string,
   flags: InspectMobileFlags,
 ): BuiltInspectMobileRequest {
+  // The schema strips fields the chosen `by` does not define rather than
+  // refusing them, so a flag from the other `by` would be silently ignored
+  // rather than reported — the same reason a flag alongside stdin is refused
+  // in `readAction.ts` rather than dropped.
+  if (
+    flags.by === "point" &&
+    (flags.text !== undefined || flags.partial !== undefined)
+  ) {
+    return {
+      error:
+        "--by point matches by pixel, so --text/--partial would be ignored rather than searching by text. Pass --by text instead, or drop --text/--partial.",
+      ok: false,
+    };
+  }
+  if (flags.by === "text" && (flags.x !== undefined || flags.y !== undefined)) {
+    return {
+      error:
+        "--by text matches by text, so --x/--y would be ignored rather than matching a point. Pass --by point instead, or drop --x/--y.",
+      ok: false,
+    };
+  }
+
   const candidate = {
     what,
     ...(flags.by === undefined ? {} : { by: flags.by }),
@@ -49,17 +64,9 @@ export function buildInspectMobileRequest(
     ...(flags.y === undefined ? {} : { y: toNumber(flags.y) }),
   };
 
-  if (!inspectMobileRequestSchema) {
-    return {
-      error:
-        "This build's @qawolf/api-contracts does not publish runner.inspectMobile yet. Upgrade with npm install -g @qawolf/cli once mobile inspect ships.",
-      ok: false,
-    };
-  }
-
   const parsed = inspectMobileRequestSchema.safeParse(candidate);
   if (!parsed.success) {
     return { error: z.prettifyError(parsed.error), ok: false };
   }
-  return { ok: true, request: parsed.data as InspectMobileRequest };
+  return { ok: true, request: parsed.data };
 }

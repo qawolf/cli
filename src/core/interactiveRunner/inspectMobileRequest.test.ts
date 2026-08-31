@@ -130,4 +130,48 @@ describe("buildInspectMobileRequest", () => {
   it("refuses an unrecognized what", () => {
     expect(buildInspectMobileRequest("bogus", noFlags).ok).toBe(false);
   });
+
+  // The schema strips fields the chosen `by` does not define rather than
+  // refusing them, so `--by point --text ...` would otherwise answer the
+  // point and silently ignore the text — the flag has to be refused before
+  // it reaches the schema, not dropped there.
+  it("refuses --text alongside --by point rather than silently ignoring it", () => {
+    const built = buildInspectMobileRequest("elements", {
+      ...noFlags,
+      by: "point",
+      text: "Sign in",
+      x: "100",
+      y: "200",
+    });
+
+    expect(built.ok).toBe(false);
+    if (built.ok) return;
+    expect(built.error).toContain("--text");
+  });
+
+  it("refuses --partial alongside --by point", () => {
+    expect(
+      buildInspectMobileRequest("elements", {
+        ...noFlags,
+        by: "point",
+        partial: true,
+        x: "100",
+        y: "200",
+      }).ok,
+    ).toBe(false);
+  });
+
+  it("refuses --x/--y alongside --by text rather than silently ignoring them", () => {
+    const built = buildInspectMobileRequest("elements", {
+      ...noFlags,
+      by: "text",
+      text: "Sign in",
+      x: "100",
+      y: "200",
+    });
+
+    expect(built.ok).toBe(false);
+    if (built.ok) return;
+    expect(built.error).toContain("--x/--y");
+  });
 });

@@ -64,17 +64,20 @@ describe("handleRunnerInspectMobile", () => {
     },
   );
 
-  it("summarizes the available contexts and the current one", async () => {
-    const { callPublicApi, ctx, outputs } = makeAuthCtx();
-    callPublicApi.mockResolvedValue({
-      ok: true,
-      value: {
-        contexts: ["NATIVE_APP", "WEBVIEW_1"],
-        current: "WEBVIEW_1",
-        outcome: "success",
-        what: "contexts",
-      },
-    });
+  // contexts/page/elements print their answer, not a summary: `output` drops
+  // `data` at a TTY (human.ts), so a summary sentence would be the only thing
+  // a human-mode caller ever saw. `session`'s one-liner above is exempt
+  // because it genuinely is the whole answer.
+  it("streams the contexts and the current one as JSON, not a summary", async () => {
+    const { callPublicApi, ctx, outputs, streamed, streamedData } =
+      makeAuthCtx();
+    const value = {
+      contexts: ["NATIVE_APP", "WEBVIEW_1"],
+      current: "WEBVIEW_1",
+      outcome: "success",
+      what: "contexts",
+    };
+    callPublicApi.mockResolvedValue({ ok: true, value });
 
     await handleRunnerInspectMobile(
       ctx,
@@ -87,15 +90,19 @@ describe("handleRunnerInspectMobile", () => {
       { id: "ci", request: { what: "contexts" } },
       runnerCallOptions,
     );
-    expect(outputs()[0]?.humanMessage).toBe(
-      "2 contexts available; current is WEBVIEW_1.",
-    );
-    // The value goes out as data too, so --json carries it through.
-    expect(outputs()[0]?.data).toMatchObject({ current: "WEBVIEW_1" });
+    expect(streamed()).toEqual([
+      JSON.stringify({
+        contexts: ["NATIVE_APP", "WEBVIEW_1"],
+        current: "WEBVIEW_1",
+      }),
+    ]);
+    // The full value carries through as data too, for --json.
+    expect(streamedData()).toEqual([value]);
+    expect(outputs()).toEqual([]);
   });
 
-  it("summarizes the page source and carries a named context into the request", async () => {
-    const { callPublicApi, ctx, outputs } = makeAuthCtx();
+  it("streams the page source as JSON and carries a named context into the request", async () => {
+    const { callPublicApi, ctx, streamed } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
       value: {
@@ -122,22 +129,23 @@ describe("handleRunnerInspectMobile", () => {
       { id: "ci", request: { context: "WEBVIEW_1", what: "page" } },
       runnerCallOptions,
     );
-    expect(outputs()[0]?.humanMessage).toBe(
-      "Read the page source of context WEBVIEW_1 (PORTRAIT).",
-    );
+    expect(streamed()).toEqual([
+      JSON.stringify({
+        context: "WEBVIEW_1",
+        orientation: "PORTRAIT",
+        pageSource: { selectors: [], tag: "body" },
+      }),
+    ]);
   });
 
-  it("summarizes matching elements and carries a point request through", async () => {
-    const { callPublicApi, ctx, outputs } = makeAuthCtx();
+  it("streams matching elements as JSON and carries a point request through", async () => {
+    const { callPublicApi, ctx, streamed } = makeAuthCtx();
+    const matches = [
+      { attributes: {}, selectors: [], tag: "android.widget.Button" },
+    ];
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
-        matches: [
-          { attributes: {}, selectors: [], tag: "android.widget.Button" },
-        ],
-        outcome: "success",
-        what: "elements",
-      },
+      value: { matches, outcome: "success", what: "elements" },
     });
 
     await handleRunnerInspectMobile(
@@ -158,7 +166,7 @@ describe("handleRunnerInspectMobile", () => {
       },
       runnerCallOptions,
     );
-    expect(outputs()[0]?.humanMessage).toBe("Found 1 matching element.");
+    expect(streamed()).toEqual([JSON.stringify({ matches })]);
   });
 
   it("refuses an invalid request without addressing a runner", async () => {

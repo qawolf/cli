@@ -6,7 +6,6 @@ import {
   buildInspectMobileRequest,
 } from "~/core/interactiveRunner/inspectMobileRequest.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
-import { pluralize } from "~/core/pluralize.js";
 import type {
   AuthCommandContext,
   CommandResult,
@@ -46,17 +45,26 @@ function describeSession(session: SessionStatus): string {
   }
 }
 
-/** A one-line summary of a successful answer, one branch per `what`. */
-function describeSuccess(value: InspectMobileSuccess): string {
+/** The answer as JSON, on its own, so a caller can redirect or pipe it —
+ * same reasoning as `inspect.ts` streaming `value.value`. `session` skips
+ * this: its `describeSession` line is the whole answer. */
+function streamLine(
+  value: Exclude<InspectMobileSuccess, { what: "session" }>,
+): string {
   switch (value.what) {
-    case "session":
-      return describeSession(value.session);
     case "contexts":
-      return `${pluralize(value.contexts.length, "context", "contexts")} available; current is ${value.current}.`;
+      return JSON.stringify({
+        contexts: value.contexts,
+        current: value.current,
+      });
     case "page":
-      return `Read the page source of context ${value.context} (${value.orientation}).`;
+      return JSON.stringify({
+        context: value.context,
+        orientation: value.orientation,
+        pageSource: value.pageSource,
+      });
     case "elements":
-      return `Found ${pluralize(value.matches.length, "matching element", "matching elements")}.`;
+      return JSON.stringify({ matches: value.matches });
   }
 }
 
@@ -99,7 +107,12 @@ export async function handleRunnerInspectMobile(
   }
 
   if (result.value.outcome === "success") {
-    ctx.ui.output(result.value, describeSuccess(result.value));
+    const value = result.value;
+    if (value.what === "session") {
+      ctx.ui.output(value, describeSession(value.session));
+    } else {
+      ctx.ui.stream(value, streamLine(value));
+    }
     return undefined;
   }
 

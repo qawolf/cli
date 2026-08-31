@@ -216,24 +216,32 @@ qawolf runner inspect elements --by point --x 240 --y 480
 qawolf runner inspect elements --by text --text "Sign in" --partial
 ```
 
-`session` prints the Appium session's status, and it is the one subcommand that
-never answers `screen-needs-a-run`: readiness is the question it exists to
-answer, so it reports one of `ready` (with the platform, device and session
-id), `unreachable`, `ambiguous` (more than one session is somehow live) or
-`no-session`, rather than refusing until a run has happened. The other three
-need a live session first and share the same readiness contract `act` and
-`screenshot` use on a browser runner: `screen-needs-a-run` exits `2` and means
-no Appium session has started on this runner yet — run a flow that opens one,
-then inspect again; `screen-not-ready` exits `4` and means the session exists
-but did not answer this instant, or more than one is somehow live — retry once,
-and relaunch the runner if it persists.
+`session` prints one summary line — ready, or why not — because that line is
+the whole answer. `contexts`, `page-source` and `elements` instead print their
+answer as JSON on stdout, on its own like `inspect element-html`, so you can
+redirect or pipe it (`| jq .current`, `| jq .matches`, `| jq .pageSource`)
+rather than getting a count with no way to see what was actually found.
+
+`session` is also the one subcommand that never answers `screen-needs-a-run`:
+readiness is the question it exists to answer, so it reports one of `ready`
+(with the platform, device and session id), `unreachable`, `ambiguous` (more
+than one session is somehow live) or `no-session`, rather than refusing until a
+run has happened. The other three need a live session first and share the same
+readiness contract `act` and `screenshot` use on a browser runner:
+`screen-needs-a-run` exits `2` and means no Appium session has started on this
+runner yet — run a flow that opens one, then inspect again; `screen-not-ready`
+exits `4` and means the session exists but did not answer this instant, or more
+than one is somehow live — retry once, and relaunch the runner if it persists.
 
 `elements` takes one of two ways to search, chosen with `--by`: `point` needs
 whole-pixel `--x`/`--y` on the device's own screen, the same coordinates a
 screenshot is measured in; `text` needs `--text` and matches it exactly unless
-`--partial` is passed. `--context` on `page-source` or `elements` reads a
-context other than the current one — useful once `contexts` has told you which
-are available.
+`--partial` is passed. The two do not mix — `--by point` with `--text` set, or
+`--by text` with `--x`/`--y` set, is refused before a runner is addressed
+rather than silently searching by the one it picked, since the schema itself
+just strips whichever field the chosen `by` does not define. `--context` on
+`page-source` or `elements` reads a context other than the current one —
+useful once `contexts` has told you which are available.
 
 A browser runner answers `runner-is-not-mobile` to all four, exit `2`, since
 retrying never helps: launch with `--name android` or `--name ios` instead.
