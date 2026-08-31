@@ -19,6 +19,13 @@ export function throwNoEntError(
   );
 }
 
+export function throwExistsError(path: string, kind: "mkdir"): never {
+  throw Object.assign(
+    new Error(`EEXIST: file already exists, ${kind} '${path}'`),
+    { code: "EEXIST" },
+  );
+}
+
 export function throwNotDirError(path: string, syscall: string): never {
   throw Object.assign(
     new Error(`ENOTDIR: not a directory, ${syscall} '${path}'`),

@@ -165,6 +165,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf runner inspect variable` | read | Print a top-level variable's value from the running workflow |
 | `qawolf runner keepalive` | read | Reset a runner's inactivity clock, for a caller that pauses between actions |
 | `qawolf runner launch` | write | Launch an interactive runner and make it this directory's default |
+| `qawolf runner list` | read | List the runners this directory holds that are still running |
 | `qawolf runner promote-snapshot` | write | Accept a run's screenshot as the new baseline for an image diff, on the runner that produced it |
 | `qawolf runner run` | write | Run a flow on an interactive runner, shipping the flow and what it imports |
 | `qawolf runner screenshot` | read | Save a JPEG of an interactive runner's screen to a file |

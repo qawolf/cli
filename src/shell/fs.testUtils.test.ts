@@ -29,6 +29,13 @@ describe("makeMemoryFs", () => {
     expect(result).toBe(true);
   });
 
+  it("refuses a non-recursive mkdir of a directory that exists", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/held");
+
+    expect(fs.mkdir("/held")).rejects.toThrow("EEXIST");
+  });
+
   it("should return false from pathExists for missing path", async () => {
     const fs = makeMemoryFs();
     const result = await fs.pathExists("/no/such/file");

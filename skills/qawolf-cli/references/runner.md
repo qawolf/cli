@@ -41,6 +41,32 @@ No `read` command ever launches a runner. `screenshot`, `events` and `keepalive`
 tell you there is no runner rather than quietly billing one, and so does
 `terminate`, since starting a pod in order to end it would be absurd.
 
+## Knowing what you are holding
+
+`qawolf runner list` names the runners this directory has launched that are
+still running, and marks the one a command with no `--runner` would reach:
+
+```text
+id                   family      default
+tester-abc-main      playwright  yes
+tester-abc-checkout  playwright
+```
+
+Every runner is looked up before it is listed, so a runner that idled out is
+absent rather than reported. The lookup neither starts a runner nor resets an
+inactivity clock, which is what separates `list` from `keepalive`: listing tells
+you what is there and changes nothing, and holding a runner open is still
+`keepalive`'s job. A lookup that cannot be answered fails the command rather
+than returning a shorter list, because a short list reads as the whole truth.
+
+Nothing is billed by listing, but everything in the list is billing. Terminate
+what you are done with.
+
+The list includes the runner named by `QAWOLF_RUNNER_ID` even though this
+directory did not launch it, so a harness handed a runner sees it alongside the
+ones it started itself. Use the `id` column with `--runner` to address any of
+them; addressing one does not make it the default.
+
 ## The order that matters
 
 A freshly launched runner has no screen. The virtual desktop starts with the

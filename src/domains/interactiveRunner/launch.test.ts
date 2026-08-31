@@ -198,11 +198,14 @@ describe("handleRunnerLaunch", () => {
       { id: undefined, name: undefined },
       makeTestDeps({
         store: {
-          clearDefaultRunnerId: async () => {},
+          forgetRunner: async () => {},
           readDefaultRunnerId: async () => undefined,
-          writeDefaultRunnerId: async () => {
+          readRunners: async () => [],
+          rememberLaunch: async () => {
             throw new Error("EACCES: permission denied, mkdir '/app/.qawolf'");
           },
+          dropRunners: async () => {},
+          writeDefaultRunnerId: async () => {},
         },
       }),
     );

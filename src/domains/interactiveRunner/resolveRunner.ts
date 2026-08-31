@@ -4,7 +4,7 @@ import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
-import { launchAndRemember } from "./launch.js";
+import { launchAndRemember } from "./launchAndRemember.js";
 import { parseRunnerId } from "./runnerIds.js";
 
 /**
@@ -20,7 +20,7 @@ export type ResolvedRunner =
   | { type: "launched"; runnerId: string }
   | { type: "failed"; error: string; errorBody?: string; exitCode: number };
 
-const runnerIdEnvironmentVariable = "QAWOLF_RUNNER_ID";
+export const runnerIdEnvironmentVariable = "QAWOLF_RUNNER_ID";
 
 /**
  * Flag, then environment, then the workspace's stored default: most explicit
