@@ -43,18 +43,11 @@ export async function handleRunnerTerminate(
   // commands in this directory should be sent. Best effort, for the same reason
   // the launch side is: the pod is what costs money, and a directory the CLI
   // cannot write to must not turn a stop that worked into a failed command.
-  await deps.store
-    .readDefaultRunnerId()
-    .then(async (storedDefault) => {
-      if (storedDefault === resolved.runnerId) {
-        await deps.store.clearDefaultRunnerId();
-      }
-    })
-    .catch(() => {
-      ctx.ui.warn(
-        interactiveRunnerMessages.defaultNotForgotten(resolved.runnerId),
-      );
-    });
+  await deps.store.forgetRunner(resolved.runnerId).catch(() => {
+    ctx.ui.warn(
+      interactiveRunnerMessages.defaultNotForgotten(resolved.runnerId),
+    );
+  });
 
   ctx.ui.output(
     result.value,

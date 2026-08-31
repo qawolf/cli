@@ -100,7 +100,7 @@ describe("handleRunnerTerminate", () => {
         ...deps,
         store: {
           ...deps.store,
-          readDefaultRunnerId: () => Promise.reject(Error("EROFS")),
+          forgetRunner: () => Promise.reject(Error("EROFS")),
         },
       },
     );

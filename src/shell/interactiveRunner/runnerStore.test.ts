@@ -32,17 +32,28 @@ describe("makeRunnerStore", () => {
     expect(await store.readDefaultRunnerId()).toBe("review");
   });
 
-  it("has no default after clearing", async () => {
+  it("has no default after forgetting the runner it named", async () => {
     const store = makeStore();
-    await store.writeDefaultRunnerId("ci");
+    await store.rememberLaunch({ id: "ci" });
 
-    await store.clearDefaultRunnerId();
+    await store.forgetRunner("ci");
 
     expect(await store.readDefaultRunnerId()).toBeUndefined();
   });
 
-  it("clearing a store that has nothing in it is not an error", async () => {
-    await makeStore().clearDefaultRunnerId();
+  // Ending one runner must not retarget the commands aimed at another.
+  it("keeps the default when a different runner is forgotten", async () => {
+    const store = makeStore();
+    await store.rememberLaunch({ id: "ci" });
+    await store.rememberLaunch({ id: "review" });
+
+    await store.forgetRunner("ci");
+
+    expect(await store.readDefaultRunnerId()).toBe("review");
+  });
+
+  it("forgetting from a store that has nothing in it is not an error", async () => {
+    await makeStore().forgetRunner("ci");
   });
 
   // Each write keeps its own temp file, so one write's rename cannot pull the

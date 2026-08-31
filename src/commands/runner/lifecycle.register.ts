@@ -4,6 +4,7 @@ import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext } from "~/commands/context.js";
 import { handleRunnerKeepalive } from "~/domains/interactiveRunner/keepalive.js";
 import { handleRunnerLaunch } from "~/domains/interactiveRunner/launch.js";
+import { handleRunnerList } from "~/domains/interactiveRunner/list.js";
 import { handleRunnerStopRun } from "~/domains/interactiveRunner/stopRun.js";
 import { handleRunnerTerminate } from "~/domains/interactiveRunner/terminate.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
@@ -15,6 +16,11 @@ Examples:
   $ qawolf runner launch
   $ qawolf runner launch --name android
   $ qawolf runner launch --id ci`;
+
+const listExamples = `
+Examples:
+  $ qawolf runner list
+  $ qawolf runner list --json`;
 
 const keepaliveExamples = `
 Examples:
@@ -43,6 +49,16 @@ export function registerRunnerLifecycleCommands(
           runnerDeps(ctx),
         ),
       )(opts, command),
+    );
+
+  declareCommandKind(runner.command("list"), "read")
+    .description("List the runners this directory holds that are still running")
+    .addHelpText("after", listExamples)
+    .action((opts: Record<string, never>, command: Command) =>
+      withAuthContext(signals, (ctx) => handleRunnerList(ctx, runnerDeps(ctx)))(
+        opts,
+        command,
+      ),
     );
 
   declareCommandKind(runner.command("terminate"), "write")

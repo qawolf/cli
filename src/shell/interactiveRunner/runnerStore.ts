@@ -5,8 +5,8 @@ import { qawolfDir } from "~/core/paths.js";
 import type { Fs } from "~/shell/fs.js";
 
 /**
- * The runner a workspace goes back to when no flag and no environment variable
- * name one.
+ * The runners a workspace has launched, and which one its commands go back to
+ * when no flag and no environment variable names one.
  *
  * In the workspace rather than the user's config directory, because a runner is
  * bound to the project whose files it has been running: two checkouts driven
@@ -14,7 +14,22 @@ import type { Fs } from "~/shell/fs.js";
  */
 const storeFileName = "runner.json";
 
-const storeSchema = z.object({ defaultRunnerId: z.string().optional() });
+const storedRunnerSchema = z.object({
+  id: z.string(),
+  runnerName: z.string().optional(),
+});
+
+const storeSchema = z.object({
+  defaultRunnerId: z.string().optional(),
+  runners: z.array(storedRunnerSchema).optional(),
+});
+
+export type StoredRunner = z.output<typeof storedRunnerSchema>;
+
+type StoreContents = {
+  defaultRunnerId: string | undefined;
+  runners: StoredRunner[];
+};
 
 function parseJson(text: string): unknown {
   try {
@@ -25,8 +40,11 @@ function parseJson(text: string): unknown {
 }
 
 export type RunnerStore = {
-  clearDefaultRunnerId: () => Promise<void>;
+  forgetRunner: (runnerId: string) => Promise<void>;
   readDefaultRunnerId: () => Promise<string | undefined>;
+  readRunners: () => Promise<StoredRunner[]>;
+  rememberLaunch: (runner: StoredRunner) => Promise<void>;
+  retainRunners: (runnerIds: readonly string[]) => Promise<void>;
   writeDefaultRunnerId: (runnerId: string) => Promise<void>;
 };
 
@@ -38,34 +56,74 @@ export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
   let pendingWrites = 0;
   const nextPendingPath = () => `${path}.${process.pid}.${++pendingWrites}.tmp`;
 
+  const read = async (): Promise<StoreContents> => {
+    const contents = await options.fs.readFile(path).catch(() => undefined);
+    const parsed =
+      contents === undefined
+        ? undefined
+        : storeSchema.safeParse(parseJson(contents));
+    if (!parsed?.success) return { defaultRunnerId: undefined, runners: [] };
+    return {
+      defaultRunnerId: parsed.data.defaultRunnerId,
+      runners: parsed.data.runners ?? [],
+    };
+  };
+
+  const write = async (contents: StoreContents): Promise<void> => {
+    const pendingPath = nextPendingPath();
+    await options.fs.mkdir(directory, { recursive: true });
+    await options.fs.writeFile(
+      pendingPath,
+      `${JSON.stringify(contents, undefined, 2)}\n`,
+    );
+    await options.fs.rename(pendingPath, path);
+  };
+
+  const update = async (
+    change: (contents: StoreContents) => StoreContents,
+  ): Promise<void> => {
+    await write(change(await read()));
+  };
+
   return {
-    async clearDefaultRunnerId() {
-      await options.fs.rm(path, { force: true });
+    async forgetRunner(runnerId) {
+      await update((contents) => ({
+        defaultRunnerId:
+          contents.defaultRunnerId === runnerId
+            ? undefined
+            : contents.defaultRunnerId,
+        runners: contents.runners.filter((runner) => runner.id !== runnerId),
+      }));
     },
 
     async readDefaultRunnerId() {
-      // An absent, truncated or hand-edited file means "no default", not a
-      // failure: the caller's next step is to launch a runner either way, and
-      // refusing to run because of a stale cache file would be the worse answer.
-      const contents = await options.fs.readFile(path).catch(() => undefined);
-      if (contents === undefined) return undefined;
-      const parsed = storeSchema.safeParse(parseJson(contents));
-      return parsed.success ? parsed.data.defaultRunnerId : undefined;
+      return (await read()).defaultRunnerId;
     },
 
-    // Written beside the file and renamed over it, so a second invocation
-    // reading in the middle of this one sees the old id or the new one and never
-    // a half-written file. A file that read as unparseable would read as "no
-    // default", and the command that met it would launch and bill a second
-    // runner.
+    async readRunners() {
+      return (await read()).runners;
+    },
+
+    async rememberLaunch(runner) {
+      await update((contents) => ({
+        defaultRunnerId: runner.id,
+        runners: [
+          ...contents.runners.filter((held) => held.id !== runner.id),
+          runner,
+        ],
+      }));
+    },
+
+    async retainRunners(runnerIds) {
+      const running = new Set(runnerIds);
+      await update((contents) => ({
+        ...contents,
+        runners: contents.runners.filter((runner) => running.has(runner.id)),
+      }));
+    },
+
     async writeDefaultRunnerId(runnerId) {
-      const pendingPath = nextPendingPath();
-      await options.fs.mkdir(directory, { recursive: true });
-      await options.fs.writeFile(
-        pendingPath,
-        `${JSON.stringify({ defaultRunnerId: runnerId }, undefined, 2)}\n`,
-      );
-      await options.fs.rename(pendingPath, path);
+      await update((contents) => ({ ...contents, defaultRunnerId: runnerId }));
     },
   };
 }

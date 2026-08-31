@@ -273,6 +273,7 @@ Options:
 
 Commands:
   launch [options]                         Launch an interactive runner and make it this directory's default
+  list                                     List the runners this directory holds that are still running
   terminate [options]                      End an interactive runner, and the pod it runs on with it
   stop-run [options]                       Stop what a runner is currently executing, leaving the runner up
   keepalive [options]                      Reset a runner's inactivity clock, for a caller that pauses between actions
