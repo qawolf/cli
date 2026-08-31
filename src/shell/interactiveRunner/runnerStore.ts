@@ -112,7 +112,9 @@ export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
           return parsed.success ? parsed.data : undefined;
         }),
       );
-      return runners.filter((runner): runner is StoredRunner => !!runner);
+      return runners
+        .filter((runner): runner is StoredRunner => !!runner)
+        .sort((left, right) => left.id.localeCompare(right.id));
     },
 
     async rememberLaunch(runner) {
