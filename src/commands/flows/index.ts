@@ -8,6 +8,7 @@ import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { handleFlowsList } from "~/domains/flows/listDefaults.js";
 import { flowsListRemote } from "~/domains/flows/listRemote.js";
+import { registerFlowsLintCommand } from "./lint.register.js";
 import { registerFlowsPullCommand } from "./pull.register.js";
 import { registerFlowsRunCommand } from "./run.register.js";
 import { registerRunWorkerCommand } from "./runWorker.register.js";
@@ -105,5 +106,6 @@ export function registerFlowsCommand(
       },
     );
 
+  registerFlowsLintCommand(flows, signals);
   registerFlowsPullCommand(flows, signals);
 }

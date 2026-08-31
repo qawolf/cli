@@ -5,8 +5,8 @@ import { join } from "node:path";
 import { makeDefaultFs } from "~/shell/fs.js";
 import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 
-import { formatLintReport } from "./renderLintReport.js";
 import { lintFiles, type LintReport } from "./lintFiles.js";
+import { formatLintReport } from "./renderLintReport.js";
 
 const fs = makeDefaultFs();
 const tracker = makeTmpDirTracker("qawolf-lint-test-");
@@ -29,32 +29,37 @@ async function createProject(
 }
 
 function lint(cwd: string, filePaths: string[]): Promise<LintReport> {
-  return lintFiles({ cwd, filePaths, fs });
+  return lintFiles({
+    cwd,
+    filePaths: filePaths.map((filePath) => join(cwd, filePath)),
+    fs,
+  });
 }
 
 describe("lintFiles", () => {
   it("reports nothing for a clean file", async () => {
     const project = await createProject({
-      "clean.ts": "export const greeting = `hello`;\n",
+      "clean.flow.ts": "export const greeting = `hello`;\n",
     });
 
-    const report = await lint(project, ["clean.ts"]);
+    const report = await lint(project, ["clean.flow.ts"]);
 
     expect(report.errorCount).toBe(0);
     expect(report.warningCount).toBe(0);
     expect(formatLintReport(report)).toBe("");
   });
 
-  it("reports an error with its position and rule", async () => {
+  it("reports an error with its position and rule, against the path as typed", async () => {
     const project = await createProject({
-      "broken.ts": "const value: any = 1;\nexport const doubled = value * 2;\n",
+      "flows/broken.flow.ts":
+        "const value: any = 1;\nexport const doubled = value * 2;\n",
     });
 
-    const report = await lint(project, ["broken.ts"]);
+    const report = await lint(project, ["flows/broken.flow.ts"]);
 
     expect(report.errorCount).toBe(1);
     const output = formatLintReport(report);
-    expect(output).toContain("broken.ts\n  1:14  error");
+    expect(output).toContain("flows/broken.flow.ts\n  1:14  error");
     expect(output).toContain("@typescript-eslint/no-explicit-any");
     expect(output).toContain("1 problem (1 error, 0 warnings)");
   });
@@ -63,11 +68,11 @@ describe("lintFiles", () => {
     const project = await createProject({
       "helper.ts":
         "export type Options = { count: number };\nexport const options: Options = { count: 1 };\n",
-      "uses-helper.ts":
+      "uses-helper.flow.ts":
         'import { type Options, options } from "./helper.js";\n\nexport const count = (options as Options).count;\n',
     });
 
-    const report = await lint(project, ["uses-helper.ts"]);
+    const report = await lint(project, ["uses-helper.flow.ts"]);
 
     expect(report.errorCount).toBeGreaterThan(0);
     expect(formatLintReport(report)).toContain(
@@ -75,35 +80,16 @@ describe("lintFiles", () => {
     );
   });
 
-  it("reports a path that is not a file", async () => {
-    const project = await createProject({});
-
-    const report = await lint(project, ["missing.ts"]);
-
-    expect(report.files).toEqual([
-      { path: "missing.ts", reason: "no such file", type: "unreadable" },
-    ]);
-  });
-
-  it("says a path is a directory rather than claiming it is missing", async () => {
-    const project = await createProject({ "src/flows/a.ts": "export {};\n" });
-
-    const report = await lint(project, ["src"]);
-
-    expect(report.files).toEqual([
-      { path: "src", reason: "is a directory", type: "unreadable" },
-    ]);
-  });
-
   it("applies the severity the team's .eslintrc.json asks for", async () => {
     const project = await createProject({
       ".eslintrc.json": JSON.stringify({
         rules: { "@typescript-eslint/no-explicit-any": "warn" },
       }),
-      "broken.ts": "const value: any = 1;\nexport const doubled = value * 2;\n",
+      "broken.flow.ts":
+        "const value: any = 1;\nexport const doubled = value * 2;\n",
     });
 
-    const report = await lint(project, ["broken.ts"]);
+    const report = await lint(project, ["broken.flow.ts"]);
 
     expect(report.errorCount).toBe(0);
     expect(report.warningCount).toBe(1);
@@ -117,11 +103,15 @@ describe("lintFiles", () => {
       ".eslintrc.json": JSON.stringify({
         rules: { "@typescript-eslint/no-explicit-any": "off" },
       }),
-      "src/flows/broken.ts":
+      "src/flows/broken.flow.ts":
         "const value: any = 1;\nexport const doubled = value * 2;\n",
     });
 
-    const report = await lint(join(project, "src/flows"), ["broken.ts"]);
+    const report = await lintFiles({
+      cwd: join(project, "src/flows"),
+      filePaths: [join(project, "src/flows/broken.flow.ts")],
+      fs,
+    });
 
     expect(report.errorCount).toBe(0);
     expect(formatLintReport(report)).toBe("");
@@ -139,22 +129,22 @@ describe("lintFiles", () => {
     await mkdir(project);
     await writeFile(join(project, "package.json"), "{}");
     await writeFile(
-      join(project, "broken.ts"),
+      join(project, "broken.flow.ts"),
       "const value: any = 1;\nexport const doubled = value * 2;\n",
     );
 
-    const report = await lint(project, ["broken.ts"]);
+    const report = await lint(project, ["broken.flow.ts"]);
 
     expect(report.errorCount).toBe(1);
   });
 
   it("keeps a warning out of the error count", async () => {
     const project = await createProject({
-      "unreachable.ts":
+      "unreachable.flow.ts":
         '/* eslint no-unreachable: "warn" */\nexport function run(): number {\n  return 1;\n  return 2;\n}\n',
     });
 
-    const report = await lint(project, ["unreachable.ts"]);
+    const report = await lint(project, ["unreachable.flow.ts"]);
 
     expect(report.errorCount).toBe(0);
     expect(report.warningCount).toBe(1);

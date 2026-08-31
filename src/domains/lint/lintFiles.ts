@@ -1,4 +1,4 @@
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative } from "node:path";
 
 import type { WorkflowLintMessage } from "@qawolf/workflow-linter";
 import { makeLinter } from "@qawolf/workflow-linter/node-bundle";
@@ -11,9 +11,7 @@ import { eslintrcJsonPath } from "@qawolf/workflow-linter/team-config";
 import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
 import type { Fs } from "~/shell/fs.js";
 
-type LintFileReport =
-  | { path: string; messages: WorkflowLintMessage[]; type: "linted" }
-  | { path: string; reason: string; type: "unreadable" };
+type LintFileReport = { messages: WorkflowLintMessage[]; path: string };
 
 export type LintReport = {
   errorCount: number;
@@ -27,21 +25,21 @@ export async function lintFiles({
   fs,
 }: {
   cwd: string;
-  filePaths: string[];
+  filePaths: readonly string[];
   fs: Fs;
 }): Promise<LintReport> {
   const eslintrcJsonText = await readTeamEslintrcJsonText({
     cwd,
-    filePaths: filePaths.map((filePath) => resolve(cwd, filePath)),
+    filePaths,
     fs,
   });
   const files = await Promise.all(
-    filePaths.map((path) => lintOneFile({ cwd, eslintrcJsonText, fs, path })),
+    filePaths.map((filePath) =>
+      lintOneFile({ cwd, eslintrcJsonText, filePath, fs }),
+    ),
   );
 
-  const messages = files.flatMap((file) =>
-    file.type === "linted" ? file.messages : [],
-  );
+  const messages = files.flatMap((file) => file.messages);
   const errorCount = messages.filter(
     (message) => message.severity === 2,
   ).length;
@@ -54,10 +52,10 @@ async function readTeamEslintrcJsonText({
   fs,
 }: {
   cwd: string;
-  filePaths: string[];
+  filePaths: readonly string[];
   fs: Fs;
 }): Promise<string | undefined> {
-  const projectDir = resolveProjectDirSafe(filePaths, fs);
+  const projectDir = resolveProjectDirSafe([...filePaths], fs);
 
   let directory = cwd;
   while (true) {
@@ -77,35 +75,29 @@ async function readTeamEslintrcJsonText({
 async function lintOneFile({
   cwd,
   eslintrcJsonText,
+  filePath,
   fs,
-  path,
 }: {
   cwd: string;
   eslintrcJsonText: string | undefined;
+  filePath: string;
   fs: Fs;
-  path: string;
 }): Promise<LintFileReport> {
-  const absolutePath = resolve(cwd, path);
-  if (!(await fs.pathExists(absolutePath)))
-    return { path, reason: "no such file", type: "unreadable" };
-  if ((await fs.stat(absolutePath)).isDirectory())
-    return { path, reason: "is a directory", type: "unreadable" };
-
-  const fileContent = await fs.readFile(absolutePath);
+  const fileContent = await fs.readFile(filePath);
   const resolvedFiles = await resolveImportGraph({
     fileContent,
     fileExists: (importPath) => fs.existsSync(importPath),
-    filePath: absolutePath,
+    filePath,
     resolveFileContent: async (importPath) =>
       (await fs.pathExists(importPath)) ? fs.readFile(importPath) : undefined,
   });
 
   const messages = makeLinter({ eslintrcJsonText })
     .verify(fileContent, {
-      filename: absolutePath,
-      program: createTypescriptProgram(resolvedFiles, absolutePath),
+      filename: filePath,
+      program: createTypescriptProgram(resolvedFiles, filePath),
     })
     .filter((message) => message.severity >= 1);
 
-  return { messages, path, type: "linted" };
+  return { messages, path: relative(cwd, filePath) };
 }

@@ -20,8 +20,6 @@ Commands:
                                directory
   install [options] [pattern]  Install every runtime dependency the project's
                                flows need
-  lint <files...>              Lint flow files with QA Wolf's rules, honoring
-                               the project's .eslintrc.json
   runner                       Drive an interactive runner on the QA Wolf
                                platform
   automate [options]           Request automation for draft flows. First create
@@ -169,6 +167,9 @@ Commands:
                             Wolf environment
   list [options] [pattern]  List flows matching [pattern] from the local
                             project, or from a QA Wolf environment with --remote
+  lint [options] [pattern]  Lint flow files matching [pattern], or every flow
+                            when omitted, with QA Wolf's rules, honoring the
+                            project's .eslintrc.json
   pull [options]            Download an environment's flows into the local
                             .qawolf/<env>/ cache
   help [command]            display help for command

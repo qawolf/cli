@@ -15,11 +15,7 @@ export function renderLintReport(ui: UI, report: LintReport): void {
 
 export function formatLintReport(report: LintReport): string {
   const blocks = report.files
-    .map((file) =>
-      file.type === "unreadable"
-        ? ""
-        : formatFileMessages(file.path, file.messages),
-    )
+    .map((file) => formatFileMessages(file.path, file.messages))
     .filter((block) => block !== "");
 
   const problemCount = report.errorCount + report.warningCount;
