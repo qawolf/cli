@@ -62,13 +62,13 @@ describe("makeRunnerStore runners", () => {
     ]);
   });
 
-  it("keeps only the runners it is told are still running", async () => {
+  it("drops only the runners it is told are gone", async () => {
     const store = makeStore();
     await store.rememberLaunch({ id: "ci" });
     await store.rememberLaunch({ id: "review" });
     await store.rememberLaunch({ id: "scratch" });
 
-    await store.retainRunners(["ci", "scratch"]);
+    await store.dropRunners(["review"]);
 
     expect((await store.readRunners()).map((runner) => runner.id)).toEqual([
       "ci",
@@ -76,13 +76,24 @@ describe("makeRunnerStore runners", () => {
     ]);
   });
 
-  // Listing is a read, so it reports what is gone without retargeting the
-  // commands that name a runner.
-  it("leaves the default alone when pruning the runners it names", async () => {
+  it("ignores an id it is told to drop that it never held", async () => {
     const store = makeStore();
     await store.rememberLaunch({ id: "ci" });
 
-    await store.retainRunners([]);
+    await store.dropRunners(["never-launched"]);
+
+    expect((await store.readRunners()).map((runner) => runner.id)).toEqual([
+      "ci",
+    ]);
+  });
+
+  // Listing is a read, so it reports what is gone without retargeting the
+  // commands that name a runner.
+  it("leaves the default alone when dropping the runner it names", async () => {
+    const store = makeStore();
+    await store.rememberLaunch({ id: "ci" });
+
+    await store.dropRunners(["ci"]);
 
     expect(await store.readRunners()).toEqual([]);
     expect(await store.readDefaultRunnerId()).toBe("ci");

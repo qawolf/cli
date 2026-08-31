@@ -204,7 +204,7 @@ describe("handleRunnerLaunch", () => {
           rememberLaunch: async () => {
             throw new Error("EACCES: permission denied, mkdir '/app/.qawolf'");
           },
-          retainRunners: async () => {},
+          dropRunners: async () => {},
           writeDefaultRunnerId: async () => {},
         },
       }),

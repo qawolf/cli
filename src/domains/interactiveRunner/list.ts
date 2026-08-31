@@ -74,6 +74,7 @@ export async function handleRunnerList(
   const { candidates, defaultRunnerId } = await readCandidates(deps);
 
   const running: StoredRunner[] = [];
+  const gone: string[] = [];
   for await (const probe of batchMap(
     candidates,
     (runner) => probeRunner(ctx, runner),
@@ -83,11 +84,10 @@ export async function handleRunnerList(
       return { ...failureFields(probe), exitCode: exitCodes.network };
     }
     if (probe.running) running.push(probe.runner);
+    else gone.push(probe.runner.id);
   }
 
-  await deps.store
-    .retainRunners(running.map((runner) => runner.id))
-    .catch(() => undefined);
+  await deps.store.dropRunners(gone).catch(() => undefined);
 
   const items: RunnerListItem[] = [
     ...running.filter((runner) => runner.id === defaultRunnerId),

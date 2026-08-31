@@ -39,7 +39,7 @@ export type RunnerStore = {
   readDefaultRunnerId: () => Promise<string | undefined>;
   readRunners: () => Promise<StoredRunner[]>;
   rememberLaunch: (runner: StoredRunner) => Promise<void>;
-  retainRunners: (runnerIds: readonly string[]) => Promise<void>;
+  dropRunners: (runnerIds: readonly string[]) => Promise<void>;
   writeDefaultRunnerId: (runnerId: string) => Promise<void>;
 };
 
@@ -121,8 +121,12 @@ export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
       await writeDefaultRunnerId(runner.id);
     },
 
-    async retainRunners(runnerIds) {
-      const running = new Set(runnerIds);
+    async dropRunners(runnerIds) {
+      await Promise.all(
+        runnerIds.map((runnerId) =>
+          options.fs.rm(runnerPath(runnerId), { force: true }),
+        ),
+      );
       const names = await readRunnerFileNames();
       await Promise.all(
         names.map(async (name) => {
@@ -130,11 +134,8 @@ export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
           const contents = await options.fs
             .readFile(runnerFile)
             .catch(() => undefined);
-          const parsed =
-            contents === undefined
-              ? undefined
-              : storedRunnerSchema.safeParse(parseJson(contents));
-          if (parsed?.success && running.has(parsed.data.id)) return;
+          if (contents === undefined) return;
+          if (storedRunnerSchema.safeParse(parseJson(contents)).success) return;
           await options.fs.rm(runnerFile, { force: true });
         }),
       );
