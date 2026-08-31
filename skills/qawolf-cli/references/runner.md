@@ -41,6 +41,15 @@ No `read` command ever launches a runner. `screenshot`, `events` and `keepalive`
 tell you there is no runner rather than quietly billing one, and so does
 `terminate`, since starting a pod in order to end it would be absurd.
 
+`--name` also chooses between a browser and a mobile device:
+`qawolf runner launch --name android` or `--name ios` starts an Appium session
+instead of a browser. A command built for the other kind answers a
+`failureReason` naming the mismatch rather than doing something approximate —
+`runner-is-not-mobile` from `inspect session`/`contexts`/`page-source`/`elements`
+on a browser runner, `runner-is-not-a-browser` from `inspect element-html`/
+`page-html` on a mobile one — so launch the right family up front rather than
+discovering it from a refusal mid-session.
+
 ## Knowing what you are holding
 
 `qawolf runner list` names the runners this directory has launched that are
@@ -138,6 +147,14 @@ taken effect. On a `4` from `act`, take a screenshot before repeating a click.
 looks the same from outside, so treat a `4` from a snippet that changes something
 as "may have run" rather than "did not run".
 
+A mobile runner has a touchscreen, not a mouse, so only three of the eight
+actions have a touchscreen equivalent and go through: `click` with
+`button: "left"` taps, `drag` swipes, and `type` types into whatever the last
+tap focused. The rest — `double_click`, `scroll`, `move`, `keypress`,
+`navigate` — answer `action-not-supported-on-mobile` rather than doing
+something approximate. `navigate` is the one to watch for, since it works on a
+browser runner without a run first but has no meaning on mobile at all.
+
 ## The recorder: what you cannot get from pixels
 
 `qawolf runner events recorder` is the capability that has no equivalent in a
@@ -184,6 +201,44 @@ whatever the runner said. An unreachable runner exits `4` and is worth retrying.
 Use `inspect` before reaching for `exec`. Reading a value through a snippet
 means printing it and then fishing it back out of the `console` stream, which is
 two calls and a marker; `inspect variable` is one call and the value.
+
+## Reading a mobile screen: `inspect session`/`contexts`/`page-source`/`elements`
+
+`element-html`, `page-html` and `variable` are a browser's shapes. A mobile
+runner answers four different ones instead, one subcommand per question:
+
+```sh
+qawolf runner inspect session
+qawolf runner inspect contexts
+qawolf runner inspect page-source
+qawolf runner inspect page-source --context WEBVIEW_1     # a specific context, not the current one
+qawolf runner inspect elements --by point --x 240 --y 480
+qawolf runner inspect elements --by text --text "Sign in" --partial
+```
+
+`session` prints the Appium session's status, and it is the one subcommand that
+never answers `screen-needs-a-run`: readiness is the question it exists to
+answer, so it reports one of `ready` (with the platform, device and session
+id), `unreachable`, `ambiguous` (more than one session is somehow live) or
+`no-session`, rather than refusing until a run has happened. The other three
+need a live session first and share the same readiness contract `act` and
+`screenshot` use on a browser runner: `screen-needs-a-run` exits `2` and means
+no Appium session has started on this runner yet — run a flow that opens one,
+then inspect again; `screen-not-ready` exits `4` and means the session exists
+but did not answer this instant, or more than one is somehow live — retry once,
+and relaunch the runner if it persists.
+
+`elements` takes one of two ways to search, chosen with `--by`: `point` needs
+whole-pixel `--x`/`--y` on the device's own screen, the same coordinates a
+screenshot is measured in; `text` needs `--text` and matches it exactly unless
+`--partial` is passed. `--context` on `page-source` or `elements` reads a
+context other than the current one — useful once `contexts` has told you which
+are available.
+
+A browser runner answers `runner-is-not-mobile` to all four, exit `2`, since
+retrying never helps: launch with `--name android` or `--name ios` instead.
+`runner-unreachable` exits `4` and is worth retrying, same as everywhere else
+on this surface.
 
 ## Checking a selector: `highlight-selector`
 
