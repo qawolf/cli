@@ -4,6 +4,8 @@ import { z } from "zod";
 import { qawolfDir } from "~/core/paths.js";
 import type { Fs } from "~/shell/fs.js";
 
+import { makeStoreLock } from "./runnerStoreLock.js";
+
 /**
  * The runners a workspace has launched, and which one its commands go back to
  * when no flag and no environment variable names one.
@@ -48,13 +50,20 @@ export type RunnerStore = {
   writeDefaultRunnerId: (runnerId: string) => Promise<void>;
 };
 
+let pendingWrites = 0;
+
 export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
   const directory = join(options.cwd, qawolfDir);
   const path = join(directory, storeFileName);
   // Unique per write: two commands writing at once must not share a temp file,
   // or one rename pulls the other's out from under it.
-  let pendingWrites = 0;
   const nextPendingPath = () => `${path}.${process.pid}.${++pendingWrites}.tmp`;
+
+  const withLock = makeStoreLock({
+    directory,
+    fs: options.fs,
+    lockPath: `${path}.lock`,
+  });
 
   const read = async (): Promise<StoreContents> => {
     const contents = await options.fs.readFile(path).catch(() => undefined);
@@ -82,7 +91,7 @@ export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
   const update = async (
     change: (contents: StoreContents) => StoreContents,
   ): Promise<void> => {
-    await write(change(await read()));
+    await withLock(async () => write(change(await read())));
   };
 
   return {

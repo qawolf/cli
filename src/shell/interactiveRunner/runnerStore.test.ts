@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
+import { sleep } from "~/core/sleep.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { makeRunnerStore } from "./runnerStore.js";
@@ -56,19 +57,16 @@ describe("makeRunnerStore", () => {
     await makeStore().forgetRunner("ci");
   });
 
-  // Each write keeps its own temp file, so one write's rename cannot pull the
-  // other's out from under it. The first write is held open until the second
-  // has finished, so the two genuinely overlap.
-  it("survives two writes in flight at once", async () => {
+  it("makes a second write wait for the one already in flight", async () => {
     const fs = makeMemoryFs();
-    let holdFirstWrite: (() => void) | undefined;
+    let releaseFirstWrite: (() => void) | undefined;
     const overlappingFs: typeof fs = {
       ...fs,
       async writeFile(path, data, options) {
         await fs.writeFile(path, data, options);
-        if (holdFirstWrite === undefined && path.endsWith(".tmp")) {
+        if (releaseFirstWrite === undefined && path.endsWith(".tmp")) {
           await new Promise<void>((resolve) => {
-            holdFirstWrite = resolve;
+            releaseFirstWrite = resolve;
           });
         }
       },
@@ -76,11 +74,20 @@ describe("makeRunnerStore", () => {
     const store = makeRunnerStore({ cwd, fs: overlappingFs });
 
     const first = store.writeDefaultRunnerId("first");
-    await store.writeDefaultRunnerId("second");
-    holdFirstWrite?.();
-    await first;
+    await sleep(10);
+    const second = store.writeDefaultRunnerId("second");
 
-    expect(await store.readDefaultRunnerId()).toBe("first");
+    expect(
+      await Promise.race([
+        second.then(() => "finished" as const),
+        sleep(50).then(() => "still waiting" as const),
+      ]),
+    ).toBe("still waiting");
+
+    releaseFirstWrite?.();
+    await Promise.all([first, second]);
+
+    expect(await store.readDefaultRunnerId()).toBe("second");
   });
 
   // A stale cache file is not a reason to refuse to run: the caller's next step

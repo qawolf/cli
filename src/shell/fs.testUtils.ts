@@ -6,6 +6,7 @@ import {
   childNames,
   joinPath,
   requireParent,
+  throwExistsError,
   throwNoEntError,
   throwNotDirError,
   toKey,
@@ -20,7 +21,11 @@ export function makeMemoryFs(): Fs {
   return {
     async mkdir(rawPath, opts) {
       const path = toKey(rawPath);
-      if (!opts?.recursive) requireParent(dirs, path, rawPath, "mkdir");
+      if (!opts?.recursive) {
+        requireParent(dirs, path, rawPath, "mkdir");
+        if (dirs.has(path) || files.has(path))
+          throwExistsError(rawPath, "mkdir");
+      }
       dirs.add(path);
       if (opts?.recursive) addParents(dirs, path);
     },
