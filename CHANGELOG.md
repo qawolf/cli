@@ -1,5 +1,12 @@
 # @qawolf/cli
 
+## 1.18.0
+
+### Minor Changes
+
+- b19e8b6: `flows list --remote --json` now includes each flow's `url`, the flow page on the platform. The agent skill explains that a flow gets a platform page only once it is on the environment's flow code branch and how to land it there.
+- 87dbe54: `qawolf runner list` names the runners a directory holds that are still running, and marks the one a command with no `--runner` would reach. Every runner is looked up before it is listed, so one that idled out is absent rather than reported, and the lookup neither starts a runner nor resets an inactivity clock.
+
 ## 1.17.1
 
 ### Patch Changes
