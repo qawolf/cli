@@ -46,7 +46,7 @@ tell you there is no runner rather than quietly billing one, and so does
 `qawolf runner list` names the runners this directory has launched that are
 still running, and marks the one a command with no `--runner` would reach:
 
-```
+```text
 id                   family      default
 tester-abc-main      playwright  yes
 tester-abc-checkout  playwright
