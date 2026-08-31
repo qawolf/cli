@@ -1,10 +1,6 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
-import {
-  type BrowserActionFlags,
-  buildBrowserAction,
-  parseBrowserAction,
-} from "~/core/interactiveRunner/browserAction.js";
+import type { BrowserActionFlags } from "~/core/interactiveRunner/browserAction.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
   AuthCommandContext,
@@ -15,36 +11,9 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { describePerformActionFailure } from "./performActionFailure.js";
+import { readAction } from "./readAction.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
-
-/** `-` reads a whole action as JSON, which is the forward-a-tool-call path. */
-const stdinArgument = "-";
-
-async function readAction(
-  type: string,
-  flags: BrowserActionFlags,
-  deps: InteractiveRunnerDeps,
-): Promise<ReturnType<typeof buildBrowserAction>> {
-  if (type !== stdinArgument) return buildBrowserAction(type, flags);
-
-  // Refused rather than ignored, for the same reason `act click --text hi` is:
-  // a flag that does not reach the runner has to be answered, because dropping
-  // it performs a different action than the one that was asked for.
-  if (Object.values(flags).some((value) => value !== undefined)) {
-    return { error: interactiveRunnerMessages.actionFlagsWithStdin, ok: false };
-  }
-
-  const piped = (await deps.readStdin()).trim();
-  if (piped === "") {
-    return { error: interactiveRunnerMessages.stdinEmptyAction, ok: false };
-  }
-  try {
-    return parseBrowserAction(JSON.parse(piped));
-  } catch {
-    return { error: interactiveRunnerMessages.actionNotJson, ok: false };
-  }
-}
 
 /**
  * Performs one raw browser action.

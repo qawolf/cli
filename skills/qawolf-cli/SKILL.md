@@ -155,13 +155,17 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf run find` | read | List an environment's recent runs, newest first. |
 | `qawolf run get` | read | Get a run's status, per-flow results, and links. |
 | `qawolf run reattempt` | write | Request new attempts for a run's flows, in the same run. A flow is eligible once its result is failed or canceled and QA Wolf's automatic retries have finished. A fully investigated run no longer accepts reattempts. Attempts run with the latest flow code. Poll run.get for results. |
-| `qawolf runner act` | write | Perform one raw action on a runner's screen: click, double_click, scroll, move, drag, keypress, navigate or type. Use - to read a whole action as JSON from stdin |
+| `qawolf runner act` | write | Perform one raw action on a runner's screen: click, double_click, scroll, move, drag, keypress, navigate or type. Use - to read a whole action as JSON from stdin. On a mobile runner only click (button left), drag and type have a touchscreen equivalent; the rest answer action-not-supported-on-mobile |
 | `qawolf runner events` | read | Print a runner's journal, one entry per line. QA Wolf writes console, recorder, run-events, run-logs, run-status |
 | `qawolf runner exec` | write | Evaluate a snippet against a runner's live page. Use - to read the snippet from stdin |
 | `qawolf runner highlight-selector` | write | Highlight what a selector matches on a runner's live page, so the next screenshot shows it. Omit the selector to clear the highlight |
 | `qawolf runner import-package` | write | Install a package into a runner's live run, so a snippet or a selection can import it |
+| `qawolf runner inspect contexts` | read | List the WebView contexts available, and which is current |
 | `qawolf runner inspect element-html` | read | Print the HTML of the first element a selector matches |
+| `qawolf runner inspect elements` | read | Find elements at a screen point, or elements carrying some text |
 | `qawolf runner inspect page-html` | read | Print the page's HTML, simplified for a model to read |
+| `qawolf runner inspect page-source` | read | Print the current context's page source, as a tree |
+| `qawolf runner inspect session` | read | Print the Appium session's status: ready, or why not |
 | `qawolf runner inspect variable` | read | Print a top-level variable's value from the running workflow |
 | `qawolf runner keepalive` | read | Reset a runner's inactivity clock, for a caller that pauses between actions |
 | `qawolf runner launch` | write | Launch an interactive runner and make it this directory's default |

@@ -26,6 +26,10 @@ export const interactMessages = {
     `The runner had nothing to inspect${errorMessage === undefined ? "" : `: ${errorMessage}`}. There is no live page, nothing matched the selector, or no variable has that name; a runner cannot tell those apart. Run a flow on it first, or check the selector or name.`,
   inspectAnsweredUnknown: (failureReason: string) =>
     `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
+  inspectMobileAnsweredUnknown: (failureReason: string) =>
+    `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
+  runnerIsNotMobile:
+    "This runner is not a mobile device, so there is nothing here to inspect. Retrying will never help: launch an android or ios runner instead.",
   screenNeedsARun:
     "This runner has not run anything yet, so its screen has never started. Waiting will not clear this and there is nothing to retry: run a flow on it with qawolf runner run, then ask again. Evaluating a snippet does not start a screen.",
   screenNotReady:

@@ -134,6 +134,22 @@ describe("--help output", () => {
     expect(helpFor("runner", "inspect", "variable")).toMatchSnapshot();
   });
 
+  it("qawolf runner inspect session", () => {
+    expect(helpFor("runner", "inspect", "session")).toMatchSnapshot();
+  });
+
+  it("qawolf runner inspect contexts", () => {
+    expect(helpFor("runner", "inspect", "contexts")).toMatchSnapshot();
+  });
+
+  it("qawolf runner inspect page-source", () => {
+    expect(helpFor("runner", "inspect", "page-source")).toMatchSnapshot();
+  });
+
+  it("qawolf runner inspect elements", () => {
+    expect(helpFor("runner", "inspect", "elements")).toMatchSnapshot();
+  });
+
   it("qawolf runner exec", () => {
     expect(helpFor("runner", "exec")).toMatchSnapshot();
   });
@@ -166,6 +182,10 @@ describe("--help output", () => {
       ["runner", "inspect", "element-html"],
       ["runner", "inspect", "page-html"],
       ["runner", "inspect", "variable"],
+      ["runner", "inspect", "session"],
+      ["runner", "inspect", "contexts"],
+      ["runner", "inspect", "page-source"],
+      ["runner", "inspect", "elements"],
     ];
     for (const path of paths) {
       expect(helpFor(...path)).not.toContain("—");

@@ -69,14 +69,20 @@ export function registerRunnerInteractCommands(
   // caller forwards its model's tool call rather than translating it.
   declareCommandKind(runner.command("act <action>"), "write")
     .description(
-      "Perform one raw action on a runner's screen: click, double_click, scroll, move, drag, keypress, navigate or type. Use - to read a whole action as JSON from stdin",
+      "Perform one raw action on a runner's screen: click, double_click, scroll, move, drag, keypress, navigate or type. Use - to read a whole action as JSON from stdin. On a mobile runner only click (button left), drag and type have a touchscreen equivalent; the rest answer action-not-supported-on-mobile",
     )
-    .option("--button <button>", "click: left, right, wheel, back or forward")
+    .option(
+      "--button <button>",
+      "click: left, right, wheel, back or forward (mobile: left only)",
+    )
     .option(
       "--keys <keys...>",
       "keypress: modifiers and the key, e.g. Control a",
     )
-    .option("--path <json>", "drag: JSON array of points to drag through")
+    .option(
+      "--path <json>",
+      "drag: JSON array of points to drag through (mobile: only the first and last are used)",
+    )
     .option("--runner <id>", runnerFlagDescription)
     .option("--scroll-x <delta>", "scroll: horizontal wheel delta")
     .option("--scroll-y <delta>", "scroll: vertical wheel delta")
