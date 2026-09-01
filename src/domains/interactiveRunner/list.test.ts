@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { callsOf } from "~/domains/runner/run.fixtures.js";
+import { callsOf } from "~/shell/commandContext.testUtils.js";
 
 import { handleRunnerList } from "./list.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";

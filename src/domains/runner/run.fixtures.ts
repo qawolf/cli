@@ -141,6 +141,6 @@ export function failResult(
   };
 }
 
-// Re-exported from the shell layer so existing runner tests keep their import
-// while flows tests can reach it without crossing a domain boundary.
+// Re-exported from the shell layer so runner tests take every fixture from
+// this one module; other domains import it from the shell helper directly.
 export { callsOf } from "~/shell/commandContext.testUtils.js";
