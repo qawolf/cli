@@ -19,7 +19,12 @@ export type FlowStamp = {
 
 export type Manifest = {
   envId: string;
+  // The environment's alias and display name at pull time. Both optional: a
+  // terminated environment has no alias, and the interactive picker may not
+  // supply one. A slug can be renamed on the platform, so it identifies a
+  // pulled copy for convenience — `envId` stays the source of truth.
   envSlug: string | undefined;
+  envName: string | undefined;
   fetchedAt: string;
   envVarsFetchedAt: string | undefined;
   cliFlowsVersion: string;

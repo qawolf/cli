@@ -25,7 +25,13 @@ type Args = {
 export function withResolvedEnv(
   signals: SignalRegistry,
   args: Args,
-  fn: (ctx: AuthCommandContext, env: string) => Promise<CommandResult>,
+  fn: (
+    ctx: AuthCommandContext,
+    env: string,
+    // Slug and display name when resolution learned them. Callers that only
+    // need the id can ignore it.
+    identity: { slug: string | undefined; name: string | undefined },
+  ) => Promise<CommandResult>,
 ): (opts: unknown, command: Command) => Promise<void> {
   return (opts, command) => {
     // The picker is the only resolution path that needs the platform. A
@@ -59,7 +65,10 @@ export function withResolvedEnv(
       if (outcome.kind === "error") {
         return failureFields(outcome);
       }
-      return fn(ctx, outcome.env);
+      return fn(ctx, outcome.env, {
+        slug: outcome.slug,
+        name: outcome.name,
+      });
     })(opts, command);
   };
 }

@@ -45,7 +45,13 @@ export function registerFlowsPullCommand(
       return withResolvedEnv(
         signals,
         { explicit: opts.env, requiredMessage: flowsMessages.pull.requiresEnv },
-        (ctx, env) => handleFlowsPull(ctx, { ...opts, env }),
+        (ctx, env, identity) =>
+          handleFlowsPull(ctx, {
+            ...opts,
+            env,
+            envSlug: identity.slug,
+            envName: identity.name,
+          }),
       )(opts, command);
     });
 }

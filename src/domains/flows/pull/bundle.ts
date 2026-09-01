@@ -62,6 +62,8 @@ export type FetchedTags = {
 export async function buildManifest(
   args: {
     envId: string;
+    envSlug?: string | undefined;
+    envName?: string | undefined;
     bundleDir: string;
     cliFlowsVersion: string;
     now: Date;
@@ -88,7 +90,8 @@ export async function buildManifest(
 
   return {
     envId: args.envId,
-    envSlug: undefined,
+    envSlug: args.envSlug,
+    envName: args.envName,
     fetchedAt: args.now.toISOString(),
     envVarsFetchedAt: args.envVarsFetchedAt?.toISOString(),
     cliFlowsVersion: args.cliFlowsVersion,

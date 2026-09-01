@@ -20,6 +20,7 @@ const flowEntrySchema = z.object({
 const manifestSchema = z.object({
   envId: z.string(),
   envSlug: z.string().optional(),
+  envName: z.string().optional(),
   fetchedAt: z.string(),
   envVarsFetchedAt: z.string().optional(),
   cliFlowsVersion: z.string(),
@@ -58,6 +59,7 @@ export async function readManifest(
   return {
     envId: result.data.envId,
     envSlug: result.data.envSlug,
+    envName: result.data.envName,
     fetchedAt: result.data.fetchedAt,
     envVarsFetchedAt: result.data.envVarsFetchedAt,
     cliFlowsVersion: result.data.cliFlowsVersion,

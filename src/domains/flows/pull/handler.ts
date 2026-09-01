@@ -15,6 +15,10 @@ import { stageBundle } from "./stage.js";
 
 export type FlowsPullOptions = {
   readonly env: string;
+  /** Alias and display name of the env, recorded so a pulled cache is
+   * recognisable without the platform. */
+  readonly envSlug?: string | undefined;
+  readonly envName?: string | undefined;
   readonly out?: string;
   readonly yes?: boolean;
 };
@@ -82,6 +86,8 @@ export async function handleFlowsPull(
                 destAbs,
                 assetsAbs,
                 envId: opts.env,
+                envSlug: opts.envSlug,
+                envName: opts.envName,
                 cliFlowsVersion: resolvedDeps.flowsVersion,
                 now: fetched.bundleFetchedAt,
                 envVars: fetched.envVars,

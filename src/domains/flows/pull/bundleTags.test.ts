@@ -28,6 +28,8 @@ async function stage(names: string[]): Promise<void> {
 
 const baseArgs = () => ({
   envId: "env-x",
+  envSlug: undefined,
+  envName: undefined,
   bundleDir: workDir,
   cliFlowsVersion: "0.4.0",
   now: new Date("2026-05-10T12:00:00.000Z"),
@@ -106,6 +108,8 @@ describe("stageBundle tag preservation", () => {
       destAbs: dest,
       assetsAbs: join(workDir, "assets"),
       envId: "env-x",
+      envSlug: undefined,
+      envName: undefined,
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: {},
@@ -124,6 +128,8 @@ describe("stageBundle tag preservation", () => {
       destAbs: dest,
       assetsAbs: join(workDir, "assets"),
       envId: "env-x",
+      envSlug: undefined,
+      envName: undefined,
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-11T12:00:00.000Z"),
       envVars: {},
@@ -189,5 +195,32 @@ describe("stageBundle tag preservation", () => {
     const manifest = await readManifest(dest);
     if (typeof manifest === "string") throw new Error(manifest);
     expect(manifest.flows[0]?.tags).toEqual(["auth"]);
+  });
+});
+
+describe("buildManifest environment identity", () => {
+  it("records the slug and name so the env is recognisable offline", async () => {
+    await stage(["src/flows/a.flow.ts"]);
+
+    const manifest = await buildManifest({
+      ...baseArgs(),
+      envSlug: "debugging-beats",
+      envName: "Debugging Beats",
+    });
+
+    expect(manifest.envId).toBe("env-x");
+    expect(manifest.envSlug).toBe("debugging-beats");
+    expect(manifest.envName).toBe("Debugging Beats");
+  });
+
+  // A terminated environment has no alias, and the interactive picker may not
+  // supply one, so both stay optional rather than inventing a value.
+  it("leaves them unset when the caller has neither", async () => {
+    await stage(["src/flows/a.flow.ts"]);
+
+    const manifest = await buildManifest(baseArgs());
+
+    expect(manifest.envSlug).toBeUndefined();
+    expect(manifest.envName).toBeUndefined();
   });
 });

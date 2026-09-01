@@ -14,7 +14,14 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-1" });
+    // The display name rides along so a pull can record which environment a
+    // cache directory holds; this fixture has no alias, hence slug undefined.
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-1",
+      slug: undefined,
+      name: "Staging",
+    });
     expect(getEnvironment).toHaveBeenCalledWith({ environmentId: "staging" });
     expect(findEnvironments).not.toHaveBeenCalled();
   });
@@ -38,7 +45,12 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-1" });
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-1",
+      slug: undefined,
+      name: "Staging",
+    });
     expect(info).not.toHaveBeenCalled();
   });
 
@@ -53,7 +65,12 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-2" });
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-2",
+      slug: undefined,
+      name: "Prod",
+    });
     expect(getEnvironment).toHaveBeenCalledWith({ environmentId: "prod" });
     expect(info).toHaveBeenCalledWith(
       "Using environment from QAWOLF_ENVIRONMENT (prod)",
@@ -134,6 +151,8 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
+    // The picker resolves an id only, so a pull started this way records no
+    // slug — the manifest keeps both fields optional for exactly this case.
     expect(outcome).toEqual({ kind: "resolved", env: "env-2" });
     expect(select).toHaveBeenCalledTimes(1);
     expect(select).toHaveBeenCalledWith("Which environment?", [

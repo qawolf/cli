@@ -16,7 +16,14 @@ type FindOutput = z.output<typeof findContract.output>;
 type GetOutput = z.output<typeof getContract.output>;
 
 export type ResolveEnvironmentOutcome =
-  | { kind: "resolved"; env: string }
+  | {
+      kind: "resolved";
+      env: string;
+      // Carried so a pull can record which environment a cache directory
+      // holds. Absent where the resolution path did not learn them.
+      slug?: string | undefined;
+      name?: string | undefined;
+    }
   | { kind: "cancelled" }
   | { kind: "error"; error: string; errorBody?: string };
 
@@ -90,5 +97,10 @@ async function resolveRef(
   if (result.value.id !== ref) {
     deps.ui.info(environmentsMessages.resolvedAlias(ref, result.value.id));
   }
-  return { kind: "resolved", env: result.value.id };
+  return {
+    kind: "resolved",
+    env: result.value.id,
+    slug: result.value.alias ?? undefined,
+    name: result.value.name,
+  };
 }

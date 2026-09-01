@@ -36,6 +36,7 @@ async function stageEnv(
 const sampleManifest: Manifest = {
   envId: "env-abc",
   envSlug: undefined,
+  envName: undefined,
   fetchedAt: "2026-05-10T12:00:00.000Z",
   cliFlowsVersion: "0.1.0",
   qawolfCommitSha: undefined,

@@ -14,6 +14,7 @@ const flowB = `${envDir}/src/flows/b.flow.ts`;
 const manifest = (over: Partial<Manifest>): Manifest => ({
   envId: "env-1",
   envSlug: undefined,
+  envName: undefined,
   fetchedAt: "2026-05-10T12:00:00.000Z",
   envVarsFetchedAt: undefined,
   cliFlowsVersion: "0.1.0",

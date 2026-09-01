@@ -21,6 +21,8 @@ type StageBundleArgs = {
   destAbs: string;
   assetsAbs: string;
   envId: string;
+  envSlug: string | undefined;
+  envName: string | undefined;
   cliFlowsVersion: string;
   now: Date;
   envVars: Record<string, string>;
@@ -69,6 +71,8 @@ export async function stageBundle(
       {
         envId: args.envId,
         tags: args.tags ?? (await carriedTags(args.destAbs, fs)),
+        envSlug: args.envSlug,
+        envName: args.envName,
         bundleDir: tmpDir,
         cliFlowsVersion: args.cliFlowsVersion,
         now: args.now,

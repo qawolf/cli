@@ -18,6 +18,7 @@ const envDir = "/qawolf/manifest-test";
 const sample: Manifest = {
   envId: "env-abc",
   envSlug: "staging",
+  envName: undefined,
   fetchedAt: "2026-05-10T12:00:00.000Z",
   cliFlowsVersion: "0.1.0",
   qawolfCommitSha: "c67b5b6ff48766ca3cd72ceb4037e95c49633725",
@@ -129,6 +130,7 @@ describe("writeManifest", () => {
     const minimal: Manifest = {
       envId: "env-min",
       envSlug: undefined,
+      envName: undefined,
       fetchedAt: "2026-05-10T12:00:00.000Z",
       cliFlowsVersion: "0.1.0",
       qawolfCommitSha: undefined,
