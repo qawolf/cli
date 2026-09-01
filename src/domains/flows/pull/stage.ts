@@ -1,3 +1,4 @@
+import { toPosix } from "~/core/repoRelativePath.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import { readManifest, writeManifest } from "~/shell/manifest/io.js";
 import {
@@ -122,7 +123,10 @@ async function carriedTags(
 
   const byPath = new Map<string, string[]>();
   for (const flow of previous.flows) {
-    if (flow.tags !== undefined) byPath.set(flow.path, [...flow.tags]);
+    // A manifest written by an older CLI on win32 may hold `\` paths; the new
+    // manifest looks entries up by posix path, so normalize or the carried
+    // tags never match and vanish silently.
+    if (flow.tags !== undefined) byPath.set(toPosix(flow.path), [...flow.tags]);
   }
   return { fetchedAt: new Date(previous.tagsFetchedAt), byPath };
 }
