@@ -14,6 +14,7 @@ import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
+import { describeEvaluateSnippetFailure } from "./evaluateSnippetFailure.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
@@ -115,11 +116,7 @@ export async function handleRunnerExec(
   }
 
   if (result.value.outcome === "failure") {
-    result.value.failureReason satisfies "runner-unreachable";
-    return {
-      error: interactiveRunnerMessages.runnerHasNoScreenToEvaluate,
-      exitCode: exitCodes.network,
-    };
+    return describeEvaluateSnippetFailure(result.value);
   }
 
   switch (result.value.result) {
