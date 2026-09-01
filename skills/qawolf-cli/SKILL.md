@@ -140,7 +140,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf environment update` | write | Update an environment owned by the caller's team and return it in the environment.get shape. Omitted fields remain unchanged. |
 | `qawolf flow addTag` | write | Assign an existing tag to the selected flows. Create tags with tag.create. |
 | `qawolf flow update` | write | Move a flow between draft and active readiness. The other statuses shown in the app are derived and cannot be set. |
-| `qawolf flows lint` | local | Lint flow files matching [pattern], or every flow when omitted, with QA Wolf's rules, honoring the project's .eslintrc.json |
+| `qawolf flows lint` | local | Lint source files matching [pattern], or every .ts/.js file when omitted, with QA Wolf's rules, honoring the project's .eslintrc.json |
 | `qawolf flows list` | local (read with --remote) | List flows matching [pattern] from the local project, or from a QA Wolf environment with --remote |
 | `qawolf flows pull` | read | Download an environment's flows into the local .qawolf/<env>/ cache |
 | `qawolf flows run` | local (read with --env) | Run flows matching [pattern], or every flow when omitted; with --env, pull missing flows from that QA Wolf environment |

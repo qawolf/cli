@@ -10,9 +10,10 @@ const lintExamples = `
 Examples:
   $ qawolf flows lint
   $ qawolf flows lint "flows/checkout/**"
+  $ qawolf flows lint "src/pages/**/*.ts"
   $ qawolf flows lint flows/login.flow.ts
 
-Exits 1 when a flow has a lint error, and 0 when every flow is clean or only
+Exits 1 when a file has a lint error, and 0 when every file is clean or only
 has warnings.`;
 
 export function registerFlowsLintCommand(
@@ -21,11 +22,11 @@ export function registerFlowsLintCommand(
 ): void {
   declareCommandKind(flows.command("lint [pattern]"), "local")
     .description(
-      "Lint flow files matching [pattern], or every flow when omitted, with QA Wolf's rules, honoring the project's .eslintrc.json",
+      "Lint source files matching [pattern], or every .ts/.js file when omitted, with QA Wolf's rules, honoring the project's .eslintrc.json",
     )
     .option(
       "--allow-no-match",
-      "Exit 0 instead of 2 when the pattern selects no flow",
+      "Exit 0 instead of 2 when the pattern selects no lintable file",
       false,
     )
     .addHelpText("after", lintExamples)

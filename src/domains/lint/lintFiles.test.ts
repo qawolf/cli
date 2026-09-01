@@ -5,7 +5,11 @@ import { join } from "node:path";
 import { makeDefaultFs } from "~/shell/fs.js";
 import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 
-import { lintFiles, type LintReport } from "./lintFiles.js";
+import {
+  lintFiles,
+  selectLintableFiles,
+  type LintReport,
+} from "./lintFiles.js";
 import { formatLintReport } from "./renderLintReport.js";
 
 const fs = makeDefaultFs();
@@ -149,5 +153,34 @@ describe("lintFiles", () => {
     expect(report.errorCount).toBe(0);
     expect(report.warningCount).toBe(1);
     expect(formatLintReport(report)).toContain("no-unreachable");
+  });
+});
+
+describe("selectLintableFiles", () => {
+  it("keeps .ts and .js files, including declaration files", () => {
+    expect(
+      selectLintableFiles([
+        "/project/flows/login.flow.ts",
+        "/project/src/pages/LoginPage.ts",
+        "/project/scripts/seed.js",
+        "/project/types/globals.d.ts",
+      ]),
+    ).toEqual([
+      "/project/flows/login.flow.ts",
+      "/project/src/pages/LoginPage.ts",
+      "/project/scripts/seed.js",
+      "/project/types/globals.d.ts",
+    ]);
+  });
+
+  it("drops files the linter cannot parse as source", () => {
+    expect(
+      selectLintableFiles([
+        "/project/data/fixture.json",
+        "/project/README.md",
+        "/project/flows/login.flow.tsx",
+        "/project/Makefile",
+      ]),
+    ).toEqual([]);
   });
 });

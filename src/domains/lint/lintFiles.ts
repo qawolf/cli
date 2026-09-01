@@ -1,4 +1,4 @@
-import { dirname, join, relative } from "node:path";
+import { dirname, extname, join, relative } from "node:path";
 
 import type { WorkflowLintMessage } from "@qawolf/workflow-linter";
 import { makeLinter } from "@qawolf/workflow-linter/node-bundle";
@@ -18,6 +18,18 @@ export type LintReport = {
   files: LintFileReport[];
   warningCount: number;
 };
+
+export const lintablePattern = "**/*.{ts,js}";
+
+const lintableExtensions = new Set([".js", ".ts"]);
+
+export function selectLintableFiles(
+  filePaths: readonly string[],
+): readonly string[] {
+  return filePaths.filter((filePath) =>
+    lintableExtensions.has(extname(filePath)),
+  );
+}
 
 export async function lintFiles({
   cwd,

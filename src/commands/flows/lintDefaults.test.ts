@@ -45,12 +45,14 @@ function writtenText(ctx: ReturnType<typeof makeCtx>): string {
 }
 
 describe("handleFlowsLint", () => {
-  it("lints every flow in the project when no pattern is given", async () => {
+  it("lints every source file in the project when no pattern is given", async () => {
     await inProject(
       {
         "flows/broken.flow.ts": brokenFlow,
         "flows/nested/also-broken.flow.ts": brokenFlow,
-        "not-a-flow.ts": brokenFlow,
+        "helpers/not-a-flow.ts": brokenFlow,
+        "src/pages/LoginPage.ts": brokenFlow,
+        "data/fixture.json": '{ "value": 1 }\n',
         "node_modules/dep/dep.flow.ts": brokenFlow,
       },
       async () => {
@@ -61,7 +63,7 @@ describe("handleFlowsLint", () => {
         });
 
         expect(result).toEqual({
-          error: "2 lint errors found",
+          error: "4 lint errors found",
           exitCode: exitCodes.testFailure,
         });
         const output = writtenText(ctx);
@@ -69,13 +71,60 @@ describe("handleFlowsLint", () => {
         expect(output).toContain(
           join("flows", "nested", "also-broken.flow.ts"),
         );
-        expect(output).not.toContain("not-a-flow.ts");
+        expect(output).toContain(join("helpers", "not-a-flow.ts"));
+        expect(output).toContain(join("src", "pages", "LoginPage.ts"));
+        expect(output).not.toContain("fixture.json");
         expect(output).not.toContain("dep.flow.ts");
       },
     );
   });
 
-  it("lints only the flows a pattern selects", async () => {
+  it("ignores the files a pattern matches that are not lintable", async () => {
+    await inProject(
+      {
+        "flows/broken.flow.ts": brokenFlow,
+        "flows/fixture.json": '{ "value": 1 }\n',
+      },
+      async () => {
+        const ctx = makeCtx("human", { fs: makeDefaultFs() });
+
+        const result = await handleFlowsLint(ctx, "flows/*", {
+          allowNoMatch: false,
+        });
+
+        expect(result).toEqual({
+          error: "1 lint error found",
+          exitCode: exitCodes.testFailure,
+        });
+        expect(writtenText(ctx)).not.toContain("fixture.json");
+      },
+    );
+  });
+
+  it("treats a pattern that matches only unlintable files as no match", async () => {
+    await inProject(
+      {
+        "flows/broken.flow.ts": brokenFlow,
+        "data/fixture.json": '{ "value": 1 }\n',
+      },
+      async () => {
+        const ctx = makeCtx("human", { fs: makeDefaultFs() });
+
+        const result = await handleFlowsLint(ctx, "data/**", {
+          allowNoMatch: false,
+        });
+
+        expect(result).toEqual({
+          error:
+            "No lintable source files matched 'data/**'. Pass --allow-no-match to exit 0 instead.",
+          exitCode: exitCodes.invalidArgs,
+        });
+        expect(ctx.ui.write).not.toHaveBeenCalled();
+      },
+    );
+  });
+
+  it("lints only the files a pattern selects", async () => {
     await inProject(
       {
         "flows/checkout/pay.flow.ts": brokenFlow,
@@ -97,7 +146,7 @@ describe("handleFlowsLint", () => {
     );
   });
 
-  it("succeeds without output when every flow is clean", async () => {
+  it("succeeds without output when every file is clean", async () => {
     await inProject({ "flows/clean.flow.ts": cleanFlow }, async () => {
       const ctx = makeCtx("human", { fs: makeDefaultFs() });
 
@@ -110,7 +159,7 @@ describe("handleFlowsLint", () => {
     });
   });
 
-  it("succeeds when a flow only has warnings", async () => {
+  it("succeeds when a file only has warnings", async () => {
     await inProject(
       {
         ".eslintrc.json": JSON.stringify({
@@ -142,7 +191,7 @@ describe("handleFlowsLint", () => {
     });
   });
 
-  it("fails when the pattern selects no flow", async () => {
+  it("fails when the pattern selects no file", async () => {
     await inProject({ "flows/clean.flow.ts": cleanFlow }, async () => {
       const ctx = makeCtx("human", { fs: makeDefaultFs() });
 
@@ -152,7 +201,7 @@ describe("handleFlowsLint", () => {
 
       expect(result).toEqual({
         error:
-          "No flows matched 'flows/checkout/**'. Pass --allow-no-match to exit 0 instead.",
+          "No lintable source files matched 'flows/checkout/**'. Pass --allow-no-match to exit 0 instead.",
         exitCode: exitCodes.invalidArgs,
       });
     });
@@ -167,7 +216,9 @@ describe("handleFlowsLint", () => {
       });
 
       expect(result).toBeUndefined();
-      expect(ctx.ui.info).toHaveBeenCalledWith("No flows matched.");
+      expect(ctx.ui.info).toHaveBeenCalledWith(
+        "No lintable source files matched.",
+      );
     });
   });
 });

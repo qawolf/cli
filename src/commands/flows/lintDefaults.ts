@@ -1,8 +1,12 @@
-import { runnerMessages } from "~/core/messages/index.js";
+import { lintMessages } from "~/core/messages/index.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { pluralize } from "~/core/pluralize.js";
 import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
-import { lintFiles as defaultLintFiles } from "~/domains/lint/lintFiles.js";
+import {
+  lintFiles as defaultLintFiles,
+  lintablePattern,
+  selectLintableFiles,
+} from "~/domains/lint/lintFiles.js";
 import { renderLintReport } from "~/domains/lint/renderLintReport.js";
 import { noMatchResult } from "~/domains/runner/noMatch.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
@@ -38,16 +42,17 @@ export async function handleFlowsLint(
   const resolvedDeps = deps ?? makeDefaultDeps(ctx.fs);
   const cwd = process.cwd();
 
-  const files = await resolvedDeps.expandPatterns(
-    buildPatternArgs(pattern),
+  const matched = await resolvedDeps.expandPatterns(
+    buildPatternArgs(pattern ?? lintablePattern),
     cwd,
     ctx.log("flows"),
   );
+  const files = selectLintableFiles(matched);
   if (files.length === 0) {
     return noMatchResult(ctx, {
       allowNoMatch: flags.allowNoMatch,
-      error: runnerMessages.noFlowsMatchedPattern(pattern),
-      notice: runnerMessages.noFlowsMatched,
+      error: lintMessages.noFilesMatchedPattern(pattern),
+      notice: lintMessages.noFilesMatched,
     });
   }
 
