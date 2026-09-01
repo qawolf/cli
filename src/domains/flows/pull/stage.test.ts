@@ -58,9 +58,10 @@ describe("stageBundle", () => {
     if (manifest === "missing" || manifest === "malformed") {
       throw new Error("manifest should be present");
     }
+    // Manifest paths are written in posix form on every host.
     expect(manifest.flows.map((f) => f.path).sort()).toEqual([
       "checkout.flow.ts",
-      join("nested", "login.flow.ts"),
+      "nested/login.flow.ts",
     ]);
   });
 

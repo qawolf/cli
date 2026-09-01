@@ -49,9 +49,7 @@ describe("buildManifest tags", () => {
     const manifest = await buildManifest({ ...baseArgs(), tags: undefined });
 
     expect(manifest.tagsFetchedAt).toBeUndefined();
-    expect(
-      entryFor(manifest, join("src", "flows", "a.flow.ts"))?.tags,
-    ).toBeUndefined();
+    expect(entryFor(manifest, "src/flows/a.flow.ts")?.tags).toBeUndefined();
   });
 
   it("records the fetched tags against each flow", async () => {
@@ -69,12 +67,8 @@ describe("buildManifest tags", () => {
     });
 
     expect(manifest.tagsFetchedAt).toBe("2026-05-10T12:30:00.000Z");
-    expect(entryFor(manifest, join("src", "flows", "a.flow.ts"))?.tags).toEqual(
-      ["auth"],
-    );
-    expect(entryFor(manifest, join("src", "flows", "b.flow.ts"))?.tags).toEqual(
-      [],
-    );
+    expect(entryFor(manifest, "src/flows/a.flow.ts")?.tags).toEqual(["auth"]);
+    expect(entryFor(manifest, "src/flows/b.flow.ts")?.tags).toEqual([]);
   });
 
   // A file in the bundle the tag fetch did not return has unknown tags. It must
@@ -90,11 +84,9 @@ describe("buildManifest tags", () => {
       },
     });
 
-    expect(entryFor(manifest, join("src", "flows", "a.flow.ts"))?.tags).toEqual(
-      ["auth"],
-    );
+    expect(entryFor(manifest, "src/flows/a.flow.ts")?.tags).toEqual(["auth"]);
     expect(
-      entryFor(manifest, join("src", "flows", "missing.flow.ts"))?.tags,
+      entryFor(manifest, "src/flows/missing.flow.ts")?.tags,
     ).toBeUndefined();
   });
 });
