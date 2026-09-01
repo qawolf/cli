@@ -116,7 +116,7 @@ describe("handleHybridFlowsRun", () => {
       makeCtx(),
       undefined,
       { ...defaultFlags(), env: "INVALID ENV ID" },
-      makeDeps(),
+      { deps: makeDeps() },
     );
 
     expect(result).toEqual({
@@ -143,7 +143,7 @@ describe("handleHybridFlowsRun", () => {
       ctx,
       "**/login.flow.ts",
       { ...defaultFlags(), env: "my-env" },
-      deps,
+      { deps },
     );
 
     expect(pullEnvMock).not.toHaveBeenCalled();
@@ -176,7 +176,7 @@ describe("handleHybridFlowsRun", () => {
       ctx,
       "**/login.flow.ts",
       { ...defaultFlags(), env: "my-env" },
-      deps,
+      { deps },
     );
 
     expect(prepareRunDirMock).toHaveBeenCalledWith(
@@ -206,7 +206,7 @@ describe("handleHybridFlowsRun", () => {
       ctx,
       "**/login.flow.ts",
       { ...defaultFlags(), env: "my-env" },
-      deps,
+      { deps },
     );
 
     expect(flowsRunMock).toHaveBeenCalledWith(
@@ -236,7 +236,7 @@ describe("handleHybridFlowsRun", () => {
       ctx,
       "**/login.flow.ts",
       { ...defaultFlags(), env: "my-env" },
-      deps,
+      { deps },
     );
 
     expect(cleanup).toHaveBeenCalledTimes(1);
@@ -260,7 +260,7 @@ describe("handleHybridFlowsRun", () => {
       ctx,
       "**/login.flow.ts",
       { ...defaultFlags(), env: "my-env" },
-      deps,
+      { deps },
     );
 
     // The pull records which environment it holds, so the identity travels
@@ -288,7 +288,7 @@ describe("handleHybridFlowsRun", () => {
       ctx,
       "**/missing.flow.ts",
       { ...defaultFlags(), env: "my-env" },
-      deps,
+      { deps },
     );
 
     expect(result).toEqual({
@@ -308,7 +308,7 @@ describe("handleHybridFlowsRun", () => {
       ctx,
       "**/missing.flow.ts",
       { ...defaultFlags(), env: "my-env", allowNoMatch: true },
-      deps,
+      { deps },
     );
 
     expect(result).toBeUndefined();
@@ -326,7 +326,7 @@ describe("handleHybridFlowsRun", () => {
       ctx,
       "**/login.flow.ts",
       { ...defaultFlags(), env: "my-env" },
-      deps,
+      { deps },
     );
 
     expect(result).toEqual({ error: "network error" });
@@ -355,7 +355,7 @@ describe("handleHybridFlowsRun", () => {
       ctx,
       undefined,
       { ...defaultFlags(), env: "my-env" },
-      deps,
+      { deps },
     );
 
     expect(pullEnvMock).not.toHaveBeenCalled();
@@ -382,7 +382,7 @@ describe("handleHybridFlowsRun", () => {
       ctx,
       undefined,
       { ...defaultFlags(), env: "my-env" },
-      deps,
+      { deps },
     );
 
     expect(result).toEqual({

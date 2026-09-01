@@ -99,9 +99,7 @@ export function registerFlowsRunCommand(
                 ctx,
                 pattern,
                 { ...opts, env },
-                undefined,
-                identity,
-                selectors,
+                { identity, selectors },
               ),
           )(opts, command);
         }

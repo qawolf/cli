@@ -55,15 +55,22 @@ function makeDefaultHybridDeps(fs: Fs): HandleHybridFlowsRunDeps {
   };
 }
 
+export type HybridRunOptions = {
+  readonly deps?: HandleHybridFlowsRunDeps;
+  /** Identity of the env named by flags.env, recorded when a pull happens. */
+  readonly identity?: EnvironmentIdentity;
+  readonly selectors?: FlowSelectors;
+};
+
 export async function handleHybridFlowsRun(
   ctx: AuthCommandContext,
   pattern: string | undefined,
   flags: FlowsRunFlags & { env: string },
-  deps?: HandleHybridFlowsRunDeps,
-  identity: EnvironmentIdentity = { slug: undefined, name: undefined },
-  selectors: FlowSelectors = { tags: [] },
+  options: HybridRunOptions = {},
 ): Promise<CommandResult> {
-  const resolvedDeps = deps ?? makeDefaultHybridDeps(ctx.fs);
+  const identity = options.identity ?? { slug: undefined, name: undefined };
+  const selectors = options.selectors ?? { tags: [] };
+  const resolvedDeps = options.deps ?? makeDefaultHybridDeps(ctx.fs);
   const validation = validateEnvId(flags.env);
   if (validation !== "ok") {
     return { error: validation.error, exitCode: 2 };
