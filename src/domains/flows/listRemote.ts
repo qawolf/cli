@@ -78,6 +78,9 @@ export async function flowsListRemote(
   const rows = items.map((it) => ({
     name: it.name,
     target: it.target,
+    // A remote listing is scoped to one environment by definition, so the env
+    // column would repeat the --env value on every row.
+    env: undefined,
     tags: it.tags,
     file: it.file,
   }));

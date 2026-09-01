@@ -11,12 +11,9 @@ import {
   targetToBrowser,
   type PeekFlowMetaFn,
 } from "~/core/flowMeta.js";
-import {
-  expandPatterns as defaultExpandPatterns,
-  makePeekFlowMeta,
-} from "./expand.js";
+import { envLabelFor, readEnvLabels } from "./envLabels.js";
+import { selectPulledEnv } from "./selectPulledEnv.js";
 import { emptySelectionResult, tagsNotCachedResult } from "./selectorGuards.js";
-import { readCachedTags as defaultReadCachedTags } from "./readCachedTags.js";
 import { renderListTable } from "./renderListTable.js";
 
 export type FlowsListDeps = {
@@ -30,11 +27,22 @@ export type FlowsListDeps = {
   readonly readCachedTags: (
     files: readonly string[],
   ) => Promise<Map<string, readonly string[]>>;
+  /** Human label for a pulled env dir — its slug, name, or id. */
+  readonly readEnvLabel: (envDir: string) => Promise<string>;
+  /** Resolves an id, slug, or name to a pulled env, without the API. */
+  readonly findPulledEnv: (
+    ref: string,
+  ) => Promise<{ dir: string; envId: string } | undefined>;
+  /** Every pulled env dir on disk, for naming what --env could refer to. */
+  readonly listPulledEnvDirs: () => Promise<string[]>;
 };
 
 type FlowsListItem = {
   file: string;
   name: string;
+  // The pulled environment the flow came from. Undefined for project flows,
+  // which belong to no environment.
+  env: string | undefined;
   // Absent when the flow was never pulled, so its tags are unknown rather
   // than known to be empty.
   tags: readonly string[] | undefined;
@@ -46,11 +54,26 @@ export async function flowsList(
   ctx: CommandContext,
   pattern: string | undefined,
   deps: FlowsListDeps,
-  selectors: FlowSelectors = { tags: [] },
+  selectors: FlowSelectors & { env?: string | undefined } = { tags: [] },
 ): Promise<CommandResult> {
   const patterns = pattern ? [pattern] : [];
-  const files = await deps.expandPatterns(patterns, deps.cwd);
+  let files = await deps.expandPatterns(patterns, deps.cwd);
+
+  // --env without --remote names a pulled environment, so it is answered from
+  // disk: no auth, no network, and the error can list what is actually here.
+  if (selectors.env !== undefined) {
+    const selection = await selectPulledEnv({
+      files,
+      ref: selectors.env,
+      findPulledEnv: deps.findPulledEnv,
+      listPulledEnvDirs: deps.listPulledEnvDirs,
+      readEnvLabel: deps.readEnvLabel,
+    });
+    if (selection.kind === "unknown") return selection.result;
+    files = selection.files;
+  }
   const cachedTags = await deps.readCachedTags(files);
+  const envLabels = await readEnvLabels(files, deps.readEnvLabel);
 
   const notCached = tagsNotCachedResult(selectors, cachedTags);
   if (notCached !== undefined) return notCached;
@@ -64,6 +87,7 @@ export async function flowsList(
     all.push({
       file: path.relative(deps.cwd, file),
       name: meta.name ?? flowBasename(file),
+      env: envLabelFor(file, envLabels),
       tags: cachedTags.get(file),
       target: meta.target,
       browser: meta.target ? targetToBrowser(meta.target) : undefined,
@@ -86,6 +110,7 @@ export async function flowsList(
   const rows = items.map((it) => ({
     name: it.name,
     target: it.target ?? "",
+    env: it.env,
     tags: it.tags,
     file: it.file,
   }));
@@ -97,24 +122,4 @@ export async function flowsList(
   ctx.ui.intro(flowsMessages.title);
   ctx.ui.write(renderListTable(rows, true));
   ctx.ui.outro(flowsMessages.flowCount(items.length));
-}
-
-export function handleFlowsList(
-  ctx: CommandContext,
-  pattern: string | undefined,
-  selectors?: FlowSelectors,
-): Promise<CommandResult> {
-  const { fs } = ctx;
-  return flowsList(
-    ctx,
-    pattern,
-    {
-      cwd: process.cwd(),
-      expandPatterns: (patterns, cwd) =>
-        defaultExpandPatterns(patterns, cwd, undefined, fs),
-      peekFlowMeta: makePeekFlowMeta(fs),
-      readCachedTags: (files) => defaultReadCachedTags(files, fs),
-    },
-    selectors,
-  );
 }

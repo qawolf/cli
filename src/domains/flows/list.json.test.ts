@@ -54,6 +54,15 @@ function makeDeps(overrides?: {
     readCachedTags: mock<FlowsListDeps["readCachedTags"]>(() =>
       Promise.resolve(new Map(Object.entries(cachedTags))),
     ),
+    readEnvLabel: mock<FlowsListDeps["readEnvLabel"]>((dir: string) =>
+      Promise.resolve(dir),
+    ),
+    findPulledEnv: mock<FlowsListDeps["findPulledEnv"]>(() =>
+      Promise.resolve(undefined),
+    ),
+    listPulledEnvDirs: mock<FlowsListDeps["listPulledEnvDirs"]>(() =>
+      Promise.resolve([]),
+    ),
   };
 }
 

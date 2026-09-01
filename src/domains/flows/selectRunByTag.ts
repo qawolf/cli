@@ -22,6 +22,13 @@ export type SelectRunByTagResult =
 export async function selectRunByTag(args: {
   files: string[];
   selectors: FlowSelectors;
+  /**
+   * Decides which environment to act on when a selection spans several.
+   * Returns the files to run, or the result the caller should return instead.
+   */
+  chooseEnv: (
+    files: string[],
+  ) => Promise<{ proceed: string[] } | { stop: CommandResult }>;
   readCachedTags: (
     files: readonly string[],
   ) => Promise<Map<string, readonly string[]>>;
@@ -43,5 +50,11 @@ export async function selectRunByTag(args: {
       result: args.noMatch(explainEmptySelection(args.selectors)),
     };
   }
-  return { ok: true, files: matched };
+
+  // Each pulled env has its own variables, so the same file pulled twice is
+  // two different runs; ask rather than guess which was meant.
+  const choice = await args.chooseEnv(matched);
+  return "proceed" in choice
+    ? { ok: true, files: choice.proceed }
+    : { ok: false, result: choice.stop };
 }

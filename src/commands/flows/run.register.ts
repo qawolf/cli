@@ -1,17 +1,11 @@
 import type { Command } from "commander";
 
-import { withContext } from "~/commands/context.js";
 import { declareCommandKind } from "~/commands/commandKind.js";
-import { flowsMessages } from "~/core/messages/index.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { collectValue, parseInteger } from "~/domains/runner/runFlagParsers.js";
-import { findPulledEnv } from "~/shell/manifest/pulledEnv.js";
-import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
 import { addRunArtifactOptions } from "./runArtifactOptions.js";
-import { handleFlowsRun } from "./runDefaults.js";
-import { handleHybridFlowsRun } from "./hybridRunDefaults.js";
-import { withResolvedEnv } from "./withResolvedEnv.js";
+import { makeFlowsRunAction } from "./runAction.js";
 
 const runExamples = `
 Examples:
@@ -77,43 +71,11 @@ export function registerFlowsRunCommand(
       collectValue,
       [],
     )
+    .option(
+      "--all-envs",
+      "When a tag matches flows in several pulled environments, run every match instead of choosing one",
+      false,
+    )
     .addHelpText("after", runExamples)
-    .action(
-      (
-        pattern: string | undefined,
-        opts: FlowsRunFlags & { env?: string; tag: string[] },
-        command: Command,
-      ) => {
-        const selectors = { tags: opts.tag };
-        if (opts.env !== undefined) {
-          // Resolution turns an alias into the canonical id before the
-          // .qawolf/<env>/ cache lookup, so --env <alias> and --env <id>
-          // share one cache directory.
-          return withResolvedEnv(
-            signals,
-            {
-              explicit: opts.env,
-              requiredMessage: flowsMessages.run.requiresEnv,
-              // A run whose flows are already pulled does not need the
-              // platform, so an unreachable one should not stop it. The slug
-              // recorded at pull time means an alias resolves here too.
-              offlineFallback: async (explicit) =>
-                explicit === undefined
-                  ? undefined
-                  : (await findPulledEnv(explicit, process.cwd()))?.envId,
-            },
-            (ctx, env, identity) =>
-              handleHybridFlowsRun(
-                ctx,
-                pattern,
-                { ...opts, env },
-                { identity, selectors },
-              ),
-          )(opts, command);
-        }
-        return withContext(signals, (ctx) =>
-          handleFlowsRun(ctx, pattern, opts, undefined, selectors),
-        )(opts, command);
-      },
-    );
+    .action(makeFlowsRunAction(signals));
 }

@@ -11,12 +11,16 @@ const tagsFor = (
   mock(() => Promise.resolve(new Map(Object.entries(entries))));
 
 const noMatch = (error: string) => ({ error, exitCode: 2 });
+// The environment choice is the caller's concern; these tests pass the
+// selection straight through.
+const chooseEnv = (files: string[]) => Promise.resolve({ proceed: files });
 
 describe("selectRunByTag", () => {
   it("returns every file when no tag is given", async () => {
     const result = await selectRunByTag({
       files: [login, smoke],
       selectors: { tags: [] },
+      chooseEnv,
       readCachedTags: tagsFor({}),
       noMatch,
     });
@@ -28,6 +32,7 @@ describe("selectRunByTag", () => {
     const result = await selectRunByTag({
       files: [login, smoke],
       selectors: { tags: ["auth"] },
+      chooseEnv,
       readCachedTags: tagsFor({ [login]: ["auth"], [smoke]: ["smoke"] }),
       noMatch,
     });
@@ -41,6 +46,7 @@ describe("selectRunByTag", () => {
     const result = await selectRunByTag({
       files: [login],
       selectors: { tags: ["auth"] },
+      chooseEnv,
       readCachedTags: tagsFor({}),
       noMatch,
     });
@@ -52,6 +58,7 @@ describe("selectRunByTag", () => {
     const result = await selectRunByTag({
       files: [login],
       selectors: { tags: ["nope"] },
+      chooseEnv,
       readCachedTags: tagsFor({ [login]: ["auth"] }),
       noMatch,
     });
@@ -66,8 +73,34 @@ describe("selectRunByTag", () => {
     const result = await selectRunByTag({
       files: [login],
       selectors: { tags: ["nope"] },
+      chooseEnv,
       readCachedTags: tagsFor({ [login]: ["auth"] }),
       noMatch: () => undefined,
+    });
+
+    expect(result).toEqual({ ok: false, result: undefined });
+  });
+
+  // The caller decides which environment a multi-environment match meant.
+  it("returns whatever the environment choice resolved to", async () => {
+    const result = await selectRunByTag({
+      files: [login, smoke],
+      selectors: { tags: ["auth"] },
+      chooseEnv: () => Promise.resolve({ proceed: [smoke] }),
+      readCachedTags: tagsFor({ [login]: ["auth"], [smoke]: ["auth"] }),
+      noMatch,
+    });
+
+    expect(result).toEqual({ ok: true, files: [smoke] });
+  });
+
+  it("returns the caller's result when the choice stops the run", async () => {
+    const result = await selectRunByTag({
+      files: [login],
+      selectors: { tags: ["auth"] },
+      chooseEnv: () => Promise.resolve({ stop: undefined }),
+      readCachedTags: tagsFor({ [login]: ["auth"] }),
+      noMatch,
     });
 
     expect(result).toEqual({ ok: false, result: undefined });

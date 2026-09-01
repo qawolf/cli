@@ -213,6 +213,8 @@ Options:
   --tag <name>          Only run flows carrying this tag; repeat for several.
                         Without --env, matches against tags cached by the last
                         pull (default: [])
+  --all-envs            When a tag matches flows in several pulled environments,
+                        run every match instead of choosing one (default: false)
   -h, --help            display help for command
 
 Examples:
@@ -234,8 +236,8 @@ environment with --remote
 Options:
   --remote          List flows from the QA Wolf platform instead of the local
                     project (default: false)
-  --env <env>       Environment to list flows from (with --remote; defaults to
-                    QAWOLF_ENVIRONMENT, or an interactive picker)
+  --env <env>       Environment to list flows from: a QA Wolf environment with
+                    --remote, otherwise a pulled one by slug or id
   --include-drafts  Include draft flows in the listing (requires --remote)
                     (default: false)
   --tag <name>      Only list flows carrying this tag; repeat for several.
@@ -246,8 +248,9 @@ Options:
 Examples:
   $ qawolf flows list
   $ qawolf flows list "flows/checkout/**"
-  $ qawolf flows list --tag auth
   $ qawolf flows list --remote --env staging
+  $ qawolf flows list --tag auth
+  $ qawolf flows list --env staging --tag auth
   $ qawolf flows list --remote --env staging --tag auth --tag smoke
   $ qawolf flows list "**/checkout/**" --remote --env staging --include-drafts
 "

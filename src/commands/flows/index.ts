@@ -6,7 +6,7 @@ import { flowsMessages } from "~/core/messages/index.js";
 import { collectValue } from "~/domains/runner/runFlagParsers.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
-import { handleFlowsList } from "~/domains/flows/list.js";
+import { handleFlowsList } from "~/domains/flows/listDefaults.js";
 import { flowsListRemote } from "~/domains/flows/listRemote.js";
 import { registerFlowsPullCommand } from "./pull.register.js";
 import { registerFlowsRunCommand } from "./run.register.js";
@@ -17,8 +17,9 @@ const listExamples = `
 Examples:
   $ qawolf flows list
   $ qawolf flows list "flows/checkout/**"
-  $ qawolf flows list --tag auth
   $ qawolf flows list --remote --env staging
+  $ qawolf flows list --tag auth
+  $ qawolf flows list --env staging --tag auth
   $ qawolf flows list --remote --env staging --tag auth --tag smoke
   $ qawolf flows list "**/checkout/**" --remote --env staging --include-drafts`;
 
@@ -53,7 +54,7 @@ export function registerFlowsCommand(
     )
     .option(
       "--env <env>",
-      "Environment to list flows from (with --remote; defaults to QAWOLF_ENVIRONMENT, or an interactive picker)",
+      "Environment to list flows from: a QA Wolf environment with --remote, otherwise a pulled one by slug or id",
     )
     .option(
       "--include-drafts",
@@ -73,6 +74,7 @@ export function registerFlowsCommand(
         opts: FlowsListOptions,
         command: Command,
       ) => {
+        const tags = opts.tag;
         if (opts.remote) {
           return withResolvedEnv(
             signals,
@@ -84,17 +86,21 @@ export function registerFlowsCommand(
               flowsListRemote(ctx, pattern, {
                 env,
                 includeDrafts: opts.includeDrafts,
-                tags: opts.tag,
+                tags,
               }),
           )(opts, command);
         }
-        if (opts.env !== undefined || opts.includeDrafts) {
+        // --include-drafts is a platform concept; --env is not, so without
+        // --remote it names a pulled environment and is answered from disk.
+        if (opts.includeDrafts) {
           return withContext(signals, async () => ({
-            error: flowsMessages.list.flagsRequireRemote,
+            error: flowsMessages.list.draftsRequireRemote,
           }))(opts, command);
         }
+        // Without --remote the tags come from the pull cache, so this works
+        // offline; it cannot validate names against the team's tag list.
         return withContext(signals, (ctx) =>
-          handleFlowsList(ctx, pattern, { tags: opts.tag }),
+          handleFlowsList(ctx, pattern, { tags, env: opts.env }),
         )(opts, command);
       },
     );
