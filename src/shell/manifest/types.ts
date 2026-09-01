@@ -1,6 +1,10 @@
 type ManifestFlowEntry = {
   path: string;
   contentHash: string;
+  // Tags carried by the flow at the time of the pull. Optional because it is
+  // absent both on pre-tags manifests and on flows the tag fetch skipped —
+  // `Manifest.tagsFetchedAt` distinguishes those from a genuinely untagged flow.
+  tags?: string[] | undefined;
 };
 
 // Identifies a flow run against a pulled env: derived by walking the
@@ -34,5 +38,9 @@ export type Manifest = {
   // qawolfCommitSha undefined.
   qawolfCommitSha: string | undefined;
   qawolfCommittedAt: string | undefined;
+  // When the tag fetch last succeeded for this env. Undefined means tags were
+  // never fetched, so tag queries cannot be answered from this manifest at all
+  // — distinct from a fetch that succeeded and found no tags on a flow.
+  tagsFetchedAt: string | undefined;
   flows: ManifestFlowEntry[];
 };

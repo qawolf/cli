@@ -46,6 +46,9 @@ function makeDeps(overrides?: {
         target: metaByFile[file]?.target,
       }),
     ),
+    readCachedTags: mock<FlowsListDeps["readCachedTags"]>(() =>
+      Promise.resolve(new Map<string, readonly string[]>()),
+    ),
   };
 }
 

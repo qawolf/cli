@@ -7,10 +7,10 @@ import {
   type AuthCommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
-import { manifestFilename } from "~/shell/manifest/io.js";
 import { flowsMessages } from "~/core/messages/index.js";
 import { fetchBundleAndEnvVars } from "./fetchPhase.js";
 import { checkSafety, validateEnvId } from "./pull.js";
+import { reportPullResult } from "./reportPull.js";
 import { stageBundle } from "./stage.js";
 
 export type FlowsPullOptions = {
@@ -86,6 +86,7 @@ export async function handleFlowsPull(
                 now: fetched.bundleFetchedAt,
                 envVars: fetched.envVars,
                 envVarsFetchedAt: fetched.envVarsFetchedAt,
+                tags: fetched.tags,
               },
               resolvedDeps.fs,
             ),
@@ -122,24 +123,13 @@ export async function handleFlowsPull(
         ),
     );
 
-    if (ctx.ui.mode === "json") {
-      ctx.ui.output(
-        {
-          env: opts.env,
-          envDir: result.envDir,
-          assetsDir: assetsAbs,
-          fetchedAt: fetched.bundleFetchedAt.toISOString(),
-          flowCount: result.flowCount,
-          envVarCount: result.envVarCount,
-          flowsWithTeamStorageRefs: result.flowsWithTeamStorageRefs,
-          assetDownloadedCount: assetResult.downloadedCount,
-          assetReusedCount: assetResult.reusedCount,
-          assetSkippedCount: assetResult.skippedCount,
-          manifestPath: join(result.envDir, manifestFilename),
-        },
-        "",
-      );
-    }
+    reportPullResult(ctx.ui, {
+      env: opts.env,
+      assetsAbs,
+      fetchedAt: fetched.bundleFetchedAt,
+      stage: result,
+      assets: assetResult,
+    });
   } finally {
     if (archive !== undefined)
       await resolvedDeps.fs.unlink(archive).catch(() => {});

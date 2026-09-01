@@ -4,6 +4,7 @@ import {
   buildManifest,
   flattenSingleWrapper,
   sampleQawolfCommittedAt,
+  type FetchedTags,
 } from "./bundle.js";
 import { applyTeamStorageRewrite } from "./applyTeamStorageRewrite.js";
 import { writeEnvFile } from "./envVars.js";
@@ -23,6 +24,7 @@ type StageBundleArgs = {
   now: Date;
   envVars: Record<string, string>;
   envVarsFetchedAt: Date;
+  tags: FetchedTags | undefined;
 };
 
 type StageBundleResult = {
@@ -71,6 +73,7 @@ export async function stageBundle(
         envVarsFetchedAt: args.envVarsFetchedAt,
         wrapperName,
         qawolfCommittedAt,
+        tags: args.tags,
       },
       fs,
     );

@@ -1,4 +1,4 @@
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 
 import { hashFile } from "~/shell/manifest/io.js";
 import type { Manifest } from "~/shell/manifest/types.js";
@@ -48,6 +48,15 @@ function extractQawolfCommitSha(
 
 const flowExtensions = [".flow.ts", ".flow.js"];
 
+/**
+ * Tags fetched for an env at pull time, keyed by repo-relative flow path.
+ * Undefined when the fetch did not happen or failed.
+ */
+export type FetchedTags = {
+  fetchedAt: Date;
+  byPath: Map<string, string[]>;
+};
+
 export async function buildManifest(
   args: {
     envId: string;
@@ -57,6 +66,7 @@ export async function buildManifest(
     envVarsFetchedAt: Date | undefined;
     wrapperName: string | undefined;
     qawolfCommittedAt: string | undefined;
+    tags?: FetchedTags | undefined;
   },
   fs: Fs = makeDefaultFs(),
 ): Promise<Manifest> {
@@ -65,6 +75,10 @@ export async function buildManifest(
     flowPaths.map(async (rel) => ({
       path: rel,
       contentHash: await hashFile(join(args.bundleDir, rel), fs),
+      // The walk yields platform-specific separators; tag keys arrive as posix
+      // paths, so normalize before looking one up. Left unset when the fetch
+      // did not cover this file — unknown, not untagged.
+      tags: args.tags?.byPath.get(rel.split(sep).join("/")),
     })),
   );
 
@@ -76,6 +90,7 @@ export async function buildManifest(
     cliFlowsVersion: args.cliFlowsVersion,
     qawolfCommitSha: extractQawolfCommitSha(args.wrapperName),
     qawolfCommittedAt: args.qawolfCommittedAt,
+    tagsFetchedAt: args.tags?.fetchedAt.toISOString(),
     flows,
   };
 }

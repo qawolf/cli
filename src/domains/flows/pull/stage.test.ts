@@ -41,6 +41,7 @@ describe("stageBundle", () => {
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: {},
       envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+      tags: undefined,
     });
 
     expect(result).toEqual({
@@ -78,6 +79,7 @@ describe("stageBundle", () => {
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: {},
       envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+      tags: undefined,
     });
 
     expect(result.flowCount).toBe(1);
@@ -103,6 +105,7 @@ describe("stageBundle", () => {
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: {},
       envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+      tags: undefined,
     });
 
     const manifest = await readManifest(destDir);
@@ -131,6 +134,7 @@ describe("stageBundle", () => {
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: { BASE_URL: "https://example.com", TOKEN: "abc" },
       envVarsFetchedAt: fetchedAt,
+      tags: undefined,
     });
 
     expect(result.envVarCount).toBe(3);
@@ -182,6 +186,7 @@ describe("stageBundle", () => {
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: { TEAM_STORAGE_DIR: "/home/wolf/team-storage" },
       envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+      tags: undefined,
     });
 
     expect(stageResult.flowsWithTeamStorageRefs).toEqual([

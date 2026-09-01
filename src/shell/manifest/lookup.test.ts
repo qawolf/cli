@@ -40,6 +40,7 @@ const sampleManifest: Manifest = {
   cliFlowsVersion: "0.1.0",
   qawolfCommitSha: undefined,
   qawolfCommittedAt: undefined,
+  tagsFetchedAt: undefined,
   envVarsFetchedAt: undefined,
   flows: [
     { path: join("src", "login.flow.ts"), contentHash: "hash-login" },

@@ -64,6 +64,7 @@ export async function flowsListRemote(
   const rows = items.map((it) => ({
     name: it.name,
     target: it.target,
+    tags: it.tags,
     file: it.file,
   }));
   if (ctx.ui.mode === "agent") {

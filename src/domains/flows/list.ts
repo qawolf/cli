@@ -14,6 +14,7 @@ import {
   expandPatterns as defaultExpandPatterns,
   makePeekFlowMeta,
 } from "./expand.js";
+import { readCachedTags as defaultReadCachedTags } from "./readCachedTags.js";
 import { renderListTable } from "./renderListTable.js";
 
 export type FlowsListDeps = {
@@ -23,12 +24,18 @@ export type FlowsListDeps = {
     cwd: string,
   ) => Promise<string[]>;
   readonly peekFlowMeta: PeekFlowMetaFn;
+  /** Tags cached at pull time, keyed by absolute flow path. */
+  readonly readCachedTags: (
+    files: readonly string[],
+  ) => Promise<Map<string, readonly string[]>>;
 };
 
 type FlowsListItem = {
   file: string;
   name: string;
-  tags: readonly string[];
+  // Absent when the flow was never pulled, so its tags are unknown rather
+  // than known to be empty.
+  tags: readonly string[] | undefined;
   target: string | undefined;
   browser: BrowserName | undefined;
 };
@@ -40,6 +47,7 @@ export async function flowsList(
 ): Promise<CommandResult> {
   const patterns = pattern ? [pattern] : [];
   const files = await deps.expandPatterns(patterns, deps.cwd);
+  const cachedTags = await deps.readCachedTags(files);
 
   const items: FlowsListItem[] = [];
   for await (const { file, ...meta } of batchMap(
@@ -50,7 +58,7 @@ export async function flowsList(
     items.push({
       file: path.relative(deps.cwd, file),
       name: meta.name ?? flowBasename(file),
-      tags: [],
+      tags: cachedTags.get(file),
       target: meta.target,
       browser: meta.target ? targetToBrowser(meta.target) : undefined,
     });
@@ -67,6 +75,7 @@ export async function flowsList(
   const rows = items.map((it) => ({
     name: it.name,
     target: it.target ?? "",
+    tags: it.tags,
     file: it.file,
   }));
   if (ctx.ui.mode === "agent") {
@@ -89,5 +98,6 @@ export function handleFlowsList(
     expandPatterns: (patterns, cwd) =>
       defaultExpandPatterns(patterns, cwd, undefined, fs),
     peekFlowMeta: makePeekFlowMeta(fs),
+    readCachedTags: (files) => defaultReadCachedTags(files, fs),
   });
 }

@@ -29,6 +29,7 @@ const baseManifest = (
   cliFlowsVersion: "0.1.0",
   qawolfCommitSha: undefined,
   qawolfCommittedAt: undefined,
+  tagsFetchedAt: undefined,
   flows,
 });
 

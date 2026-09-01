@@ -12,6 +12,9 @@ export const manifestFilename = ".manifest.json";
 const flowEntrySchema = z.object({
   path: z.string(),
   contentHash: z.string(),
+  // Absent on manifests written before tags existed, and on flows the tag
+  // fetch did not return. Both optional so an older manifest still parses.
+  tags: z.array(z.string()).optional(),
 });
 
 const manifestSchema = z.object({
@@ -22,6 +25,7 @@ const manifestSchema = z.object({
   cliFlowsVersion: z.string(),
   qawolfCommitSha: z.string().optional(),
   qawolfCommittedAt: z.string().optional(),
+  tagsFetchedAt: z.string().optional(),
   flows: z.array(flowEntrySchema),
 });
 
@@ -59,6 +63,7 @@ export async function readManifest(
     cliFlowsVersion: result.data.cliFlowsVersion,
     qawolfCommitSha: result.data.qawolfCommitSha,
     qawolfCommittedAt: result.data.qawolfCommittedAt,
+    tagsFetchedAt: result.data.tagsFetchedAt,
     flows: result.data.flows,
   };
 }

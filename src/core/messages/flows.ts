@@ -28,6 +28,7 @@ export const flowsMessages = {
       "An environment is required. Pass --env <env> or set QAWOLF_ENVIRONMENT.",
     downloadingBundle: "Downloading flows bundle",
     fetchingEnvVars: "Fetching environment variables",
+    fetchingTags: "Fetching flow tags",
     downloadComplete: "Downloaded flows bundle and environment variables",
     needsYesError: "Re-run with --yes to overwrite locally-modified files",
     aborted: "Aborted; no changes.",

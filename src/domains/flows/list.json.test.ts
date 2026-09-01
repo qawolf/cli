@@ -50,6 +50,9 @@ function makeDeps(overrides?: {
         target: metaByFile[file]?.target,
       }),
     ),
+    readCachedTags: mock<FlowsListDeps["readCachedTags"]>(() =>
+      Promise.resolve(new Map<string, readonly string[]>()),
+    ),
   };
 }
 
@@ -72,7 +75,7 @@ describe("flowsList json mode output", () => {
       {
         file: join("src", "flows", "login.flow.ts"),
         name: "Login",
-        tags: [],
+        tags: undefined,
         target: "Web - Chrome",
         browser: "chromium",
       },
@@ -100,7 +103,7 @@ describe("flowsList json mode output", () => {
       {
         file: join("src", "flows", "checkout.flow.ts"),
         name: "checkout",
-        tags: [],
+        tags: undefined,
         target: "Web - Firefox",
         browser: "firefox",
       },
@@ -122,7 +125,7 @@ describe("flowsList json mode output", () => {
       {
         file: join("src", "flows", "legacy.flow.js"),
         name: "legacy",
-        tags: [],
+        tags: undefined,
         target: "Web - Chrome",
         browser: "chromium",
       },
@@ -147,7 +150,7 @@ describe("flowsList json mode output", () => {
       {
         file: join("src", "flows", "mobile.flow.ts"),
         name: "Mobile",
-        tags: [],
+        tags: undefined,
         target: "Android - Pixel",
         browser: undefined,
       },

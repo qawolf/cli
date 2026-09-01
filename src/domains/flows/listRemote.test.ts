@@ -103,7 +103,7 @@ describe("flowsListRemote wire call", () => {
 });
 
 describe("flowsListRemote success paths", () => {
-  it("renders a bolded header + name|target|file rows in human mode", async () => {
+  it("renders a bolded header + name|target|tags|file rows in human mode", async () => {
     const { ui } = await run({ mode: "human" });
 
     const output = callsOf(ui.write)
@@ -115,13 +115,13 @@ describe("flowsListRemote success paths", () => {
     expect(lines[0]).toMatch(/\[0m/);
     // oxlint-disable-next-line no-control-regex, @typescript-eslint/no-non-null-assertion
     expect(lines[0]!.replace(/\x1b[^m]*m/g, "")).toMatch(
-      /^name\s+target\s+file$/,
+      /^name\s+target\s+tags\s+file$/,
     );
     expect(stripAnsi(lines[1])).toMatch(
       /^Login\s+Web - Chrome\s+src\/flows\/login\.flow\.ts$/,
     );
     expect(stripAnsi(lines[2])).toMatch(
-      /^Checkout\s+Web - Firefox\s+src\/flows\/sub\/checkout\.flow\.ts$/,
+      /^Checkout\s+Web - Firefox\s+smoke\s+src\/flows\/sub\/checkout\.flow\.ts$/,
     );
     expect(ui.intro).toHaveBeenCalledWith("Remote Flows");
     expect(ui.outro).toHaveBeenCalledWith("2 flows");

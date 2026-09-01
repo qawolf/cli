@@ -35,6 +35,7 @@ describe("safety + staging integration", () => {
       cliFlowsVersion: "0.4.0",
       qawolfCommitSha: undefined,
       qawolfCommittedAt: undefined,
+      tagsFetchedAt: undefined,
       flows: [
         {
           path: "a.flow.ts",
@@ -66,6 +67,7 @@ describe("safety + staging integration", () => {
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: {},
       envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+      tags: undefined,
     });
 
     expect(await readFile(join(destDir, "a.flow.ts"), "utf8")).toBe("original");
