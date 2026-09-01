@@ -109,4 +109,25 @@ describe("readCachedTags", () => {
 
     expect(reads).toBe(1);
   });
+
+  // A manifest written on Windows stores win32 separators. Splitting on the
+  // host separator would be a no-op here and the lookup would miss, so the
+  // flow's tags would wrongly read as unknown.
+  it("matches a manifest written with windows separators", async () => {
+    const fs = await fsWith(
+      manifest({
+        flows: [
+          {
+            path: "src\\flows\\a.flow.ts",
+            contentHash: "h1",
+            tags: ["auth"],
+          },
+        ],
+      }),
+    );
+
+    const result = await readCachedTags([flowA], fs);
+
+    expect(result.get(flowA)).toEqual(["auth"]);
+  });
 });
