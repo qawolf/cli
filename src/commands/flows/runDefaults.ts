@@ -1,4 +1,6 @@
 import { buildPatternArgs } from "~/core/patternArgs.js";
+import type { FlowSelectors } from "~/core/flowSelectors.js";
+import { readCachedTags as defaultReadCachedTags } from "~/domains/flows/readCachedTags.js";
 import { runnerMessages } from "~/core/messages/index.js";
 import { pluralize } from "~/core/pluralize.js";
 import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
@@ -14,6 +16,7 @@ import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js"
 import { resolveDepsRoot } from "~/commands/resolveDepsRoot.js";
 
 import { createFlowRuntimeDeps as defaultCreateFlowRuntimeDeps } from "./flowRuntimeDeps.js";
+import { selectRunByTag } from "./selectRunByTag.js";
 import { type StagedRunDeps, runStagedFlows } from "./runStagedFlows.js";
 
 export type HandleFlowsRunDeps = StagedRunDeps & {
@@ -42,6 +45,7 @@ export async function handleFlowsRun(
   pattern: string | undefined,
   flags: FlowsRunFlags,
   deps?: HandleFlowsRunDeps,
+  selectors: FlowSelectors = { tags: [] },
 ): Promise<CommandResult> {
   const resolvedDeps = deps ?? makeDefaultDeps(ctx.fs);
   const cwd = process.cwd();
@@ -63,9 +67,17 @@ export async function handleFlowsRun(
     });
   }
 
+  const selected = await selectRunByTag(ctx, {
+    files: expandedFiles,
+    selectors,
+    flags,
+    readCachedTags: (files) => defaultReadCachedTags(files, ctx.fs),
+  });
+  if (!Array.isArray(selected)) return selected;
+
   return runStagedFlows({
     ctx,
-    files: expandedFiles,
+    files: selected,
     flags,
     deps: resolvedDeps,
   });

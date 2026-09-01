@@ -21,6 +21,7 @@ afterEach(() => {
 const defaultOptions: FlowsListRemoteOptions = {
   env: "environment-id",
   includeDrafts: false,
+  tags: [],
 };
 
 type SampleFlow = {
@@ -92,7 +93,7 @@ describe("flowsListRemote wire call", () => {
   it("calls public.flow.list with the environment and drafts flag", async () => {
     const { platformClient } = await run({
       mode: "json",
-      options: { env: "env-1", includeDrafts: true },
+      options: { ...defaultOptions, env: "env-1", includeDrafts: true },
     });
 
     expect(platformClient.callPublicApi).toHaveBeenCalledWith(

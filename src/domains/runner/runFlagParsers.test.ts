@@ -1,7 +1,7 @@
 import { InvalidArgumentError } from "commander";
 import { describe, expect, it } from "bun:test";
 
-import { parseEnum, parseInteger } from "./runFlagParsers.js";
+import { collectValue, parseEnum, parseInteger } from "./runFlagParsers.js";
 
 describe("parseInteger", () => {
   it("returns the integer for a plain decimal string", () => {
@@ -46,5 +46,23 @@ describe("parseEnum", () => {
     expect(() => parseEnum("--video", modes)("maybe")).toThrow(
       /--video must be one of: on, off, retain-on-failure/,
     );
+  });
+});
+
+describe("collectValue", () => {
+  // Repeatable rather than variadic, so a positional argument after the flag
+  // is never mistaken for another value.
+  it("accumulates repeated values in order", () => {
+    let acc: string[] = [];
+    acc = collectValue("auth", acc);
+    acc = collectValue("smoke", acc);
+    expect(acc).toEqual(["auth", "smoke"]);
+  });
+
+  it("does not mutate the previous list", () => {
+    const first = ["auth"];
+    const second = collectValue("smoke", first);
+    expect(first).toEqual(["auth"]);
+    expect(second).toEqual(["auth", "smoke"]);
   });
 });

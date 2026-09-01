@@ -19,6 +19,7 @@ afterEach(() => {
 const options: FlowsListRemoteOptions = {
   env: "environment-id",
   includeDrafts: false,
+  tags: [],
 };
 
 async function runWithFailure(

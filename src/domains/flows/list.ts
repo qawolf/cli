@@ -5,6 +5,7 @@ import { flowsMessages, runnerMessages } from "~/core/messages/index.js";
 import type { BrowserName } from "~/core/types.js";
 
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
+import { matchesSelectors, type FlowSelectors } from "~/core/flowSelectors.js";
 import {
   flowBasename,
   targetToBrowser,
@@ -14,6 +15,10 @@ import {
   expandPatterns as defaultExpandPatterns,
   makePeekFlowMeta,
 } from "./expand.js";
+import {
+  emptySelectionResult,
+  tagsUnavailableResult,
+} from "./listTagGuards.js";
 import { readCachedTags as defaultReadCachedTags } from "./readCachedTags.js";
 import { renderListTable } from "./renderListTable.js";
 
@@ -44,18 +49,22 @@ export async function flowsList(
   ctx: CommandContext,
   pattern: string | undefined,
   deps: FlowsListDeps,
+  selectors: FlowSelectors = { tags: [] },
 ): Promise<CommandResult> {
   const patterns = pattern ? [pattern] : [];
   const files = await deps.expandPatterns(patterns, deps.cwd);
   const cachedTags = await deps.readCachedTags(files);
 
-  const items: FlowsListItem[] = [];
+  const unavailable = tagsUnavailableResult(selectors, cachedTags);
+  if (unavailable !== undefined) return unavailable;
+
+  const all: FlowsListItem[] = [];
   for await (const { file, ...meta } of batchMap(
     files,
     async (f) => ({ file: f, ...(await deps.peekFlowMeta(f)) }),
     flowBatchSize,
   )) {
-    items.push({
+    all.push({
       file: path.relative(deps.cwd, file),
       name: meta.name ?? flowBasename(file),
       tags: cachedTags.get(file),
@@ -63,6 +72,10 @@ export async function flowsList(
       browser: meta.target ? targetToBrowser(meta.target) : undefined,
     });
   }
+
+  const items = all.filter((item) => matchesSelectors(item, selectors));
+  const empty = emptySelectionResult(selectors, items.length);
+  if (empty !== undefined) return empty;
 
   if (ctx.ui.mode === "json") {
     ctx.ui.json(items);
@@ -91,13 +104,19 @@ export async function flowsList(
 export function handleFlowsList(
   ctx: CommandContext,
   pattern: string | undefined,
+  selectors?: FlowSelectors,
 ): Promise<CommandResult> {
   const { fs } = ctx;
-  return flowsList(ctx, pattern, {
-    cwd: process.cwd(),
-    expandPatterns: (patterns, cwd) =>
-      defaultExpandPatterns(patterns, cwd, undefined, fs),
-    peekFlowMeta: makePeekFlowMeta(fs),
-    readCachedTags: (files) => defaultReadCachedTags(files, fs),
-  });
+  return flowsList(
+    ctx,
+    pattern,
+    {
+      cwd: process.cwd(),
+      expandPatterns: (patterns, cwd) =>
+        defaultExpandPatterns(patterns, cwd, undefined, fs),
+      peekFlowMeta: makePeekFlowMeta(fs),
+      readCachedTags: (files) => defaultReadCachedTags(files, fs),
+    },
+    selectors,
+  );
 }

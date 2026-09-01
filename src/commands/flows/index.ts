@@ -3,6 +3,7 @@ import type { Command } from "commander";
 import { declareCommandKind } from "~/commands/commandKind.js";
 import { withContext } from "~/commands/context.js";
 import { flowsMessages } from "~/core/messages/index.js";
+import { collectValue } from "~/domains/runner/runFlagParsers.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { handleFlowsList } from "~/domains/flows/list.js";
@@ -16,13 +17,16 @@ const listExamples = `
 Examples:
   $ qawolf flows list
   $ qawolf flows list "flows/checkout/**"
+  $ qawolf flows list --tag auth
   $ qawolf flows list --remote --env staging
+  $ qawolf flows list --remote --env staging --tag auth --tag smoke
   $ qawolf flows list "**/checkout/**" --remote --env staging --include-drafts`;
 
 type FlowsListOptions = {
   readonly remote: boolean;
   readonly env: string | undefined;
   readonly includeDrafts: boolean;
+  readonly tag: string[];
 };
 
 export function registerFlowsCommand(
@@ -56,6 +60,12 @@ export function registerFlowsCommand(
       "Include draft flows in the listing (requires --remote)",
       false,
     )
+    .option(
+      "--tag <name>",
+      "Only list flows carrying this tag; repeat for several. Without --remote, matches against tags cached by the last pull",
+      collectValue,
+      [],
+    )
     .addHelpText("after", listExamples)
     .action(
       (
@@ -74,6 +84,7 @@ export function registerFlowsCommand(
               flowsListRemote(ctx, pattern, {
                 env,
                 includeDrafts: opts.includeDrafts,
+                tags: opts.tag,
               }),
           )(opts, command);
         }
@@ -82,10 +93,9 @@ export function registerFlowsCommand(
             error: flowsMessages.list.flagsRequireRemote,
           }))(opts, command);
         }
-        return withContext(signals, (ctx) => handleFlowsList(ctx, pattern))(
-          opts,
-          command,
-        );
+        return withContext(signals, (ctx) =>
+          handleFlowsList(ctx, pattern, { tags: opts.tag }),
+        )(opts, command);
       },
     );
 

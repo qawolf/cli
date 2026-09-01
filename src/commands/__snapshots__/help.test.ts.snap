@@ -210,12 +210,17 @@ Options:
   --no-browser-deps     Skip installing OS-level browser dependencies (Linux
                         --with-deps, which needs root); requires the system
                         libraries to already be present
+  --tag <name>          Only run flows carrying this tag; repeat for several.
+                        Without --env, matches against tags cached by the last
+                        pull (default: [])
   -h, --help            display help for command
 
 Examples:
   $ qawolf flows run
   $ qawolf flows run "flows/checkout/**"
   $ qawolf flows run --retries 2 --video retain-on-failure
+  $ qawolf flows run --tag auth
+  $ qawolf flows run --tag auth --env staging
   $ qawolf flows run checkout --env staging --headed
 "
 `;
@@ -233,12 +238,17 @@ Options:
                     QAWOLF_ENVIRONMENT, or an interactive picker)
   --include-drafts  Include draft flows in the listing (requires --remote)
                     (default: false)
+  --tag <name>      Only list flows carrying this tag; repeat for several.
+                    Without --remote, matches against tags cached by the last
+                    pull (default: [])
   -h, --help        display help for command
 
 Examples:
   $ qawolf flows list
   $ qawolf flows list "flows/checkout/**"
+  $ qawolf flows list --tag auth
   $ qawolf flows list --remote --env staging
+  $ qawolf flows list --remote --env staging --tag auth --tag smoke
   $ qawolf flows list "**/checkout/**" --remote --env staging --include-drafts
 "
 `;

@@ -19,6 +19,21 @@ export const flowsMessages = {
       "--remote requires an environment. Pass --env <env> or set QAWOLF_ENVIRONMENT.",
     flagsRequireRemote: "--env and --include-drafts require --remote",
   },
+  selectors: {
+    tagsNotCached:
+      "No cached tags found. Run 'qawolf flows pull --env <env>' to cache them, or pass --remote to read tags from the platform.",
+    tagsUnavailable: (env: string) =>
+      `Could not reach the platform and no tags are cached for environment '${env}'. Run 'qawolf flows pull --env ${env}' while online.`,
+    usingCachedTags: (fetchedAt: string) =>
+      `Could not reach the platform. Using tags cached at ${fetchedAt}; tag names were not validated.`,
+    unknownTag: (name: string, suggestion: string | undefined) =>
+      suggestion === undefined
+        ? `No tag named '${name}' on this team. Run 'qawolf tag list' to see available tags.`
+        : `No tag named '${name}' on this team. Did you mean '${suggestion}'?`,
+    noFlowsSelected: (selectors: {
+      readonly tags: readonly string[];
+    }): string => `No flows matched tags ${selectors.tags.join(", ")}.`,
+  },
   run: {
     requiresEnv:
       "An environment is required. Pass --env <env> or set QAWOLF_ENVIRONMENT.",

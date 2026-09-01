@@ -4,41 +4,28 @@ import { withContext } from "~/commands/context.js";
 import { declareCommandKind } from "~/commands/commandKind.js";
 import { flowsMessages } from "~/core/messages/index.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
-import type {
-  HarContent,
-  HarMode,
-  TraceMode,
-  VideoMode,
-} from "~/core/types.js";
-import { defaultOutputDir } from "~/core/paths.js";
-import { parseEnum, parseInteger } from "~/domains/runner/runFlagParsers.js";
+import { collectValue, parseInteger } from "~/domains/runner/runFlagParsers.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
+import { addRunArtifactOptions } from "./runArtifactOptions.js";
 import { handleFlowsRun } from "./runDefaults.js";
 import { handleHybridFlowsRun } from "./hybridRunDefaults.js";
 import { withResolvedEnv } from "./withResolvedEnv.js";
-
-const videoModes = ["on", "off", "retain-on-failure"] as const;
-const traceModes = ["on", "off", "retain-on-failure"] as const;
-const harModes = ["on", "off", "retain-on-failure"] as const;
-const harContentModes = ["full", "omit"] as const;
-const videoDefault: VideoMode = "off";
-const traceDefault: TraceMode = "off";
-const harDefault: HarMode = "off";
-const harContentDefault: HarContent = "omit";
 
 const runExamples = `
 Examples:
   $ qawolf flows run
   $ qawolf flows run "flows/checkout/**"
   $ qawolf flows run --retries 2 --video retain-on-failure
+  $ qawolf flows run --tag auth
+  $ qawolf flows run --tag auth --env staging
   $ qawolf flows run checkout --env staging --headed`;
 
 export function registerFlowsRunCommand(
   flows: Command,
   signals: SignalRegistry,
 ): void {
-  declareCommandKind(flows.command("run [pattern]"), "local", {
+  const command = declareCommandKind(flows.command("run [pattern]"), "local", {
     kindNote: "read with --env",
   })
     .description(
@@ -62,40 +49,9 @@ export function registerFlowsRunCommand(
       "Default timeout for actions and assertions, in milliseconds",
       parseInteger("--timeout", { min: 0 }),
       30_000,
-    )
-    .option(
-      "--video <mode>",
-      "Record video: on | off | retain-on-failure",
-      parseEnum<VideoMode>("--video", videoModes),
-      videoDefault,
-    )
-    .option(
-      "--trace <mode>",
-      "Record Playwright trace: on | off | retain-on-failure",
-      parseEnum<TraceMode>("--trace", traceModes),
-      traceDefault,
-    )
-    .option(
-      "--har <mode>",
-      "Record HAR network log: on | off | retain-on-failure",
-      parseEnum<HarMode>("--har", harModes),
-      harDefault,
-    )
-    .option(
-      "--har-content <mode>",
-      "HAR response bodies: omit | full (full uses more memory)",
-      parseEnum<HarContent>("--har-content", harContentModes),
-      harContentDefault,
-    )
-    .option(
-      "--output-dir <path>",
-      "Directory for run artifacts (videos, traces, HAR)",
-      defaultOutputDir,
-    )
-    .option(
-      "--junit [path]",
-      "Write a JUnit XML report (default: <output-dir>/junit-report.xml)",
-    )
+    );
+
+  addRunArtifactOptions(command)
     .option("--headed", "Show the browser window instead of headless", false)
     .option(
       "--env <env>",
@@ -114,13 +70,20 @@ export function registerFlowsRunCommand(
       "--no-browser-deps",
       "Skip installing OS-level browser dependencies (Linux --with-deps, which needs root); requires the system libraries to already be present",
     )
+    .option(
+      "--tag <name>",
+      "Only run flows carrying this tag; repeat for several. Without --env, matches against tags cached by the last pull",
+      collectValue,
+      [],
+    )
     .addHelpText("after", runExamples)
     .action(
       (
         pattern: string | undefined,
-        opts: FlowsRunFlags & { env?: string },
+        opts: FlowsRunFlags & { env?: string; tag: string[] },
         command: Command,
       ) => {
+        const selectors = { tags: opts.tag };
         if (opts.env !== undefined) {
           // Resolution turns an alias into the canonical id before the
           // .qawolf/<env>/ cache lookup, so --env <alias> and --env <id>
@@ -138,11 +101,12 @@ export function registerFlowsRunCommand(
                 { ...opts, env },
                 undefined,
                 identity,
+                selectors,
               ),
           )(opts, command);
         }
         return withContext(signals, (ctx) =>
-          handleFlowsRun(ctx, pattern, opts),
+          handleFlowsRun(ctx, pattern, opts, undefined, selectors),
         )(opts, command);
       },
     );
