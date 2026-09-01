@@ -6,12 +6,12 @@ import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.j
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeDefaultFs } from "~/shell/fs.js";
 import type { UI } from "~/shell/ui/index.js";
+import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import {
   makeCallPublicApiMock,
   makeMockPlatformClient,
 } from "~/shell/platform/createPlatformClient.testUtils.js";
 
-import { makeFakeUI } from "~/domains/runner/run.fixtures.js";
 import { fetchBundleAndEnvVars } from "./fetchPhase.js";
 
 afterEach(() => {
