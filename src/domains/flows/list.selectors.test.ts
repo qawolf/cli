@@ -9,7 +9,7 @@ import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
-import { callsOf, makeFakeUI } from "~/domains/runner/run.fixtures.js";
+import { callsOf, makeFakeUI } from "~/shell/commandContext.testUtils.js";
 
 afterEach(() => {
   mock.restore();

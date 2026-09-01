@@ -16,7 +16,7 @@ import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js"
 import { resolveDepsRoot } from "~/commands/resolveDepsRoot.js";
 
 import { createFlowRuntimeDeps as defaultCreateFlowRuntimeDeps } from "./flowRuntimeDeps.js";
-import { selectRunByTag } from "./selectRunByTag.js";
+import { selectRunByTag } from "~/domains/flows/selectRunByTag.js";
 import { type StagedRunDeps, runStagedFlows } from "./runStagedFlows.js";
 
 export type HandleFlowsRunDeps = StagedRunDeps & {
@@ -67,11 +67,16 @@ export async function handleFlowsRun(
     });
   }
 
-  const selected = await selectRunByTag(ctx, {
+  const selected = await selectRunByTag({
     files: expandedFiles,
     selectors,
-    flags,
     readCachedTags: (files) => defaultReadCachedTags(files, ctx.fs),
+    noMatch: (error) =>
+      noMatchResult(ctx, {
+        allowNoMatch: flags.allowNoMatch,
+        error,
+        notice: runnerMessages.noFlowsMatched,
+      }),
   });
   if (!Array.isArray(selected)) return selected;
 

@@ -80,14 +80,27 @@ describe("fetchKnownTags", () => {
     expect(await fetchKnownTags(makeCtx(callPublicApi))).toBeUndefined();
   });
 
-  it("stops after a bounded number of pages", async () => {
+  // A partial list is worse than no list: the caller would report a real tag
+  // from an unread page as a typo.
+  it("returns undefined when the page cap is reached with more pages left", async () => {
     const callPublicApi = makeCallPublicApiMock().mockResolvedValue(
       page(["auth"], "never-ending"),
     );
 
     const result = await fetchKnownTags(makeCtx(callPublicApi));
 
-    expect(result).toBeDefined();
+    expect(result).toBeUndefined();
     expect(callPublicApi.mock.calls.length).toBeLessThanOrEqual(20);
+  });
+
+  it("returns the names when the last page ends within the cap", async () => {
+    const callPublicApi = makeCallPublicApiMock()
+      .mockResolvedValueOnce(page(["auth"], "c2"))
+      .mockResolvedValueOnce(page(["smoke"]));
+
+    expect(await fetchKnownTags(makeCtx(callPublicApi))).toEqual([
+      "auth",
+      "smoke",
+    ]);
   });
 });

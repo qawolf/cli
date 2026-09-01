@@ -34,10 +34,13 @@ export async function fetchKnownTags(
 
       names.push(...result.value.tags.map((tag) => tag.name));
       cursor = result.value.nextCursor;
-      if (cursor === undefined) break;
+      if (cursor === undefined) return names;
     }
   } catch {
     return undefined;
   }
-  return names;
+  // The page cap was reached with more pages left. A partial list would make
+  // the caller report a real tag from a later page as unknown, so say the
+  // list is unavailable instead.
+  return undefined;
 }

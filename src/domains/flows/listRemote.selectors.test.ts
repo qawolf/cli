@@ -10,7 +10,7 @@ import {
 } from "~/shell/platform/createPlatformClient.testUtils.js";
 import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
 
-import { callsOf, makeFakeUI } from "~/domains/runner/run.fixtures.js";
+import { callsOf, makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import { flowsListRemote, type FlowsListRemoteOptions } from "./listRemote.js";
 
 afterEach(() => {

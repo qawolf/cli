@@ -141,6 +141,6 @@ export function failResult(
   };
 }
 
-export const callsOf = <T extends (...args: never) => unknown>(
-  fn: T,
-): unknown[][] => (fn as unknown as ReturnType<typeof mock>).mock.calls;
+// Re-exported from the shell layer so existing runner tests keep their import
+// while flows tests can reach it without crossing a domain boundary.
+export { callsOf } from "~/shell/commandContext.testUtils.js";
