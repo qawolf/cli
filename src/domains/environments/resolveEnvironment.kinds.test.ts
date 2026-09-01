@@ -20,7 +20,12 @@ describe("resolveEnvironment kind pre-selector", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-1" });
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-1",
+      slug: undefined,
+      name: "PR 1",
+    });
     expect(select).toHaveBeenCalledTimes(1);
   });
 
@@ -42,7 +47,12 @@ describe("resolveEnvironment kind pre-selector", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-2" });
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-2",
+      slug: undefined,
+      name: "PR 2",
+    });
     expect(select).toHaveBeenNthCalledWith(1, "Which kind of environment?", [
       { value: "static", label: "Static environments", hint: "2 environments" },
       {
@@ -74,7 +84,12 @@ describe("resolveEnvironment kind pre-selector", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-3" });
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-3",
+      slug: undefined,
+      name: "Staging",
+    });
     expect(select).toHaveBeenCalledTimes(1);
     expect(info).toHaveBeenCalledWith("Using environment Staging");
   });

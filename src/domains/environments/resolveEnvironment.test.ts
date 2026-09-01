@@ -128,7 +128,12 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-1" });
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-1",
+      slug: undefined,
+      name: "Staging",
+    });
     expect(select).not.toHaveBeenCalled();
     expect(info).toHaveBeenCalledWith("Using environment Staging");
     // Auto-picks are frictionless; the export tip only follows a real prompt.
@@ -151,9 +156,14 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    // The picker resolves an id only, so a pull started this way records no
-    // slug — the manifest keeps both fields optional for exactly this case.
-    expect(outcome).toEqual({ kind: "resolved", env: "env-2" });
+    // The picker knows the chosen environment's name, so a pull started this
+    // way records the same identity an explicit --env would.
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-2",
+      slug: undefined,
+      name: "Prod",
+    });
     expect(select).toHaveBeenCalledTimes(1);
     expect(select).toHaveBeenCalledWith("Which environment?", [
       { value: "env-1", label: "Staging", hint: "static · ready" },
@@ -178,7 +188,12 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-1" });
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-1",
+      slug: undefined,
+      name: "A",
+    });
     expect(findEnvironments).toHaveBeenCalledTimes(2);
     expect(select).toHaveBeenCalledTimes(1);
   });
