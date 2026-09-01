@@ -33,7 +33,9 @@ const sampleManifest = (): Manifest => ({
   qawolfCommittedAt: undefined,
   tagsFetchedAt: undefined,
   envVarsFetchedAt: undefined,
-  flows: [{ path: "login.flow.ts", contentHash: "hash-login" }],
+  flows: [
+    { path: "login.flow.ts", contentHash: "hash-login", tags: undefined },
+  ],
 });
 
 describe("dispatchFlow manifest stamping", () => {

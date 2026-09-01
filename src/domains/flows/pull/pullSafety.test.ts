@@ -40,6 +40,7 @@ describe("safety + staging integration", () => {
         {
           path: "a.flow.ts",
           contentHash: await hashFile(join(destDir, "a.flow.ts")),
+          tags: undefined,
         },
       ],
     };

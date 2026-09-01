@@ -64,7 +64,11 @@ export async function readManifest(
     qawolfCommitSha: result.data.qawolfCommitSha,
     qawolfCommittedAt: result.data.qawolfCommittedAt,
     tagsFetchedAt: result.data.tagsFetchedAt,
-    flows: result.data.flows,
+    flows: result.data.flows.map((flow) => ({
+      path: flow.path,
+      contentHash: flow.contentHash,
+      tags: flow.tags,
+    })),
   };
 }
 

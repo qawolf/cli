@@ -4,7 +4,7 @@ type ManifestFlowEntry = {
   // Tags carried by the flow at the time of the pull. Optional because it is
   // absent both on pre-tags manifests and on flows the tag fetch skipped —
   // `Manifest.tagsFetchedAt` distinguishes those from a genuinely untagged flow.
-  tags?: string[] | undefined;
+  tags: string[] | undefined;
 };
 
 // Identifies a flow run against a pulled env: derived by walking the

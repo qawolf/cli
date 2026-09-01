@@ -1,5 +1,5 @@
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
-import { writeManifest } from "~/shell/manifest/io.js";
+import { readManifest, writeManifest } from "~/shell/manifest/io.js";
 import {
   buildManifest,
   flattenSingleWrapper,
@@ -67,13 +67,13 @@ export async function stageBundle(
     const manifest = await buildManifest(
       {
         envId: args.envId,
+        tags: args.tags ?? (await carriedTags(args.destAbs, fs)),
         bundleDir: tmpDir,
         cliFlowsVersion: args.cliFlowsVersion,
         now: args.now,
         envVarsFetchedAt: args.envVarsFetchedAt,
         wrapperName,
         qawolfCommittedAt,
-        tags: args.tags,
       },
       fs,
     );
@@ -103,4 +103,26 @@ export async function stageBundle(
     await removeTempDir(tmpDir, registry, fs).catch(() => {});
     throw err;
   }
+}
+
+/**
+ * Tags kept from the previous pull of this environment.
+ *
+ * A pull rebuilds the manifest from the bundle, so a failed tag fetch would
+ * otherwise erase tags that were cached successfully earlier. Stale tags are
+ * reported as stale; losing them silently would break every offline query.
+ */
+async function carriedTags(
+  envDir: string,
+  fs: Fs,
+): Promise<FetchedTags | undefined> {
+  const previous = await readManifest(envDir, fs);
+  if (typeof previous === "string") return undefined;
+  if (previous.tagsFetchedAt === undefined) return undefined;
+
+  const byPath = new Map<string, string[]>();
+  for (const flow of previous.flows) {
+    if (flow.tags !== undefined) byPath.set(flow.path, [...flow.tags]);
+  }
+  return { fetchedAt: new Date(previous.tagsFetchedAt), byPath };
 }

@@ -1,5 +1,7 @@
 import { relative } from "node:path";
 
+import { toPosix } from "~/core/repoRelativePath.js";
+
 import { findPulledEnvDir } from "~/core/repoRelativePath.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import { readManifest } from "~/shell/manifest/io.js";
@@ -33,11 +35,6 @@ export async function readCachedTags(
     // No fetch ever happened for this env, so every entry is unknown.
     if (manifest.tagsFetchedAt === undefined) continue;
 
-    // Manifest paths are compared on posix form so a manifest written on one
-    // platform resolves on another. Replace backslashes explicitly rather
-    // than splitting on the host separator: on posix that would be a no-op
-    // and a win32-written manifest would never match.
-    const toPosix = (p: string): string => p.replaceAll("\\", "/");
     const entryByPath = new Map(
       manifest.flows.map((f) => [toPosix(f.path), f]),
     );

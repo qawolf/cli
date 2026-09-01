@@ -1,4 +1,4 @@
-import { join, relative, sep } from "node:path";
+import { join, relative } from "node:path";
 
 import { hashFile } from "~/shell/manifest/io.js";
 import type { Manifest } from "~/shell/manifest/types.js";
@@ -46,6 +46,8 @@ function extractQawolfCommitSha(
   return /-([0-9a-f]{40})$/i.exec(wrapperName)?.[1];
 }
 
+const toPosix = (p: string): string => p.replaceAll("\\", "/");
+
 const flowExtensions = [".flow.ts", ".flow.js"];
 
 /**
@@ -66,19 +68,21 @@ export async function buildManifest(
     envVarsFetchedAt: Date | undefined;
     wrapperName: string | undefined;
     qawolfCommittedAt: string | undefined;
-    tags?: FetchedTags | undefined;
+    tags: FetchedTags | undefined;
   },
   fs: Fs = makeDefaultFs(),
 ): Promise<Manifest> {
   const flowPaths = await walkForFlows(args.bundleDir, fs);
   const flows = await Promise.all(
     flowPaths.map(async (rel) => ({
-      path: rel,
+      // Stored posix so a manifest written on one platform resolves on
+      // another. Every reader compares against this, so normalizing once
+      // here beats normalizing in each of them.
+      path: toPosix(rel),
       contentHash: await hashFile(join(args.bundleDir, rel), fs),
-      // The walk yields platform-specific separators; tag keys arrive as posix
-      // paths, so normalize before looking one up. Left unset when the fetch
-      // did not cover this file — unknown, not untagged.
-      tags: args.tags?.byPath.get(rel.split(sep).join("/")),
+      // Left unset when the fetch did not cover this file — unknown, not
+      // untagged.
+      tags: args.tags?.byPath.get(toPosix(rel)),
     })),
   );
 

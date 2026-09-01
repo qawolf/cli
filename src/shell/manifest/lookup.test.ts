@@ -43,8 +43,12 @@ const sampleManifest: Manifest = {
   tagsFetchedAt: undefined,
   envVarsFetchedAt: undefined,
   flows: [
-    { path: join("src", "login.flow.ts"), contentHash: "hash-login" },
-    { path: "checkout.flow.ts", contentHash: "hash-checkout" },
+    {
+      path: join("src", "login.flow.ts"),
+      contentHash: "hash-login",
+      tags: undefined,
+    },
+    { path: "checkout.flow.ts", contentHash: "hash-checkout", tags: undefined },
   ],
 };
 

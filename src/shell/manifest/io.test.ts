@@ -24,7 +24,9 @@ const sample: Manifest = {
   qawolfCommittedAt: "2026-05-09T10:00:00.000Z",
   tagsFetchedAt: undefined,
   envVarsFetchedAt: "2026-05-10T12:30:00.000Z",
-  flows: [{ path: "src/checkout.flow.ts", contentHash: "deadbeef" }],
+  flows: [
+    { path: "src/checkout.flow.ts", contentHash: "deadbeef", tags: undefined },
+  ],
 };
 
 describe("readManifest", () => {
@@ -72,7 +74,13 @@ describe("readManifest", () => {
         envId: "env-abc",
         fetchedAt: "2026-05-10T12:00:00.000Z",
         cliFlowsVersion: "0.1.0",
-        flows: [{ path: "src/checkout.flow.ts", contentHash: "deadbeef" }],
+        flows: [
+          {
+            path: "src/checkout.flow.ts",
+            contentHash: "deadbeef",
+            tags: undefined,
+          },
+        ],
       }),
     );
 

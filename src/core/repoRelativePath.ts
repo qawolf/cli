@@ -1,4 +1,14 @@
-import { basename, dirname, relative, sep } from "node:path";
+import { basename, dirname, relative } from "node:path";
+
+/**
+ * Rewrites a path to posix separators.
+ *
+ * Manifest paths and platform paths are both posix, so anything compared
+ * against them is normalized with this rather than with the host separator:
+ * splitting on `sep` is a no-op on posix and would leave a win32-written
+ * manifest unmatched.
+ */
+export const toPosix = (path: string): string => path.replaceAll("\\", "/");
 
 /**
  * Resolves the `.qawolf/<env>/` directory a pulled flow lives under, or
@@ -25,9 +35,5 @@ export function findPulledEnvDir(flowAbsPath: string): string | undefined {
  */
 export function toRepoRelativePath(flowAbsPath: string, cwd: string): string {
   const envDir = findPulledEnvDir(flowAbsPath);
-  // Always posix. The result is compared against paths the platform reports,
-  // which are posix, so returning win32 separators would never match.
-  return relative(envDir ?? cwd, flowAbsPath)
-    .split(sep)
-    .join("/");
+  return toPosix(relative(envDir ?? cwd, flowAbsPath));
 }

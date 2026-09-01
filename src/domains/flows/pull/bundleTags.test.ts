@@ -3,7 +3,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
+import { readManifest } from "~/shell/manifest/io.js";
 import { buildManifest } from "./bundle.js";
+import { buildBundle } from "./pull.fixtures.js";
+import { stageBundle } from "./stage.js";
 
 let workDir = "";
 
@@ -31,6 +34,7 @@ const baseArgs = () => ({
   envVarsFetchedAt: undefined,
   wrapperName: undefined,
   qawolfCommittedAt: undefined,
+  tags: undefined,
 });
 
 const entryFor = (
@@ -92,5 +96,52 @@ describe("buildManifest tags", () => {
     expect(
       entryFor(manifest, join("src", "flows", "missing.flow.ts"))?.tags,
     ).toBeUndefined();
+  });
+});
+
+describe("stageBundle tag preservation", () => {
+  // A pull rebuilds the manifest from the bundle. Without carrying the
+  // previous tags forward, one failed tag fetch erases a good cache and every
+  // offline tag query silently stops working.
+  it("keeps the previous tags when the fetch failed", async () => {
+    const dest = join(workDir, "env");
+    const flows = [{ name: "src/flows/a.flow.ts", data: "// a" }];
+    const first = join(workDir, "first.tar.gz");
+    await buildBundle(first, { flows });
+
+    await stageBundle({
+      tmpArchive: first,
+      destAbs: dest,
+      assetsAbs: join(workDir, "assets"),
+      envId: "env-x",
+      cliFlowsVersion: "0.4.0",
+      now: new Date("2026-05-10T12:00:00.000Z"),
+      envVars: {},
+      envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+      tags: {
+        fetchedAt: new Date("2026-05-10T12:30:00.000Z"),
+        byPath: new Map([["src/flows/a.flow.ts", ["auth"]]]),
+      },
+    });
+
+    // Second pull, tag fetch failed.
+    const second = join(workDir, "second.tar.gz");
+    await buildBundle(second, { flows });
+    await stageBundle({
+      tmpArchive: second,
+      destAbs: dest,
+      assetsAbs: join(workDir, "assets"),
+      envId: "env-x",
+      cliFlowsVersion: "0.4.0",
+      now: new Date("2026-05-11T12:00:00.000Z"),
+      envVars: {},
+      envVarsFetchedAt: new Date("2026-05-11T12:00:00.000Z"),
+      tags: undefined,
+    });
+
+    const manifest = await readManifest(dest);
+    if (typeof manifest === "string") throw new Error(manifest);
+    expect(manifest.tagsFetchedAt).toBe("2026-05-10T12:30:00.000Z");
+    expect(manifest.flows[0]?.tags).toEqual(["auth"]);
   });
 });

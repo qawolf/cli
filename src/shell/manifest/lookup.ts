@@ -1,5 +1,7 @@
 import { relative } from "node:path";
 
+import { toPosix } from "~/core/repoRelativePath.js";
+
 import { findPulledEnvDir } from "~/core/repoRelativePath.js";
 import { readManifest } from "./io.js";
 import type { FlowStamp } from "./types.js";
@@ -14,8 +16,10 @@ export async function findFlowStamp(
   const manifest = await readManifest(envDir);
   if (typeof manifest === "string") return undefined;
 
-  const relPath = relative(envDir, flowAbsPath);
-  const entry = manifest.flows.find((f) => f.path === relPath);
+  // Manifests are written posix, but one written by an older CLI on win32
+  // holds native separators, so both sides are normalized before comparing.
+  const relPath = toPosix(relative(envDir, flowAbsPath));
+  const entry = manifest.flows.find((f) => toPosix(f.path) === relPath);
   if (!entry) return undefined;
 
   return {

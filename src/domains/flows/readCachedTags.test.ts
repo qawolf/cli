@@ -60,7 +60,9 @@ describe("readCachedTags", () => {
     const fs = await fsWith(
       manifest({
         tagsFetchedAt: undefined,
-        flows: [{ path: "src/flows/a.flow.ts", contentHash: "h1" }],
+        flows: [
+          { path: "src/flows/a.flow.ts", contentHash: "h1", tags: undefined },
+        ],
       }),
     );
 
@@ -76,7 +78,7 @@ describe("readCachedTags", () => {
       manifest({
         flows: [
           { path: "src/flows/a.flow.ts", contentHash: "h1", tags: ["auth"] },
-          { path: "src/flows/b.flow.ts", contentHash: "h2" },
+          { path: "src/flows/b.flow.ts", contentHash: "h2", tags: undefined },
         ],
       }),
     );
