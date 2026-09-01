@@ -60,7 +60,10 @@ export async function sendRunFlowRequest(
   );
   if (!result.ok) {
     return {
-      failure: { ...failureFields(result), exitCode: exitCodes.network },
+      failure: {
+        ...failureFields(result),
+        exitCode: result.exitCode ?? exitCodes.network,
+      },
       type: "failed",
     };
   }

@@ -55,6 +55,12 @@ export function describeRequestError(
         exitCode: exitCodes.auth,
         ...body,
       };
+    if (err.status === 402)
+      return {
+        error: m.request.rejected402(noun),
+        exitCode: exitCodes.payment,
+        ...body,
+      };
     if (err.status === 403)
       return { error: m.request.rejected403(noun), ...body };
     if (err.status === 404)

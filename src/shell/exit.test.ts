@@ -59,6 +59,7 @@ describe("exit", () => {
       network: 4,
       config: 5,
       timeout: 6,
+      payment: 7,
     });
   });
 });

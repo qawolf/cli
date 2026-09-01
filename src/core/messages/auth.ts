@@ -44,6 +44,8 @@ export const authMessages = {
     request: {
       rejected401: (noun: string | undefined) =>
         `QA Wolf API rejected the${noun ? ` ${noun}` : ""} request (HTTP 401). Check your API key.`,
+      rejected402: (noun: string | undefined) =>
+        `QA Wolf API refused the${noun ? ` ${noun}` : ""} request (HTTP 402): billing prevented it.`,
       rejected403: (noun: string | undefined) =>
         `QA Wolf API rejected the${noun ? ` ${noun}` : ""} request (HTTP 403). Check that your API key has access to this environment.`,
       notFound404: (noun: string | undefined) =>

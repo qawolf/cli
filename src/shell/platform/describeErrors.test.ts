@@ -18,7 +18,7 @@ const envelope = (message: string) =>
   JSON.stringify({ error: { json: { message } } });
 
 describe("describeRequestError", () => {
-  it.each([401, 403, 404, 500])(
+  it.each([401, 402, 403, 404, 500])(
     "carries the server's reason on HTTP %i",
     (status) => {
       const described = describeRequestError(
@@ -32,7 +32,7 @@ describe("describeRequestError", () => {
     },
   );
 
-  it.each([401, 403, 404, 500])(
+  it.each([401, 402, 403, 404, 500])(
     "omits the body entirely when HTTP %i carries no reason",
     (status) => {
       const described = describeRequestError(
@@ -53,6 +53,16 @@ describe("describeRequestError", () => {
     );
 
     expect(described.exitCode).toBe(exitCodes.auth);
+  });
+
+  it("maps HTTP 402 to the payment exit code", () => {
+    const described = describeRequestError(
+      httpError(402),
+      baseUrl,
+      "run.create",
+    );
+
+    expect(described.exitCode).toBe(exitCodes.payment);
   });
 
   it.each([403, 404, 500])(
