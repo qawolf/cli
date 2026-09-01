@@ -1,5 +1,6 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
+import { toPosix } from "~/core/repoRelativePath.js";
 import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import { readManifest } from "~/shell/manifest/io.js";
@@ -40,7 +41,9 @@ async function readCache(
 
   const byPath: TagsByPath = new Map();
   for (const flow of manifest.flows) {
-    if (flow.tags !== undefined) byPath.set(flow.path, flow.tags);
+    // A manifest written by an older CLI on win32 may hold `\` paths; callers
+    // look up posix repo-relative paths, so normalize or they never match.
+    if (flow.tags !== undefined) byPath.set(toPosix(flow.path), flow.tags);
   }
   return { byPath, fetchedAt: manifest.tagsFetchedAt };
 }

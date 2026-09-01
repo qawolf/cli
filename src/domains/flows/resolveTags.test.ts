@@ -145,11 +145,35 @@ describe("resolveTags fallback", () => {
       "env-1",
       envDir,
       await fsWithManifest({
-        flows: [{ path: "src/flows/a.flow.ts", contentHash: "h1" }],
+        flows: [
+          { path: "src/flows/a.flow.ts", contentHash: "h1", tags: undefined },
+        ],
       }),
     );
 
     if (result.kind !== "cached") throw new Error("expected cached tags");
     expect(result.byPath.has("src/flows/a.flow.ts")).toBe(false);
+  });
+
+  // Manifests written by an older CLI on win32 hold `\` paths; lookups are
+  // posix repo-relative, so the cache must normalize to stay usable.
+  it("keys cached tags on posix form even when the manifest used backslashes", async () => {
+    const result = await resolveTags(
+      makeCtx(liveFails()),
+      "env-1",
+      envDir,
+      await fsWithManifest({
+        flows: [
+          {
+            path: "src\\flows\\a.flow.ts",
+            contentHash: "h1",
+            tags: ["cached-tag"],
+          },
+        ],
+      }),
+    );
+
+    if (result.kind !== "cached") throw new Error("expected cached tags");
+    expect(result.byPath.get("src/flows/a.flow.ts")).toEqual(["cached-tag"]);
   });
 });
