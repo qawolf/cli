@@ -5,6 +5,7 @@ import { declareCommandKind } from "~/commands/commandKind.js";
 import { flowsMessages } from "~/core/messages/index.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { collectValue, parseInteger } from "~/domains/runner/runFlagParsers.js";
+import { findPulledEnv } from "~/shell/manifest/pulledEnv.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
 
 import { addRunArtifactOptions } from "./runArtifactOptions.js";
@@ -93,6 +94,13 @@ export function registerFlowsRunCommand(
             {
               explicit: opts.env,
               requiredMessage: flowsMessages.run.requiresEnv,
+              // A run whose flows are already pulled does not need the
+              // platform, so an unreachable one should not stop it. The slug
+              // recorded at pull time means an alias resolves here too.
+              offlineFallback: async (explicit) =>
+                explicit === undefined
+                  ? undefined
+                  : (await findPulledEnv(explicit, process.cwd()))?.envId,
             },
             (ctx, env, identity) =>
               handleHybridFlowsRun(

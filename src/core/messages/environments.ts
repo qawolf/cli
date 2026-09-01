@@ -17,6 +17,8 @@ export const environmentsMessages = {
   couldNotResolve: (ref: string, detail: string) =>
     `Could not resolve environment ${ref}: ${detail} If ${ref} is an alias, note that aliases require a team API key.`,
   aborted: "Aborted; no environment selected.",
+  usingPulledEnv: (env: string) =>
+    `Could not reach the platform to resolve environment ${env}; using the copy pulled into .qawolf/${env}.`,
   tooManyPages: (pages: number) =>
     `Stopped listing environments after ${pages} pages. Pass --env explicitly.`,
 };

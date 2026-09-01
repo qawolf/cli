@@ -25,7 +25,17 @@ export type ResolveEnvironmentOutcome =
       name?: string | undefined;
     }
   | { kind: "cancelled" }
-  | { kind: "error"; error: string; errorBody?: string };
+  | {
+      kind: "error";
+      error: string;
+      errorBody?: string;
+      /**
+       * True when the platform never answered. A definitive refusal (unknown
+       * environment, revoked key) is not unreachable: falling back to a
+       * pulled copy would then run something the platform said no to.
+       */
+      unreachable: boolean;
+    };
 
 // The concrete instantiations of PlatformClient["callPublicApi"] this domain
 // needs. The real generic method is assignable to the overload set, and test
@@ -68,7 +78,7 @@ export async function resolveEnvironment(
   }
 
   if (deps.ui.mode !== "human") {
-    return { kind: "error", error: opts.requiredMessage };
+    return { kind: "error", error: opts.requiredMessage, unreachable: false };
   }
 
   return pickEnvironment(deps);
@@ -92,6 +102,7 @@ async function resolveRef(
       ...failureFields(result),
       kind: "error",
       error: environmentsMessages.couldNotResolve(ref, result.error),
+      unreachable: result.unreachable === true,
     };
   }
   if (result.value.id !== ref) {

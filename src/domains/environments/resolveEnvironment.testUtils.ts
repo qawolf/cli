@@ -27,6 +27,8 @@ export function makeDeps(args: {
   getEnv?: Page["environments"][number];
   getError?: string;
   getErrorBody?: string;
+  /** Marks the getError as a transport failure the platform never answered. */
+  getUnreachable?: boolean;
   selectAnswers?: string[];
   selectCancelled?: boolean;
 }) {
@@ -58,9 +60,14 @@ export function makeDeps(args: {
   const getEnvironment = mock(
     async (_input: unknown): Promise<PlatformResult<GetOutput>> => {
       if (args.getError !== undefined) {
-        return args.getErrorBody === undefined
-          ? { ok: false, error: args.getError }
-          : { ok: false, error: args.getError, errorBody: args.getErrorBody };
+        return {
+          ok: false,
+          error: args.getError,
+          ...(args.getErrorBody === undefined
+            ? {}
+            : { errorBody: args.getErrorBody }),
+          ...(args.getUnreachable ? { unreachable: true } : {}),
+        };
       }
       const value = args.getEnv;
       if (value === undefined)

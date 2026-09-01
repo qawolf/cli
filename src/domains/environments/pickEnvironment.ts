@@ -24,11 +24,21 @@ export async function pickEnvironment(
   deps: ResolveEnvironmentDeps,
 ): Promise<ResolveEnvironmentOutcome> {
   const fetched = await fetchAllEnvironments(deps.platformClient);
-  if (!fetched.ok) return { ...failureFields(fetched), kind: "error" };
+  if (!fetched.ok) {
+    return {
+      ...failureFields(fetched),
+      kind: "error",
+      unreachable: fetched.unreachable === true,
+    };
+  }
 
   const environments = fetched.environments;
   if (environments.length === 0) {
-    return { kind: "error", error: environmentsMessages.noEnvironments };
+    return {
+      kind: "error",
+      error: environmentsMessages.noEnvironments,
+      unreachable: false,
+    };
   }
   const sole = environments.length === 1 ? environments[0] : undefined;
   if (sole) {

@@ -85,7 +85,11 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "error", error: "req" });
+    expect(outcome).toEqual({
+      kind: "error",
+      error: "req",
+      unreachable: false,
+    });
   });
 
   it("errors with the required message in non-human modes", async () => {
@@ -97,7 +101,11 @@ describe("resolveEnvironment", () => {
         requiredMessage: "req",
       });
 
-      expect(outcome).toEqual({ kind: "error", error: "req" });
+      expect(outcome).toEqual({
+        kind: "error",
+        error: "req",
+        unreachable: false,
+      });
       expect(findEnvironments).not.toHaveBeenCalled();
       expect(getEnvironment).not.toHaveBeenCalled();
     }
@@ -115,6 +123,7 @@ describe("resolveEnvironment", () => {
       kind: "error",
       error:
         'No environments found on your team. Create one with "qawolf environment create".',
+      unreachable: false,
     });
   });
 
@@ -226,6 +235,7 @@ describe("resolveEnvironment", () => {
       kind: "error",
       error:
         "Stopped listing environments after 10 pages. Pass --env explicitly.",
+      unreachable: false,
     });
     expect(findEnvironments).toHaveBeenCalledTimes(10);
   });
