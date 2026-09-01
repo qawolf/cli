@@ -105,11 +105,13 @@ export function env(
   name: string,
   kind: "static" | "preview" = "static",
   isDefault = false,
+  alias?: string,
 ): Page["environments"][number] {
   return {
     id,
     isDefault,
     name,
+    ...(alias === undefined ? {} : { alias }),
     kind,
     runConcurrencyLimit: "5",
     status: "ready",

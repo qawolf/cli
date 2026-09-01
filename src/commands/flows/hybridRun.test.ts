@@ -263,7 +263,12 @@ describe("handleHybridFlowsRun", () => {
       deps,
     );
 
-    expect(pullEnvMock).toHaveBeenCalledWith(ctx, "my-env");
+    // The pull records which environment it holds, so the identity travels
+    // with it rather than being dropped on the run path.
+    expect(pullEnvMock).toHaveBeenCalledWith(ctx, "my-env", {
+      slug: undefined,
+      name: undefined,
+    });
     expect(expandPatternsMock).toHaveBeenCalledTimes(2);
     expect(flowsRunMock).toHaveBeenCalledWith(
       expect.anything(),

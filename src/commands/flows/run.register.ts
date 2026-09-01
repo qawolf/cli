@@ -131,7 +131,14 @@ export function registerFlowsRunCommand(
               explicit: opts.env,
               requiredMessage: flowsMessages.run.requiresEnv,
             },
-            (ctx, env) => handleHybridFlowsRun(ctx, pattern, { ...opts, env }),
+            (ctx, env, identity) =>
+              handleHybridFlowsRun(
+                ctx,
+                pattern,
+                { ...opts, env },
+                undefined,
+                identity,
+              ),
           )(opts, command);
         }
         return withContext(signals, (ctx) =>
