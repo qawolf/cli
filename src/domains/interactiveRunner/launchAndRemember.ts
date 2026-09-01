@@ -36,7 +36,7 @@ async function launchRunner(
   if (!result.ok) {
     return {
       ...failureFields(result),
-      exitCode: exitCodes.network,
+      exitCode: result.exitCode ?? exitCodes.network,
       mayHaveArrived: result.mayHaveArrived ?? false,
       ok: false,
     };

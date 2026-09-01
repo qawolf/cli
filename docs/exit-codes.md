@@ -11,6 +11,7 @@ CI consumers depend on consistent exit codes. The CLI commits to the following c
 | `4`  | `network`     | Apex unreachable, GCS download failure, registry unreachable, or a runner that could not serve the request now (unreachable, or its screen not yet up).                                                                                                                                            |
 | `5`  | `config`      | `qawolf.config.ts` invalid, file collision during `init`, or a run file that could not be read.                                                                                                                                                                                                    |
 | `6`  | `timeout`     | A `--follow` reached its `--timeout`: `runner run` before its run settled (the run may still be going), or `runner events`.                                                                                                                                                                        |
+| `7`  | `payment`     | The QA Wolf API refused the request with HTTP 402: billing prevented it — the organization is over its monthly spend limit or has no valid payment method.                                                                                                                                         |
 
 ## Using the helper
 

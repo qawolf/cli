@@ -81,7 +81,10 @@ export async function handleRunnerImportPackage(
     runnerCallOptions,
   );
   if (!result.ok) {
-    return { ...failureFields(result), exitCode: exitCodes.network };
+    return {
+      ...failureFields(result),
+      exitCode: result.exitCode ?? exitCodes.network,
+    };
   }
 
   if (result.value.outcome === "failure") {

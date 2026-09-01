@@ -149,4 +149,25 @@ describe("handleRunnerImportPackage", () => {
     expect(result?.error).toContain("Retry");
     expect(result?.exitCode).toBe(4);
   });
+
+  it("keeps the payment exit code on a spend-limit refusal", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error:
+        "QA Wolf API refused the runner.importPackage request (HTTP 402): billing prevented it.",
+      errorBody:
+        "You have reached your monthly limit of $50.00 for runner usage.",
+      exitCode: 7,
+      ok: false,
+    });
+
+    const result = await handleRunnerImportPackage(
+      ctx,
+      { name: "dayjs", runner: "ci", version: undefined },
+      depsWithManifest(),
+    );
+
+    expect(result?.errorBody).toContain("monthly limit");
+    expect(result?.exitCode).toBe(7);
+  });
 });
