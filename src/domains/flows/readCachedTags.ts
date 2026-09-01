@@ -1,4 +1,4 @@
-import { relative } from "node:path";
+import { relative, sep } from "node:path";
 
 import { findPulledEnvDir } from "~/core/repoRelativePath.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
@@ -33,9 +33,14 @@ export async function readCachedTags(
     // No fetch ever happened for this env, so every entry is unknown.
     if (manifest.tagsFetchedAt === undefined) continue;
 
-    const entryByPath = new Map(manifest.flows.map((f) => [f.path, f]));
+    // Manifest paths are compared on posix form: a manifest written on one
+    // platform must still resolve on another.
+    const toPosix = (p: string): string => p.split(sep).join("/");
+    const entryByPath = new Map(
+      manifest.flows.map((f) => [toPosix(f.path), f]),
+    );
     for (const file of envFiles) {
-      const tags = entryByPath.get(relative(envDir, file))?.tags;
+      const tags = entryByPath.get(toPosix(relative(envDir, file)))?.tags;
       if (tags !== undefined) tagsByFile.set(file, tags);
     }
   }

@@ -44,6 +44,18 @@ describe("toRepoRelativePath", () => {
     ).toBe("src/flows/a/b.flow.ts");
   });
 
+  // The result is compared against paths the platform reports, which are
+  // posix. On win32 `relative` yields backslashes, so it must be normalized
+  // or every comparison misses.
+  it("always returns posix separators", () => {
+    const result = toRepoRelativePath(
+      "/repo/.qawolf/staging/src/flows/a/b.flow.ts",
+      "/repo",
+    );
+    expect(result).not.toContain("\\");
+    expect(result.split("/")).toEqual(["src", "flows", "a", "b.flow.ts"]);
+  });
+
   it("falls back to a path relative to cwd for a project flow", () => {
     expect(toRepoRelativePath("/repo/src/flows/a/b.flow.ts", "/repo")).toBe(
       "src/flows/a/b.flow.ts",

@@ -1,4 +1,4 @@
-import { basename, dirname, relative } from "node:path";
+import { basename, dirname, relative, sep } from "node:path";
 
 /**
  * Resolves the `.qawolf/<env>/` directory a pulled flow lives under, or
@@ -25,5 +25,9 @@ export function findPulledEnvDir(flowAbsPath: string): string | undefined {
  */
 export function toRepoRelativePath(flowAbsPath: string, cwd: string): string {
   const envDir = findPulledEnvDir(flowAbsPath);
-  return relative(envDir ?? cwd, flowAbsPath);
+  // Always posix. The result is compared against paths the platform reports,
+  // which are posix, so returning win32 separators would never match.
+  return relative(envDir ?? cwd, flowAbsPath)
+    .split(sep)
+    .join("/");
 }
