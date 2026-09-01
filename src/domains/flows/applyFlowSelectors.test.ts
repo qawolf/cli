@@ -20,9 +20,10 @@ function makeArgs(
     cwd,
     selectors: { tags: [] },
     warn: mock(() => undefined),
-    resolveTags: undefined,
+    resolveTags: mock(() => Promise.resolve(liveTags())),
     fetchKnownTags: mock(() => Promise.resolve(["auth", "smoke"])),
     onEmpty: (error: string) => ({ error, exitCode: 2 }),
+    envId: "env-1",
     ...over,
   };
 }
@@ -82,7 +83,11 @@ describe("applyFlowSelectors with a tag selector", () => {
 
     expect(result).toMatchObject({
       ok: false,
-      result: { exitCode: 4 },
+      result: {
+        error:
+          "Could not reach the platform and no tags are cached for environment 'env-1'. Run 'qawolf flows pull --env env-1' while online.",
+        exitCode: 4,
+      },
     });
   });
 });

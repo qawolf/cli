@@ -15,10 +15,7 @@ import {
   expandPatterns as defaultExpandPatterns,
   makePeekFlowMeta,
 } from "./expand.js";
-import {
-  emptySelectionResult,
-  tagsUnavailableResult,
-} from "./listTagGuards.js";
+import { emptySelectionResult, tagsNotCachedResult } from "./selectorGuards.js";
 import { readCachedTags as defaultReadCachedTags } from "./readCachedTags.js";
 import { renderListTable } from "./renderListTable.js";
 
@@ -55,8 +52,8 @@ export async function flowsList(
   const files = await deps.expandPatterns(patterns, deps.cwd);
   const cachedTags = await deps.readCachedTags(files);
 
-  const unavailable = tagsUnavailableResult(selectors, cachedTags);
-  if (unavailable !== undefined) return unavailable;
+  const notCached = tagsNotCachedResult(selectors, cachedTags);
+  if (notCached !== undefined) return notCached;
 
   const all: FlowsListItem[] = [];
   for await (const { file, ...meta } of batchMap(
@@ -74,7 +71,8 @@ export async function flowsList(
   }
 
   const items = all.filter((item) => matchesSelectors(item, selectors));
-  const empty = emptySelectionResult(selectors, items.length);
+  // No team tag list offline, so a miss is reported as a miss, never a typo.
+  const empty = await emptySelectionResult(selectors, items.length, undefined);
   if (empty !== undefined) return empty;
 
   if (ctx.ui.mode === "json") {

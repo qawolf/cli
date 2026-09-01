@@ -21,7 +21,7 @@ describe("selectRunByTag", () => {
       noMatch,
     });
 
-    expect(result).toEqual([login, smoke]);
+    expect(result).toEqual({ ok: true, files: [login, smoke] });
   });
 
   it("keeps only the flows carrying a named tag", async () => {
@@ -32,7 +32,7 @@ describe("selectRunByTag", () => {
       noMatch,
     });
 
-    expect(result).toEqual([login]);
+    expect(result).toEqual({ ok: true, files: [login] });
   });
 
   // Nothing cached means the tags are unknown, so filtering would match
@@ -45,7 +45,7 @@ describe("selectRunByTag", () => {
       noMatch,
     });
 
-    expect(result).toMatchObject({ exitCode: 4 });
+    expect(result).toMatchObject({ ok: false, result: { exitCode: 4 } });
   });
 
   it("hands an empty selection to the caller", async () => {
@@ -57,8 +57,8 @@ describe("selectRunByTag", () => {
     });
 
     expect(result).toEqual({
-      error: "No flows matched tags nope.",
-      exitCode: 2,
+      ok: false,
+      result: { error: "No flows matched tags nope.", exitCode: 2 },
     });
   });
 
@@ -70,6 +70,6 @@ describe("selectRunByTag", () => {
       noMatch: () => undefined,
     });
 
-    expect(result).toBeUndefined();
+    expect(result).toEqual({ ok: false, result: undefined });
   });
 });

@@ -78,11 +78,11 @@ export async function handleFlowsRun(
         notice: runnerMessages.noFlowsMatched,
       }),
   });
-  if (!Array.isArray(selected)) return selected;
+  if (!selected.ok) return selected.result;
 
   return runStagedFlows({
     ctx,
-    files: selected,
+    files: selected.files,
     flags,
     deps: resolvedDeps,
   });

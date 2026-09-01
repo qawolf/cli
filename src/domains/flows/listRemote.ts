@@ -7,12 +7,11 @@ import type {
 } from "~/shell/commandContext.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import { flowsMessages, runnerMessages } from "~/core/messages/index.js";
-import { hasSelectors, matchesSelectors } from "~/core/flowSelectors.js";
-import { exitCodes } from "~/shell/exit.js";
+import { matchesSelectors } from "~/core/flowSelectors.js";
 
-import { explainEmptySelection } from "./explainEmptySelection.js";
 import { fetchKnownTags } from "./fetchKnownTags.js";
 import { renderListTable } from "./renderListTable.js";
+import { emptySelectionResult } from "./selectorGuards.js";
 
 type RemoteListItem = {
   flowId: string;
@@ -61,17 +60,12 @@ export async function flowsListRemote(
   const selectors = { tags: options.tags };
   const items = all.filter((item) => matchesSelectors(item, selectors));
 
-  // An explicit selector that matches nothing is a mistake worth reporting,
-  // not an empty listing: exiting 0 here reads as "there are none".
-  if (items.length === 0 && hasSelectors(selectors)) {
-    // Tags are team-scoped, so only the team list can tell a typo from a real
-    // tag that nothing here carries. Fetched only now that something already
-    // failed to match, so the happy path stays one call.
-    return {
-      error: explainEmptySelection(selectors, await fetchKnownTags(ctx)),
-      exitCode: exitCodes.invalidArgs,
-    };
-  }
+  // Tags are team-scoped, so only the team list can tell a typo from a real
+  // tag that nothing here carries.
+  const empty = await emptySelectionResult(selectors, items.length, () =>
+    fetchKnownTags(ctx),
+  );
+  if (empty !== undefined) return empty;
 
   if (ctx.ui.mode === "json") {
     ctx.ui.json(items);

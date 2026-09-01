@@ -2,25 +2,24 @@ import { hasSelectors, type FlowSelectors } from "~/core/flowSelectors.js";
 import { flowsMessages } from "~/core/messages/index.js";
 import { selectFlowFiles } from "~/core/selectFlowFiles.js";
 import type { CommandResult } from "~/shell/commandContext.js";
-import { exitCodes } from "~/shell/exit.js";
 
 import { explainEmptySelection } from "./explainEmptySelection.js";
 import type { TagResolution } from "./resolveTags.js";
+import { tagsUnavailableResult } from "./selectorGuards.js";
 
 type Args = {
   readonly files: readonly string[];
   readonly cwd: string;
   readonly selectors: FlowSelectors;
   readonly warn: (message: string) => void;
-  /** Resolves the env's tags. Undefined when no environment is in play. */
-  readonly resolveTags: (() => Promise<TagResolution>) | undefined;
+  readonly resolveTags: () => Promise<TagResolution>;
   readonly fetchKnownTags: () => Promise<string[] | undefined>;
   /**
    * Turns an empty selection into a result. `flows run` routes this through
    * noMatchResult so --allow-no-match downgrades it to a clean exit.
    */
   readonly onEmpty: (error: string) => CommandResult;
-  readonly envId?: string | undefined;
+  readonly envId: string;
 };
 
 export type ApplyFlowSelectorsResult =
@@ -42,15 +41,9 @@ export async function applyFlowSelectors(
     return { ok: true, files: [...args.files] };
   }
 
-  const resolution = await args.resolveTags?.();
-  if (resolution === undefined || resolution.kind === "unavailable") {
-    return {
-      ok: false,
-      result: {
-        error: flowsMessages.selectors.tagsUnavailable(args.envId ?? ""),
-        exitCode: exitCodes.network,
-      },
-    };
+  const resolution = await args.resolveTags();
+  if (resolution.kind === "unavailable") {
+    return { ok: false, result: tagsUnavailableResult(args.envId) };
   }
   if (resolution.kind === "cached") {
     args.warn(flowsMessages.selectors.usingCachedTags(resolution.fetchedAt));
