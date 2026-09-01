@@ -1,3 +1,5 @@
+import { sep } from "node:path";
+
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import type { CommandContext } from "~/shell/commandContext.js";
@@ -57,6 +59,11 @@ type Item = {
 const itemsFrom = (ui: CommandContext["ui"]): Item[] =>
   (callsOf(ui.json)[0]?.[0] ?? []) as Item[];
 
+// `file` is built with node:path, so it carries win32 separators on Windows.
+// Compare on posix form rather than pinning one platform's spelling.
+const filesFrom = (ui: CommandContext["ui"]): string[] =>
+  itemsFrom(ui).map((i) => i.file.split(sep).join("/"));
+
 describe("flowsList tags", () => {
   // Tags are platform state. A flow that was never pulled has no cached tags,
   // and reporting [] there would claim it is untagged.
@@ -105,7 +112,7 @@ describe("flowsList --tag against cached tags", () => {
       { tags: ["auth"] },
     );
 
-    expect(itemsFrom(ctx.ui).map((i) => i.file)).toEqual([
+    expect(filesFrom(ctx.ui)).toEqual([
       ".qawolf/staging/src/flows/checkout/login.flow.ts",
     ]);
   });
