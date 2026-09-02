@@ -74,6 +74,36 @@ describe("handleRunnerLaunch", () => {
     expect(outputs()[0]?.humanMessage).toContain("already running");
   });
 
+  // QAWOLF_RUNNER_ID outranks the directory default a launch just wrote (resolveRunner.ts).
+  it("warns when QAWOLF_RUNNER_ID names a different runner than the one just launched", async () => {
+    const { callPublicApi, ctx, warnings } = makeAuthCtx();
+    const value = { ...launched, id: "ci", runnerName: "android" as const };
+    callPublicApi.mockResolvedValue({ ok: true, value });
+
+    await handleRunnerLaunch(
+      ctx,
+      { id: "ci", name: "android" },
+      makeTestDeps({ env: { QAWOLF_RUNNER_ID: "old-default" } }),
+    );
+
+    expect(warnings()).toHaveLength(1);
+    expect(warnings()[0]).toContain("QAWOLF_RUNNER_ID=old-default");
+    expect(warnings()[0]).toContain("--runner ci");
+  });
+
+  it("does not warn when QAWOLF_RUNNER_ID already names the launched runner, or is unset", async () => {
+    const { callPublicApi, ctx, warnings } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { ...launched, id: "ci" },
+    });
+    const opts = { id: "ci", name: undefined };
+    for (const env of [{ QAWOLF_RUNNER_ID: "ci" }, {}]) {
+      await handleRunnerLaunch(ctx, opts, makeTestDeps({ env }));
+    }
+    expect(warnings()).toEqual([]);
+  });
+
   it("refuses an id the published schema does not admit, without a request", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
 

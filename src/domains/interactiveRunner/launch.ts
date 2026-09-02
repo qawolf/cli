@@ -8,6 +8,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { launchAndRemember } from "./launchAndRemember.js";
+import { runnerIdEnvironmentVariable } from "./resolveRunner.js";
 import { parseRunnerId, parseRunnerName } from "./runnerIds.js";
 
 export async function handleRunnerLaunch(
@@ -35,6 +36,20 @@ export async function handleRunnerLaunch(
   );
   if (!launched.ok) {
     return { ...failureFields(launched), exitCode: launched.exitCode };
+  }
+
+  // The directory default this launch just wrote is only what a runner-less
+  // command reaches for; QAWOLF_RUNNER_ID outranks it (see resolveRunner.ts),
+  // so a stale value there would silently keep sending those commands
+  // elsewhere. Say so now, while it's this launch's id that's fresh in mind.
+  const envRunnerId = deps.env[runnerIdEnvironmentVariable]?.trim();
+  if (envRunnerId && envRunnerId !== launched.value.id) {
+    ctx.ui.warn(
+      interactiveRunnerMessages.envRunnerIdShadowsLaunch(
+        launched.value.id,
+        envRunnerId,
+      ),
+    );
   }
 
   ctx.ui.output(

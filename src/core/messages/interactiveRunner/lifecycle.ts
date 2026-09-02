@@ -7,6 +7,8 @@ export const lifecycleMessages = {
     `Runner ${id} could not be written to .qawolf as this directory's default, so later commands will not find it on their own. Pass --runner ${id}, or set QAWOLF_RUNNER_ID=${id}.`,
   defaultNotForgotten: (id: string) =>
     `Runner ${id} was terminated, but it could not be removed from .qawolf as this directory's default, so later commands will still be sent to it. Pass --runner, or launch a new runner.`,
+  envRunnerIdShadowsLaunch: (launchedId: string, envId: string) =>
+    `QAWOLF_RUNNER_ID=${envId} is still set, so commands that omit --runner will keep targeting it instead of the runner just launched. Pass --runner ${launchedId}, or export QAWOLF_RUNNER_ID=${launchedId}.`,
   keptAlive: (id: string) =>
     `Runner ${id} is alive, and its inactivity clock has been reset.`,
   launchFailed: (id: string, error: string) =>
