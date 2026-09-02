@@ -87,4 +87,11 @@ describe("flows list --tag parsing", () => {
 
     expect(output).not.toContain("src/flows/**");
   });
+
+  it("rejects --ai-task-id without --remote", async () => {
+    const output = await runList(["--ai-task-id", "task-1"]);
+
+    expect(process.exitCode).toBe(1);
+    expect(output).toContain(flowsMessages.list.aiTaskIdRequiresRemote);
+  });
 });

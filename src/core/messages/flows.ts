@@ -17,6 +17,7 @@ export const flowsMessages = {
   list: {
     remoteRequiresEnv:
       "--remote requires an environment. Pass --env <env> or set QAWOLF_ENVIRONMENT.",
+    aiTaskIdRequiresRemote: "--ai-task-id requires --remote",
     draftsRequireRemote: "--include-drafts requires --remote",
   },
   selectors: {

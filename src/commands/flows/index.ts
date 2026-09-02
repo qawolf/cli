@@ -1,4 +1,4 @@
-import type { Command } from "commander";
+import { Option, type Command } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
 import { withContext } from "~/commands/context.js";
@@ -21,18 +21,27 @@ Examples:
   $ qawolf flows list --tag auth
   $ qawolf flows list --env staging --tag auth
   $ qawolf flows list --remote --env staging --tag auth --tag smoke
-  $ qawolf flows list "**/checkout/**" --remote --env staging --include-drafts`;
+  $ qawolf flows list "**/checkout/**" --remote --env staging --include-drafts
+  $ qawolf flows list --remote --env staging --ai-task-id ait_123`;
 
 type FlowsListOptions = {
   readonly remote: boolean;
   readonly env: string | undefined;
   readonly includeDrafts: boolean;
+  readonly aiTaskId: string | undefined;
   readonly tag: string[];
+};
+
+type Deps = {
+  // The remote listing resolves its environment (and its auth) through this.
+  // A test stands in its own to drive the command without a platform.
+  readonly withResolvedEnv: typeof withResolvedEnv;
 };
 
 export function registerFlowsCommand(
   program: Command,
   signals: SignalRegistry,
+  deps: Deps = { withResolvedEnv },
 ): void {
   const flows = program
     .command("flows")
@@ -67,6 +76,12 @@ export function registerFlowsCommand(
       collectValue,
       [],
     )
+    .addOption(
+      new Option(
+        "--ai-task-id <aiTaskId>",
+        "List the flows on this AI task's branch, including drafts, instead of the ones in the environment (requires --remote)",
+      ).env("QAWOLF_AI_TASK_ID"),
+    )
     .addHelpText("after", listExamples)
     .action(
       (
@@ -76,7 +91,7 @@ export function registerFlowsCommand(
       ) => {
         const tags = opts.tag;
         if (opts.remote) {
-          return withResolvedEnv(
+          return deps.withResolvedEnv(
             signals,
             {
               explicit: opts.env,
@@ -86,9 +101,18 @@ export function registerFlowsCommand(
               flowsListRemote(ctx, pattern, {
                 env,
                 includeDrafts: opts.includeDrafts,
+                aiTaskId: opts.aiTaskId,
                 tags,
               }),
           )(opts, command);
+        }
+        // Only an explicitly passed --ai-task-id is a usage error here:
+        // QAWOLF_AI_TASK_ID is ambient in AI task runners, and a local
+        // listing must not fail just because it is set.
+        if (command.getOptionValueSource("aiTaskId") === "cli") {
+          return withContext(signals, async () => ({
+            error: flowsMessages.list.aiTaskIdRequiresRemote,
+          }))(opts, command);
         }
         // --include-drafts is a platform concept; --env is not, so without
         // --remote it names a pulled environment and is answered from disk.

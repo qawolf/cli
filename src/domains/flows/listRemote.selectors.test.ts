@@ -18,6 +18,7 @@ afterEach(() => {
 });
 
 const defaultOptions: FlowsListRemoteOptions = {
+  aiTaskId: undefined,
   env: "environment-id",
   includeDrafts: false,
   tags: [],
