@@ -18,8 +18,6 @@ export const interactMessages = {
     `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
   runnerHasNoScreen:
     "This runner does not run a browser on a virtual desktop, so there is nothing about it to see or drive. Retrying will never help: launch a playwright runner instead.",
-  runnerHasNoScreenToEvaluate:
-    "The runner could not evaluate the snippet. This covers a runner that is still starting or busy, and also one with no live page to evaluate against: a freshly launched runner has no page until a run opens one, so run a flow on it with qawolf runner run first. If it is not a runner that runs a browser at all, this will never clear. It is not proof the snippet did not run, so do not resubmit one that mutates the page without reading qawolf runner events console first.",
   inspectNeedsABrowserRunner:
     "This runner is a mobile device, and element and page HTML are a browser's shapes. Retrying will never help. Launch a playwright runner to inspect one.",
   nothingToInspect: (errorMessage: string | undefined) =>
@@ -48,8 +46,16 @@ export const interactMessages = {
     `Could not read "${path}". Name a readable file, or "-" to read the snippet from stdin.`,
   snippetRan:
     "The snippet ran. Its value is not returned: read anything it printed with qawolf runner events console.",
+  // Alone among these failure reasons, this one may have taken effect before its
+  // answer was lost, so the message must not invite a bare repeat.
+  snippetRunnerUnreachable:
+    "The runner could not be reached. It may still be starting, or it may have terminated after inactivity. It is not proof the snippet did not run: a snippet that outlives the answer window is still executing when you read this, so do not blindly resubmit one that mutates the page without reading qawolf runner events console first.",
   snippetStopped:
     "The snippet was interrupted before it finished. Anything it printed first is in qawolf runner events console.",
+  runnerCannotEvaluateSnippets:
+    "This runner has no snippet evaluator attached, so there is nothing to run code against. Retrying will never help: launch a playwright, android, ios, or windows runner instead.",
+  snippetAnsweredUnknown: (failureReason: string) =>
+    `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
   stdinEmptyAction:
     'Nothing arrived on stdin. Pipe the action in, or name the action type instead of "-".',
   stdinEmptySnippet:

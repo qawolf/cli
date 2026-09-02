@@ -219,13 +219,17 @@ describe("handleRunnerExec", () => {
     expect(result?.exitCode).toBe(4);
   });
 
-  // For this verb, unreachable also covers a runner with no live page, which will
-  // never clear, so the message has to name that rather than just say "retry".
-  it("names the no-live-page case an unreachable answer hides", async () => {
+  // A runner with nothing attached to serve `exec` will never clear, unlike a
+  // genuinely unreachable one, which may still have run the snippet before its
+  // answer was lost.
+  it.each([
+    ["runner-cannot-evaluate-snippets", 2, "no snippet evaluator attached"],
+    ["runner-unreachable", 4, "not proof the snippet did not run"],
+  ])("reports %s", async (failureReason, exitCode, text) => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: { failureReason: "runner-unreachable", outcome: "failure" },
+      value: { failureReason, outcome: "failure" },
     });
 
     const result = await handleRunnerExec(
@@ -234,11 +238,7 @@ describe("handleRunnerExec", () => {
       makeTestDeps(),
     );
 
-    expect(result?.error).toContain("no live page");
-    // A fresh playwright runner does run a browser, so telling the
-    // caller to check the image would send them after the wrong thing.
-    expect(result?.error).toContain("run a flow on it with qawolf runner run");
-    expect(result?.error).toContain("not proof the snippet did not run");
-    expect(result?.exitCode).toBe(4);
+    expect(result?.exitCode).toBe(exitCode);
+    expect(result?.error).toContain(text);
   });
 });
