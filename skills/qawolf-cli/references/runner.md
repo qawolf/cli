@@ -17,7 +17,7 @@ Commands that target a runner find one in this order: `--runner`, then
 `QAWOLF_RUNNER_ID`, then the runner stored for the current directory (which
 `qawolf runner launch` sets). Setting the environment variable once is the most
 robust for a harness whose working directory may not be stable, but it comes
-with two catches worth knowing before you rely on it.
+with three catches worth knowing before you rely on it.
 
 `qawolf runner launch` is not in that order: it takes its id from `--id` and
 never reads `QAWOLF_RUNNER_ID`. Bare `qawolf runner launch` invents a random id,
@@ -30,6 +30,13 @@ running under it. So exporting `QAWOLF_RUNNER_ID=agent-1` turns off the
 auto-launch described next: instead of starting `agent-1`, commands try to reach
 it and fail with exit code `4`, which reads as "retry" and never succeeds.
 Launch that id once yourself and the rest follows.
+
+And launching an id that differs from `QAWOLF_RUNNER_ID` prints a warning on
+stderr naming both ids: the variable still outranks the directory default, so
+commands that omit `--runner` keep going to whatever it names, not the runner
+you just launched. Expected when you are launching an additional runner on
+purpose — address that one with `--runner` rather than re-exporting the
+variable, which would repoint every other runner-less command too.
 
 If nothing names a runner, the commands that change something will launch one
 and say so on stderr, naming it: `run`, `act` and `exec`. **Read that
