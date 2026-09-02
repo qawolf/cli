@@ -81,7 +81,9 @@ artifact URLs expire, its failure fields are absent from a passing run, and its
 `traceUrl` downloads a Playwright trace that you can read as JSON without
 opening the trace viewer. **Read
 [`references/run-results.md`](references/run-results.md) before reporting on a
-run's outcome or opening its trace.**
+run's outcome or opening its trace.** If that path is not on your filesystem,
+fetch it:
+`https://raw.githubusercontent.com/qawolf/cli/main/skills/qawolf-cli/references/run-results.md`.
 
 ## Safety: reads vs writes
 
@@ -199,4 +201,5 @@ The full workflow is its own guide: how a runner is billed, why the first call
 must be a run, the order the commands go in, the see-and-act loop, `exec`, the
 recorder, reading history, staying alive, and an end-to-end example. **Read
 [`references/runner.md`](references/runner.md) before driving a runner for the
-first time.**
+first time.** If that path is not on your filesystem, fetch it:
+`https://raw.githubusercontent.com/qawolf/cli/main/skills/qawolf-cli/references/runner.md`.
