@@ -218,4 +218,27 @@ describe("handleRunnerExec", () => {
     expect(result?.errorBody).toContain("quota reached");
     expect(result?.exitCode).toBe(4);
   });
+
+  // A runner with nothing attached to serve `exec` will never clear, unlike a
+  // genuinely unreachable one, which may still have run the snippet before its
+  // answer was lost.
+  it.each([
+    ["runner-cannot-evaluate-snippets", 2, "no snippet evaluator attached"],
+    ["runner-unreachable", 4, "not proof the snippet did not run"],
+  ])("reports %s", async (failureReason, exitCode, text) => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { failureReason, outcome: "failure" },
+    });
+
+    const result = await handleRunnerExec(
+      ctx,
+      { contextFile: undefined, runner: "ci", source: "flow.ts" },
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(exitCode);
+    expect(result?.error).toContain(text);
+  });
 });
