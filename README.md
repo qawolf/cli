@@ -93,6 +93,28 @@ Omit `--global` to install the skill only for the current project. The skill als
 
 The skill is generated from its [source template](src/commands/qawolfCliSkill.template.md) and the command tree (`bun run generate`), and kept in sync by the test suite.
 
+## Runner SDK
+
+Drive interactive runners from TypeScript instead of spawning commands. Every verb names the runner it addresses, so nothing is launched or billed implicitly.
+
+```ts
+import { createRunnerSdk } from "@qawolf/cli/runner-sdk";
+
+const runner = createRunnerSdk({ apiKey: process.env.QAWOLF_API_KEY });
+
+await runner.launch({ id: "agent-1", runnerFamily: "default" });
+
+const submitted = await runner.run({
+  entryPointPath: "src/flows/smoke.flow.ts",
+  environment: "ambient",
+  runnerId: "agent-1",
+  selection: "whole-flow",
+});
+if (submitted.ok) console.log(submitted.value.runId, submitted.value.fileSync);
+```
+
+`ok: false` is a transport or auth failure. A runner that refused the request comes back as `ok: true` with `value.outcome === "failure"` and a `failureReason` from the published contract, so a caller can switch on it exhaustively.
+
 ## Reference
 
 - [Commands](https://docs.qawolf.com/qawolf/libraries/cli/api-reference/commands) — full command and flag reference

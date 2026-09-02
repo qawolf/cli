@@ -19,17 +19,31 @@ const externals = [
   "@qawolf/testkit",
 ];
 
-const buildArgs = [
-  "build",
-  "./src/main.ts",
-  "--outdir",
-  "dist",
-  "--entry-naming=cli.[ext]",
-  "--target",
-  "node",
-  ...externals.flatMap((pkg) => ["--external", pkg]),
-  "--sourcemap=external",
+function buildArgs(entry: string, name: string): string[] {
+  return [
+    "build",
+    entry,
+    "--outdir",
+    "dist",
+    `--entry-naming=${name}.[ext]`,
+    "--target",
+    "node",
+    ...externals.flatMap((pkg) => ["--external", pkg]),
+    "--sourcemap=external",
+  ];
+}
+
+const bundles = [
+  buildArgs("./src/main.ts", "cli"),
+  buildArgs("./src/runnerSdk/index.ts", "runner-sdk"),
 ];
 
-const result = spawnSync("bun", buildArgs, { stdio: "inherit" });
-process.exit(result.status ?? 1);
+for (const args of bundles) {
+  const result = spawnSync("bun", args, { stdio: "inherit" });
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+const types = spawnSync("bunx", ["tsc", "-p", "tsconfig.types.json"], {
+  stdio: "inherit",
+});
+process.exit(types.status ?? 1);

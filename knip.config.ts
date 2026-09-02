@@ -3,6 +3,7 @@ import type { KnipConfig } from "knip";
 const config: KnipConfig = {
   entry: [
     "*.config.ts",
+    "src/runnerSdk/index.ts",
     "src/**/*.test.ts",
     "src/**/*.mock.ts",
     "src/**/*.fixtures.ts",

@@ -5,7 +5,7 @@ import {
   toRunFilesManifest,
 } from "~/core/interactiveRunner/fileDelta.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
-import type { AuthCommandContext } from "~/shell/commandContext.js";
+import type { RunnerApiContext } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
@@ -27,7 +27,7 @@ export type SubmittedRun =
 type Runner = Extract<ResolvedRunner, { type: "launched" | "resolved" }>;
 
 export async function submitRun(
-  ctx: AuthCommandContext,
+  ctx: RunnerApiContext,
   options: {
     entryPointPath: string;
     environment: Record<string, string> | undefined;

@@ -5,7 +5,7 @@ import {
 } from "@qawolf/api-contracts/v1";
 
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
-import type { AuthCommandContext } from "~/shell/commandContext.js";
+import type { RunnerApiContext } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
@@ -24,7 +24,7 @@ export type SendResult =
   | { type: "failed"; failure: RunSubmitRefusal };
 
 export async function sendRunFlowRequest(
-  ctx: AuthCommandContext,
+  ctx: RunnerApiContext,
   options: {
     entryPointPath: string;
     environment: Record<string, string> | undefined;

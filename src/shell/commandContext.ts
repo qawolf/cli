@@ -21,6 +21,8 @@ export type AuthCommandContext = CommandContext & {
   readonly apiKeySource: string;
 };
 
+export type RunnerApiContext = Pick<AuthCommandContext, "platformClient">;
+
 export type CommandResult = {
   readonly error: string;
   /** Multi-line detail rendered under the error (json mode emits it as `body`). */
