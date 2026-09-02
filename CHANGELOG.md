@@ -1,5 +1,35 @@
 # @qawolf/cli
 
+## 1.20.0
+
+### Minor Changes
+
+- 0dbf27d: `flows list` now shows the tags of each flow.
+
+  `flows pull` gets the tags of an environment and writes them to the manifest. A failed tag request does not stop the pull, and it does not erase tags from an earlier pull.
+
+  Local `flows list` no longer sends `tags: []` for a flow it did not pull. The `tags` key is absent when the tags are unknown, and `[]` only when the flow has none.
+
+- 33ebe2f: `flows run --env` can now run from the pulled copy when the platform is not reachable. The fallback applies only when the platform did not answer — a connection failure or a timeout. An answer from the platform, for example an unknown environment or a rejected key, stops the run and shows that answer.
+
+  A pulled environment resolves by its id, its slug, or its display name — every form the CLI can show.
+
+- 8f5d2cf: `flows run --tag` and `flows list` now handle flows from more than one pulled environment. When a tag matches flows in several environments, an interactive run asks which environment to use, and `--all-envs` runs every match. The CLI warns when `--all-envs` has no effect: with `--env`, or without `--tag`.
+
+  `flows list` shows the environment of each flow, and `flows list --env` filters to one pulled environment without a platform call. An unknown `--env` value lists the environments that are on disk.
+
+- 337a4cc: `flows run` and `flows list` accept `--tag <name>` to select only the flows that carry that tag. Give the flag more than one time to select more than one tag.
+
+  With `--env`, the CLI reads the tags from the platform. If the platform is not reachable, the CLI uses the tags from the last pull and shows a warning. Without `--env`, the CLI always uses the tags from the last pull.
+
+  A tag that matches no flows stops the command with an error. If the tag does not exist on the team, the error names the closest known tag.
+
+### Patch Changes
+
+- 1776b65: `flows pull` now records the alias and the display name of an environment in the manifest.
+
+  This makes a pulled directory recognisable without the platform. The id stays the source of truth, because an alias can change.
+
 ## 1.19.2
 
 ### Patch Changes
