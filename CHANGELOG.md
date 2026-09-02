@@ -1,5 +1,11 @@
 # @qawolf/cli
 
+## 1.20.1
+
+### Patch Changes
+
+- c0c1fe5: Point the `qawolf-cli` skill's reference files at absolute raw URLs, so a harness that loads `SKILL.md` without its surrounding directory can still reach `references/runner.md` and `references/run-results.md`.
+
 ## 1.20.0
 
 ### Minor Changes
