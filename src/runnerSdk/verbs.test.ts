@@ -5,8 +5,19 @@ import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
 import type { SdkContext } from "./createContext.js";
 import { createLifecycleVerbs } from "./lifecycleVerbs.js";
 import { createPageVerbs } from "./pageVerbs.js";
+import { createProjectVerbs } from "./projectVerbs.js";
 
 type Sent = { input: unknown; name: string };
+
+const packageJson = JSON.stringify({
+  dependencies: { dayjs: "1.11.13" },
+  devDependencies: { typescript: "5.9.3" },
+});
+
+const scopeFiles = {
+  "src/pages/helper.ts": "export const helper = 2;",
+  "src/pages/login.ts": "export const login = 1;",
+};
 
 function makeContext(answer: unknown = { outcome: "success" }) {
   const sent: Sent[] = [];
@@ -17,10 +28,15 @@ function makeContext(answer: unknown = { outcome: "success" }) {
     },
   } as unknown as PlatformClient;
 
-  const context = { deps: {}, platformClient } as unknown as SdkContext;
+  const deps = {
+    collectRunFiles: async () => ({ files: scopeFiles }),
+    cwd: "/workspace",
+    readFile: async () => packageJson,
+  };
+  const context = { deps, platformClient } as unknown as SdkContext;
   return {
     lifecycle: createLifecycleVerbs(context),
-    page: createPageVerbs(context),
+    page: { ...createPageVerbs(context), ...createProjectVerbs(context) },
     sent,
   };
 }
@@ -66,28 +82,6 @@ describe("the input each verb sends", () => {
     expect(sent[1]?.input).toEqual({
       id: "agent-1",
       selector: "text=Sign in",
-    });
-  });
-
-  it("scopes a snippet to a file only when one is named", async () => {
-    const { page, sent } = makeContext();
-
-    await page.evaluateSnippet({
-      runnerId: "agent-1",
-      scope: "no-imports",
-      source: "1",
-    });
-    await page.evaluateSnippet({
-      runnerId: "agent-1",
-      scope: { filePath: "src/pages/login.ts" },
-      source: "1",
-    });
-
-    expect(sent[0]?.input).toEqual({ code: "1", id: "agent-1" });
-    expect(sent[1]?.input).toEqual({
-      code: "1",
-      filePath: "src/pages/login.ts",
-      id: "agent-1",
     });
   });
 
@@ -140,5 +134,78 @@ describe("what a caller gets back", () => {
     const answer = await terminate({ runnerId: "agent-1" });
 
     expect(answer).toEqual({ error: "The request failed.", ok: false });
+  });
+});
+
+describe("what the CLI sends that a hand-written input would miss", () => {
+  it("resolves the project's npm dependencies rather than sending none", async () => {
+    const { page, sent } = makeContext();
+
+    await page.importPackage({
+      name: "dayjs",
+      runnerId: "agent-1",
+      version: "latest",
+    });
+
+    expect(sent[0]?.input).toMatchObject({
+      npmDependencies: { dayjs: "1.11.13", typescript: "5.9.3" },
+    });
+  });
+
+  it("refuses rather than installing against nothing when package.json is absent", async () => {
+    const sent: Sent[] = [];
+    const platformClient = {
+      callPublicApi: async (contract: { name: string }, input: unknown) => {
+        sent.push({ input, name: contract.name });
+        return { ok: true as const, value: { outcome: "success" } };
+      },
+    } as unknown as PlatformClient;
+    const { importPackage } = createProjectVerbs({
+      deps: {
+        cwd: "/workspace",
+        readFile: async (): Promise<string> => {
+          throw new Error("ENOENT");
+        },
+      },
+      platformClient,
+    } as unknown as SdkContext);
+
+    const answer = await importPackage({
+      name: "dayjs",
+      runnerId: "agent-1",
+      version: "latest",
+    });
+
+    expect(answer.ok).toBe(false);
+    expect(sent).toEqual([]);
+  });
+
+  // A runner holds no copy of the project, so naming a scope whose files never
+  // arrive is worse than sending no scope at all.
+  it("ships the scope's files alongside its path", async () => {
+    const { page, sent } = makeContext();
+
+    await page.evaluateSnippet({
+      runnerId: "agent-1",
+      scope: { filePath: "src/pages/login.ts" },
+      source: "1",
+    });
+
+    expect(sent[0]?.input).toMatchObject({
+      filePath: "src/pages/login.ts",
+      files: scopeFiles,
+    });
+  });
+
+  it("sends neither a path nor files when the snippet imports nothing", async () => {
+    const { page, sent } = makeContext();
+
+    await page.evaluateSnippet({
+      runnerId: "agent-1",
+      scope: "no-imports",
+      source: "1",
+    });
+
+    expect(sent[0]?.input).toEqual({ code: "1", id: "agent-1" });
   });
 });

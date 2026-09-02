@@ -3,6 +3,7 @@ import { listRunners } from "~/domains/interactiveRunner/list.js";
 import { createSdkContext } from "./createContext.js";
 import { createLifecycleVerbs } from "./lifecycleVerbs.js";
 import { createPageVerbs } from "./pageVerbs.js";
+import { createProjectVerbs } from "./projectVerbs.js";
 import { createRunVerbs } from "./runVerbs.js";
 import type { ListedRunner, RunnerSdkOptions, SdkResult } from "./types.js";
 
@@ -59,6 +60,7 @@ export function createRunnerSdk(options: RunnerSdkOptions) {
     ...createLifecycleVerbs(context),
     ...createRunVerbs(context),
     ...createPageVerbs(context),
+    ...createProjectVerbs(context),
 
     async list(): Promise<SdkResult<ListedRunner[]>> {
       const listed = await listRunners(context, context.deps);

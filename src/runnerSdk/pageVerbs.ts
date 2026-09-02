@@ -6,12 +6,8 @@ import type { SdkContext } from "./createContext.js";
 import { toSdkResult } from "./toSdkResult.js";
 import type {
   ActRequest,
-  EvaluateSnippetRequest,
-  EvaluatedSnippet,
   HighlightSelectorRequest,
   HighlightedSelector,
-  ImportPackageRequest,
-  ImportedPackage,
   InspectRequest,
   Inspected,
   PerformedAction,
@@ -23,9 +19,7 @@ import type {
 } from "./types.js";
 
 const {
-  evaluateSnippet,
   highlightSelector,
-  importPackage,
   inspect,
   performAction,
   promoteSnapshot,
@@ -47,24 +41,6 @@ export function createPageVerbs({ platformClient }: SdkContext) {
       );
     },
 
-    async evaluateSnippet({
-      runnerId,
-      scope,
-      source,
-    }: EvaluateSnippetRequest): Promise<SdkResult<EvaluatedSnippet>> {
-      return toSdkResult(
-        await platformClient.callPublicApi(
-          evaluateSnippet,
-          {
-            code: source,
-            id: runnerId,
-            ...(scope === "no-imports" ? {} : { filePath: scope.filePath }),
-          },
-          runnerCallOptions,
-        ),
-      );
-    },
-
     async highlightSelector({
       highlight,
       runnerId,
@@ -75,25 +51,6 @@ export function createPageVerbs({ platformClient }: SdkContext) {
           {
             id: runnerId,
             selector: highlight === "clear" ? "" : highlight.selector,
-          },
-          runnerCallOptions,
-        ),
-      );
-    },
-
-    async importPackage({
-      name,
-      runnerId,
-      version,
-    }: ImportPackageRequest): Promise<SdkResult<ImportedPackage>> {
-      return toSdkResult(
-        await platformClient.callPublicApi(
-          importPackage,
-          {
-            id: runnerId,
-            npmDependencies: {},
-            packageName: name,
-            packageVersion: version === "latest" ? "latest" : version.exact,
           },
           runnerCallOptions,
         ),
