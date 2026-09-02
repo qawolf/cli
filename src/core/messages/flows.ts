@@ -17,7 +17,44 @@ export const flowsMessages = {
   list: {
     remoteRequiresEnv:
       "--remote requires an environment. Pass --env <env> or set QAWOLF_ENVIRONMENT.",
-    flagsRequireRemote: "--env and --include-drafts require --remote",
+    draftsRequireRemote: "--include-drafts requires --remote",
+  },
+  selectors: {
+    tagsNotCached:
+      "No cached tags found. Run 'qawolf flows pull --env <env>' to cache them, or pass --remote to read tags from the platform.",
+    tagsUnavailable: (env: string) =>
+      `Could not reach the platform and no tags are cached for environment '${env}'. Run 'qawolf flows pull --env ${env}' while online.`,
+    usingCachedTags: (fetchedAt: string) =>
+      `Could not reach the platform. Using tags cached at ${fetchedAt}; tag names were not validated.`,
+    unknownTag: (name: string, suggestion: string | undefined) =>
+      suggestion === undefined
+        ? `No tag named '${name}' on this team. Run 'qawolf tag list' to see available tags.`
+        : `No tag named '${name}' on this team. Did you mean '${suggestion}'?`,
+    unknownPulledEnv: (
+      name: string,
+      pulled: readonly string[],
+      suggestion: string | undefined,
+    ) => {
+      const known =
+        pulled.length === 0
+          ? "No environments have been pulled yet."
+          : `Pulled environments: ${pulled.join(", ")}.`;
+      const hint =
+        suggestion === undefined ? "" : ` Did you mean '${suggestion}'?`;
+      return `No pulled environment named '${name}'.${hint} ${known}`;
+    },
+    allEnvsWithEnv:
+      "--all-envs has no effect with --env: the run is already scoped to that environment.",
+    allEnvsWithoutTag:
+      "--all-envs has no effect without --tag: a pattern run already includes every environment.",
+    chooseEnv: "Which environment should these flows run against?",
+    ambiguousEnvs: (labels: readonly string[]) =>
+      `The selection matches flows in several pulled environments: ${labels.join(
+        ", ",
+      )}. Pass --env <name> to choose one, or --all-envs to run every match.`,
+    noFlowsSelected: (selectors: {
+      readonly tags: readonly string[];
+    }): string => `No flows matched tags ${selectors.tags.join(", ")}.`,
   },
   run: {
     requiresEnv:
@@ -28,6 +65,7 @@ export const flowsMessages = {
       "An environment is required. Pass --env <env> or set QAWOLF_ENVIRONMENT.",
     downloadingBundle: "Downloading flows bundle",
     fetchingEnvVars: "Fetching environment variables",
+    fetchingTags: "Fetching flow tags",
     downloadComplete: "Downloaded flows bundle and environment variables",
     needsYesError: "Re-run with --yes to overwrite locally-modified files",
     aborted: "Aborted; no changes.",

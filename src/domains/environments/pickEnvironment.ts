@@ -24,16 +24,26 @@ export async function pickEnvironment(
   deps: ResolveEnvironmentDeps,
 ): Promise<ResolveEnvironmentOutcome> {
   const fetched = await fetchAllEnvironments(deps.platformClient);
-  if (!fetched.ok) return { ...failureFields(fetched), kind: "error" };
+  if (!fetched.ok) {
+    return {
+      ...failureFields(fetched),
+      kind: "error",
+      unreachable: fetched.unreachable === true,
+    };
+  }
 
   const environments = fetched.environments;
   if (environments.length === 0) {
-    return { kind: "error", error: environmentsMessages.noEnvironments };
+    return {
+      kind: "error",
+      error: environmentsMessages.noEnvironments,
+      unreachable: false,
+    };
   }
   const sole = environments.length === 1 ? environments[0] : undefined;
   if (sole) {
     deps.ui.info(environmentsMessages.usingEnvironment(sole.name));
-    return { kind: "resolved", env: sole.id };
+    return resolvedFrom(sole);
   }
 
   const narrowed = await narrowByKind(deps.ui, environments);
@@ -42,7 +52,7 @@ export async function pickEnvironment(
   const soleOfKind = narrowed.length === 1 ? narrowed[0] : undefined;
   if (soleOfKind) {
     deps.ui.info(environmentsMessages.usingEnvironment(soleOfKind.name));
-    return { kind: "resolved", env: soleOfKind.id };
+    return resolvedFrom(soleOfKind);
   }
 
   const picked = await deps.ui.select(
@@ -57,7 +67,27 @@ export async function pickEnvironment(
   // Only after a real prompt: teach the way to skip it next time. Auto-picks
   // and env-var resolutions had no friction worth a tip.
   deps.ui.info(environmentsMessages.exportHint(picked.value));
-  return { kind: "resolved", env: picked.value };
+  const chosen = narrowed.find((e) => e.id === picked.value);
+  return chosen
+    ? resolvedFrom(chosen)
+    : { kind: "resolved", env: picked.value };
+}
+
+/**
+ * Carries the slug and name the listing already provided, so a pull started
+ * from the picker records the same identity an explicit --env would.
+ */
+function resolvedFrom(environment: {
+  id: string;
+  name: string;
+  alias?: string | null | undefined;
+}): ResolveEnvironmentOutcome {
+  return {
+    kind: "resolved",
+    env: environment.id,
+    slug: environment.alias ?? undefined,
+    name: environment.name,
+  };
 }
 
 // Large teams accumulate many ephemeral preview (PR) environments that

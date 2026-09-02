@@ -12,16 +12,21 @@ export const manifestFilename = ".manifest.json";
 const flowEntrySchema = z.object({
   path: z.string(),
   contentHash: z.string(),
+  // Absent on manifests written before tags existed, and on flows the tag
+  // fetch did not return. Both optional so an older manifest still parses.
+  tags: z.array(z.string()).optional(),
 });
 
 const manifestSchema = z.object({
   envId: z.string(),
   envSlug: z.string().optional(),
+  envName: z.string().optional(),
   fetchedAt: z.string(),
   envVarsFetchedAt: z.string().optional(),
   cliFlowsVersion: z.string(),
   qawolfCommitSha: z.string().optional(),
   qawolfCommittedAt: z.string().optional(),
+  tagsFetchedAt: z.string().optional(),
   flows: z.array(flowEntrySchema),
 });
 
@@ -54,12 +59,18 @@ export async function readManifest(
   return {
     envId: result.data.envId,
     envSlug: result.data.envSlug,
+    envName: result.data.envName,
     fetchedAt: result.data.fetchedAt,
     envVarsFetchedAt: result.data.envVarsFetchedAt,
     cliFlowsVersion: result.data.cliFlowsVersion,
     qawolfCommitSha: result.data.qawolfCommitSha,
     qawolfCommittedAt: result.data.qawolfCommittedAt,
-    flows: result.data.flows,
+    tagsFetchedAt: result.data.tagsFetchedAt,
+    flows: result.data.flows.map((flow) => ({
+      path: flow.path,
+      contentHash: flow.contentHash,
+      tags: flow.tags,
+    })),
   };
 }
 

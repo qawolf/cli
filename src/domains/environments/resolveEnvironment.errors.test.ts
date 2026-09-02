@@ -18,6 +18,7 @@ describe("resolveEnvironment platform errors", () => {
       kind: "error",
       error:
         "Could not resolve environment staging: HTTP 400 If staging is an alias, note that aliases require a team API key.",
+      unreachable: false,
     });
   });
 
@@ -37,7 +38,26 @@ describe("resolveEnvironment platform errors", () => {
       error:
         "Could not resolve environment staging: HTTP 404 If staging is an alias, note that aliases require a team API key.",
       errorBody: "No environment named staging exists on this team.",
+      unreachable: false,
     });
+  });
+
+  // The unreachable flag is what lets `flows run --env` fall back to a pulled
+  // copy: it must be set only when the platform never answered, so a
+  // definitive refusal (404, revoked key) still surfaces as an error.
+  it("marks the outcome unreachable when the platform never answered", async () => {
+    const { deps } = makeDeps({
+      getError: "Could not reach the platform.",
+      getUnreachable: true,
+    });
+
+    const outcome = await resolveEnvironment(deps, {
+      ...opts,
+      explicit: "staging",
+    });
+
+    if (outcome.kind !== "error") throw new Error("expected an error");
+    expect(outcome.unreachable).toBe(true);
   });
 
   it("surfaces a platform error", async () => {
@@ -45,7 +65,11 @@ describe("resolveEnvironment platform errors", () => {
 
     const outcome = await resolveEnvironment(deps, opts);
 
-    expect(outcome).toEqual({ kind: "error", error: "HTTP 500" });
+    expect(outcome).toEqual({
+      kind: "error",
+      error: "HTTP 500",
+      unreachable: false,
+    });
   });
 
   it("carries the server's reason from the environment listing", async () => {
@@ -60,6 +84,7 @@ describe("resolveEnvironment platform errors", () => {
       kind: "error",
       error: "HTTP 403",
       errorBody: "This API key has no access to environments.",
+      unreachable: false,
     });
   });
 });

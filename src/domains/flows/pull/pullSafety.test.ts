@@ -30,15 +30,18 @@ describe("safety + staging integration", () => {
     const manifest: Manifest = {
       envId: "env-abc",
       envSlug: undefined,
+      envName: undefined,
       fetchedAt: "2026-05-09T00:00:00.000Z",
       envVarsFetchedAt: undefined,
       cliFlowsVersion: "0.4.0",
       qawolfCommitSha: undefined,
       qawolfCommittedAt: undefined,
+      tagsFetchedAt: undefined,
       flows: [
         {
           path: "a.flow.ts",
           contentHash: await hashFile(join(destDir, "a.flow.ts")),
+          tags: undefined,
         },
       ],
     };
@@ -62,10 +65,13 @@ describe("safety + staging integration", () => {
       destAbs: destDir,
       assetsAbs: join(destDir, "..", "assets"),
       envId: "env-abc",
+      envSlug: undefined,
+      envName: undefined,
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: {},
       envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+      tags: undefined,
     });
 
     expect(await readFile(join(destDir, "a.flow.ts"), "utf8")).toBe("original");

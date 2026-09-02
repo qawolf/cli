@@ -23,6 +23,7 @@ describe("requestWithRetry", () => {
       error: "failed",
       mayHaveArrived: true,
       ok: false,
+      unreachable: true,
     });
   });
 
@@ -48,6 +49,7 @@ describe("requestWithRetry", () => {
       error: "failed",
       mayHaveArrived: true,
       ok: false,
+      unreachable: true,
     });
   });
 });

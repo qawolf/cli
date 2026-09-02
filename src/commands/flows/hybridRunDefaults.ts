@@ -1,7 +1,12 @@
 import { join, resolve } from "node:path";
 
 import { buildPatternArgs } from "~/core/patternArgs.js";
+import type { EnvironmentIdentity } from "~/core/environmentIdentity.js";
 import { runnerMessages } from "~/core/messages/index.js";
+import type { FlowSelectors } from "~/core/flowSelectors.js";
+import { applyFlowSelectors } from "~/domains/flows/applyFlowSelectors.js";
+import { fetchKnownTags } from "~/domains/flows/fetchKnownTags.js";
+import { resolveTags } from "~/domains/flows/resolveTags.js";
 import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
 import { handleFlowsPull } from "~/domains/flows/pull/handler.js";
 import { validateEnvId } from "~/domains/flows/pull/pull.js";
@@ -23,14 +28,24 @@ import { type HandleFlowsRunDeps } from "./runDefaults.js";
 import { runStagedFlows } from "./runStagedFlows.js";
 
 export type HandleHybridFlowsRunDeps = HandleFlowsRunDeps & {
-  pullEnv: (ctx: AuthCommandContext, envId: string) => Promise<CommandResult>;
+  pullEnv: (
+    ctx: AuthCommandContext,
+    envId: string,
+    identity: EnvironmentIdentity,
+  ) => Promise<CommandResult>;
 };
 
 function makeDefaultHybridDeps(fs: Fs): HandleHybridFlowsRunDeps {
   return {
     expandPatterns: (patterns, cwd, logger) =>
       defaultExpandPatterns(patterns, cwd, logger, fs),
-    pullEnv: (ctx, envId) => handleFlowsPull(ctx, { env: envId, yes: true }),
+    pullEnv: (ctx, envId, identity) =>
+      handleFlowsPull(ctx, {
+        env: envId,
+        yes: true,
+        envSlug: identity.slug,
+        envName: identity.name,
+      }),
     resolveDepsRoot: (args) => resolveDepsRoot({ ...args, fs }),
     prepareRunDir: (args) => defaultPrepareRunDir({ ...args, fs }),
     configureTestkit: defaultConfigureTestkit,
@@ -40,13 +55,22 @@ function makeDefaultHybridDeps(fs: Fs): HandleHybridFlowsRunDeps {
   };
 }
 
+export type HybridRunOptions = {
+  readonly deps?: HandleHybridFlowsRunDeps;
+  /** Identity of the env named by flags.env, recorded when a pull happens. */
+  readonly identity?: EnvironmentIdentity;
+  readonly selectors?: FlowSelectors;
+};
+
 export async function handleHybridFlowsRun(
   ctx: AuthCommandContext,
   pattern: string | undefined,
   flags: FlowsRunFlags & { env: string },
-  deps?: HandleHybridFlowsRunDeps,
+  options: HybridRunOptions = {},
 ): Promise<CommandResult> {
-  const resolvedDeps = deps ?? makeDefaultHybridDeps(ctx.fs);
+  const identity = options.identity ?? { slug: undefined, name: undefined };
+  const selectors = options.selectors ?? { tags: [] };
+  const resolvedDeps = options.deps ?? makeDefaultHybridDeps(ctx.fs);
   const validation = validateEnvId(flags.env);
   if (validation !== "ok") {
     return { error: validation.error, exitCode: 2 };
@@ -60,7 +84,7 @@ export async function handleHybridFlowsRun(
   let files = await globFlows();
 
   if (files.length === 0) {
-    const pullResult = await resolvedDeps.pullEnv(ctx, flags.env);
+    const pullResult = await resolvedDeps.pullEnv(ctx, flags.env, identity);
     if (pullResult !== undefined) return pullResult;
 
     files = await globFlows();
@@ -73,5 +97,28 @@ export async function handleHybridFlowsRun(
     }
   }
 
-  return runStagedFlows({ ctx, files, flags, envDir, deps: resolvedDeps });
+  const selection = await applyFlowSelectors({
+    files,
+    cwd: envDir,
+    selectors,
+    envId: flags.env,
+    warn: (message) => ctx.ui.warn(message),
+    resolveTags: () => resolveTags(ctx, flags.env, envDir, ctx.fs),
+    fetchKnownTags: () => fetchKnownTags(ctx),
+    onEmpty: (error) =>
+      noMatchResult(ctx, {
+        allowNoMatch: flags.allowNoMatch,
+        error,
+        notice: runnerMessages.noFlowsMatched,
+      }),
+  });
+  if (!selection.ok) return selection.result;
+
+  return runStagedFlows({
+    ctx,
+    files: selection.files,
+    flags,
+    envDir,
+    deps: resolvedDeps,
+  });
 }

@@ -1,7 +1,12 @@
 import { buildPatternArgs } from "~/core/patternArgs.js";
-import { runnerMessages } from "~/core/messages/index.js";
+import type { FlowSelectors } from "~/core/flowSelectors.js";
+import { environmentsMessages, runnerMessages } from "~/core/messages/index.js";
 import { pluralize } from "~/core/pluralize.js";
 import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
+import { readCachedTags as defaultReadCachedTags } from "~/domains/flows/readCachedTags.js";
+import { readEnvLabel as defaultReadEnvLabel } from "~/domains/flows/readEnvLabel.js";
+import { resolveEnvChoice } from "~/domains/flows/resolveEnvChoice.js";
+import { exitCodes } from "~/shell/exit.js";
 import { flowsRun as defaultFlowsRun } from "~/domains/runner/run.js";
 import { noMatchResult } from "~/domains/runner/noMatch.js";
 import type { FlowsRunFlags } from "~/domains/runner/runInternals.js";
@@ -14,6 +19,7 @@ import { configureTestkit as defaultConfigureTestkit } from "~/shell/testkit.js"
 import { resolveDepsRoot } from "~/commands/resolveDepsRoot.js";
 
 import { createFlowRuntimeDeps as defaultCreateFlowRuntimeDeps } from "./flowRuntimeDeps.js";
+import { selectRunByTag } from "~/domains/flows/selectRunByTag.js";
 import { type StagedRunDeps, runStagedFlows } from "./runStagedFlows.js";
 
 export type HandleFlowsRunDeps = StagedRunDeps & {
@@ -42,6 +48,8 @@ export async function handleFlowsRun(
   pattern: string | undefined,
   flags: FlowsRunFlags,
   deps?: HandleFlowsRunDeps,
+  selectors: FlowSelectors = { tags: [] },
+  allEnvs = false,
 ): Promise<CommandResult> {
   const resolvedDeps = deps ?? makeDefaultDeps(ctx.fs);
   const cwd = process.cwd();
@@ -63,10 +71,48 @@ export async function handleFlowsRun(
     });
   }
 
+  const selected = await selectRunByTag({
+    files: expandedFiles,
+    selectors,
+    readCachedTags: (files) => defaultReadCachedTags(files, ctx.fs),
+    chooseEnv: (files) => chooseEnv(ctx, files, allEnvs),
+    noMatch: (error) =>
+      noMatchResult(ctx, {
+        allowNoMatch: flags.allowNoMatch,
+        error,
+        notice: runnerMessages.noFlowsMatched,
+      }),
+  });
+  if (!selected.ok) return selected.result;
+
   return runStagedFlows({
     ctx,
-    files: expandedFiles,
+    files: selected.files,
     flags,
     deps: resolvedDeps,
   });
+}
+
+/**
+ * Resolves which pulled environment a tag selection meant, prompting a human
+ * and reporting an error to everyone else.
+ */
+async function chooseEnv(
+  ctx: CommandContext,
+  files: string[],
+  allEnvs: boolean,
+): Promise<{ proceed: string[] } | { stop: CommandResult }> {
+  const choice = await resolveEnvChoice({
+    files,
+    allEnvs,
+    mode: ctx.ui.mode,
+    select: ctx.ui.select,
+    readLabel: (dir) => defaultReadEnvLabel(dir, ctx.fs),
+  });
+  if (choice.kind === "proceed") return { proceed: choice.files };
+  if (choice.kind === "cancelled") {
+    ctx.ui.info(environmentsMessages.aborted);
+    return { stop: undefined };
+  }
+  return { stop: { error: choice.error, exitCode: exitCodes.invalidArgs } };
 }

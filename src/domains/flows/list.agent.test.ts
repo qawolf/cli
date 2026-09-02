@@ -7,7 +7,7 @@ import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
-import { callsOf, makeFakeUI } from "~/domains/runner/run.fixtures.js";
+import { callsOf, makeFakeUI } from "~/shell/commandContext.testUtils.js";
 
 const noopSignals = makeNoopSignals();
 
@@ -45,6 +45,18 @@ function makeDeps(overrides?: {
         name: metaByFile[file]?.name,
         target: metaByFile[file]?.target,
       }),
+    ),
+    readCachedTags: mock<FlowsListDeps["readCachedTags"]>(() =>
+      Promise.resolve(new Map<string, readonly string[]>()),
+    ),
+    readEnvLabel: mock<FlowsListDeps["readEnvLabel"]>((dir: string) =>
+      Promise.resolve(dir),
+    ),
+    findPulledEnv: mock<FlowsListDeps["findPulledEnv"]>(() =>
+      Promise.resolve(undefined),
+    ),
+    listPulledEnvDirs: mock<FlowsListDeps["listPulledEnvDirs"]>(() =>
+      Promise.resolve([]),
     ),
   };
 }

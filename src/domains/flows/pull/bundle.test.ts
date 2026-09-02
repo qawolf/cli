@@ -115,6 +115,7 @@ describe("buildManifest", () => {
     envVarsFetchedAt: Date | undefined;
     wrapperName: string | undefined;
     qawolfCommittedAt: string | undefined;
+    tags: undefined;
   } => ({
     envId: "env-x",
     bundleDir: workDir,
@@ -123,6 +124,7 @@ describe("buildManifest", () => {
     envVarsFetchedAt: undefined,
     wrapperName: undefined,
     qawolfCommittedAt: undefined,
+    tags: undefined,
   });
 
   it("walks .flow.ts and .flow.js files, ignores other extensions", async () => {
@@ -137,9 +139,10 @@ describe("buildManifest", () => {
 
     const manifest = await buildManifest(baseArgs());
 
+    // Manifest paths are written in posix form on every host.
     expect(manifest.flows.map((f) => f.path).sort()).toEqual([
       "a.flow.ts",
-      join("nested", "b.flow.js"),
+      "nested/b.flow.js",
     ]);
     expect(manifest.flows[0]?.contentHash).toMatch(/^[a-f0-9]{64}$/);
   });

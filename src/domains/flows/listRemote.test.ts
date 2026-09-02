@@ -11,7 +11,7 @@ import {
 } from "~/shell/platform/createPlatformClient.testUtils.js";
 import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
 
-import { callsOf, makeFakeUI } from "~/domains/runner/run.fixtures.js";
+import { callsOf, makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import { flowsListRemote, type FlowsListRemoteOptions } from "./listRemote.js";
 
 afterEach(() => {
@@ -21,6 +21,7 @@ afterEach(() => {
 const defaultOptions: FlowsListRemoteOptions = {
   env: "environment-id",
   includeDrafts: false,
+  tags: [],
 };
 
 type SampleFlow = {
@@ -92,7 +93,7 @@ describe("flowsListRemote wire call", () => {
   it("calls public.flow.list with the environment and drafts flag", async () => {
     const { platformClient } = await run({
       mode: "json",
-      options: { env: "env-1", includeDrafts: true },
+      options: { ...defaultOptions, env: "env-1", includeDrafts: true },
     });
 
     expect(platformClient.callPublicApi).toHaveBeenCalledWith(
@@ -103,7 +104,7 @@ describe("flowsListRemote wire call", () => {
 });
 
 describe("flowsListRemote success paths", () => {
-  it("renders a bolded header + name|target|file rows in human mode", async () => {
+  it("renders a bolded header + name|target|tags|file rows in human mode", async () => {
     const { ui } = await run({ mode: "human" });
 
     const output = callsOf(ui.write)
@@ -115,13 +116,13 @@ describe("flowsListRemote success paths", () => {
     expect(lines[0]).toMatch(/\[0m/);
     // oxlint-disable-next-line no-control-regex, @typescript-eslint/no-non-null-assertion
     expect(lines[0]!.replace(/\x1b[^m]*m/g, "")).toMatch(
-      /^name\s+target\s+file$/,
+      /^name\s+target\s+tags\s+file$/,
     );
     expect(stripAnsi(lines[1])).toMatch(
       /^Login\s+Web - Chrome\s+src\/flows\/login\.flow\.ts$/,
     );
     expect(stripAnsi(lines[2])).toMatch(
-      /^Checkout\s+Web - Firefox\s+src\/flows\/sub\/checkout\.flow\.ts$/,
+      /^Checkout\s+Web - Firefox\s+smoke\s+src\/flows\/sub\/checkout\.flow\.ts$/,
     );
     expect(ui.intro).toHaveBeenCalledWith("Remote Flows");
     expect(ui.outro).toHaveBeenCalledWith("2 flows");

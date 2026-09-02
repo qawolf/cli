@@ -8,7 +8,7 @@ import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
-import { makeFakeUI } from "~/domains/runner/run.fixtures.js";
+import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
 
 const noopSignals = makeNoopSignals();
 
@@ -37,8 +37,9 @@ function makeCtx(
 function makeDeps(overrides?: {
   files?: readonly string[];
   metaByFile?: Record<string, { name?: string; target?: string }>;
+  cachedTags?: Record<string, readonly string[]>;
 }): FlowsListDeps {
-  const { files = [], metaByFile = {} } = overrides ?? {};
+  const { files = [], metaByFile = {}, cachedTags = {} } = overrides ?? {};
   return {
     cwd: fakeCwd,
     expandPatterns: mock<FlowsListDeps["expandPatterns"]>(() =>
@@ -49,6 +50,18 @@ function makeDeps(overrides?: {
         name: metaByFile[file]?.name,
         target: metaByFile[file]?.target,
       }),
+    ),
+    readCachedTags: mock<FlowsListDeps["readCachedTags"]>(() =>
+      Promise.resolve(new Map(Object.entries(cachedTags))),
+    ),
+    readEnvLabel: mock<FlowsListDeps["readEnvLabel"]>((dir: string) =>
+      Promise.resolve(dir),
+    ),
+    findPulledEnv: mock<FlowsListDeps["findPulledEnv"]>(() =>
+      Promise.resolve(undefined),
+    ),
+    listPulledEnvDirs: mock<FlowsListDeps["listPulledEnvDirs"]>(() =>
+      Promise.resolve([]),
     ),
   };
 }
@@ -72,7 +85,7 @@ describe("flowsList json mode output", () => {
       {
         file: join("src", "flows", "login.flow.ts"),
         name: "Login",
-        tags: [],
+        tags: undefined,
         target: "Web - Chrome",
         browser: "chromium",
       },
@@ -100,7 +113,7 @@ describe("flowsList json mode output", () => {
       {
         file: join("src", "flows", "checkout.flow.ts"),
         name: "checkout",
-        tags: [],
+        tags: undefined,
         target: "Web - Firefox",
         browser: "firefox",
       },
@@ -122,7 +135,7 @@ describe("flowsList json mode output", () => {
       {
         file: join("src", "flows", "legacy.flow.js"),
         name: "legacy",
-        tags: [],
+        tags: undefined,
         target: "Web - Chrome",
         browser: "chromium",
       },
@@ -147,10 +160,65 @@ describe("flowsList json mode output", () => {
       {
         file: join("src", "flows", "mobile.flow.ts"),
         name: "Mobile",
-        tags: [],
+        tags: undefined,
         target: "Android - Pixel",
         browser: undefined,
       },
     ]);
+  });
+  // A pulled flow known to carry no tags is not the same as a flow whose tags
+  // the CLI never fetched: one sends [], the other sends nothing.
+  it("emits an empty tag list for a pulled flow with no tags", async () => {
+    const ui = makeFakeUI();
+    const file = "/proj/.qawolf/staging/src/flows/login.flow.ts";
+    const deps = makeDeps({
+      files: [file],
+      metaByFile: { [file]: { name: "Login", target: "Web - Chrome" } },
+      cachedTags: { [file]: [] },
+    });
+
+    await flowsList(makeCtx(ui, "json"), undefined, deps);
+
+    const items = (ui.json as ReturnType<typeof mock>).mock.calls[0]?.[0] as {
+      tags?: readonly string[];
+    }[];
+    expect(items[0]?.tags).toEqual([]);
+  });
+
+  it("emits the cached tags for a pulled flow that has them", async () => {
+    const ui = makeFakeUI();
+    const file = "/proj/.qawolf/staging/src/flows/login.flow.ts";
+    const deps = makeDeps({
+      files: [file],
+      metaByFile: { [file]: { name: "Login", target: "Web - Chrome" } },
+      cachedTags: { [file]: ["auth", "smoke"] },
+    });
+
+    await flowsList(makeCtx(ui, "json"), undefined, deps);
+
+    const items = (ui.json as ReturnType<typeof mock>).mock.calls[0]?.[0] as {
+      tags?: readonly string[];
+    }[];
+    expect(items[0]?.tags).toEqual(["auth", "smoke"]);
+  });
+
+  it("omits tags entirely for a flow that was never pulled", async () => {
+    const ui = makeFakeUI();
+    const deps = makeDeps({
+      files: ["/proj/src/flows/local.flow.ts"],
+      metaByFile: {
+        "/proj/src/flows/local.flow.ts": {
+          name: "Local",
+          target: "Web - Chrome",
+        },
+      },
+    });
+
+    await flowsList(makeCtx(ui, "json"), undefined, deps);
+
+    const items = (ui.json as ReturnType<typeof mock>).mock
+      .calls[0]?.[0] as Record<string, unknown>[];
+    expect(items[0]).not.toHaveProperty("tags", []);
+    expect(items[0]?.["tags"]).toBeUndefined();
   });
 });

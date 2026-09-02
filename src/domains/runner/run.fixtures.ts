@@ -141,6 +141,6 @@ export function failResult(
   };
 }
 
-export const callsOf = <T extends (...args: never) => unknown>(
-  fn: T,
-): unknown[][] => (fn as unknown as ReturnType<typeof mock>).mock.calls;
+// Re-exported from the shell layer so runner tests take every fixture from
+// this one module; other domains import it from the shell helper directly.
+export { callsOf } from "~/shell/commandContext.testUtils.js";

@@ -7,14 +7,18 @@ import {
   type AuthCommandContext,
   type CommandResult,
 } from "~/shell/commandContext.js";
-import { manifestFilename } from "~/shell/manifest/io.js";
 import { flowsMessages } from "~/core/messages/index.js";
 import { fetchBundleAndEnvVars } from "./fetchPhase.js";
 import { checkSafety, validateEnvId } from "./pull.js";
+import { reportPullResult } from "./reportPull.js";
 import { stageBundle } from "./stage.js";
 
 export type FlowsPullOptions = {
   readonly env: string;
+  /** Alias and display name of the env, recorded so a pulled cache is
+   * recognisable without the platform. */
+  readonly envSlug?: string | undefined;
+  readonly envName?: string | undefined;
   readonly out?: string;
   readonly yes?: boolean;
 };
@@ -82,10 +86,13 @@ export async function handleFlowsPull(
                 destAbs,
                 assetsAbs,
                 envId: opts.env,
+                envSlug: opts.envSlug,
+                envName: opts.envName,
                 cliFlowsVersion: resolvedDeps.flowsVersion,
                 now: fetched.bundleFetchedAt,
                 envVars: fetched.envVars,
                 envVarsFetchedAt: fetched.envVarsFetchedAt,
+                tags: fetched.tags,
               },
               resolvedDeps.fs,
             ),
@@ -122,24 +129,13 @@ export async function handleFlowsPull(
         ),
     );
 
-    if (ctx.ui.mode === "json") {
-      ctx.ui.output(
-        {
-          env: opts.env,
-          envDir: result.envDir,
-          assetsDir: assetsAbs,
-          fetchedAt: fetched.bundleFetchedAt.toISOString(),
-          flowCount: result.flowCount,
-          envVarCount: result.envVarCount,
-          flowsWithTeamStorageRefs: result.flowsWithTeamStorageRefs,
-          assetDownloadedCount: assetResult.downloadedCount,
-          assetReusedCount: assetResult.reusedCount,
-          assetSkippedCount: assetResult.skippedCount,
-          manifestPath: join(result.envDir, manifestFilename),
-        },
-        "",
-      );
-    }
+    reportPullResult(ctx.ui, {
+      env: opts.env,
+      assetsAbs,
+      fetchedAt: fetched.bundleFetchedAt,
+      stage: result,
+      assets: assetResult,
+    });
   } finally {
     if (archive !== undefined)
       await resolvedDeps.fs.unlink(archive).catch(() => {});

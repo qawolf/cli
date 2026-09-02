@@ -7,8 +7,11 @@ import type {
 } from "~/shell/commandContext.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import { flowsMessages, runnerMessages } from "~/core/messages/index.js";
+import { matchesSelectors } from "~/core/flowSelectors.js";
 
+import { fetchKnownTags } from "./fetchKnownTags.js";
 import { renderListTable } from "./renderListTable.js";
+import { emptySelectionResult } from "./selectorGuards.js";
 
 type RemoteListItem = {
   flowId: string;
@@ -22,6 +25,7 @@ type RemoteListItem = {
 export type FlowsListRemoteOptions = {
   readonly env: string;
   readonly includeDrafts: boolean;
+  readonly tags: readonly string[];
 };
 
 export async function flowsListRemote(
@@ -39,7 +43,7 @@ export async function flowsListRemote(
   if (!result.ok) return failureFields(result);
 
   const matches = pattern ? picomatch(pattern) : undefined;
-  const items: RemoteListItem[] = result.value.flows
+  const all: RemoteListItem[] = result.value.flows
     .filter((f) => !matches || matches(f.path))
     .map((f) => ({
       flowId: f.flowId,
@@ -53,6 +57,16 @@ export async function flowsListRemote(
       url: f.url,
     }));
 
+  const selectors = { tags: options.tags };
+  const items = all.filter((item) => matchesSelectors(item, selectors));
+
+  // Tags are team-scoped, so only the team list can tell a typo from a real
+  // tag that nothing here carries.
+  const empty = await emptySelectionResult(selectors, items.length, () =>
+    fetchKnownTags(ctx),
+  );
+  if (empty !== undefined) return empty;
+
   if (ctx.ui.mode === "json") {
     ctx.ui.json(items);
     return;
@@ -64,6 +78,10 @@ export async function flowsListRemote(
   const rows = items.map((it) => ({
     name: it.name,
     target: it.target,
+    // A remote listing is scoped to one environment by definition, so the env
+    // column would repeat the --env value on every row.
+    env: undefined,
+    tags: it.tags,
     file: it.file,
   }));
   if (ctx.ui.mode === "agent") {

@@ -14,7 +14,14 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-1" });
+    // The display name rides along so a pull can record which environment a
+    // cache directory holds; this fixture has no alias, hence slug undefined.
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-1",
+      slug: undefined,
+      name: "Staging",
+    });
     expect(getEnvironment).toHaveBeenCalledWith({ environmentId: "staging" });
     expect(findEnvironments).not.toHaveBeenCalled();
   });
@@ -38,7 +45,12 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-1" });
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-1",
+      slug: undefined,
+      name: "Staging",
+    });
     expect(info).not.toHaveBeenCalled();
   });
 
@@ -53,7 +65,12 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-2" });
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-2",
+      slug: undefined,
+      name: "Prod",
+    });
     expect(getEnvironment).toHaveBeenCalledWith({ environmentId: "prod" });
     expect(info).toHaveBeenCalledWith(
       "Using environment from QAWOLF_ENVIRONMENT (prod)",
@@ -68,7 +85,11 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "error", error: "req" });
+    expect(outcome).toEqual({
+      kind: "error",
+      error: "req",
+      unreachable: false,
+    });
   });
 
   it("errors with the required message in non-human modes", async () => {
@@ -80,7 +101,11 @@ describe("resolveEnvironment", () => {
         requiredMessage: "req",
       });
 
-      expect(outcome).toEqual({ kind: "error", error: "req" });
+      expect(outcome).toEqual({
+        kind: "error",
+        error: "req",
+        unreachable: false,
+      });
       expect(findEnvironments).not.toHaveBeenCalled();
       expect(getEnvironment).not.toHaveBeenCalled();
     }
@@ -98,6 +123,7 @@ describe("resolveEnvironment", () => {
       kind: "error",
       error:
         'No environments found on your team. Create one with "qawolf environment create".',
+      unreachable: false,
     });
   });
 
@@ -111,7 +137,12 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-1" });
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-1",
+      slug: undefined,
+      name: "Staging",
+    });
     expect(select).not.toHaveBeenCalled();
     expect(info).toHaveBeenCalledWith("Using environment Staging");
     // Auto-picks are frictionless; the export tip only follows a real prompt.
@@ -134,7 +165,14 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-2" });
+    // The picker knows the chosen environment's name, so a pull started this
+    // way records the same identity an explicit --env would.
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-2",
+      slug: undefined,
+      name: "Prod",
+    });
     expect(select).toHaveBeenCalledTimes(1);
     expect(select).toHaveBeenCalledWith("Which environment?", [
       { value: "env-1", label: "Staging", hint: "static · ready" },
@@ -159,7 +197,12 @@ describe("resolveEnvironment", () => {
       requiredMessage: "req",
     });
 
-    expect(outcome).toEqual({ kind: "resolved", env: "env-1" });
+    expect(outcome).toEqual({
+      kind: "resolved",
+      env: "env-1",
+      slug: undefined,
+      name: "A",
+    });
     expect(findEnvironments).toHaveBeenCalledTimes(2);
     expect(select).toHaveBeenCalledTimes(1);
   });
@@ -192,6 +235,7 @@ describe("resolveEnvironment", () => {
       kind: "error",
       error:
         "Stopped listing environments after 10 pages. Pass --env explicitly.",
+      unreachable: false,
     });
     expect(findEnvironments).toHaveBeenCalledTimes(10);
   });

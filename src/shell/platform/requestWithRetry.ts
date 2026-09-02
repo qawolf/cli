@@ -18,6 +18,12 @@ export type PlatformFailure = {
   errorBody?: string;
   exitCode?: number;
   mayHaveArrived?: boolean;
+  /**
+   * The platform never answered — the connection failed or the deadline
+   * passed. An HTTP error is the opposite: a definitive answer. Callers use
+   * this to decide whether an offline fallback is honest.
+   */
+  unreachable?: boolean;
 };
 
 export type PlatformResult<T> =
@@ -73,10 +79,15 @@ export async function requestWithRetry<T>(
       // after the request body was sent just as it covers one refused outright,
       // so it cannot prove the request never arrived either.
       const mayHaveArrived = result.error.kind !== "http";
+      // A parse error is the server answering, so only the two failures that
+      // never produced an answer count as unreachable.
+      const unreachable =
+        result.error.kind === "network" || result.error.kind === "timeout";
       return {
         ok: false,
         ...args.describe(result.error),
         ...(mayHaveArrived ? { mayHaveArrived } : {}),
+        ...(unreachable ? { unreachable } : {}),
       };
     }
     await sleep(backoff);

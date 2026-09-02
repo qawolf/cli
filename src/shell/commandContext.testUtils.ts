@@ -57,3 +57,12 @@ export function makeCtx(
     ...overrides,
   };
 }
+
+/**
+ * The recorded calls of a bun mock. Lives in the shell layer because tests in
+ * any layer inspect UI mocks, and a domain must not import a sibling domain
+ * to get at it.
+ */
+export const callsOf = <T extends (...args: never) => unknown>(
+  fn: T,
+): unknown[][] => (fn as unknown as ReturnType<typeof mock>).mock.calls;

@@ -33,3 +33,14 @@ export function parseEnum<T extends string>(
     return value as T;
   };
 }
+
+/**
+ * Accumulates a repeated flag into a list.
+ *
+ * Repeatable rather than variadic: a variadic option consumes every following
+ * bare word, which silently swallows a positional argument (`--tag auth
+ * pattern` reads `pattern` as a second tag).
+ */
+export function collectValue(value: string, previous: string[]): string[] {
+  return [...previous, value];
+}

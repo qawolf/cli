@@ -37,10 +37,13 @@ describe("stageBundle", () => {
       destAbs: destDir,
       assetsAbs: join(workDir, "assets"),
       envId: "env-abc",
+      envSlug: undefined,
+      envName: undefined,
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: {},
       envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+      tags: undefined,
     });
 
     expect(result).toEqual({
@@ -57,9 +60,10 @@ describe("stageBundle", () => {
     if (manifest === "missing" || manifest === "malformed") {
       throw new Error("manifest should be present");
     }
+    // Manifest paths are written in posix form on every host.
     expect(manifest.flows.map((f) => f.path).sort()).toEqual([
       "checkout.flow.ts",
-      join("nested", "login.flow.ts"),
+      "nested/login.flow.ts",
     ]);
   });
 
@@ -74,10 +78,13 @@ describe("stageBundle", () => {
       destAbs: destDir,
       assetsAbs: join(workDir, "assets"),
       envId: "env-abc",
+      envSlug: undefined,
+      envName: undefined,
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: {},
       envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+      tags: undefined,
     });
 
     expect(result.flowCount).toBe(1);
@@ -99,10 +106,13 @@ describe("stageBundle", () => {
       destAbs: destDir,
       assetsAbs: join(workDir, "assets"),
       envId: "env-abc",
+      envSlug: undefined,
+      envName: undefined,
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: {},
       envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+      tags: undefined,
     });
 
     const manifest = await readManifest(destDir);
@@ -127,10 +137,13 @@ describe("stageBundle", () => {
       destAbs: destDir,
       assetsAbs,
       envId: "env-abc",
+      envSlug: undefined,
+      envName: undefined,
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: { BASE_URL: "https://example.com", TOKEN: "abc" },
       envVarsFetchedAt: fetchedAt,
+      tags: undefined,
     });
 
     expect(result.envVarCount).toBe(3);
@@ -178,10 +191,13 @@ describe("stageBundle", () => {
       destAbs: destDir,
       assetsAbs: assetsDir,
       envId: "env-abc",
+      envSlug: undefined,
+      envName: undefined,
       cliFlowsVersion: "0.4.0",
       now: new Date("2026-05-10T12:00:00.000Z"),
       envVars: { TEAM_STORAGE_DIR: "/home/wolf/team-storage" },
       envVarsFetchedAt: new Date("2026-05-10T12:00:00.000Z"),
+      tags: undefined,
     });
 
     expect(stageResult.flowsWithTeamStorageRefs).toEqual([

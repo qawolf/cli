@@ -10,7 +10,7 @@ import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.te
 import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeDefaultFs } from "~/shell/fs.js";
 
-import { makeFakeUI } from "~/domains/runner/run.fixtures.js";
+import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
 import { handleFlowsPull } from "./handler.js";
 import { manifestFilename } from "~/shell/manifest/io.js";
 import { buildBundle } from "./pull.fixtures.js";

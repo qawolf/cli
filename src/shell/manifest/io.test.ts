@@ -18,12 +18,16 @@ const envDir = "/qawolf/manifest-test";
 const sample: Manifest = {
   envId: "env-abc",
   envSlug: "staging",
+  envName: undefined,
   fetchedAt: "2026-05-10T12:00:00.000Z",
   cliFlowsVersion: "0.1.0",
   qawolfCommitSha: "c67b5b6ff48766ca3cd72ceb4037e95c49633725",
   qawolfCommittedAt: "2026-05-09T10:00:00.000Z",
+  tagsFetchedAt: undefined,
   envVarsFetchedAt: "2026-05-10T12:30:00.000Z",
-  flows: [{ path: "src/checkout.flow.ts", contentHash: "deadbeef" }],
+  flows: [
+    { path: "src/checkout.flow.ts", contentHash: "deadbeef", tags: undefined },
+  ],
 };
 
 describe("readManifest", () => {
@@ -59,6 +63,55 @@ describe("readManifest", () => {
     const result = await readManifest(envDir, memFs);
     expect(result).toBe("malformed");
   });
+
+  // Manifests written before tags existed must keep parsing: a hard failure
+  // here would break `flows run` against any env pulled by an older CLI.
+  it("parses a manifest written before tags existed", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
+    await memFs.writeFile(
+      join(envDir, manifestFilename),
+      JSON.stringify({
+        envId: "env-abc",
+        fetchedAt: "2026-05-10T12:00:00.000Z",
+        cliFlowsVersion: "0.1.0",
+        flows: [
+          {
+            path: "src/checkout.flow.ts",
+            contentHash: "deadbeef",
+            tags: undefined,
+          },
+        ],
+      }),
+    );
+
+    const result = await readManifest(envDir, memFs);
+    if (typeof result === "string")
+      throw new Error(`expected a manifest, got ${result}`);
+    expect(result.tagsFetchedAt).toBeUndefined();
+    expect(result.flows[0]?.tags).toBeUndefined();
+  });
+
+  it("round-trips tags and tagsFetchedAt", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
+    const tagged: Manifest = {
+      ...sample,
+      tagsFetchedAt: "2026-05-10T12:45:00.000Z",
+      flows: [
+        {
+          path: "src/checkout.flow.ts",
+          contentHash: "deadbeef",
+          tags: ["smoke", "auth"],
+        },
+        { path: "src/untagged.flow.ts", contentHash: "cafe", tags: [] },
+      ],
+    };
+
+    await writeManifest(envDir, tagged, memFs);
+
+    expect(await readManifest(envDir, memFs)).toEqual(tagged);
+  });
 });
 
 describe("writeManifest", () => {
@@ -77,10 +130,12 @@ describe("writeManifest", () => {
     const minimal: Manifest = {
       envId: "env-min",
       envSlug: undefined,
+      envName: undefined,
       fetchedAt: "2026-05-10T12:00:00.000Z",
       cliFlowsVersion: "0.1.0",
       qawolfCommitSha: undefined,
       qawolfCommittedAt: undefined,
+      tagsFetchedAt: undefined,
       envVarsFetchedAt: undefined,
       flows: [],
     };

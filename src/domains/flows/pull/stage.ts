@@ -1,9 +1,11 @@
+import { toPosix } from "~/core/repoRelativePath.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
-import { writeManifest } from "~/shell/manifest/io.js";
+import { readManifest, writeManifest } from "~/shell/manifest/io.js";
 import {
   buildManifest,
   flattenSingleWrapper,
   sampleQawolfCommittedAt,
+  type FetchedTags,
 } from "./bundle.js";
 import { applyTeamStorageRewrite } from "./applyTeamStorageRewrite.js";
 import { writeEnvFile } from "./envVars.js";
@@ -19,10 +21,13 @@ type StageBundleArgs = {
   destAbs: string;
   assetsAbs: string;
   envId: string;
+  envSlug: string | undefined;
+  envName: string | undefined;
   cliFlowsVersion: string;
   now: Date;
   envVars: Record<string, string>;
   envVarsFetchedAt: Date;
+  tags: FetchedTags | undefined;
 };
 
 type StageBundleResult = {
@@ -65,6 +70,9 @@ export async function stageBundle(
     const manifest = await buildManifest(
       {
         envId: args.envId,
+        tags: args.tags ?? (await carriedTags(args.destAbs, fs)),
+        envSlug: args.envSlug,
+        envName: args.envName,
         bundleDir: tmpDir,
         cliFlowsVersion: args.cliFlowsVersion,
         now: args.now,
@@ -100,4 +108,29 @@ export async function stageBundle(
     await removeTempDir(tmpDir, registry, fs).catch(() => {});
     throw err;
   }
+}
+
+/**
+ * Tags kept from the previous pull of this environment.
+ *
+ * A pull rebuilds the manifest from the bundle, so a failed tag fetch would
+ * otherwise erase tags that were cached successfully earlier. Stale tags are
+ * reported as stale; losing them silently would break every offline query.
+ */
+async function carriedTags(
+  envDir: string,
+  fs: Fs,
+): Promise<FetchedTags | undefined> {
+  const previous = await readManifest(envDir, fs);
+  if (typeof previous === "string") return undefined;
+  if (previous.tagsFetchedAt === undefined) return undefined;
+
+  const byPath = new Map<string, string[]>();
+  for (const flow of previous.flows) {
+    // A manifest written by an older CLI on win32 may hold `\` paths; the new
+    // manifest looks entries up by posix path, so normalize or the carried
+    // tags never match and vanish silently.
+    if (flow.tags !== undefined) byPath.set(toPosix(flow.path), [...flow.tags]);
+  }
+  return { fetchedAt: new Date(previous.tagsFetchedAt), byPath };
 }
