@@ -1,4 +1,4 @@
-import { dirname, extname, join, relative, sep } from "node:path";
+import { relative } from "node:path";
 
 import type { WorkflowLintMessage } from "@qawolf/workflow-linter";
 import { makeLinter } from "@qawolf/workflow-linter/node-bundle";
@@ -6,10 +6,10 @@ import {
   createTypescriptProgram,
   resolveImportGraph,
 } from "@qawolf/workflow-linter/program";
-import { eslintrcJsonPath } from "@qawolf/workflow-linter/team-config";
 
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 import type { Fs } from "~/shell/fs.js";
+import { readTeamEslintrcJsonText } from "./readTeamEslintrcJsonText.js";
 
 type LintFileReport = { messages: WorkflowLintMessage[]; path: string };
 
@@ -19,42 +19,6 @@ export type LintReport = {
   unreadablePaths: string[];
   warningCount: number;
 };
-
-export const lintablePattern = "**/*.{ts,js}";
-
-const lintableExtensions = new Set([".js", ".ts"]);
-
-const generatedDirectoryNames = new Set([
-  ".next",
-  ".nuxt",
-  ".output",
-  ".svelte-kit",
-  ".turbo",
-  ".vercel",
-  "build",
-  "coverage",
-  "dist",
-  "out",
-]);
-
-export function selectLintableFiles(
-  filePaths: readonly string[],
-  cwd: string,
-): readonly string[] {
-  return filePaths.filter(
-    (filePath) =>
-      lintableExtensions.has(extname(filePath)) &&
-      !isUnderGeneratedDirectory(filePath, cwd),
-  );
-}
-
-function isUnderGeneratedDirectory(filePath: string, cwd: string): boolean {
-  const withinProject = relative(cwd, filePath);
-  return withinProject
-    .split(sep)
-    .slice(0, -1)
-    .some((segment) => generatedDirectoryNames.has(segment));
-}
 
 export async function lintFiles({
   cwd,
@@ -96,51 +60,6 @@ export async function lintFiles({
     unreadablePaths,
     warningCount: messages.length - errorCount,
   };
-}
-
-async function readTeamEslintrcJsonText({
-  cwd,
-  fs,
-  projectDir,
-}: {
-  cwd: string;
-  fs: Fs;
-  projectDir: string | undefined;
-}): Promise<string | undefined> {
-  const outermost = outermostSearchedDirectory({ cwd, fs, projectDir });
-
-  let directory = cwd;
-  while (true) {
-    const candidate = join(directory, eslintrcJsonPath);
-    if (await fs.pathExists(candidate)) return fs.readFile(candidate);
-
-    const parent = dirname(directory);
-    if (directory === outermost || parent === directory) return undefined;
-    directory = parent;
-  }
-}
-
-function outermostSearchedDirectory({
-  cwd,
-  fs,
-  projectDir,
-}: {
-  cwd: string;
-  fs: Fs;
-  projectDir: string | undefined;
-}): string {
-  if (projectDir !== undefined) return projectDir;
-  return findRepositoryRoot(cwd, fs) ?? cwd;
-}
-
-function findRepositoryRoot(cwd: string, fs: Fs): string | undefined {
-  let directory = cwd;
-  while (true) {
-    if (fs.existsSync(join(directory, ".git"))) return directory;
-    const parent = dirname(directory);
-    if (parent === directory) return undefined;
-    directory = parent;
-  }
 }
 
 type LintOneFileOutcome =

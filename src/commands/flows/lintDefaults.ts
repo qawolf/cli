@@ -3,11 +3,11 @@ import { buildPatternArgs } from "~/core/patternArgs.js";
 import { pluralize } from "~/core/pluralize.js";
 import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
 import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
+import { lintFiles as defaultLintFiles } from "~/domains/lint/lintFiles.js";
 import {
-  lintFiles as defaultLintFiles,
   lintablePattern,
   selectLintableFiles,
-} from "~/domains/lint/lintFiles.js";
+} from "~/domains/lint/selectLintableFiles.js";
 import { renderLintReport } from "~/domains/lint/renderLintReport.js";
 import { noMatchResult } from "~/domains/runner/noMatch.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
