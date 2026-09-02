@@ -19,7 +19,9 @@ export const interactMessages = {
   runnerHasNoScreen:
     "This runner does not run a browser on a virtual desktop, so there is nothing about it to see or drive. Retrying will never help: launch a playwright runner instead.",
   runnerHasNoScreenToEvaluate:
-    "The runner could not evaluate the snippet. This covers a runner that is still starting or busy, and also one with no live page to evaluate against: a freshly launched runner has no page until a run opens one, so run a flow on it with qawolf runner run first. If it is not a runner that runs a browser at all, this will never clear. It is not proof the snippet did not run, so do not resubmit one that mutates the page without reading qawolf runner events console first.",
+    "The runner has no live page to evaluate the snippet against: a freshly launched runner has no page until a run opens one, so run a flow on it with qawolf runner run first. If it is not a runner that runs a browser at all, this will never clear. It is not proof the snippet did not run, so do not resubmit one that mutates the page without reading qawolf runner events console first.",
+  evaluateAnsweredUnknown: (failureReason: string) =>
+    `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
   inspectNeedsABrowserRunner:
     "This runner is a mobile device, and element and page HTML are a browser's shapes. Retrying will never help. Launch a playwright runner to inspect one.",
   nothingToInspect: (errorMessage: string | undefined) =>
