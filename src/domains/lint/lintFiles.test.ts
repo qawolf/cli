@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "bun:test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
 import { makeDefaultFs } from "~/shell/fs.js";
 import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 
@@ -33,10 +34,12 @@ async function createProject(
 }
 
 function lint(cwd: string, filePaths: string[]): Promise<LintReport> {
+  const absolute = filePaths.map((filePath) => join(cwd, filePath));
   return lintFiles({
     cwd,
-    filePaths: filePaths.map((filePath) => join(cwd, filePath)),
+    filePaths: absolute,
     fs,
+    projectDir: resolveProjectDirSafe(absolute, fs),
   });
 }
 
@@ -115,6 +118,7 @@ describe("lintFiles", () => {
       cwd: join(project, "src/flows"),
       filePaths: [join(project, "src/flows/broken.flow.ts")],
       fs,
+      projectDir: project,
     });
 
     expect(report.errorCount).toBe(0);
@@ -154,6 +158,60 @@ describe("lintFiles", () => {
     expect(report.warningCount).toBe(1);
     expect(formatLintReport(report)).toContain("no-unreachable");
   });
+
+  it("reports a file it cannot read instead of failing the whole run", async () => {
+    const project = await createProject({
+      "clean.flow.ts": "export const greeting = `hello`;\n",
+    });
+
+    const report = await lintFiles({
+      cwd: project,
+      filePaths: [
+        join(project, "clean.flow.ts"),
+        join(project, "vanished.flow.ts"),
+      ],
+      fs,
+      projectDir: project,
+    });
+
+    expect(report.unreadablePaths).toEqual(["vanished.flow.ts"]);
+    expect(report.errorCount).toBe(0);
+    expect(report.files).toHaveLength(1);
+    expect(formatLintReport(report)).toContain(
+      "Not checked, could not be read (1 file):",
+    );
+  });
+
+  it("does not read an .eslintrc.json outside the project when files span packages", async () => {
+    const outside = await tracker.makeTmpDir();
+    await writeFile(
+      join(outside, ".eslintrc.json"),
+      JSON.stringify({
+        rules: { "@typescript-eslint/no-explicit-any": "off" },
+      }),
+    );
+    const project = join(outside, "project");
+    await mkdir(join(project, "b"), { recursive: true });
+    await writeFile(join(project, "package.json"), "{}");
+    await mkdir(join(project, "a"), { recursive: true });
+    await writeFile(join(project, "a/package.json"), "{}");
+    await writeFile(join(project, "b/package.json"), "{}");
+    const broken = "const value: any = 1;\nexport const doubled = value * 2;\n";
+    await writeFile(join(project, "a/one.flow.ts"), broken);
+    await writeFile(join(project, "b/two.flow.ts"), broken);
+
+    const absolute = [join(project, "a/one.flow.ts"), join(project, "b/two.flow.ts")];
+    expect(resolveProjectDirSafe(absolute, fs)).toBeUndefined();
+
+    const report = await lintFiles({
+      cwd: project,
+      filePaths: absolute,
+      fs,
+      projectDir: undefined,
+    });
+
+    expect(report.errorCount).toBe(2);
+  });
 });
 
 describe("selectLintableFiles", () => {
@@ -164,7 +222,7 @@ describe("selectLintableFiles", () => {
         "/project/src/pages/LoginPage.ts",
         "/project/scripts/seed.js",
         "/project/types/globals.d.ts",
-      ]),
+      ], "/project"),
     ).toEqual([
       "/project/flows/login.flow.ts",
       "/project/src/pages/LoginPage.ts",
@@ -180,7 +238,34 @@ describe("selectLintableFiles", () => {
         "/project/README.md",
         "/project/flows/login.flow.tsx",
         "/project/Makefile",
-      ]),
+      ], "/project"),
     ).toEqual([]);
+  });
+
+  it("drops files under a generated output directory", () => {
+    expect(
+      selectLintableFiles(
+        [
+          "/project/flows/login.flow.ts",
+          "/project/dist/flows/login.flow.js",
+          "/project/build/bundle.js",
+          "/project/coverage/lcov-report/block-navigation.js",
+          "/project/.next/server/page.js",
+        ],
+        "/project",
+      ),
+    ).toEqual(["/project/flows/login.flow.ts"]);
+  });
+
+  it("keeps a file whose own name matches a generated directory", () => {
+    expect(
+      selectLintableFiles(["/project/flows/dist.ts"], "/project"),
+    ).toEqual(["/project/flows/dist.ts"]);
+  });
+
+  it("ignores generated directory names above the project root", () => {
+    expect(
+      selectLintableFiles(["/home/me/build/project/flows/a.flow.ts"], "/home/me/build/project"),
+    ).toEqual(["/home/me/build/project/flows/a.flow.ts"]);
   });
 });

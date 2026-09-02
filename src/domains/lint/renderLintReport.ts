@@ -26,7 +26,17 @@ export function formatLintReport(report: LintReport): string {
           `${pluralize(problemCount, "problem")} (${pluralize(report.errorCount, "error")}, ${pluralize(report.warningCount, "warning")})`,
         ];
 
-  return [...blocks, ...summary].join("\n\n");
+  return [...blocks, ...summary, ...formatUnreadable(report)].join("\n\n");
+}
+
+function formatUnreadable(report: LintReport): string[] {
+  if (report.unreadablePaths.length === 0) return [];
+  return [
+    [
+      `Not checked, could not be read (${pluralize(report.unreadablePaths.length, "file")}):`,
+      ...report.unreadablePaths.map((path) => `  ${path}`),
+    ].join("\n"),
+  ];
 }
 
 function formatFileMessages(

@@ -1,6 +1,7 @@
 import { lintMessages } from "~/core/messages/index.js";
 import { buildPatternArgs } from "~/core/patternArgs.js";
 import { pluralize } from "~/core/pluralize.js";
+import { resolveProjectDirSafe } from "~/domains/flows/ensureDeps.js";
 import { expandPatterns as defaultExpandPatterns } from "~/domains/flows/expand.js";
 import {
   lintFiles as defaultLintFiles,
@@ -47,7 +48,7 @@ export async function handleFlowsLint(
     cwd,
     ctx.log("flows"),
   );
-  const files = selectLintableFiles(matched);
+  const files = selectLintableFiles(matched, cwd);
   if (files.length === 0) {
     return noMatchResult(ctx, {
       allowNoMatch: flags.allowNoMatch,
@@ -60,12 +61,19 @@ export async function handleFlowsLint(
     cwd,
     filePaths: files,
     fs: ctx.fs,
+    projectDir: resolveProjectDirSafe([...files], ctx.fs),
   });
   renderLintReport(ctx.ui, report);
 
   if (report.errorCount > 0) {
     return {
       error: `${pluralize(report.errorCount, "lint error")} found`,
+      exitCode: exitCodes.testFailure,
+    };
+  }
+  if (report.unreadablePaths.length > 0) {
+    return {
+      error: lintMessages.unreadableFiles(report.unreadablePaths.length),
       exitCode: exitCodes.testFailure,
     };
   }
