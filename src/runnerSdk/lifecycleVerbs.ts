@@ -1,5 +1,6 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
+import { readJournal } from "~/domains/interactiveRunner/readJournal.js";
 import { runnerCallOptions } from "~/domains/interactiveRunner/runnerCallOptions.js";
 
 import type { SdkContext } from "./createContext.js";
@@ -14,21 +15,28 @@ import type {
   TerminatedRunner,
 } from "./types.js";
 
-const { launch, readJournal, stopRun, terminate } = publicContractsV1.runner;
+const { launch, stopRun, terminate } = publicContractsV1.runner;
 
 export function createLifecycleVerbs({ platformClient }: SdkContext) {
+  const ctx = { platformClient };
+
   return {
     async keepalive({
       runnerId,
     }: RunnerRequest): Promise<SdkResult<KeptAlive>> {
-      const read = await platformClient.callPublicApi(
-        readJournal,
-        { id: runnerId, stream: "run-status", tail: 1 },
-        runnerCallOptions,
-      );
-      return read.ok
-        ? { ok: true, value: { id: runnerId } }
-        : { error: read.error, ok: false };
+      const read = await readJournal(ctx, runnerId, {
+        stream: "run-status",
+        tail: 1,
+      });
+
+      if (read.type === "read") return { ok: true, value: { id: runnerId } };
+      return {
+        error:
+          read.type === "unreachable"
+            ? "The runner could not be reached."
+            : read.error,
+        ok: false,
+      };
     },
 
     async launch({

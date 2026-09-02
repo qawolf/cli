@@ -74,7 +74,7 @@ src/
 │   ├── interactiveRunner/ # remote runners: launch, stop, keepalive, runFlow, journal, screenshot, act, exec
 │   ├── runner/          # the LOCAL execution engine: flowsRun, runWebFlow, runAndroidFlow, worker dispatch + pool
 │   └── updateCheck/     # startUpdateCheck: new-version notice after commands
-└── commands/            # Thin CLI glue — Commander registration + composite root
+├── commands/            # Thin CLI glue — Commander registration + composite root
     ├── context.ts       # withContext() Commander action wrapper
     ├── program.ts       # createProgram() factory
     ├── auth/            # login, logout, whoami handlers
@@ -83,9 +83,13 @@ src/
     ├── init/            # init handler
     ├── install/         # install browsers/android handlers
     └── runner/          # lifecycle/run/interact registrations (domains/interactiveRunner)
+└── runnerSdk/           # Published library entry — @qawolf/cli/runner-sdk
+    ├── index.ts         # createRunnerSdk() — the only file `exports` points at
+    ├── types.ts         # the public types; imports only @qawolf/api-contracts
+    └── *Verbs.ts        # one file per verb group
 ```
 
-The codebase is organized into four strict layers. **`core/`** holds pure functions and types with zero I/O. **`shell/`** holds I/O executors (process spawning, Playwright, UI rendering, API clients). **`domains/`** holds bounded-context business logic; each domain may import `core/` and `shell/` but never a sibling domain. **`commands/`** is the composite root: thin Commander registration plus `runDefaults.ts`, which bridges multiple domains to assemble the `flows run` command. oxlint enforces these boundaries via per-layer `no-restricted-imports` overrides in `.oxlintrc.json`.
+The codebase is organized into five layers. **`core/`** holds pure functions and types with zero I/O. **`shell/`** holds I/O executors (process spawning, Playwright, UI rendering, API clients). **`domains/`** holds bounded-context business logic; each domain may import `core/` and `shell/` but never a sibling domain. **`commands/`** is the composite root: thin Commander registration plus `runDefaults.ts`, which bridges multiple domains to assemble the `flows run` command. **`runnerSdk/`** is the second composite root, serving a library consumer where `commands/` serves the terminal: it is the only directory the `exports` field points at, and it reuses `domains/interactiveRunner` rather than reimplementing it. oxlint enforces these boundaries via per-layer `no-restricted-imports` overrides in `.oxlintrc.json`; `runnerSdk/` additionally may not import from `commands/` or from `bun`, since it is published and runs under Node.
 
 API clients (tRPC for the QA Wolf platform, GitHub REST) live in `src/shell/platform/` and `src/shell/` respectively — one module per auth boundary.
 

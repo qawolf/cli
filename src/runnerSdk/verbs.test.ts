@@ -118,6 +118,19 @@ describe("what a caller gets back", () => {
     expect(answer.value.outcome).toBe("failure");
   });
 
+  // The clock could not be reset because there is no runner to reset, so a
+  // caller must not read this as the runner still being there.
+  it("reports an unreachable runner as a failed keepalive", async () => {
+    const { lifecycle } = makeContext({
+      failureReason: "runner-unreachable",
+      outcome: "failure",
+    });
+
+    const answer = await lifecycle.keepalive({ runnerId: "agent-1" });
+
+    expect(answer.ok).toBe(false);
+  });
+
   it("carries no exit code on a transport failure", async () => {
     const platformClient = {
       callPublicApi: async () => ({
