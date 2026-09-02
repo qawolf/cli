@@ -92,7 +92,7 @@ something:
 - `screenshot` and `act` fail with exit code `2`, except `navigate`, which
   fails with exit code `1` (`action-failed`): it skips the screen but still
   needs the runner to have run something
-- `exec` fails with exit code `4`
+- `exec` fails with exit code `2`
 - `events recorder` reads as empty
 
 None of that is a fault, and none of it clears on its own. **Only
@@ -119,9 +119,6 @@ Retry on the exit code, not on the message text:
 - `2` will not clear on its own. Either nothing has run on this runner yet, so
   run a flow, or the runner has no browser at all, so launch with
   `--name playwright` instead. The message says which.
-
-The one exception is `exec`, which reports both as `4`; read its message to tell
-them apart.
 
 ## Seeing and acting: the loop is yours
 
