@@ -1,5 +1,7 @@
 import { join, relative } from "node:path";
 
+import { toPosix } from "~/core/repoRelativePath.js";
+
 import { hashFile } from "~/shell/manifest/io.js";
 import type { Manifest } from "~/shell/manifest/types.js";
 import { makeDefaultFs } from "~/shell/fs.js";
@@ -45,8 +47,6 @@ function extractQawolfCommitSha(
   if (!wrapperName) return undefined;
   return /-([0-9a-f]{40})$/i.exec(wrapperName)?.[1];
 }
-
-const toPosix = (p: string): string => p.replaceAll("\\", "/");
 
 const flowExtensions = [".flow.ts", ".flow.js"];
 
