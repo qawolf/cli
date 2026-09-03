@@ -21,7 +21,11 @@ export type ResolveOauthTokenDeps = {
   now: () => number;
 };
 
-export type OauthToken = { key: string; email: string };
+export type OauthToken = {
+  key: string;
+  email: string;
+  workspaceId: string | undefined;
+};
 
 /**
  * Undefined whenever a token cannot be produced. A failed refresh means "sign
@@ -41,7 +45,11 @@ export async function resolveOauthToken(
     expiresAt !== undefined && expiresAt - expiryMarginMs > deps.now();
 
   if (isFresh) {
-    return { key: tokens.accessToken, email: tokens.email };
+    return {
+      key: tokens.accessToken,
+      email: tokens.email,
+      workspaceId: tokens.workspaceId,
+    };
   }
 
   // Pin the refresh to the organization already in use. Without it WorkOS is
@@ -96,6 +104,7 @@ export async function resolveOauthToken(
   try {
     await deps.saveTokens(configDir, {
       ...refreshed.value,
+      workspaceId: tokens.workspaceId,
       clientId: tokens.clientId,
     });
   } catch {
@@ -105,5 +114,9 @@ export async function resolveOauthToken(
     // this one succeeds or not.
   }
 
-  return { key: refreshed.value.accessToken, email: refreshed.value.email };
+  return {
+    key: refreshed.value.accessToken,
+    email: refreshed.value.email,
+    workspaceId: tokens.workspaceId,
+  };
 }

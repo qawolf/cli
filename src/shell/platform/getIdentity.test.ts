@@ -51,7 +51,7 @@ describe("getIdentity", () => {
       baseUrl: "https://test.qawolf.com",
     });
 
-    expect(result).toEqual({ ok: true, data: { team } });
+    expect(result).toEqual({ ok: true, data: { team, organizations: [] } });
   });
 
   it("returns ok with parsed data for an organization identity", async () => {
@@ -61,7 +61,10 @@ describe("getIdentity", () => {
       baseUrl: "https://test.qawolf.com",
     });
 
-    expect(result).toEqual({ ok: true, data: { organization } });
+    expect(result).toEqual({
+      ok: true,
+      data: { organization, organizations: [] },
+    });
   });
 
   it("returns http WireError with status on auth failure", async () => {
@@ -158,6 +161,6 @@ describe("getIdentity", () => {
       baseUrl: "https://test.qawolf.com",
     });
 
-    expect(result).toEqual({ ok: true, data: { team } });
+    expect(result).toEqual({ ok: true, data: { team, organizations: [] } });
   });
 });

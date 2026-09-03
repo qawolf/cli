@@ -5,6 +5,7 @@ import { withContext } from "~/commands/context.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { handleLogin } from "./login.js";
 import { handleLogout } from "./logout.js";
+import { handleSwitchWorkspace } from "./switchWorkspace.js";
 import { handleWhoami } from "./whoami.js";
 
 export function registerAuthCommand(
@@ -22,6 +23,10 @@ export function registerAuthCommand(
   declareCommandKind(auth.command("logout"), "local")
     .description("Remove stored credentials")
     .action(withContext(signals, handleLogout));
+
+  declareCommandKind(auth.command("switch"), "local")
+    .description("Choose which workspace to work in")
+    .action(withContext(signals, handleSwitchWorkspace));
 
   declareCommandKind(auth.command("whoami"), "read")
     .description("Show authentication status")

@@ -11,6 +11,8 @@ type ApiKeySource = "env" | StorageSource | "browser";
 export type ApiKeyResult = {
   key: string;
   source: ApiKeySource;
+  /** Workspace chosen for a browser session; absent for API keys. */
+  workspaceId: string | undefined;
 };
 
 export type LoadApiKeyResult =
@@ -19,6 +21,7 @@ export type LoadApiKeyResult =
 
 /** What browser sign-in persists: the WorkOS tokens plus their issuing client. */
 export type StoredSession = DeviceTokens & {
+  workspaceId: string | undefined;
   /**
    * WorkOS client that issued these tokens. A refresh token is only redeemable
    * against its issuing client, so the session records it rather than asking

@@ -24,6 +24,7 @@ function parseTokens(raw: string): StoredSession | undefined {
     expiresAt: parsed.data.expiresAt,
     email: parsed.data.email,
     organizationId: parsed.data.organizationId,
+    workspaceId: parsed.data.workspaceId,
     clientId: parsed.data.clientId,
   };
 }

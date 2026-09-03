@@ -62,7 +62,11 @@ function registerRunCreate(
   const program = new Command().name("qawolf").exitOverride();
   registerPublicApiCommands(program, createSignalRegistry(), {
     authDeps: {
-      requireApiKey: async () => ({ key: "qawolf_key", source: "env" }),
+      requireApiKey: async () => ({
+        key: "qawolf_key",
+        source: "env",
+        workspaceId: undefined,
+      }),
       createPlatform: () => makeMockPlatformClient({ callPublicApi }),
     },
     contracts: { run: { create: contract } },

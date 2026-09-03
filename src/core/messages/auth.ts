@@ -58,6 +58,20 @@ export const authMessages = {
       cancelled: "Sign-in cancelled.",
     },
   },
+  workspace: {
+    chooseOrganization: "Which organization do you want to work in?",
+    choose: "Which workspace do you want to use?",
+    workspaceCount: (count: number) =>
+      `${count} workspace${count === 1 ? "" : "s"}`,
+    working: (organization: string, workspace: string) =>
+      `Working in ${workspace} (${organization}).`,
+    none: "This account reaches no organizations yet.",
+    cancelled: "Workspace not changed.",
+    notSignedIn:
+      "Workspace switching needs a browser sign-in. Run 'qawolf auth login' and choose Browser.",
+    nonInteractive:
+      "auth switch needs an interactive terminal, or set QAWOLF_WORKSPACE to name a workspace.",
+  },
   logout: {
     title: "Log Out",
     confirmPrompt: "Are you sure you want to log out?",
@@ -103,11 +117,23 @@ export const authMessages = {
       user: { email: string; id: string };
       organization: { id: string; name: string };
       source: string;
+      organizations: readonly {
+        name: string;
+        workspaces: readonly { name: string }[];
+      }[];
     }) =>
       [
         `User:         ${input.user.email}`,
         `ID:           ${input.user.id}`,
         `Organization: ${input.organization.name}`,
+        input.organizations.length > 0
+          ? `Workspaces:   ${input.organizations
+              .map(
+                (o) =>
+                  `${o.name}: ${o.workspaces.map((w) => w.name).join(", ")}`,
+              )
+              .join(" | ")}`
+          : undefined,
         `Source:       ${input.source}`,
       ]
         .filter((line): line is string => Boolean(line))

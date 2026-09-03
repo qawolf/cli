@@ -16,6 +16,8 @@ export const oauthTokensSchema = z.object({
   email: z.string().min(1),
   /** WorkOS organization the session is scoped to; refreshes are pinned to it. */
   organizationId: z.string().min(1).optional(),
+  /** The workspace the person chose to work in, inside that organization. */
+  workspaceId: z.string().min(1).optional(),
   /** WorkOS client that issued the tokens; refreshes go back to it. */
   clientId: z.string().min(1).optional(),
 });

@@ -10,6 +10,7 @@ import { getAuthConfig } from "~/shell/platform/getAuthConfig.js";
 import { resolveWorkosConfig } from "~/shell/workos/config.js";
 import { pollDeviceToken } from "~/shell/workos/pollDeviceToken.js";
 import { requestDeviceAuthorization } from "~/shell/workos/requestDeviceAuthorization.js";
+import { chooseWorkspace, reportWorkspace } from "./chooseWorkspace.js";
 
 export type LoginDeviceDeps = {
   env?: Record<string, string | undefined>;
@@ -101,11 +102,20 @@ export async function loginWithDevice(
       };
     }
 
-    await saveTokens(
-      ctx.configDir,
-      { ...result.tokens, clientId: config.clientId },
-      ctx.fs,
-    );
+    const session = {
+      ...result.tokens,
+      workspaceId: undefined,
+      clientId: config.clientId,
+    };
+    await saveTokens(ctx.configDir, session, ctx.fs);
+
+    // WorkOS puts the session in an organization of its choosing, so settle
+    // which workspace to work in before declaring success.
+    const workspace = await chooseWorkspace(ctx, {
+      session,
+      env: deps.env ?? process.env,
+    });
+    reportWorkspace(ctx, workspace);
 
     ctx.ui.outro(authMessages.device.signedIn(result.tokens.email));
     return;

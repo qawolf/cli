@@ -33,6 +33,7 @@ describe("resolveApiKey", () => {
     expect(result).toEqual({
       key: "qaw_test_key",
       source: "env",
+      workspaceId: undefined,
     });
     expect(loadApiKey).not.toHaveBeenCalled();
   });
@@ -49,6 +50,7 @@ describe("resolveApiKey", () => {
     expect(result).toEqual({
       key: "qaw_test_key",
       source: "env",
+      workspaceId: undefined,
     });
     expect(loadApiKey).not.toHaveBeenCalled();
   });
@@ -80,6 +82,7 @@ describe("resolveApiKey", () => {
     expect(result).toEqual({
       key: "qaw_stored",
       source: "keychain",
+      workspaceId: undefined,
     });
   });
 
@@ -99,6 +102,7 @@ describe("resolveApiKey", () => {
       resolveOauth: async () => ({
         key: "access_abc",
         email: "person@example.com",
+        workspaceId: undefined,
       }),
       env: {},
     });
@@ -106,6 +110,7 @@ describe("resolveApiKey", () => {
     expect(result).toEqual({
       key: "access_abc",
       source: "browser",
+      workspaceId: undefined,
     });
   });
 
@@ -113,6 +118,7 @@ describe("resolveApiKey", () => {
     const resolveOauth = mock(async () => ({
       key: "access_abc",
       email: "person@example.com",
+      workspaceId: undefined,
     }));
 
     const result = await resolveApiKey("/tmp/config", memFs, {
@@ -128,6 +134,7 @@ describe("resolveApiKey", () => {
     expect(result).toEqual({
       key: "qaw_stored",
       source: "keychain",
+      workspaceId: undefined,
     });
     expect(resolveOauth).not.toHaveBeenCalled();
   });
@@ -136,6 +143,7 @@ describe("resolveApiKey", () => {
     const resolveOauth = mock(async () => ({
       key: "access_abc",
       email: "person@example.com",
+      workspaceId: undefined,
     }));
 
     const result = await resolveApiKey("/tmp/config", memFs, {
@@ -147,6 +155,7 @@ describe("resolveApiKey", () => {
     expect(result).toEqual({
       key: "qaw_env",
       source: "env",
+      workspaceId: undefined,
     });
     expect(resolveOauth).not.toHaveBeenCalled();
   });
@@ -163,6 +172,7 @@ describe("requireApiKey", () => {
     expect(result).toEqual({
       key: "qaw_key",
       source: "env",
+      workspaceId: undefined,
     });
   });
 

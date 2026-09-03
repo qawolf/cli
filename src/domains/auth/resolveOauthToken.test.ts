@@ -12,6 +12,7 @@ const stored: StoredSession = {
   expiresAt: nowMs + 60_000,
   email: "person@example.com",
   organizationId: "org_1",
+  workspaceId: undefined,
   clientId: "client_1",
 };
 
@@ -67,6 +68,7 @@ describe("resolveOauthToken", () => {
     expect(result).toEqual({
       key: "access_old",
       email: "person@example.com",
+      workspaceId: undefined,
     });
     expect(refreshTokens).not.toHaveBeenCalled();
   });
@@ -83,6 +85,7 @@ describe("resolveOauthToken", () => {
     expect(result).toEqual({
       key: "access_new",
       email: "person@example.com",
+      workspaceId: undefined,
     });
     expect(refreshTokens).toHaveBeenCalledWith({
       refreshToken: "refresh_old",
@@ -139,6 +142,22 @@ describe("resolveOauthToken", () => {
     });
   });
 
+  it("keeps the chosen workspace across a refresh", async () => {
+    const { deps, saveTokens } = makeDeps({
+      found: true,
+      tokens: { ...stored, expiresAt: nowMs - 1, workspaceId: "ws_main" },
+      source: "keychain",
+    });
+
+    await resolveOauthToken("/config", deps);
+
+    expect(saveTokens).toHaveBeenCalledWith("/config", {
+      ...refreshed,
+      workspaceId: "ws_main",
+      clientId: "client_1",
+    });
+  });
+
   it("persists the rotated refresh token, not just the access token", async () => {
     const { deps, saveTokens } = makeDeps({
       found: true,
@@ -150,6 +169,7 @@ describe("resolveOauthToken", () => {
 
     expect(saveTokens).toHaveBeenCalledWith("/config", {
       ...refreshed,
+      workspaceId: undefined,
       clientId: "client_1",
     });
   });

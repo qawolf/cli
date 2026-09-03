@@ -100,6 +100,7 @@ describe("handleLogin", () => {
       resolveApiKey: async () => ({
         key: "qaw_existing",
         source: "env",
+        workspaceId: undefined,
       }),
     });
 
@@ -119,6 +120,7 @@ describe("handleLogin", () => {
       resolveApiKey: async () => ({
         key: "qaw_existing",
         source: "env",
+        workspaceId: undefined,
       }),
     });
 

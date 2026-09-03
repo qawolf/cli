@@ -155,7 +155,14 @@ export function withAuthContext(
 
     const platformClient = (deps.createPlatform ?? createPlatformClient)(
       resolved.key,
-      { baseUrl: apiBaseUrl, fetch: globalThis.fetch, logger: ctx.log("trpc") },
+      {
+        baseUrl: apiBaseUrl,
+        fetch: globalThis.fetch,
+        logger: ctx.log("trpc"),
+        // A browser session names its workspace on every request; an API key
+        // carries its team, so it sends none.
+        workspaceId: resolved.workspaceId,
+      },
     );
 
     try {
