@@ -37,6 +37,7 @@ export const stored: StoredSession = {
   expiresAt: nowMs + 60_000,
   email: "person@example.com",
   organizationId: "org_1",
+  workspaceId: undefined,
   issuer: testIssuer,
   clientId: "client_1",
   resource: testResource,

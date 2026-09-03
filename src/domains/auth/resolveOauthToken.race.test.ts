@@ -23,6 +23,7 @@ const spent: StoredSession = {
   expiresAt: nowMs - 1,
   email: "person@example.com",
   organizationId: "org_1",
+  workspaceId: undefined,
   issuer: testIssuer,
   clientId: "client_1",
   resource: testResource,
@@ -70,6 +71,7 @@ describe("resolveOauthToken when a refresh does not succeed", () => {
     expect(result).toEqual({
       key: winner.accessToken,
       email: "person@example.com",
+      workspaceId: undefined,
     });
     expect(loadTokens).toHaveBeenCalledTimes(2);
   });

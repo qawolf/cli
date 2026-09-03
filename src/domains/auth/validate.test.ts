@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
 import type { PlatformResult } from "~/shell/platform/requestWithRetry.js";
-import type { IdentityResponse } from "~/shell/platform/getIdentity.js";
+import type { Identity } from "~/shell/platform/getIdentity.js";
 import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
 
 import { validateApiKey } from "./validate.js";
@@ -11,7 +11,7 @@ afterEach(() => {
   mock.restore();
 });
 
-function makeDeps(result: PlatformResult<IdentityResponse>) {
+function makeDeps(result: PlatformResult<Identity>) {
   return {
     platformClient: makeMockPlatformClient({
       getIdentity:
@@ -31,6 +31,7 @@ describe("validateApiKey", () => {
           name: "Acme Corp",
           slug: "acme",
         },
+        organizations: [],
       },
     });
 
@@ -42,7 +43,10 @@ describe("validateApiKey", () => {
   it("returns valid on successful organization verification", async () => {
     const deps = makeDeps({
       ok: true,
-      value: { organization: { id: "org_1", name: "Acme Org" } },
+      value: {
+        organization: { id: "org_1", name: "Acme Org" },
+        organizations: [],
+      },
     });
 
     const result = await validateApiKey(deps);

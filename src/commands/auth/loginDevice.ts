@@ -12,6 +12,7 @@ import { pollDeviceToken } from "~/shell/workos/pollDeviceToken.js";
 import { refreshAccessToken } from "~/shell/workos/refreshAccessToken.js";
 import { requestDeviceAuthorization } from "~/shell/workos/requestDeviceAuthorization.js";
 import { defaultOpenBrowser, showDeviceCode } from "./showDeviceCode.js";
+import { chooseWorkspace, reportWorkspace } from "./chooseWorkspace.js";
 
 export type LoginDeviceDeps = {
   env?: Record<string, string | undefined>;
@@ -95,16 +96,23 @@ async function signIn(
 
     // Only the resource-bound pair the API has accepted is worth keeping. The
     // binding rides with it so a later refresh asks the deployment nothing.
-    await saveTokens(
-      ctx.configDir,
-      {
-        ...result.session,
-        issuer: config.issuer,
-        clientId: config.clientId,
-        resource: config.resource,
-      },
-      ctx.fs,
-    );
+    const session = {
+      ...result.session,
+      workspaceId: undefined,
+      issuer: config.issuer,
+      clientId: config.clientId,
+      resource: config.resource,
+    };
+    await saveTokens(ctx.configDir, session, ctx.fs);
+
+    // WorkOS puts the session in an organization of its choosing, so settle
+    // which workspace to work in before declaring success.
+    const workspace = await chooseWorkspace(ctx, {
+      session,
+      env: deps.env,
+      fetch: deps.fetch,
+    });
+    reportWorkspace(ctx, workspace);
 
     ctx.ui.outro(authMessages.device.signedIn(result.session.email));
     return;

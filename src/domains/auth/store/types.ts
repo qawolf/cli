@@ -16,6 +16,8 @@ export const oauthTokensSchema = z.object({
   email: z.string().min(1),
   /** WorkOS organization the token was granted for. */
   organizationId: z.string().min(1).optional(),
+  /** The workspace the person chose to work in, inside that organization. */
+  workspaceId: z.string().min(1).optional(),
   /** Where the tokens came from and what they are bound to; refreshes reuse all three. */
   issuer: z.string().min(1),
   clientId: z.string().min(1),

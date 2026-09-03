@@ -41,6 +41,7 @@ afterEach(() => {
 const okRequireApiKey = async () => ({
   key: "qawolf_test",
   source: "env" as const,
+  workspaceId: undefined,
 });
 
 describe("withAuthContext exit code plumbing", () => {

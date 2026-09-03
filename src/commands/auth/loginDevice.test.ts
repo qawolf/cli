@@ -87,10 +87,12 @@ function makeServers(overrides: Partial<Record<string, Route>> = {}) {
 function makeCtx() {
   const fs = makeMemoryFs();
   const ui = {
+    mode: "human",
     note: mock(),
     info: mock(),
     step: mock(),
     outro: mock(),
+    select: mock(async () => ({ ok: false })),
   } as unknown as UI;
   const ctx = {
     ui,
@@ -98,7 +100,7 @@ function makeCtx() {
     apiBaseUrl,
     fs,
     signals: { register: () => () => {} },
-    log: () => ({ debug: () => {} }),
+    log: () => ({ debug() {}, info() {}, warn() {}, error() {} }),
   } as unknown as CommandContext;
   return { ctx, ui, fs };
 }
@@ -124,7 +126,8 @@ describe("loginWithDevice", () => {
     expect(result).toBeUndefined();
     expect(opened).toEqual([`${issuer}/device`]);
     // Identity saw the bound token only; the first one never left the CLI.
-    expect(bearer).toEqual([`Bearer ${boundToken}`]);
+    expect(bearer.length).toBeGreaterThan(0);
+    expect(new Set(bearer)).toEqual(new Set([`Bearer ${boundToken}`]));
     expect(ui.outro).toHaveBeenCalledWith("Signed in as person@example.com.");
 
     const stored: unknown = JSON.parse(

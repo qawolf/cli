@@ -100,6 +100,7 @@ describe("handleLogin", () => {
       resolveApiKey: async () => ({
         key: "qaw_existing",
         source: "env",
+        workspaceId: undefined,
       }),
     });
 
@@ -119,6 +120,7 @@ describe("handleLogin", () => {
       resolveApiKey: async () => ({
         key: "qaw_existing",
         source: "env",
+        workspaceId: undefined,
       }),
     });
 
@@ -141,7 +143,11 @@ describe("handleLogin", () => {
         select: mock(async () => ({ ok: true as const, value: "browser" })),
       });
       const deps = makeDeps({
-        resolveApiKey: async () => ({ key: "qaw_old", source }),
+        resolveApiKey: async () => ({
+          key: "qaw_old",
+          source,
+          workspaceId: undefined,
+        }),
       });
 
       await handleLogin(ctx, deps);
@@ -161,7 +167,11 @@ describe("handleLogin", () => {
       select: mock(async () => ({ ok: true as const, value: "browser" })),
     });
     const deps = makeDeps({
-      resolveApiKey: async () => ({ key: "access_old", source: "browser" }),
+      resolveApiKey: async () => ({
+        key: "access_old",
+        source: "browser",
+        workspaceId: undefined,
+      }),
     });
 
     await handleLogin(ctx, deps);
@@ -176,7 +186,11 @@ describe("handleLogin", () => {
       select: mock(async () => ({ ok: true as const, value: "api-key" })),
     });
     const deps = makeDeps({
-      resolveApiKey: async () => ({ key: "qaw_old", source: "keychain" }),
+      resolveApiKey: async () => ({
+        key: "qaw_old",
+        source: "keychain",
+        workspaceId: undefined,
+      }),
     });
 
     await handleLogin(ctx, deps);
