@@ -10,7 +10,7 @@ import { runnerDeps, runnerFlagDescription } from "./context.js";
 const promoteSnapshotExamples = `
 Examples:
   $ qawolf runner promote-snapshot --screenshot checkout-1-actual.png --baseline checkout-1.png
-  $ qawolf runner events run-events --tail 20 | jq 'select(.type == "image-diff-artifact")'`;
+  $ qawolf runner events run-events --tail 20 | jq 'select(.type == "imageDiffArtifact")'`;
 
 export function registerRunnerPromoteSnapshotCommand(
   runner: Command,

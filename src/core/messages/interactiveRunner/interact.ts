@@ -91,7 +91,7 @@ export const interactMessages = {
   snapshotPromoted: (screenshotPath: string, baselinePath: string) =>
     `Promoted ${screenshotPath} to the baseline at ${baselinePath}.`,
   snapshotNotFound: (screenshotPath: string) =>
-    `The run wrote no screenshot at "${screenshotPath}", so nothing was changed. The two paths have to be the ones an image diff reported: read them from the image-diff-artifact entry on qawolf runner events run-events.`,
+    `The run wrote no screenshot at "${screenshotPath}", so nothing was changed. The two paths have to be the ones an image diff reported: read them from the imageDiffArtifact entry on qawolf runner events run-events.`,
   runnerCannotPromoteSnapshots:
     "This runner stores no screenshots, so it holds no baseline to replace. Retrying will never help.",
   promoteSnapshotAnsweredUnknown: (failureReason: string) =>

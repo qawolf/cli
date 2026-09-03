@@ -285,7 +285,7 @@ When a run's image diff fails and the new screenshot is the one you want, this
 replaces the baseline on the runner that produced it:
 
 ```sh
-qawolf runner events run-events --tail 20 | jq 'select(.type == "image-diff-artifact")'
+qawolf runner events run-events --tail 20 | jq 'select(.type == "imageDiffArtifact")'
 qawolf runner promote-snapshot --screenshot checkout-1-actual.png --baseline checkout-1.png
 ```
 
