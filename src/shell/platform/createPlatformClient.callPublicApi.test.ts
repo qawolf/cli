@@ -47,7 +47,16 @@ describe("callPublicApi", () => {
   it("sends a write contract as a mutation and returns the value", async () => {
     const runId = "run-id";
     const url = "https://app.qawolf.com/runs/run-id";
-    const f = mockFetch(json(trpcWrapped({ excludedFlows: [], runId, url })));
+    const f = mockFetch(
+      json(
+        trpcWrapped({
+          excludedFlows: [],
+          runId,
+          tracking: "not-requested",
+          url,
+        }),
+      ),
+    );
 
     const result = await createPlatformClient(apiKey, {
       fetch: f,
@@ -63,7 +72,7 @@ describe("callPublicApi", () => {
     expect(req.auth).toBe(`Bearer ${apiKey}`);
     expect(result).toEqual({
       ok: true,
-      value: { excludedFlows: [], runId, url },
+      value: { excludedFlows: [], runId, tracking: "not-requested", url },
     });
   });
 

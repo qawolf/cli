@@ -23,6 +23,7 @@ describe("buildCommandSpecs", () => {
     expect(runCreate?.contract).toBe(publicContractsV1.run.create);
     expect(runCreate?.flags.map((flag) => flag.path.join("."))).toEqual([
       "aiTaskId",
+      "chatSessionId",
       "environmentId",
       "environmentVariables",
       "ignoreRules",
