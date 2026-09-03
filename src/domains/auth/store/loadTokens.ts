@@ -41,6 +41,7 @@ function parseTokens(
       expiresAt: parsed.data.expiresAt,
       email: parsed.data.email,
       organizationId: parsed.data.organizationId,
+      workspaceId: parsed.data.workspaceId,
       issuer: parsed.data.issuer,
       clientId: parsed.data.clientId,
       resource: parsed.data.resource,

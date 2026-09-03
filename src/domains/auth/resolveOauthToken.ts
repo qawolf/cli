@@ -1,5 +1,5 @@
-import { verifyTokenBinding } from "~/core/deviceAuth/tokenClaims.js";
 import type { DeviceTokens } from "~/core/deviceAuth/types.js";
+import { isBound, isSameSession } from "./sessionBinding.js";
 import type { LoadTokensResult, StoredSession } from "./types.js";
 
 /**
@@ -25,8 +25,11 @@ export type ResolveOauthTokenDeps = {
   resource: string;
 };
 
-export type OauthToken = { key: string; email: string };
-
+export type OauthToken = {
+  key: string;
+  email: string;
+  workspaceId: string | undefined;
+};
 /** Whether the API would accept this session's access token as it stands. */
 function isBound(session: StoredSession): boolean {
   return verifyTokenBinding(session.accessToken, {
@@ -80,7 +83,11 @@ export async function resolveOauthToken(
     expiresAt !== undefined && expiresAt - expiryMarginMs > deps.now();
 
   if (isFresh && isBound(tokens)) {
-    return { key: tokens.accessToken, email: tokens.email };
+    return {
+      key: tokens.accessToken,
+      email: tokens.email,
+      workspaceId: tokens.workspaceId,
+    };
   }
 
   // The resource goes on every refresh: without it WorkOS answers with the
@@ -96,7 +103,11 @@ export async function resolveOauthToken(
     // leaves a token that still works, so ending the session over one would
     // sign someone out mid-command for nothing.
     if (refreshed.retryable && unexpired && isBound(tokens)) {
-      return { key: tokens.accessToken, email: tokens.email };
+      return {
+        key: tokens.accessToken,
+        email: tokens.email,
+        workspaceId: tokens.workspaceId,
+      };
     }
 
     // Another command may have refreshed while this one was in flight — the
@@ -110,7 +121,11 @@ export async function resolveOauthToken(
       current.tokens.refreshToken !== tokens.refreshToken &&
       isAdoptable(current.tokens, tokens, deps.now())
     ) {
-      return { key: current.tokens.accessToken, email: current.tokens.email };
+      return {
+        key: current.tokens.accessToken,
+        email: current.tokens.email,
+        workspaceId: current.tokens.workspaceId,
+      };
     }
     return undefined;
   }
@@ -118,6 +133,7 @@ export async function resolveOauthToken(
   const renewed: StoredSession = {
     ...refreshed.value,
     email: tokens.email,
+    workspaceId: tokens.workspaceId,
     issuer: tokens.issuer,
     clientId: tokens.clientId,
     resource: tokens.resource,
@@ -140,5 +156,9 @@ export async function resolveOauthToken(
   // opaque 401 in place of a reason.
   if (!isBound(renewed)) return undefined;
 
-  return { key: renewed.accessToken, email: renewed.email };
+  return {
+    key: renewed.accessToken,
+    email: renewed.email,
+    workspaceId: renewed.workspaceId,
+  };
 }

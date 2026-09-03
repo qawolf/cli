@@ -6,12 +6,11 @@ import {
   makeCallPublicApiMethod,
 } from "./callPublicApi.js";
 import { createTrpcClient } from "./createTrpcClient.js";
-import {
-  describeIdentityError,
-  describeRequestError,
-} from "./describeErrors.js";
+import { describeRequestError } from "./describeErrors.js";
 import { downloadBundle } from "./downloadBundle.js";
-import { getIdentity, type IdentityResponse } from "./getIdentity.js";
+import { createIdentityMethods } from "./identityMethods.js";
+import type { Identity } from "./getIdentity.js";
+import type { Organization } from "./organizations.js";
 import { type PlatformResult, requestWithRetry } from "./requestWithRetry.js";
 import { listTeamStorageFiles } from "./teamStorage.js";
 import {
@@ -27,7 +26,9 @@ import {
 
 export type PlatformClient = {
   callPublicApi: CallPublicApiMethod;
-  getIdentity: () => Promise<PlatformResult<IdentityResponse>>;
+  getIdentity: () => Promise<PlatformResult<Identity>>;
+  /** Every organization the caller may act on, including employee reach. */
+  getAccessibleOrganizations: () => Promise<PlatformResult<Organization[]>>;
   getFlowsBundleUrl: (
     envId: string,
   ) => Promise<PlatformResult<{ signedUrl: string }>>;
@@ -52,6 +53,8 @@ type Deps = {
   fs?: Fs | undefined;
   logger?: Logger;
   sleep?: (ms: number) => Promise<void>;
+  /** Workspace the session chose; public routes take it as an argument. */
+  workspaceId?: string | undefined;
 };
 
 const requestBackoffMs = [500, 1500] as const;
@@ -83,14 +86,7 @@ export function createPlatformClient(
   }
 
   return {
-    async getIdentity() {
-      return requestWithRetry({
-        call: () => getIdentity(apiKey, deps),
-        backoffMs: requestBackoffMs,
-        describe: describeIdentityError,
-        sleep: deps.sleep,
-      });
-    },
+    ...createIdentityMethods(apiKey, deps, requestBackoffMs),
 
     getFlowsBundleUrl: getFlowsBundleUrlImpl,
 

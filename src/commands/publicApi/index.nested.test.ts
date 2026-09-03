@@ -50,7 +50,11 @@ function registerWith(
   registerPublicApiCommands(program, createSignalRegistry(), {
     contracts: { fake: { reportStatus: contract } },
     authDeps: {
-      requireApiKey: async () => ({ key: "qawolf_key", source: "env" }),
+      requireApiKey: async () => ({
+        key: "qawolf_key",
+        source: "env",
+        workspaceId: undefined,
+      }),
       createPlatform: () => makeMockPlatformClient({ callPublicApi }),
     },
   });

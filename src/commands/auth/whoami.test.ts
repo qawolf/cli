@@ -124,45 +124,4 @@ describe("handleWhoami", () => {
       );
     });
   });
-
-  describe("user identity", () => {
-    function makeUserDeps() {
-      return makeDeps({
-        getIdentity: mock(() =>
-          Promise.resolve({
-            ok: true as const,
-            value: {
-              organization: { id: "org_1", name: "Acme Org" },
-              user: { email: "user@example.com", id: "user_1" },
-            },
-          }),
-        ),
-      });
-    }
-
-    it("outputs the user and organization in JSON output", async () => {
-      const ctx = makeCtx("json", { apiBaseUrl: "https://app.qawolf.com" });
-      await handleWhoami(ctx, makeUserDeps());
-
-      expect(ctx.ui.output).toHaveBeenCalledWith(
-        expect.objectContaining({
-          authenticated: true,
-          organization: { id: "org_1", name: "Acme Org" },
-          source: "env",
-          user: { email: "user@example.com", id: "user_1" },
-        }),
-        expect.any(String),
-      );
-    });
-
-    it("includes the user email in the human note", async () => {
-      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
-      await handleWhoami(ctx, makeUserDeps());
-
-      expect(ctx.ui.note).toHaveBeenCalledWith(
-        expect.stringContaining("user@example.com"),
-        expect.any(String),
-      );
-    });
-  });
 });

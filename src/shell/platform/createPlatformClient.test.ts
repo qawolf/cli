@@ -60,7 +60,7 @@ describe("getIdentity", () => {
     const req = calledRequest(f);
     expect(req.url).toBe(`${baseUrl}/api/v0/identity`);
     expect(req.auth).toBe(`Bearer ${apiKey}`);
-    expect(result).toEqual({ ok: true, value: { team } });
+    expect(result).toEqual({ ok: true, value: { team, organizations: [] } });
   });
 
   it("returns ok:false with auth error for HTTP 401", async () => {

@@ -3,6 +3,7 @@ import { describe, expect, it } from "bun:test";
 import { z } from "zod";
 
 import { createTrpcClient } from "./createTrpcClient.js";
+import { getAccessibleOrganizations } from "./getAccessibleOrganizations.js";
 import { getIdentity } from "./getIdentity.js";
 
 /**
@@ -52,6 +53,15 @@ describe("bearer token transmission", () => {
     });
 
     await getIdentity(token, { baseUrl, fetch: fetchFn });
+
+    expect(calls).toHaveLength(1);
+    expectHeaderOnly(calls[0]!);
+  });
+
+  it("sends the organization request's token in the Authorization header only", async () => {
+    const { calls, fetchFn } = recordingFetch({ organizations: [] });
+
+    await getAccessibleOrganizations(token, { baseUrl, fetch: fetchFn });
 
     expect(calls).toHaveLength(1);
     expectHeaderOnly(calls[0]!);

@@ -11,6 +11,8 @@ type ApiKeySource = "env" | StorageSource | "browser";
 export type ApiKeyResult = {
   key: string;
   source: ApiKeySource;
+  /** Workspace chosen for a browser session; absent for API keys. */
+  workspaceId: string | undefined;
 };
 
 export type LoadApiKeyResult =
@@ -28,6 +30,7 @@ export type LoadApiKeyResult =
 export type StoredSession = DeviceTokens & {
   /** From the API's identity response, not from the token. */
   email: string;
+  workspaceId: string | undefined;
   issuer: string;
   clientId: string;
   /** The API resource the tokens are bound to; also names the deployment. */

@@ -1,6 +1,7 @@
 import { type PublicApiContractKind } from "@qawolf/api-contracts/v1";
 import type { z } from "zod";
 
+import { applyWorkspaceId } from "./applyWorkspaceId.js";
 import { describeRequestError } from "./describeErrors.js";
 import type {
   RequestOptions,
@@ -46,6 +47,8 @@ export type CallPublicApiMethod = <Input, Output>(
 type MethodDeps = {
   baseUrl: string;
   sleep?: ((ms: number) => Promise<void>) | undefined;
+  /** Workspace the session chose, sent on routes that accept one. */
+  workspaceId?: string | undefined;
 };
 
 // Builds the PlatformClient method: reads retry on transient network
@@ -58,7 +61,13 @@ export function makeCallPublicApiMethod(
 ): CallPublicApiMethod {
   return async (contract, input, options) =>
     requestWithRetry({
-      call: () => callPublicApi(trpc, contract, input, options),
+      call: () =>
+        callPublicApi(
+          trpc,
+          contract,
+          applyWorkspaceId(contract.input, input, deps.workspaceId),
+          options,
+        ),
       backoffMs: contract.kind === "read" ? readBackoffMs : [],
       describe: (err) => describeRequestError(err, deps.baseUrl, contract.name),
       sleep: deps.sleep,
