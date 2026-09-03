@@ -1,5 +1,17 @@
 # @qawolf/cli
 
+## 1.21.0
+
+### Minor Changes
+
+- a13c3bb: `qawolf flows list --remote` accepts `--ai-task-id`, listing the flows on that AI task's branch — drafts included — instead of the ones the environment holds at its latest reconciled commit. It defaults to `QAWOLF_AI_TASK_ID`, which an AI task runner already sets, so the flag is only needed to point at another task.
+- 7d73a85: Add `@qawolf/cli/runner-sdk`, a typed library for driving interactive runners in process rather than by spawning `qawolf runner`. Every verb names the runner it addresses, so nothing is launched or billed implicitly, and answers come back as the `@qawolf/api-contracts` output types rather than parsed stdout.
+
+### Patch Changes
+
+- 5444be5: `qawolf runner exec` now tells apart a runner with nothing attached to evaluate a snippet (`runner-cannot-evaluate-snippets`, exit `2`, which will never clear) from one that could not be reached (`runner-unreachable`, exit `4`, which may still be starting or busy) instead of reporting both the same way. Only the unreachable message warns that the snippet may still be executing, since only that case can have taken effect before its answer was lost.
+- e6971f2: Name the image-diff run event correctly wherever `promote-snapshot` points at it. Its type is `imageDiffArtifact`, so the documented `jq 'select(.type == "image-diff-artifact")'` filter matched nothing, and the failure message shown when a path is wrong sent readers after an entry name that does not exist — in both cases leaving the two paths the command requires unfindable.
+
 ## 1.20.1
 
 ### Patch Changes
