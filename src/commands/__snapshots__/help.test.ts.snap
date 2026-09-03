@@ -234,16 +234,19 @@ List flows matching [pattern] from the local project, or from a QA Wolf
 environment with --remote
 
 Options:
-  --remote          List flows from the QA Wolf platform instead of the local
-                    project (default: false)
-  --env <env>       Environment to list flows from: a QA Wolf environment with
-                    --remote, otherwise a pulled one by slug or id
-  --include-drafts  Include draft flows in the listing (requires --remote)
-                    (default: false)
-  --tag <name>      Only list flows carrying this tag; repeat for several.
-                    Without --remote, matches against tags cached by the last
-                    pull (default: [])
-  -h, --help        display help for command
+  --remote                 List flows from the QA Wolf platform instead of the
+                           local project (default: false)
+  --env <env>              Environment to list flows from: a QA Wolf environment
+                           with --remote, otherwise a pulled one by slug or id
+  --include-drafts         Include draft flows in the listing (requires
+                           --remote) (default: false)
+  --tag <name>             Only list flows carrying this tag; repeat for
+                           several. Without --remote, matches against tags
+                           cached by the last pull (default: [])
+  --ai-task-id <aiTaskId>  List the flows on this AI task's branch, including
+                           drafts, instead of the ones in the environment
+                           (requires --remote) (env: QAWOLF_AI_TASK_ID)
+  -h, --help               display help for command
 
 Examples:
   $ qawolf flows list
@@ -253,6 +256,7 @@ Examples:
   $ qawolf flows list --env staging --tag auth
   $ qawolf flows list --remote --env staging --tag auth --tag smoke
   $ qawolf flows list "**/checkout/**" --remote --env staging --include-drafts
+  $ qawolf flows list --remote --env staging --ai-task-id ait_123
 "
 `;
 

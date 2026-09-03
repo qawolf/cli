@@ -25,6 +25,7 @@ type RemoteListItem = {
 export type FlowsListRemoteOptions = {
   readonly env: string;
   readonly includeDrafts: boolean;
+  readonly aiTaskId: string | undefined;
   readonly tags: readonly string[];
 };
 
@@ -36,6 +37,7 @@ export async function flowsListRemote(
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.flow.list,
     {
+      aiTaskId: options.aiTaskId,
       environmentId: options.env,
       includeDrafts: options.includeDrafts,
     },

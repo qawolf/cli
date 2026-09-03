@@ -19,6 +19,7 @@ afterEach(() => {
 });
 
 const defaultOptions: FlowsListRemoteOptions = {
+  aiTaskId: undefined,
   env: "environment-id",
   includeDrafts: false,
   tags: [],
@@ -98,7 +99,19 @@ describe("flowsListRemote wire call", () => {
 
     expect(platformClient.callPublicApi).toHaveBeenCalledWith(
       publicContractsV1.flow.list,
-      { environmentId: "env-1", includeDrafts: true },
+      { aiTaskId: undefined, environmentId: "env-1", includeDrafts: true },
+    );
+  });
+
+  it("passes the AI task through to public.flow.list", async () => {
+    const { platformClient } = await run({
+      mode: "json",
+      options: { ...defaultOptions, aiTaskId: "task-1", env: "env-1" },
+    });
+
+    expect(platformClient.callPublicApi).toHaveBeenCalledWith(
+      publicContractsV1.flow.list,
+      { aiTaskId: "task-1", environmentId: "env-1", includeDrafts: false },
     );
   });
 });
