@@ -2,4 +2,4 @@
 "@qawolf/cli": patch
 ---
 
-Fix the `promote-snapshot` example's journal filter. The image-diff run event's type is `imageDiffArtifact`, so the documented `jq 'select(.type == "image-diff-artifact")'` matched nothing and left the two paths it is meant to surface unfindable.
+Name the image-diff run event correctly wherever `promote-snapshot` points at it. Its type is `imageDiffArtifact`, so the documented `jq 'select(.type == "image-diff-artifact")'` filter matched nothing, and the failure message shown when a path is wrong sent readers after an entry name that does not exist — in both cases leaving the two paths the command requires unfindable.

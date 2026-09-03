@@ -52,7 +52,7 @@ describe("handleRunnerPromoteSnapshot", () => {
 
     expect(result?.exitCode).toBe(2);
     expect(result?.error).toContain("checkout-1-actual.png");
-    expect(result?.error).toContain("image-diff-artifact");
+    expect(result?.error).toContain("imageDiffArtifact");
   });
 
   it.each([
