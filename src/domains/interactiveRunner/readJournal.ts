@@ -1,7 +1,7 @@
 import { type JournalEntry, publicContractsV1 } from "@qawolf/api-contracts/v1";
 
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
-import type { AuthCommandContext } from "~/shell/commandContext.js";
+import type { RunnerApiContext } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
@@ -52,7 +52,7 @@ export const unreachableFailure = {
 
 /** One window of one stream. */
 export async function readJournal(
-  ctx: AuthCommandContext,
+  ctx: RunnerApiContext,
   runnerId: string,
   request: JournalRequest,
 ): Promise<JournalReadResult> {

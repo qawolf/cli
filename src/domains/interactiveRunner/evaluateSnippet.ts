@@ -1,10 +1,5 @@
-import { type RunFiles, publicContractsV1 } from "@qawolf/api-contracts/v1";
+import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
-import {
-  checkSnippetFiles,
-  describeRunFilesCheck,
-  toCollectedPath,
-} from "~/core/interactiveRunner/runFiles.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
   AuthCommandContext,
@@ -16,35 +11,10 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { describeEvaluateSnippetFailure } from "./evaluateSnippetFailure.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
+import { resolveSnippetScope } from "./snippetScope.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
 const stdinArgument = "-";
-
-type Scope =
-  | { ok: true; filePath: string | undefined; files: RunFiles | undefined }
-  | { ok: false; error: string };
-
-/**
- * The scope a snippet is evaluated in. A runner holds no copy of the project, so
- * a snippet that touches the caller's own modules has to carry them: the named
- * file and everything the collector found beside it. Without `--file` the snippet
- * imports nothing of the caller's and nothing travels.
- */
-async function resolveScope(
-  contextFile: string | undefined,
-  deps: InteractiveRunnerDeps,
-): Promise<Scope> {
-  if (contextFile === undefined) {
-    return { filePath: undefined, files: undefined, ok: true };
-  }
-  const filePath = toCollectedPath(deps.cwd, contextFile);
-  const { files } = await deps.collectRunFiles([filePath]);
-  const check = checkSnippetFiles(files, filePath);
-  if (check.type !== "ok") {
-    return { error: describeRunFilesCheck(check), ok: false };
-  }
-  return { filePath, files, ok: true };
-}
 
 async function readCode(
   source: string,
@@ -88,7 +58,7 @@ export async function handleRunnerExec(
   const code = await readCode(options.source, deps);
   if (!code.ok) return { error: code.error, exitCode: exitCodes.invalidArgs };
 
-  const scope = await resolveScope(options.contextFile, deps);
+  const scope = await resolveSnippetScope(options.contextFile, deps);
   if (!scope.ok) return { error: scope.error, exitCode: exitCodes.invalidArgs };
 
   const resolved = await resolveRunner(

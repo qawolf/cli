@@ -28,16 +28,27 @@
     "LICENSE",
     "README.md",
     "dist/cli.js",
+    "dist/runner-sdk.js",
+    "dist/types/runnerSdk/index.d.ts",
+    "dist/types/runnerSdk/types.d.ts",
     "skills"
   ],
   "type": "module",
+  "exports": {
+    "./runner-sdk": {
+      "types": "./dist/types/runnerSdk/index.d.ts",
+      "import": "./dist/runner-sdk.js"
+    },
+    "./package.json": "./package.json"
+  },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "bun run build:bundle",
-    "build:bundle": "bun run generate && bun scripts/build.ts",
     "build:binary": "bun run build && bun scripts/buildBinary.ts",
+    "build:bundle": "bun run generate && bun scripts/build.ts",
+    "build:types-gate": "bun scripts/checkSdkTypes.ts",
     "dev": "bun run src/main.ts",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",

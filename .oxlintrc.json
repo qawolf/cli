@@ -13,7 +13,7 @@
           },
           {
             "group": ["bun", "bun:*"],
-            "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
+            "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
           }
         ]
       }
@@ -28,7 +28,7 @@
       "error",
       {
         "name": "Bun",
-        "message": "Bun global is not available in the nodejs build — use a Bun-compatible API or guard with typeof Bun !== 'undefined'."
+        "message": "Bun global is not available in the nodejs build \u2014 use a Bun-compatible API or guard with typeof Bun !== 'undefined'."
       }
     ],
     "eslint/eqeqeq": "error",
@@ -124,11 +124,11 @@
               },
               {
                 "group": ["bun", "bun:*"],
-                "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
               },
               {
                 "group": ["~/shell/*", "~/shell/**"],
-                "message": "core/ must not import from shell/ — keep core/ pure."
+                "message": "core/ must not import from shell/ \u2014 keep core/ pure."
               },
               {
                 "group": ["~/domains/*", "~/domains/**"],
@@ -140,15 +140,15 @@
               },
               {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
-                "message": "core/ must not import node:fs — keep core/ pure."
+                "message": "core/ must not import node:fs \u2014 keep core/ pure."
               },
               {
                 "group": ["node:child_process", "child_process"],
-                "message": "core/ must not import node:child_process — keep core/ pure."
+                "message": "core/ must not import node:child_process \u2014 keep core/ pure."
               },
               {
                 "group": ["node:readline", "readline"],
-                "message": "core/ must not import node:readline — keep core/ pure."
+                "message": "core/ must not import node:readline \u2014 keep core/ pure."
               }
             ]
           }
@@ -168,7 +168,7 @@
               },
               {
                 "group": ["bun", "bun:*"],
-                "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
               },
               {
                 "group": ["~/domains/*", "~/domains/**"],
@@ -196,7 +196,7 @@
               },
               {
                 "group": ["bun", "bun:*"],
-                "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
               },
               {
                 "group": ["~/commands/*", "~/commands/**"],
@@ -239,15 +239,15 @@
               },
               {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
-                "message": "domains/ must not import node:fs — file I/O belongs in shell/."
+                "message": "domains/ must not import node:fs \u2014 file I/O belongs in shell/."
               },
               {
                 "group": ["node:child_process", "child_process"],
-                "message": "domains/ must not import node:child_process — use SpawnFn from shell/spawn.js."
+                "message": "domains/ must not import node:child_process \u2014 use SpawnFn from shell/spawn.js."
               },
               {
                 "group": ["node:readline", "readline"],
-                "message": "domains/ must not import node:readline — use UI from shell/ui/."
+                "message": "domains/ must not import node:readline \u2014 use UI from shell/ui/."
               }
             ]
           }
@@ -267,7 +267,7 @@
               },
               {
                 "group": ["bun", "bun:*"],
-                "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
               },
               {
                 "group": ["~/commands/*", "~/commands/**"],
@@ -310,15 +310,15 @@
               },
               {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
-                "message": "domains/ must not import node:fs — file I/O belongs in shell/."
+                "message": "domains/ must not import node:fs \u2014 file I/O belongs in shell/."
               },
               {
                 "group": ["node:child_process", "child_process"],
-                "message": "domains/ must not import node:child_process — use SpawnFn from shell/spawn.js."
+                "message": "domains/ must not import node:child_process \u2014 use SpawnFn from shell/spawn.js."
               },
               {
                 "group": ["node:readline", "readline"],
-                "message": "domains/ must not import node:readline — use UI from shell/ui/."
+                "message": "domains/ must not import node:readline \u2014 use UI from shell/ui/."
               }
             ]
           }
@@ -338,7 +338,7 @@
               },
               {
                 "group": ["bun", "bun:*"],
-                "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
               },
               {
                 "group": ["~/commands/*", "~/commands/**"],
@@ -381,15 +381,15 @@
               },
               {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
-                "message": "domains/ must not import node:fs — file I/O belongs in shell/."
+                "message": "domains/ must not import node:fs \u2014 file I/O belongs in shell/."
               },
               {
                 "group": ["node:child_process", "child_process"],
-                "message": "domains/ must not import node:child_process — use SpawnFn from shell/spawn.js."
+                "message": "domains/ must not import node:child_process \u2014 use SpawnFn from shell/spawn.js."
               },
               {
                 "group": ["node:readline", "readline"],
-                "message": "domains/ must not import node:readline — use UI from shell/ui/."
+                "message": "domains/ must not import node:readline \u2014 use UI from shell/ui/."
               }
             ]
           }
@@ -409,7 +409,7 @@
               },
               {
                 "group": ["bun", "bun:*"],
-                "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
               },
               {
                 "group": ["~/commands/*", "~/commands/**"],
@@ -452,15 +452,15 @@
               },
               {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
-                "message": "domains/ must not import node:fs — file I/O belongs in shell/."
+                "message": "domains/ must not import node:fs \u2014 file I/O belongs in shell/."
               },
               {
                 "group": ["node:child_process", "child_process"],
-                "message": "domains/ must not import node:child_process — use SpawnFn from shell/spawn.js."
+                "message": "domains/ must not import node:child_process \u2014 use SpawnFn from shell/spawn.js."
               },
               {
                 "group": ["node:readline", "readline"],
-                "message": "domains/ must not import node:readline — use UI from shell/ui/."
+                "message": "domains/ must not import node:readline \u2014 use UI from shell/ui/."
               }
             ]
           }
@@ -480,7 +480,7 @@
               },
               {
                 "group": ["bun", "bun:*"],
-                "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
               },
               {
                 "group": ["~/commands/*", "~/commands/**"],
@@ -523,15 +523,15 @@
               },
               {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
-                "message": "domains/ must not import node:fs — file I/O belongs in shell/."
+                "message": "domains/ must not import node:fs \u2014 file I/O belongs in shell/."
               },
               {
                 "group": ["node:child_process", "child_process"],
-                "message": "domains/ must not import node:child_process — use SpawnFn from shell/spawn.js."
+                "message": "domains/ must not import node:child_process \u2014 use SpawnFn from shell/spawn.js."
               },
               {
                 "group": ["node:readline", "readline"],
-                "message": "domains/ must not import node:readline — use UI from shell/ui/."
+                "message": "domains/ must not import node:readline \u2014 use UI from shell/ui/."
               }
             ]
           }
@@ -551,7 +551,7 @@
               },
               {
                 "group": ["bun", "bun:*"],
-                "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
               },
               {
                 "group": ["~/commands/*", "~/commands/**"],
@@ -594,15 +594,15 @@
               },
               {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
-                "message": "domains/ must not import node:fs — file I/O belongs in shell/."
+                "message": "domains/ must not import node:fs \u2014 file I/O belongs in shell/."
               },
               {
                 "group": ["node:child_process", "child_process"],
-                "message": "domains/ must not import node:child_process — use SpawnFn from shell/spawn.js."
+                "message": "domains/ must not import node:child_process \u2014 use SpawnFn from shell/spawn.js."
               },
               {
                 "group": ["node:readline", "readline"],
-                "message": "domains/ must not import node:readline — use UI from shell/ui/."
+                "message": "domains/ must not import node:readline \u2014 use UI from shell/ui/."
               }
             ]
           }
@@ -622,7 +622,7 @@
               },
               {
                 "group": ["bun", "bun:*"],
-                "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
               },
               {
                 "group": ["~/commands/*", "~/commands/**"],
@@ -665,15 +665,15 @@
               },
               {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
-                "message": "domains/ must not import node:fs — file I/O belongs in shell/."
+                "message": "domains/ must not import node:fs \u2014 file I/O belongs in shell/."
               },
               {
                 "group": ["node:child_process", "child_process"],
-                "message": "domains/ must not import node:child_process — use SpawnFn from shell/spawn.js."
+                "message": "domains/ must not import node:child_process \u2014 use SpawnFn from shell/spawn.js."
               },
               {
                 "group": ["node:readline", "readline"],
-                "message": "domains/ must not import node:readline — use UI from shell/ui/."
+                "message": "domains/ must not import node:readline \u2014 use UI from shell/ui/."
               }
             ]
           }
@@ -693,7 +693,7 @@
               },
               {
                 "group": ["bun", "bun:*"],
-                "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
               },
               {
                 "group": ["~/commands/*", "~/commands/**"],
@@ -733,15 +733,15 @@
               },
               {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
-                "message": "domains/ must not import node:fs — file I/O belongs in shell/."
+                "message": "domains/ must not import node:fs \u2014 file I/O belongs in shell/."
               },
               {
                 "group": ["node:child_process", "child_process"],
-                "message": "domains/ must not import node:child_process — use SpawnFn from shell/spawn.js."
+                "message": "domains/ must not import node:child_process \u2014 use SpawnFn from shell/spawn.js."
               },
               {
                 "group": ["node:readline", "readline"],
-                "message": "domains/ must not import node:readline — use UI from shell/ui/."
+                "message": "domains/ must not import node:readline \u2014 use UI from shell/ui/."
               }
             ]
           }
@@ -761,7 +761,7 @@
               },
               {
                 "group": ["bun", "bun:*"],
-                "message": "Bun module imports are not available in the nodejs build — use a portable alternative."
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
               },
               {
                 "group": ["~/commands/*", "~/commands/**"],
@@ -804,15 +804,39 @@
               },
               {
                 "group": ["node:fs", "fs", "node:fs/promises", "fs/promises"],
-                "message": "domains/ must not import node:fs — file I/O belongs in shell/."
+                "message": "domains/ must not import node:fs \u2014 file I/O belongs in shell/."
               },
               {
                 "group": ["node:child_process", "child_process"],
-                "message": "domains/ must not import node:child_process — use SpawnFn from shell/spawn.js."
+                "message": "domains/ must not import node:child_process \u2014 use SpawnFn from shell/spawn.js."
               },
               {
                 "group": ["node:readline", "readline"],
-                "message": "domains/ must not import node:readline — use UI from shell/ui/."
+                "message": "domains/ must not import node:readline \u2014 use UI from shell/ui/."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/runnerSdk/**/*.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["../*"],
+                "message": "Use \"~/\" path alias instead of relative parent imports."
+              },
+              {
+                "group": ["bun", "bun:*"],
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
+              },
+              {
+                "group": ["~/commands/*", "~/commands/**"],
+                "message": "runnerSdk/ is the published library entry and must not import from commands/."
               }
             ]
           }
@@ -827,17 +851,17 @@
           {
             "object": "process",
             "property": "stdout",
-            "message": "core/ and domains/ must not write to process.stdout — return data and let shell/ render it."
+            "message": "core/ and domains/ must not write to process.stdout \u2014 return data and let shell/ render it."
           },
           {
             "object": "process",
             "property": "stderr",
-            "message": "core/ and domains/ must not write to process.stderr — return data and let shell/ render it."
+            "message": "core/ and domains/ must not write to process.stderr \u2014 return data and let shell/ render it."
           },
           {
             "object": "process",
             "property": "stdin",
-            "message": "core/ and domains/ must not read from process.stdin — use UI from shell/ui/."
+            "message": "core/ and domains/ must not read from process.stdin \u2014 use UI from shell/ui/."
           }
         ]
       }

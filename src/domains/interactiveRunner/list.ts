@@ -6,6 +6,7 @@ import { type TableColumn, renderTable } from "~/core/renderTable.js";
 import type {
   AuthCommandContext,
   CommandResult,
+  RunnerApiContext,
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
 import {
@@ -23,6 +24,10 @@ type RunnerListItem = {
   isDefault: boolean;
   runnerName: string | undefined;
 };
+
+export type ListedRunners =
+  | { items: RunnerListItem[]; ok: true }
+  | ({ ok: false } & PlatformFailure);
 
 const columns: readonly TableColumn<RunnerListItem>[] = [
   { header: "id", value: (row) => row.id },
@@ -55,7 +60,7 @@ async function readCandidates(deps: InteractiveRunnerDeps): Promise<{
 }
 
 async function probeRunner(
-  ctx: AuthCommandContext,
+  ctx: RunnerApiContext,
   runner: StoredRunner,
 ): Promise<Probe> {
   const result = await ctx.platformClient.callPublicApi(
@@ -67,10 +72,10 @@ async function probeRunner(
   return { ok: true, runner, running: result.value.running };
 }
 
-export async function handleRunnerList(
-  ctx: AuthCommandContext,
+export async function listRunners(
+  ctx: RunnerApiContext,
   deps: InteractiveRunnerDeps,
-): Promise<CommandResult> {
+): Promise<ListedRunners> {
   const { candidates, defaultRunnerId } = await readCandidates(deps);
 
   const running: StoredRunner[] = [];
@@ -80,23 +85,35 @@ export async function handleRunnerList(
     (runner) => probeRunner(ctx, runner),
     probeBatchSize,
   )) {
-    if (!probe.ok) {
-      return { ...failureFields(probe), exitCode: exitCodes.network };
-    }
+    if (!probe.ok) return { ...failureFields(probe), ok: false };
     if (probe.running) running.push(probe.runner);
     else gone.push(probe.runner.id);
   }
 
   await deps.store.dropRunners(gone).catch(() => undefined);
 
-  const items: RunnerListItem[] = [
-    ...running.filter((runner) => runner.id === defaultRunnerId),
-    ...running.filter((runner) => runner.id !== defaultRunnerId),
-  ].map((runner) => ({
-    id: runner.id,
-    isDefault: runner.id === defaultRunnerId,
-    runnerName: runner.runnerName,
-  }));
+  return {
+    items: [
+      ...running.filter((runner) => runner.id === defaultRunnerId),
+      ...running.filter((runner) => runner.id !== defaultRunnerId),
+    ].map((runner) => ({
+      id: runner.id,
+      isDefault: runner.id === defaultRunnerId,
+      runnerName: runner.runnerName,
+    })),
+    ok: true,
+  };
+}
+
+export async function handleRunnerList(
+  ctx: AuthCommandContext,
+  deps: InteractiveRunnerDeps,
+): Promise<CommandResult> {
+  const listed = await listRunners(ctx, deps);
+  if (!listed.ok) {
+    return { ...failureFields(listed), exitCode: exitCodes.network };
+  }
+  const items = listed.items;
 
   if (ctx.ui.mode === "json") {
     ctx.ui.json(items);
