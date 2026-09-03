@@ -75,6 +75,7 @@ describe("buildFlagSpecs", () => {
       })),
     ).toEqual([
       { flag: "--ai-task-id <value>", required: false },
+      { flag: "--chat-session-id <value>", required: false },
       { flag: "--environment-id <value>", required: true },
       { flag: "--environment-variables <KEY=VALUE...>", required: false },
       { flag: "--ignore-rules", required: false },

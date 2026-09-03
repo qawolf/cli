@@ -12,6 +12,11 @@ import { skippedContractNames } from "~/domains/publicApi/skippedContracts.js";
 import { declareCommandKind } from "~/commands/commandKind.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
+import {
+  optionEnvironmentVariable,
+  withoutExclusiveConflict,
+} from "./environmentOptions.js";
+
 type AuthDeps = Parameters<typeof withAuthContext>[2];
 
 type Options = {
@@ -26,22 +31,6 @@ type Options = {
 const groupDescriptions: Record<string, string> = {
   run: "Trigger and manage QA Wolf runs on the platform",
 };
-
-const optionEnvironmentVariables = new Map([
-  ["environmentId", "QAWOLF_ENVIRONMENT"],
-  ["public.run.create.aiTaskId", "QAWOLF_AI_TASK_ID"],
-]);
-
-function optionEnvironmentVariable(
-  spec: CommandSpec,
-  path: string[],
-): string | undefined {
-  const dotted = path.join(".");
-  return (
-    optionEnvironmentVariables.get(`${spec.trpcPath}.${dotted}`) ??
-    optionEnvironmentVariables.get(dotted)
-  );
-}
 
 function resolveGroup(parent: Command, segment: string): Command {
   const existing = parent.commands.find(
@@ -100,7 +89,12 @@ function registerSpec(
   command.action((options: Record<string, unknown>, leaf: Command) =>
     withAuthContext(
       signals,
-      (ctx) => handlePublicApiCommand(ctx, spec, options),
+      (ctx) =>
+        handlePublicApiCommand(
+          ctx,
+          spec,
+          withoutExclusiveConflict(spec, leaf, options),
+        ),
       authDeps ?? {},
     )(options, leaf),
   );

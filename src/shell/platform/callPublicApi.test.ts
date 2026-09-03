@@ -35,7 +35,14 @@ describe("callPublicApi", () => {
     const runId = "run-id";
     const url = "https://app.qawolf.com/runs/run-id";
     const fetchSpy = mock<typeof fetch>().mockResolvedValue(
-      jsonResponse(wrapped({ excludedFlows: [], runId, url })),
+      jsonResponse(
+        wrapped({
+          excludedFlows: [],
+          runId,
+          tracking: "not-requested",
+          url,
+        }),
+      ),
     );
     const trpc = createTrpcClient(apiKey, {
       baseUrl,
@@ -53,7 +60,7 @@ describe("callPublicApi", () => {
     );
     expect(result).toEqual({
       ok: true,
-      data: { excludedFlows: [], runId, url },
+      data: { excludedFlows: [], runId, tracking: "not-requested", url },
     });
   });
 
