@@ -1,17 +1,14 @@
-import {
-  deleteApiKey as realDeleteApiKey,
-  resolveApiKey as realResolveApiKey,
-} from "~/domains/auth/index.js";
+import { deleteApiKey as realDeleteApiKey } from "~/domains/auth/index.js";
 import { deleteTokens as realDeleteTokens } from "~/domains/auth/store/deleteTokens.js";
-import type { ApiKeyResult } from "~/domains/auth/types.js";
+import { hasStoredCredentials as realHasStoredCredentials } from "~/domains/auth/store/index.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { authMessages } from "~/core/messages/index.js";
 
 type LogoutDeps = {
-  resolveApiKey?: (
+  hasStoredCredentials?: (
     configDir: string,
     fs: CommandContext["fs"],
-  ) => Promise<ApiKeyResult | undefined>;
+  ) => Promise<boolean>;
   deleteApiKey?: (
     configDir: string,
     fs: CommandContext["fs"],
@@ -20,24 +17,33 @@ type LogoutDeps = {
     configDir: string,
     fs: CommandContext["fs"],
   ) => Promise<unknown>;
+  env?: Record<string, string | undefined>;
 };
 
 export async function handleLogout(
   ctx: CommandContext,
   deps: LogoutDeps = {},
 ): Promise<CommandResult> {
-  const resolveApiKey = deps.resolveApiKey ?? realResolveApiKey;
+  const hasStoredCredentials =
+    deps.hasStoredCredentials ?? realHasStoredCredentials;
   const deleteApiKey = deps.deleteApiKey ?? realDeleteApiKey;
   const deleteTokens = deps.deleteTokens ?? realDeleteTokens;
+  const env = deps.env ?? process.env;
 
-  const resolved = await resolveApiKey(ctx.configDir, ctx.fs);
+  // Storage is asked directly rather than through resolveApiKey. Resolving a
+  // browser session refreshes it over the network, so being offline or holding
+  // a refresh token WorkOS has already rotated away would report "not
+  // authenticated" and leave the credentials in place — the one case where
+  // clearing them matters most.
+  const envKey = env["QAWOLF_API_KEY"]?.trim();
+  const stored = await hasStoredCredentials(ctx.configDir, ctx.fs);
 
-  if (!resolved) {
+  if (!envKey && !stored) {
     ctx.ui.info(authMessages.logout.notAuthenticated);
     return;
   }
 
-  if (resolved.source === "env") {
+  if (envKey) {
     ctx.ui.warn(authMessages.logout.envVarWarning);
   }
 
@@ -56,7 +62,7 @@ export async function handleLogout(
     [
       {
         message: authMessages.logout.deleting,
-        // Both credential kinds go, whichever one resolved. Clearing only the
+        // Both credential kinds go, whichever one is present. Clearing only the
         // one in use would leave the other to take over on the next command,
         // so "logged out" would not be true.
         task: async () => {
