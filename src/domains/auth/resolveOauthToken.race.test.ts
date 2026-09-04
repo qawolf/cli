@@ -34,6 +34,9 @@ const winner: StoredSession = {
   accessToken: boundToken("winner", nowMs + 600_000),
   refreshToken: "refresh_rotated",
   expiresAt: nowMs + 600_000,
+  // The adopted pair brings its workspace with it, so the command that lost
+  // the race keeps working where the person chose.
+  workspaceId: "ws_1",
 };
 
 function found(tokens: StoredSession): LoadTokensResult {
@@ -71,7 +74,7 @@ describe("resolveOauthToken when a refresh does not succeed", () => {
     expect(result).toEqual({
       key: winner.accessToken,
       email: "person@example.com",
-      workspaceId: undefined,
+      workspaceId: "ws_1",
     });
     expect(loadTokens).toHaveBeenCalledTimes(2);
   });

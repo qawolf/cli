@@ -169,7 +169,7 @@ describe("handleLogin", () => {
     const deps = makeDeps({
       resolveApiKey: async () => ({
         key: "access_old",
-        source: "browser",
+        source: "browser" as const,
         workspaceId: undefined,
       }),
     });
@@ -188,7 +188,7 @@ describe("handleLogin", () => {
     const deps = makeDeps({
       resolveApiKey: async () => ({
         key: "qaw_old",
-        source: "keychain",
+        source: "keychain" as const,
         workspaceId: undefined,
       }),
     });
