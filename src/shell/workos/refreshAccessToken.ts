@@ -40,15 +40,22 @@ export async function refreshAccessToken(
   );
 
   if (outcome.kind === "failure") {
-    return { ok: false, error: outcome.detail };
+    return { ok: false, error: outcome.detail, retryable: outcome.retryable };
   }
 
   if (outcome.kind === "oauth-error") {
-    return { ok: false, error: outcome.description ?? outcome.code };
+    // A protocol answer WorkOS meant. Repeating it changes nothing.
+    return {
+      ok: false,
+      error: outcome.description ?? outcome.code,
+      retryable: false,
+    };
   }
 
   const parsed = deviceTokenBody.safeParse(outcome.json);
-  if (!parsed.success) return { ok: false, error: unexpectedResponse };
+  if (!parsed.success) {
+    return { ok: false, error: unexpectedResponse, retryable: false };
+  }
 
   return {
     ok: true,

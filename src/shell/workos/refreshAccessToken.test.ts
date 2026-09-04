@@ -121,7 +121,11 @@ describe("refreshAccessToken", () => {
       ),
     });
 
-    expect(result).toEqual({ ok: false, error: "token revoked" });
+    expect(result).toEqual({
+      ok: false,
+      error: "token revoked",
+      retryable: false,
+    });
   });
 
   it("fails when the network is unreachable", async () => {
@@ -136,5 +140,36 @@ describe("refreshAccessToken", () => {
 
     if (result.ok) throw Error("expected failure, got success");
     expect(result.error).toContain("socket hang up");
+    // WorkOS asks clients to retry the same refresh token on a transport
+    // failure, not to tear the session down.
+    expect(result.retryable).toBe(true);
+  });
+
+  it.each([
+    ["a WorkOS 500", 500],
+    ["rate limiting", 429],
+  ])(
+    "marks %s retryable, so the session survives it",
+    async (_label, status) => {
+      const result = await refreshAccessToken("refresh_1", undefined, {
+        ...deps,
+        fetch: createFetchMock(jsonResponse({ error: "oops" }, { status })),
+      });
+
+      if (result.ok) throw Error("expected failure, got success");
+      expect(result.retryable).toBe(true);
+    },
+  );
+
+  it("marks a revoked grant terminal, so it is not retried", async () => {
+    const result = await refreshAccessToken("refresh_1", undefined, {
+      ...deps,
+      fetch: createFetchMock(
+        jsonResponse({ error: "invalid_grant" }, { status: 400 }),
+      ),
+    });
+
+    if (result.ok) throw Error("expected failure, got success");
+    expect(result.retryable).toBe(false);
   });
 });

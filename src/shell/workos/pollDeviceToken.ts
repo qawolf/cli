@@ -45,10 +45,11 @@ export async function pollDeviceToken(
         return { kind: "slow-down" };
       case "access_denied":
         return { kind: "denied" };
-      // WorkOS answers a lapsed device code with invalid_grant rather than the
-      // spec's expired_token, describing it as "invalid, expired, or has
+      // WorkOS documents expired_token for a lapsed device code, per RFC 8628,
+      // and reserves invalid_grant for one that is "invalid, malformed, or has
       // already been used". The only device code this ever sends is one WorkOS
-      // just issued, so expiry is the cause worth naming.
+      // just issued and has not redeemed, so expiry is the cause worth naming
+      // for both.
       case "expired_token":
       case "invalid_grant":
         return { kind: "expired" };

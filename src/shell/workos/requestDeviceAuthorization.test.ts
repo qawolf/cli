@@ -109,7 +109,11 @@ describe("requestDeviceAuthorization", () => {
       ),
     });
 
-    expect(result).toEqual({ ok: false, error: "not enabled" });
+    expect(result).toEqual({
+      ok: false,
+      error: "not enabled",
+      retryable: false,
+    });
   });
 
   it("fails with the error code when no description is given", async () => {
@@ -120,7 +124,11 @@ describe("requestDeviceAuthorization", () => {
       ),
     });
 
-    expect(result).toEqual({ ok: false, error: "invalid_client" });
+    expect(result).toEqual({
+      ok: false,
+      error: "invalid_client",
+      retryable: false,
+    });
   });
 
   it("fails when the response body does not match the contract", async () => {

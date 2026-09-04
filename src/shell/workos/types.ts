@@ -47,4 +47,11 @@ export const authenticationErrorBody = z.object({
 
 export type AuthorizationResult<T> =
   | { ok: true; value: T }
-  | { ok: false; error: string };
+  /**
+   * `retryable` marks a failure the same request could survive. WorkOS
+   * classifies 408, 429 and 5xx as transient and asks clients to retry the same
+   * refresh token; only an OAuth `invalid_grant` means the session is gone.
+   * Without this flag a dropped packet is indistinguishable from a revoked
+   * credential, and the person is told to sign in again over a blip.
+   */
+  | { ok: false; error: string; retryable: boolean };

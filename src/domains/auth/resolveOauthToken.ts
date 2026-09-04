@@ -51,7 +51,21 @@ export async function resolveOauthToken(
     organizationId: tokens.organizationId,
     clientId: tokens.clientId,
   });
-  if (!refreshed.ok) return undefined;
+  if (!refreshed.ok) {
+    // Another command may have refreshed while this one was in flight — the
+    // workers of a single `flows run` all resolve at once. Adopt whatever is on
+    // disk before reporting a dead session: the winner's pair is valid for this
+    // process too, and reporting "not authenticated" over a lost race sends
+    // someone to sign in again for nothing.
+    const current = await deps.loadTokens(configDir);
+    if (current.found && current.tokens.refreshToken !== tokens.refreshToken) {
+      return {
+        key: current.tokens.accessToken,
+        email: current.tokens.email,
+      };
+    }
+    return undefined;
+  }
 
   // Refresh tokens rotate, so the whole pair has to land in storage. Persisting
   // only the access token would spend the refresh token and lock the next
