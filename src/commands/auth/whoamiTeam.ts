@@ -3,9 +3,13 @@ import type { CommandContext } from "~/shell/commandContext.js";
 import type { TeamIdentity } from "~/shell/platform/getIdentity.js";
 
 /**
- * Reports a team identity, which is what an API key resolves to.
+ * Reports the identity an API key resolves to.
  *
- * The team page URL is built here because only this identity has a slug to
+ * "Workspace" is the name this object carries everywhere a person can see it;
+ * `team` is the platform's internal name for the same thing, kept in the JSON
+ * output because scripts already read that key.
+ *
+ * The workspace page URL is built here because only this identity has a slug to
  * build one from.
  */
 export function reportTeamIdentity(
