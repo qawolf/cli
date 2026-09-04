@@ -33,18 +33,28 @@ export async function chooseWorkspace(
     logger: ctx.log("trpc"),
   });
 
-  const identity = await client.getIdentity();
-  if (!identity.ok) return { outcome: "failed", error: identity.error };
-
   // Identity lists membership only. The discovery endpoint also applies admin
   // and QA Wolf employee reach, which is the difference between an employee
-  // seeing their own workspaces and seeing the customer ones they work on. A
+  // seeing their own workspaces and seeing the client ones they work on. A
   // server that does not serve it leaves the membership list, which is the
   // behaviour before it existed.
-  const discovered = await client.getAccessibleOrganizations();
-  const organizations = discovered.ok
-    ? discovered.value
-    : identity.value.organizations;
+  //
+  // Asked together: neither depends on the other, and identity is wanted only
+  // as the fallback — so a transient identity failure must not abort a
+  // selection that discovery could have answered on its own.
+  const [identity, discovered] = await Promise.all([
+    client.getIdentity(),
+    client.getAccessibleOrganizations(),
+  ]);
+
+  let organizations;
+  if (discovered.ok) {
+    organizations = discovered.value;
+  } else if (identity.ok) {
+    organizations = identity.value.organizations;
+  } else {
+    return { outcome: "failed", error: identity.error };
+  }
 
   return selectWorkspace({
     organizations,
@@ -109,6 +119,13 @@ export function reportWorkspace(
       ctx.ui.info(authMessages.workspace.none);
       return undefined;
     case "cancelled":
+      // Nothing was cancelled in a non-interactive run: there was no prompt to
+      // answer, and the environment did not name enough to settle the choice.
+      // Exiting 0 there leaves a script working in the previous workspace.
+      if (ctx.ui.mode !== "human") {
+        ctx.ui.error(authMessages.workspace.nonInteractive);
+        return { error: "workspace not chosen" };
+      }
       ctx.ui.info(authMessages.workspace.cancelled);
       return undefined;
     case "failed":

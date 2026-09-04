@@ -87,7 +87,7 @@ describe("selectWorkspace", () => {
     expect(saveWorkspace).toHaveBeenCalledWith("ws_main");
   });
 
-  it("reaches an organization the person is no longer a member of", async () => {
+  it("uses the only organization it is given without asking", async () => {
     // Employee reach: the API authorizes by workspace, so choosing one outside
     // the credential's organization needs no token change and cannot be
     // refused by the identity provider.
@@ -181,5 +181,60 @@ describe("selectWorkspace", () => {
       outcome: "cancelled",
     });
     expect(workspaceCancelled.saveWorkspace).not.toHaveBeenCalled();
+  });
+  // The defect this covers: preferredWorkspace was only consulted after the
+  // organization had been settled, so naming a workspace alone fell through to
+  // an organization prompt — which a non-interactive run answers with
+  // `undefined`, giving "cancelled" and exit 0 with nothing changed.
+  it("lets a named workspace settle the organization too", async () => {
+    const { deps, chooseOrganization, saveWorkspace } = makeDeps({
+      preferredWorkspace: "stg",
+      chosenOrganization: undefined,
+      chosenWorkspace: undefined,
+    });
+
+    const result = await selectWorkspace(deps);
+
+    expect(result).toEqual({
+      outcome: "selected",
+      organization: acme,
+      workspace: acmeStaging,
+    });
+    expect(chooseOrganization).not.toHaveBeenCalled();
+    expect(saveWorkspace).toHaveBeenCalledWith("ws_stg");
+  });
+
+  it("names the organizations when a workspace matches in more than one", async () => {
+    const twin: Organization = {
+      id: "qw_twin",
+      name: "Twin",
+      workOsOrganizationId: "org_twin",
+      workspaces: [{ id: "ws_other_main", name: "Main", slug: "main" }],
+    };
+    const { deps } = makeDeps({
+      organizations: [acme, twin],
+      preferredWorkspace: "main",
+      chosenOrganization: undefined,
+      chosenWorkspace: undefined,
+    });
+
+    const result = await selectWorkspace(deps);
+
+    if (result.outcome !== "failed") throw Error("expected a failure");
+    expect(result.error).toContain("More than one organization");
+    expect(result.error).toContain("QAWOLF_ORGANIZATION");
+  });
+
+  it("reports a named workspace that exists in no organization", async () => {
+    const { deps } = makeDeps({
+      preferredWorkspace: "nope",
+      chosenOrganization: undefined,
+      chosenWorkspace: undefined,
+    });
+
+    const result = await selectWorkspace(deps);
+
+    if (result.outcome !== "failed") throw Error("expected a failure");
+    expect(result.error).toContain("No workspace matches 'nope'");
   });
 });

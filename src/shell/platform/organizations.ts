@@ -100,19 +100,8 @@ export function parseOrganizationsResponse(
  * whole response.
  */
 export function readOrganizations(json: unknown): Organization[] {
-  const grouped = groupedEnvelope.safeParse(json);
-  if (grouped.success) {
-    return grouped.data.organizations.map((organization) => ({
-      id: organization.id,
-      name: organization.name,
-      workOsOrganizationId: organization.workOsOrganizationId,
-      workspaces: organization.workspaces.map((workspace) => ({
-        id: workspace.id,
-        name: workspace.name,
-        slug: workspace.slug,
-      })),
-    }));
-  }
+  const grouped = parseOrganizationsResponse(json);
+  if (grouped) return grouped;
 
   const flat = flatEnvelope.safeParse(json);
   if (flat.success) return groupFlatWorkspaces(flat.data.workspaces);
