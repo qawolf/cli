@@ -21,7 +21,10 @@ export type PollResponse =
   | { kind: "expired" }
   /** The server answered something unrecognised, or refused outright. */
   | { kind: "error"; detail: string }
-  /** The server could not be reached at all — transient, so worth retrying. */
+  /**
+   * The server never gave a usable answer — unreachable, or failing with a 5xx
+   * or 429. Transient either way, so worth retrying.
+   */
   | { kind: "unreachable"; detail: string };
 
 export type PollState = {

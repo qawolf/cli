@@ -36,6 +36,13 @@ const deps = {
   clientId: "client_123",
 };
 
+function textResponse(body: string, status: number): Response {
+  return new Response(body, {
+    status,
+    headers: { "content-type": "text/html" },
+  });
+}
+
 function errorResponse(error: string, description?: string): Response {
   return jsonResponse(
     description ? { error, error_description: description } : { error },
@@ -197,5 +204,36 @@ describe("pollDeviceToken", () => {
 
     if (result.kind !== "error") throw Error("expected an error response");
     expect(result.detail).toContain("unexpected response");
+  });
+  // A device flow runs for minutes and the person has often already approved in
+  // the browser, so a fault the server may recover from has to be retried
+  // rather than ending the flow.
+  it.each([
+    ["a bad gateway from a proxy", textResponse("<html>502</html>", 502)],
+    [
+      "a WorkOS 500",
+      jsonResponse({ error: "internal_error" }, { status: 500 }),
+    ],
+    ["rate limiting", jsonResponse({ message: "slow down" }, { status: 429 })],
+    ["a captive portal answering 200", textResponse("<html>hi</html>", 200)],
+  ])("retries rather than refusing on %s", async (_label, response) => {
+    const result = await pollDeviceToken("device_abc", {
+      ...deps,
+      fetch: createFetchMock(response),
+    });
+
+    if (result.kind !== "unreachable") {
+      throw Error(`expected unreachable, got ${result.kind}`);
+    }
+  });
+
+  it("still refuses on a client error it cannot read", async () => {
+    const result = await pollDeviceToken("device_abc", {
+      ...deps,
+      fetch: createFetchMock(jsonResponse({ nope: true }, { status: 400 })),
+    });
+
+    if (result.kind !== "error") throw Error("expected an error response");
+    expect(result.detail).toContain("HTTP 400");
   });
 });

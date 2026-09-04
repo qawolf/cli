@@ -1,9 +1,19 @@
 import { errorMessage } from "~/core/errors.js";
+import { authErrorMessages } from "~/core/messages/authErrors.js";
 import { authenticationErrorBody, oauthErrorBody } from "./types.js";
 
 const timeoutMs = 15_000;
 
-export const unexpectedResponse = "WorkOS returned an unexpected response";
+export const unexpectedResponse = authErrorMessages.workos.unexpectedResponse;
+
+/**
+ * Statuses worth asking again on. A 5xx or a 429 is WorkOS failing rather than
+ * refusing, which is transient in the same way a dropped socket is. Every other
+ * 4xx is an answer WorkOS meant, and repeating it would change nothing.
+ */
+function isTransientStatus(status: number): boolean {
+  return status >= 500 || status === 429;
+}
 
 /**
  * One WorkOS device-endpoint round trip, reduced to three outcomes so callers
@@ -14,7 +24,12 @@ export const unexpectedResponse = "WorkOS returned an unexpected response";
 export type WireOutcome =
   | { kind: "json"; json: unknown }
   | { kind: "oauth-error"; code: string; description: string | undefined }
-  | { kind: "failure"; detail: string; reachable: boolean };
+  /**
+   * `retryable` says whether repeating the request could answer differently.
+   * A poller that gives up on a transient fault throws away an approval the
+   * person has already granted in their browser and cannot see failing.
+   */
+  | { kind: "failure"; detail: string; retryable: boolean };
 
 export async function sendWorkosRequest(
   url: string,
@@ -32,8 +47,8 @@ export async function sendWorkosRequest(
   } catch (err: unknown) {
     return {
       kind: "failure",
-      detail: `Could not reach WorkOS: ${errorMessage(err)}`,
-      reachable: false,
+      detail: authErrorMessages.workos.unreachable(errorMessage(err)),
+      retryable: true,
     };
   }
 
@@ -41,10 +56,31 @@ export async function sendWorkosRequest(
   try {
     json = await response.json();
   } catch {
-    return { kind: "failure", detail: unexpectedResponse, reachable: true };
+    // A 2xx whose body will not parse is a proxy or a captive portal answering
+    // in place of WorkOS, so the next attempt may well reach the real server.
+    return {
+      kind: "failure",
+      detail: authErrorMessages.workos.unexpectedResponseWithStatus(
+        response.status,
+      ),
+      retryable: response.ok || isTransientStatus(response.status),
+    };
   }
 
   if (response.ok) return { kind: "json", json };
+
+  // Checked before the error bodies below: a 5xx that happens to carry an
+  // `error` field is still a server fault, and reading it as a protocol refusal
+  // would end the flow on a fault that clears on its own.
+  if (isTransientStatus(response.status)) {
+    return {
+      kind: "failure",
+      detail: authErrorMessages.workos.unexpectedResponseWithStatus(
+        response.status,
+      ),
+      retryable: true,
+    };
+  }
 
   const parsed = oauthErrorBody.safeParse(json);
   if (parsed.success) {
@@ -69,7 +105,9 @@ export async function sendWorkosRequest(
 
   return {
     kind: "failure",
-    detail: `${unexpectedResponse} (HTTP ${response.status})`,
-    reachable: true,
+    detail: authErrorMessages.workos.unexpectedResponseWithStatus(
+      response.status,
+    ),
+    retryable: false,
   };
 }

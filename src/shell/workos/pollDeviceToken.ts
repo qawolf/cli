@@ -27,12 +27,14 @@ export async function pollDeviceToken(
     deps.fetch,
   );
 
-  // A transport failure is retryable; a response the server actually sent is
-  // not. Keeping them apart is what lets the poller ride out a blip.
+  // A fault that could clear on its own is worth another poll; an answer WorkOS
+  // meant is not. Keeping them apart is what lets the poller ride out a dropped
+  // request or a bad gateway instead of stranding someone who has already
+  // approved in the browser.
   if (outcome.kind === "failure") {
-    return outcome.reachable
-      ? { kind: "error", detail: outcome.detail }
-      : { kind: "unreachable", detail: outcome.detail };
+    return outcome.retryable
+      ? { kind: "unreachable", detail: outcome.detail }
+      : { kind: "error", detail: outcome.detail };
   }
 
   if (outcome.kind === "oauth-error") {
