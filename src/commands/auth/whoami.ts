@@ -77,12 +77,30 @@ export async function handleWhoami(
 
   if ("user" in value) {
     const { organization, user } = value;
+
+    // The chosen workspace is what every public API command sends, so the one
+    // command whose job is to report the session has to name it. A stored id
+    // the account can no longer reach is worth showing too — nothing else
+    // surfaces it, and every later request would fail on it.
+    const found = value.organizations
+      .flatMap((candidate) =>
+        candidate.workspaces.map((workspace) => ({
+          organization: candidate.name,
+          workspace: workspace.name,
+          id: workspace.id,
+        })),
+      )
+      .find((entry) => entry.id === resolved.workspaceId);
+    const activeWorkspace = resolved.workspaceId
+      ? authMessages.whoami.activeWorkspace(resolved.workspaceId, found)
+      : undefined;
     if (ctx.ui.mode === "human") {
       ctx.ui.note(
         authMessages.whoami.userNote({
           organization,
           source: resolved.source,
           user,
+          activeWorkspace,
           organizations: value.organizations,
         }),
         authMessages.whoamiAuthenticated,
@@ -95,6 +113,7 @@ export async function handleWhoami(
           organization,
           source: resolved.source,
           user,
+          workspaceId: resolved.workspaceId,
           organizations: value.organizations,
         },
         authMessages.whoami.authenticatedAs(user.email, resolved.source),

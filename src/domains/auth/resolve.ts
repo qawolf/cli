@@ -20,7 +20,7 @@ type ResolveApiKeyDeps = {
   env: Record<string, string | undefined>;
 };
 
-function makeOauthDeps(fs: Fs): ResolveOauthTokenDeps {
+export function makeOauthDeps(fs: Fs): ResolveOauthTokenDeps {
   return {
     loadTokens: (configDir) =>
       realLoadTokens(configDir, { EntryClass: Entry, fs }),

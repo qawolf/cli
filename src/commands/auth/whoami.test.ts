@@ -94,7 +94,10 @@ describe("handleWhoami", () => {
         getIdentity: mock(() =>
           Promise.resolve({
             ok: true as const,
-            value: { organization: { id: "org_1", name: "Acme Org" } },
+            value: {
+              organization: { id: "org_1", name: "Acme Org" },
+              organizations: [],
+            },
           }),
         ),
       });

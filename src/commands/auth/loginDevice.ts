@@ -115,7 +115,12 @@ export async function loginWithDevice(
       session,
       env: deps.env ?? process.env,
     });
-    reportWorkspace(ctx, workspace);
+    // Honoured rather than discarded, as its sibling handleSwitchWorkspace
+    // does. The credential is saved either way, but a session with no workspace
+    // fails every public API command, so reporting plain success would send the
+    // person away believing they are ready.
+    const failure = reportWorkspace(ctx, workspace);
+    if (failure) return failure;
 
     ctx.ui.outro(authMessages.device.signedIn(result.tokens.email));
     return;

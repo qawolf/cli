@@ -4,7 +4,6 @@ import type { WireResult } from "./createTrpcClient.js";
 import { toError } from "./toError.js";
 import { readOrganizations, type Organization } from "./organizations.js";
 
-export type { IdentityResponse };
 export type TeamIdentity = Extract<IdentityResponse, { team: unknown }>["team"];
 
 /**

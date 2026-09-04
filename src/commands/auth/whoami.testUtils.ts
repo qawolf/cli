@@ -1,10 +1,7 @@
 import { mock } from "bun:test";
 import type { ApiKeyResult } from "~/domains/auth/types.js";
 import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
-import type {
-  IdentityResponse,
-  TeamIdentity,
-} from "~/shell/platform/getIdentity.js";
+import type { Identity, TeamIdentity } from "~/shell/platform/getIdentity.js";
 import type { PlatformResult } from "~/shell/platform/requestWithRetry.js";
 
 function makeTeam(): TeamIdentity {
@@ -19,7 +16,7 @@ function makeTeam(): TeamIdentity {
 export function makeDeps(
   overrides: {
     requireApiKey?: () => Promise<ApiKeyResult>;
-    getIdentity?: () => Promise<PlatformResult<IdentityResponse>>;
+    getIdentity?: () => Promise<PlatformResult<Identity>>;
   } = {},
 ) {
   const getIdentity =

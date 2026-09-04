@@ -2,7 +2,12 @@ import type {
   Organization,
   Workspace,
 } from "~/shell/platform/organizations.js";
-import { findOrganization, findWorkspace, nameList } from "./nameMatching.js";
+import {
+  findOrganization,
+  findWorkspace,
+  findWorkspaceAcross,
+  nameList,
+} from "./nameMatching.js";
 
 export type SelectWorkspaceDeps = {
   organizations: Organization[];
@@ -29,7 +34,7 @@ export type SelectWorkspaceResult =
  *
  * The choice is local. Public API routes take the workspace as an argument and
  * authorize it per request, so working in a workspace needs no change to the
- * credential — which is what lets a QA Wolf employee reach a customer workspace
+ * credential — which is what lets a QA Wolf employee reach a client workspace
  * their token's organization does not contain, and what stops an ordinary
  * workspace change from depending on the identity provider at all.
  *
@@ -52,12 +57,35 @@ export async function selectWorkspace(
     }
   } else if (organizations.length === 1) {
     organization = organizations[0];
+  } else if (deps.preferredWorkspace) {
+    // A named workspace settles the organization too. Without this the
+    // organization prompt runs first, so naming only a workspace could never
+    // choose anything unattended — the run fell through to a prompt that
+    // cannot be answered.
+    const match = findWorkspaceAcross(organizations, deps.preferredWorkspace);
+    if (match.kind === "none") {
+      return {
+        outcome: "failed",
+        error: `No workspace matches '${deps.preferredWorkspace}'. Available: ${nameList(organizations.flatMap((o) => o.workspaces))}.`,
+      };
+    }
+    if (match.kind === "ambiguous") {
+      return {
+        outcome: "failed",
+        error: `More than one organization has a workspace matching '${deps.preferredWorkspace}': ${nameList(match.organizations)}. Set QAWOLF_ORGANIZATION to choose between them.`,
+      };
+    }
+    organization = match.organization;
   } else {
     organization = await deps.chooseOrganization(organizations);
     if (!organization) return { outcome: "cancelled" };
   }
 
-  if (!organization) return { outcome: "none" };
+  // Unreachable: every branch above either assigns or returns. It exists only
+  // because noUncheckedIndexedAccess widens organizations[0]. Reporting "none"
+  // here would claim the account reaches no organizations while holding one.
+  if (!organization) throw Error("organization was not settled");
+
   const { workspaces } = organization;
   if (workspaces.length === 0) {
     return {
@@ -82,7 +110,8 @@ export async function selectWorkspace(
     if (!workspace) return { outcome: "cancelled" };
   }
 
-  if (!workspace) return { outcome: "none" };
+  // Unreachable, for the same reason as the organization guard above.
+  if (!workspace) throw Error("workspace was not settled");
 
   await deps.saveWorkspace(workspace.id);
   return { outcome: "selected", organization, workspace };
