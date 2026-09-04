@@ -85,9 +85,8 @@ async function signIn(
     });
 
     if (!result.ok) {
-      // Returned rather than printed: withContext already renders a
-      // CommandResult, so printing here too showed the copy followed by the
-      // bare reason code.
+      // Returned rather than printed: withContext renders a CommandResult, so
+      // printing here too showed the copy followed by the bare reason code.
       return {
         error: authMessages.device.failed[result.reason],
         ...(result.detail ? { errorBody: result.detail } : {}),
@@ -112,7 +111,12 @@ async function signIn(
       env: deps.env,
       fetch: deps.fetch,
     });
-    reportWorkspace(ctx, workspace);
+    // Honoured rather than discarded, as its sibling handleSwitchWorkspace
+    // does. The credential is saved either way, but a session with no workspace
+    // fails every public API command, so reporting plain success would send the
+    // person away believing they are ready.
+    const failure = reportWorkspace(ctx, workspace);
+    if (failure) return failure;
 
     ctx.ui.outro(authMessages.device.signedIn(result.session.email));
     return;

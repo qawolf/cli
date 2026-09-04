@@ -1,4 +1,5 @@
 import { deviceMessages } from "./authDevice.js";
+import { pluralize } from "~/core/pluralize.js";
 import { authErrorMessages } from "./authErrors.js";
 
 export const authMessages = {
@@ -38,14 +39,15 @@ export const authMessages = {
   workspace: {
     chooseOrganization: "Which organization do you want to work in?",
     choose: "Which workspace do you want to use?",
-    workspaceCount: (count: number) =>
-      `${count} workspace${count === 1 ? "" : "s"}`,
+    workspaceCount: (count: number) => pluralize(count, "workspace"),
     working: (organization: string, workspace: string) =>
       `Working in ${workspace} (${organization}).`,
     none: "This account reaches no organizations yet.",
     cancelled: "Workspace not changed.",
     notSignedIn:
       "Workspace switching needs a browser sign-in. Run 'qawolf auth login' and choose Browser.",
+    sessionExpired:
+      "Your session could not be renewed. Run 'qawolf auth login' to sign in again.",
     nonInteractive:
       "auth switch needs an interactive terminal, or set QAWOLF_WORKSPACE to name a workspace.",
   },
@@ -90,10 +92,19 @@ export const authMessages = {
         `ID:           ${input.organization.id}`,
         `Source:       ${input.source}`,
       ].join("\n"),
+    /** The workspace the next command will use, named for a person to check. */
+    activeWorkspace: (
+      workspaceId: string,
+      found: { organization: string; workspace: string } | undefined,
+    ) =>
+      found
+        ? `${found.workspace} (${found.organization})`
+        : `${workspaceId} — no longer in reach; run 'qawolf auth switch'`,
     userNote: (input: {
       user: { email: string; id: string };
       organization: { id: string; name: string };
       source: string;
+      activeWorkspace: string | undefined;
       organizations: readonly {
         name: string;
         workspaces: readonly { name: string }[];
@@ -103,6 +114,9 @@ export const authMessages = {
         `User:         ${input.user.email}`,
         `ID:           ${input.user.id}`,
         `Organization: ${input.organization.name}`,
+        input.activeWorkspace
+          ? `Workspace:    ${input.activeWorkspace}`
+          : undefined,
         input.organizations.length > 0
           ? `Workspaces:   ${input.organizations
               .map(

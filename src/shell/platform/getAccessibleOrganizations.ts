@@ -19,7 +19,7 @@ const timeoutMs = 10_000;
  *
  * Identity lists membership only, because a client reads it on every command.
  * This applies the admin and QA Wolf employee reach as well, so it is read only
- * when the CLI offers a workspace choice. An employee's customer workspaces
+ * when the CLI offers a workspace choice. An employee's client workspaces
  * appear here and nowhere else.
  */
 export async function getAccessibleOrganizations(
@@ -61,9 +61,15 @@ export async function getAccessibleOrganizations(
 
   const organizations = parseOrganizationsResponse(json);
   if (!organizations) {
+    // Not `http`: the status here is a success, and pairing it with a failure
+    // renders as "HTTP 200". `parse` is the kind the sibling getIdentity uses
+    // for the same condition, and the one requestWithRetry classifies from.
     return {
       ok: false,
-      error: { kind: "http", status: response.status, body: "unexpected body" },
+      error: {
+        kind: "parse",
+        cause: Error("organizations response did not match the contract"),
+      },
     };
   }
 
