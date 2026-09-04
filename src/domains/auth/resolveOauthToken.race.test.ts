@@ -12,6 +12,7 @@ const spent: StoredSession = {
   expiresAt: nowMs - 1,
   email: "person@example.com",
   organizationId: "org_1",
+  workspaceId: undefined,
   clientId: "client_1",
 };
 
@@ -35,6 +36,9 @@ describe("resolveOauthToken when a refresh does not succeed", () => {
       accessToken: "access_from_winner",
       refreshToken: "refresh_rotated",
       expiresAt: nowMs + 600_000,
+      // The adopted pair brings its workspace with it, so the command that lost
+      // the race keeps working where the person chose.
+      workspaceId: "ws_1",
     };
     const loadTokens = mock(async () => found(winner));
     loadTokens.mockResolvedValueOnce(found(spent));
@@ -49,6 +53,7 @@ describe("resolveOauthToken when a refresh does not succeed", () => {
     expect(result).toEqual({
       key: "access_from_winner",
       email: "person@example.com",
+      workspaceId: "ws_1",
     });
     expect(loadTokens).toHaveBeenCalledTimes(2);
   });

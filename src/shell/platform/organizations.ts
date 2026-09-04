@@ -34,42 +34,6 @@ const groupedEnvelope = z.object({
   ),
 });
 
-const flatEnvelope = z.object({
-  workspaces: z.array(
-    workspaceSchema.extend({ workOsOrganizationId: z.string().min(1) }),
-  ),
-});
-
-/**
- * Only for servers that predate the grouped response, whose entries name no
- * organization — so each group is labelled with its WorkOS id, the one
- * identifier present. Delete once every environment serves `organizations`.
- */
-function groupFlatWorkspaces(
-  entries: z.infer<typeof flatEnvelope>["workspaces"],
-): Organization[] {
-  const byOrganization = new Map<string, Organization>();
-  for (const entry of entries) {
-    const existing = byOrganization.get(entry.workOsOrganizationId);
-    const workspace: Workspace = {
-      id: entry.id,
-      name: entry.name,
-      slug: entry.slug,
-    };
-    if (existing) {
-      existing.workspaces.push(workspace);
-      continue;
-    }
-    byOrganization.set(entry.workOsOrganizationId, {
-      id: entry.workOsOrganizationId,
-      name: entry.workOsOrganizationId,
-      workOsOrganizationId: entry.workOsOrganizationId,
-      workspaces: [workspace],
-    });
-  }
-  return [...byOrganization.values()];
-}
-
 /**
  * Strict, unlike {@link readOrganizations}: a body that does not match yields
  * undefined rather than an empty list, so a caller can tell "serves no
@@ -100,11 +64,5 @@ export function parseOrganizationsResponse(
  * whole response.
  */
 export function readOrganizations(json: unknown): Organization[] {
-  const grouped = parseOrganizationsResponse(json);
-  if (grouped) return grouped;
-
-  const flat = flatEnvelope.safeParse(json);
-  if (flat.success) return groupFlatWorkspaces(flat.data.workspaces);
-
-  return [];
+  return parseOrganizationsResponse(json) ?? [];
 }

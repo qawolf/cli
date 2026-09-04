@@ -69,7 +69,11 @@ export async function resolveOauthToken(
       expiresAt !== undefined &&
       expiresAt > deps.now()
     ) {
-      return { key: tokens.accessToken, email: tokens.email };
+      return {
+        key: tokens.accessToken,
+        email: tokens.email,
+        workspaceId: tokens.workspaceId,
+      };
     }
 
     // Another command may have refreshed while this one was in flight — the
@@ -93,6 +97,7 @@ export async function resolveOauthToken(
       return {
         key: current.tokens.accessToken,
         email: current.tokens.email,
+        workspaceId: current.tokens.workspaceId,
       };
     }
     return undefined;
