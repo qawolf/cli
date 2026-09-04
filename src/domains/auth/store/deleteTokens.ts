@@ -1,3 +1,4 @@
+import { isNoEntError } from "~/core/errors.js";
 import type { Fs } from "~/shell/fs.js";
 import { join } from "node:path";
 
@@ -22,8 +23,12 @@ async function deleteFromFile(
   try {
     await fs.unlink(join(configDir, tokensFile));
     return "deleted";
-  } catch {
-    return "not-found";
+  } catch (err: unknown) {
+    // Only a missing file is "not-found". Swallowing a permission or I/O error
+    // would let logout report "Credentials removed" over a credential that is
+    // still on disk.
+    if (isNoEntError(err)) return "not-found";
+    throw err;
   }
 }
 

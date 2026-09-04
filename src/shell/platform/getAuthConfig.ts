@@ -42,9 +42,15 @@ export async function getAuthConfig(deps: Deps): Promise<AuthConfigResult> {
     return { kind: "unreachable", detail: errorMessage(err) };
   }
 
-  // A 404 is the pre-route deployments answering honestly; a 5xx is the server
-  // failing to answer at all.
-  if (response.status >= 500) {
+  // A 404 is the pre-route deployments answering honestly. A 5xx, a 429 or a 408
+  // is the server failing to answer at all, which says nothing about whether it
+  // offers browser sign-in — reporting those as "offers none" states a permanent
+  // falsehood about the deployment.
+  if (
+    response.status >= 500 ||
+    response.status === 429 ||
+    response.status === 408
+  ) {
     return { kind: "unreachable", detail: `HTTP ${response.status}` };
   }
   if (!response.ok) return { kind: "unconfigured" };

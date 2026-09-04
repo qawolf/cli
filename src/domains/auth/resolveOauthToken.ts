@@ -14,7 +14,8 @@ export type ResolveOauthTokenDeps = {
     organizationId: string | undefined;
     clientId: string | undefined;
   }) => Promise<
-    { ok: true; value: DeviceTokens } | { ok: false; error: string }
+    | { ok: true; value: DeviceTokens }
+    | { ok: false; error: string; retryable: boolean }
   >;
   saveTokens: (configDir: string, tokens: StoredSession) => Promise<unknown>;
   now: () => number;
@@ -52,6 +53,17 @@ export async function resolveOauthToken(
     clientId: tokens.clientId,
   });
   if (!refreshed.ok) {
+    // The margin is a head start, not an expiry. A dropped packet inside it
+    // leaves a token that still works, so ending the session over one would
+    // sign someone out mid-command for nothing.
+    if (
+      refreshed.retryable &&
+      expiresAt !== undefined &&
+      expiresAt > deps.now()
+    ) {
+      return { key: tokens.accessToken, email: tokens.email };
+    }
+
     // Another command may have refreshed while this one was in flight — the
     // workers of a single `flows run` all resolve at once. Adopt whatever is on
     // disk before reporting a dead session: the winner's pair is valid for this
@@ -70,10 +82,17 @@ export async function resolveOauthToken(
   // Refresh tokens rotate, so the whole pair has to land in storage. Persisting
   // only the access token would spend the refresh token and lock the next
   // refresh out.
-  await deps.saveTokens(configDir, {
-    ...refreshed.value,
-    clientId: tokens.clientId,
-  });
+  try {
+    await deps.saveTokens(configDir, {
+      ...refreshed.value,
+      clientId: tokens.clientId,
+    });
+  } catch {
+    // The token in hand works for this command. Failing here as well would cost
+    // the caller a working credential and change nothing: the refresh already
+    // spent the stored token, so the next command has to sign in again whether
+    // this one succeeds or not.
+  }
 
   return { key: refreshed.value.accessToken, email: refreshed.value.email };
 }

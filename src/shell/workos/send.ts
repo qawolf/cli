@@ -7,12 +7,13 @@ const timeoutMs = 15_000;
 export const unexpectedResponse = authErrorMessages.workos.unexpectedResponse;
 
 /**
- * Statuses worth asking again on. A 5xx or a 429 is WorkOS failing rather than
- * refusing, which is transient in the same way a dropped socket is. Every other
- * 4xx is an answer WorkOS meant, and repeating it would change nothing.
+ * Statuses worth asking again on: WorkOS failing rather than refusing, which is
+ * transient in the same way a dropped socket is. 408, 429 and 5xx are the set
+ * WorkOS documents as retryable. Every other 4xx is an answer it meant, and
+ * repeating that would change nothing.
  */
 function isTransientStatus(status: number): boolean {
-  return status >= 500 || status === 429;
+  return status >= 500 || status === 429 || status === 408;
 }
 
 /**

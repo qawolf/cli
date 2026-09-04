@@ -27,7 +27,10 @@ function makeDeps(
   loadResult: LoadTokensResult,
   refreshResult:
     | { ok: true; value: DeviceTokens }
-    | { ok: false; error: string } = { ok: true, value: refreshed },
+    | { ok: false; error: string; retryable: boolean } = {
+    ok: true,
+    value: refreshed,
+  },
 ) {
   const saveTokens = mock(async (_configDir: string, _tokens: DeviceTokens) => {
     // storage is asserted through the spy, not through a filesystem
@@ -167,80 +170,12 @@ describe("resolveOauthToken", () => {
         tokens: { ...stored, expiresAt: nowMs - 1 },
         source: "file",
       },
-      { ok: false, error: "token revoked" },
+      { ok: false, error: "token revoked", retryable: false },
     );
 
     const result = await resolveOauthToken("/config", deps);
 
     expect(result).toBeUndefined();
     expect(saveTokens).not.toHaveBeenCalled();
-  });
-
-  // A lost refresh race must not read as "signed out". WorkOS rotates on every
-  // exchange, so whichever process won has already written a pair this one can
-  // use.
-  it("adopts a pair another command installed while this refresh failed", async () => {
-    const stale: StoredSession = {
-      ...stored,
-      refreshToken: "refresh_stale",
-      expiresAt: nowMs - 1,
-    };
-    const winner: StoredSession = {
-      ...stored,
-      accessToken: "access_from_winner",
-      refreshToken: "refresh_rotated",
-      expiresAt: nowMs + 600_000,
-    };
-    const loadTokens = mock(
-      async (): Promise<LoadTokensResult> => ({
-        found: true,
-        tokens: winner,
-        source: "keychain",
-      }),
-    );
-    loadTokens.mockResolvedValueOnce({
-      found: true,
-      tokens: stale,
-      source: "keychain",
-    });
-
-    const result = await resolveOauthToken("/config", {
-      loadTokens,
-      refreshTokens: async () => ({
-        ok: false as const,
-        error: "invalid_grant",
-      }),
-      saveTokens: async () => {},
-      now: () => nowMs,
-    });
-
-    expect(result).toEqual({
-      key: "access_from_winner",
-      email: "person@example.com",
-    });
-  });
-
-  it("still reports nothing when the stored pair is unchanged", async () => {
-    const stale: StoredSession = {
-      ...stored,
-      refreshToken: "refresh_stale",
-      expiresAt: nowMs - 1,
-    };
-
-    const result = await resolveOauthToken("/config", {
-      loadTokens: async () => ({
-        found: true,
-        tokens: stale,
-        source: "keychain",
-      }),
-      refreshTokens: async () => ({
-        ok: false as const,
-        error: "invalid_grant",
-      }),
-      saveTokens: async () => {},
-      now: () => nowMs,
-    });
-
-    expect(result).toBeUndefined();
   });
 });

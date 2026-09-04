@@ -72,6 +72,7 @@ export async function loginWithDevice(
     );
 
     const opened = await openBrowser(url, {
+      sleep,
       spawn: defaultSpawn,
       platform: deps.platform ?? process.platform,
     });

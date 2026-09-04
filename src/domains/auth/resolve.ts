@@ -29,9 +29,11 @@ function makeOauthDeps(fs: Fs): ResolveOauthTokenDeps {
     refreshTokens: async ({ refreshToken, organizationId, clientId }) => {
       const config = resolveWorkosConfig(clientId);
       if (!config.configured) {
+        // Nothing to retry: the session records no client to redeem against.
         return {
           ok: false,
           error: authErrorMessages.workos.noClientForSession,
+          retryable: false,
         };
       }
       return refreshAccessToken(refreshToken, organizationId, {

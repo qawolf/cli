@@ -16,7 +16,10 @@ export async function loginWithApiKey(
     return;
   }
 
-  if (!result.value.trim()) {
+  // Normalised once: a pasted key routinely carries whitespace, and validating
+  // one string while storing another would persist a key that cannot work.
+  const apiKey = result.value.trim();
+  if (!apiKey) {
     ctx.ui.cancel(authMessages.cancelled);
     return;
   }
@@ -27,7 +30,7 @@ export async function loginWithApiKey(
         message: authMessages.verifying,
         task: async () => {
           const v = await validateApiKey({
-            platformClient: createPlatformClient(result.value, {
+            platformClient: createPlatformClient(apiKey, {
               baseUrl: ctx.apiBaseUrl,
               fetch: globalThis.fetch,
             }),
@@ -37,7 +40,7 @@ export async function loginWithApiKey(
       },
       {
         message: authMessages.storing,
-        task: async () => saveApiKey(ctx.configDir, result.value, ctx.fs),
+        task: async () => saveApiKey(ctx.configDir, apiKey, ctx.fs),
       },
     ],
     ([, saveResult]) => {

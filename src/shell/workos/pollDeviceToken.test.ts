@@ -215,6 +215,10 @@ describe("pollDeviceToken", () => {
       jsonResponse({ error: "internal_error" }, { status: 500 }),
     ],
     ["rate limiting", jsonResponse({ message: "slow down" }, { status: 429 })],
+    [
+      "a request timeout",
+      jsonResponse({ message: "timeout" }, { status: 408 }),
+    ],
     ["a captive portal answering 200", textResponse("<html>hi</html>", 200)],
   ])("retries rather than refusing on %s", async (_label, response) => {
     const result = await pollDeviceToken("device_abc", {

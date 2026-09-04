@@ -3,7 +3,18 @@ import type { SpawnFn } from "./spawn.js";
 type OpenBrowserDeps = {
   spawn: SpawnFn;
   platform: NodeJS.Platform;
+  sleep: (ms: number) => Promise<void>;
 };
+
+/**
+ * How long to wait for the launcher before assuming it worked.
+ *
+ * `open` and `rundll32` hand off and exit at once, but `xdg-open` may run a
+ * foreground handler and not return until the browser itself closes. Waiting on
+ * that would hold the device flow before it prints its next step or polls once,
+ * so the code could expire while the person is looking at an approved page.
+ */
+const launchTimeoutMs = 2_000;
 
 function launcher(
   url: string,
@@ -45,10 +56,15 @@ export async function openBrowser(
 
   const { cmd, args } = launcher(url, deps.platform);
 
-  try {
-    const result = await deps.spawn(cmd, args, { platform: deps.platform });
-    return result.exitCode === 0;
-  } catch {
-    return false;
-  }
+  // Settled either way so a launcher that fails after the timeout cannot reject
+  // unobserved.
+  const launched = deps
+    .spawn(cmd, args, { platform: deps.platform })
+    .then((result) => result.exitCode === 0)
+    .catch(() => false);
+
+  // A launcher still running at the timeout is treated as success: it is far
+  // likelier to be holding a browser open than to be about to fail, and saying
+  // "could not open" over a browser that did open only confuses.
+  return Promise.race([launched, deps.sleep(launchTimeoutMs).then(() => true)]);
 }

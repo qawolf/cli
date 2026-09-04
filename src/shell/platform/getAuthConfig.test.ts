@@ -86,15 +86,22 @@ describe("getAuthConfig", () => {
     expect(result.detail).toContain("ECONNREFUSED");
   });
 
-  it("separates a failing server from one that offers none", async () => {
+  it.each([
+    ["a failing server", 503],
+    ["rate limiting", 429],
+    ["a request timeout", 408],
+  ])("separates %s from a deployment that offers none", async (_l, status) => {
     const result = await getAuthConfig({
       baseUrl,
       fetch: createFetchMock(
-        jsonResponse({ failureMessage: "boom" }, { status: 503 }),
+        jsonResponse({ failureMessage: "boom" }, { status }),
       ),
     });
 
-    expect(result).toEqual({ kind: "unreachable", detail: "HTTP 503" });
+    expect(result).toEqual({
+      kind: "unreachable",
+      detail: `HTTP ${status}`,
+    });
   });
 
   it("separates a body it could not read from one that offers none", async () => {

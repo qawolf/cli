@@ -215,4 +215,23 @@ describe("deleteTokens", () => {
 
     expect(result.found).toBe(false);
   });
+  // Reporting "Credentials removed" over a file that is still there is worse
+  // than failing loudly.
+  it("propagates a deletion failure that is not a missing file", async () => {
+    spyOn(Entry.prototype, "deletePassword").mockReturnValue(true);
+    const failing = {
+      unlink: async () => {
+        throw Object.assign(Error("permission denied"), { code: "EACCES" });
+      },
+    } as unknown as Fs;
+
+    let caught: unknown;
+    try {
+      await deleteTokens("/config", failing);
+    } catch (err) {
+      caught = err;
+    }
+
+    expect((caught as Error | undefined)?.message).toBe("permission denied");
+  });
 });
