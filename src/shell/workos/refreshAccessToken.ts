@@ -20,8 +20,8 @@ import {
  */
 export async function refreshAccessToken(
   refreshToken: string,
+  organizationId: string | undefined,
   deps: WorkosDeps,
-  organizationId?: string,
 ): Promise<AuthorizationResult<DeviceTokens>> {
   const params = new URLSearchParams({
     grant_type: "refresh_token",

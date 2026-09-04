@@ -20,7 +20,7 @@ export const oauthTokensSchema = z.object({
   clientId: z.string().min(1).optional(),
 });
 
-export type SaveApiKeyResult = {
+export type SaveCredentialResult = {
   keychain: { stored: "keychain" };
   file: { stored: "file"; keychainError: string };
 }[StorageSource];
@@ -30,4 +30,6 @@ type DeleteOutcomeMap = {
   file: "deleted" | "not-found";
 };
 
-export type DeleteApiKeyResult = { [K in StorageSource]: DeleteOutcomeMap[K] };
+export type DeleteCredentialResult = {
+  [K in StorageSource]: DeleteOutcomeMap[K];
+};

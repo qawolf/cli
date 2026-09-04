@@ -37,7 +37,10 @@ describe("refreshAccessToken", () => {
       }),
     );
 
-    await refreshAccessToken("refresh_1", { ...deps, fetch: mockFetch });
+    await refreshAccessToken("refresh_1", undefined, {
+      ...deps,
+      fetch: mockFetch,
+    });
 
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.example.com/user_management/authenticate",
@@ -63,11 +66,10 @@ describe("refreshAccessToken", () => {
       }),
     );
 
-    await refreshAccessToken(
-      "refresh_1",
-      { ...deps, fetch: mockFetch },
-      "org_1",
-    );
+    await refreshAccessToken("refresh_1", "org_1", {
+      ...deps,
+      fetch: mockFetch,
+    });
 
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.example.com/user_management/authenticate",
@@ -84,7 +86,7 @@ describe("refreshAccessToken", () => {
 
   it("returns the rotated refresh token, not the one it was given", async () => {
     const accessToken = makeJwt(1_700_000_000);
-    const result = await refreshAccessToken("refresh_1", {
+    const result = await refreshAccessToken("refresh_1", undefined, {
       ...deps,
       fetch: createFetchMock(
         jsonResponse({
@@ -109,7 +111,7 @@ describe("refreshAccessToken", () => {
   });
 
   it("fails when the refresh token has been revoked", async () => {
-    const result = await refreshAccessToken("refresh_1", {
+    const result = await refreshAccessToken("refresh_1", undefined, {
       ...deps,
       fetch: createFetchMock(
         jsonResponse(
@@ -127,7 +129,7 @@ describe("refreshAccessToken", () => {
       Error("socket hang up"),
     ) as unknown as typeof fetch;
 
-    const result = await refreshAccessToken("refresh_1", {
+    const result = await refreshAccessToken("refresh_1", undefined, {
       ...deps,
       fetch: mockFetch,
     });

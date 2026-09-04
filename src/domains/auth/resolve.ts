@@ -1,5 +1,6 @@
 import { Entry } from "@napi-rs/keyring";
 
+import { authErrorMessages } from "~/core/messages/authErrors.js";
 import type { Fs } from "~/shell/fs.js";
 import { refreshAccessToken } from "~/shell/workos/refreshAccessToken.js";
 import { resolveWorkosConfig } from "~/shell/workos/config.js";
@@ -28,17 +29,16 @@ function makeOauthDeps(fs: Fs): ResolveOauthTokenDeps {
     refreshTokens: async ({ refreshToken, organizationId, clientId }) => {
       const config = resolveWorkosConfig(clientId);
       if (!config.configured) {
-        return { ok: false, error: "This session names no WorkOS client" };
+        return {
+          ok: false,
+          error: authErrorMessages.workos.noClientForSession,
+        };
       }
-      return refreshAccessToken(
-        refreshToken,
-        {
-          fetch: globalThis.fetch,
-          baseUrl: config.baseUrl,
-          clientId: config.clientId,
-        },
-        organizationId,
-      );
+      return refreshAccessToken(refreshToken, organizationId, {
+        fetch: globalThis.fetch,
+        baseUrl: config.baseUrl,
+        clientId: config.clientId,
+      });
     },
     saveTokens: (configDir, tokens) => realSaveTokens(configDir, tokens, fs),
     now: () => Date.now(),

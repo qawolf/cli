@@ -6,7 +6,7 @@ import { Entry } from "@napi-rs/keyring";
 
 import { errorMessage } from "~/core/errors.js";
 import { service, tokensAccount, tokensFile } from "./constants.js";
-import type { SaveApiKeyResult } from "./types.js";
+import type { SaveCredentialResult } from "./types.js";
 
 async function saveToFile(
   configDir: string,
@@ -27,7 +27,7 @@ export async function saveTokens(
   configDir: string,
   tokens: StoredSession,
   fs: Fs,
-): Promise<SaveApiKeyResult> {
+): Promise<SaveCredentialResult> {
   try {
     new Entry(service, tokensAccount).setPassword(JSON.stringify(tokens));
     return { stored: "keychain" };

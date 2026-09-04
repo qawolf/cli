@@ -39,10 +39,10 @@ describe("getAuthConfig", () => {
       fetch: createFetchMock(jsonResponse({ workOsClientId: "client_1" })),
     });
 
-    expect(result).toBe("client_1");
+    expect(result).toEqual({ kind: "configured", clientId: "client_1" });
   });
 
-  it("reports nothing when the deployment does not serve the route", async () => {
+  it("reads a deployment that does not serve the route as offering none", async () => {
     // Every deployment before this endpoint shipped, production included.
     const result = await getAuthConfig({
       baseUrl,
@@ -51,36 +51,63 @@ describe("getAuthConfig", () => {
       ),
     });
 
-    expect(result).toBeUndefined();
+    expect(result).toEqual({ kind: "unconfigured" });
   });
 
-  it("reports nothing when the deployment publishes no client id", async () => {
+  // Distinct from the 404 above: the route answered, and published nothing.
+  it("reads an answer carrying no client id as offering none", async () => {
     const result = await getAuthConfig({
       baseUrl,
-      fetch: createFetchMock(
-        jsonResponse({ failureMessage: "no client id" }, { status: 404 }),
-      ),
+      fetch: createFetchMock(jsonResponse({ workOsClientId: "" })),
     });
 
-    expect(result).toBeUndefined();
+    expect(result).toEqual({ kind: "unconfigured" });
   });
 
-  it("reports nothing when the body does not match the contract", async () => {
+  it("reads a body that does not match the contract as offering none", async () => {
     const result = await getAuthConfig({
       baseUrl,
       fetch: createFetchMock(jsonResponse({ nonsense: true })),
     });
 
-    expect(result).toBeUndefined();
+    expect(result).toEqual({ kind: "unconfigured" });
   });
 
-  it("reports nothing when the deployment is unreachable", async () => {
+  // The three below must not read as "this deployment offers no browser
+  // sign-in": nothing was learned about the deployment at all.
+  it("separates an unreachable deployment from one that offers none", async () => {
     const mockFetch = mock<typeof fetch>().mockRejectedValue(
       Error("connect ECONNREFUSED"),
     ) as unknown as typeof fetch;
 
     const result = await getAuthConfig({ baseUrl, fetch: mockFetch });
 
-    expect(result).toBeUndefined();
+    if (result.kind !== "unreachable") throw Error("expected unreachable");
+    expect(result.detail).toContain("ECONNREFUSED");
+  });
+
+  it("separates a failing server from one that offers none", async () => {
+    const result = await getAuthConfig({
+      baseUrl,
+      fetch: createFetchMock(
+        jsonResponse({ failureMessage: "boom" }, { status: 503 }),
+      ),
+    });
+
+    expect(result).toEqual({ kind: "unreachable", detail: "HTTP 503" });
+  });
+
+  it("separates a body it could not read from one that offers none", async () => {
+    const result = await getAuthConfig({
+      baseUrl,
+      fetch: createFetchMock(
+        new Response("<html>hi</html>", {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        }),
+      ),
+    });
+
+    expect(result.kind).toBe("unreachable");
   });
 });

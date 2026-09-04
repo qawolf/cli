@@ -17,11 +17,7 @@ export type LoadApiKeyResult =
   | { found: true; key: string; source: StorageSource }
   | { found: false; errors?: { keychain?: string; file?: string } };
 
-/**
- * What browser sign-in persists: the WorkOS tokens plus the workspace the
- * person chose. The workspace is a QA Wolf concept rather than a token field,
- * but it belongs to the same session and is cleared with it.
- */
+/** What browser sign-in persists: the WorkOS tokens plus their issuing client. */
 export type StoredSession = DeviceTokens & {
   /**
    * WorkOS client that issued these tokens. A refresh token is only redeemable

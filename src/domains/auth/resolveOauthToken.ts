@@ -55,8 +55,7 @@ export async function resolveOauthToken(
 
   // Refresh tokens rotate, so the whole pair has to land in storage. Persisting
   // only the access token would spend the refresh token and lock the next
-  // refresh out. The chosen workspace is carried across, because a refresh
-  // renews the credential rather than changing where the person is working.
+  // refresh out.
   await deps.saveTokens(configDir, {
     ...refreshed.value,
     clientId: tokens.clientId,

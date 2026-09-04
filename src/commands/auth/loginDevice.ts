@@ -23,12 +23,23 @@ export async function loginWithDevice(
 ): Promise<CommandResult> {
   // The deployment publishes the client id it signs people in with, so the
   // CLI carries none and follows whatever host it is aimed at.
+  const authConfig = await getAuthConfig({
+    baseUrl: ctx.apiBaseUrl,
+    fetch: globalThis.fetch,
+  });
+  if (authConfig.kind === "unreachable") {
+    ctx.log("auth").debug(`auth config unreachable: ${authConfig.detail}`);
+    return {
+      error: authMessages.device.configUnreachable,
+      errorBody: authConfig.detail,
+    };
+  }
+
   const config = resolveWorkosConfig(
-    await getAuthConfig({ baseUrl: ctx.apiBaseUrl, fetch: globalThis.fetch }),
+    authConfig.kind === "configured" ? authConfig.clientId : undefined,
   );
   if (!config.configured) {
-    ctx.ui.error(authMessages.device.unavailable);
-    return { error: "browser sign-in unavailable" };
+    return { error: authMessages.device.unavailable };
   }
 
   const workos = {
@@ -80,9 +91,13 @@ export async function loginWithDevice(
     });
 
     if (!result.ok) {
-      const message = authMessages.device.failed[result.reason];
-      ctx.ui.error(message, result.detail);
-      return { error: result.reason };
+      // Returned rather than printed: withContext already renders a
+      // CommandResult, so printing here too showed the copy followed by the
+      // bare reason code.
+      return {
+        error: authMessages.device.failed[result.reason],
+        ...(result.detail ? { errorBody: result.detail } : {}),
+      };
     }
 
     await saveTokens(

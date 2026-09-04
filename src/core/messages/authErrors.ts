@@ -30,6 +30,13 @@ export const authErrorMessages = {
     unexpectedResponse: (noun: string | undefined) =>
       `Unexpected${noun ? ` ${noun}` : ""} response from the QA Wolf API.`,
   },
+  workos: {
+    unexpectedResponse: "WorkOS returned an unexpected response",
+    unexpectedResponseWithStatus: (status: number) =>
+      `WorkOS returned an unexpected response (HTTP ${status})`,
+    unreachable: (detail: string) => `Could not reach WorkOS: ${detail}`,
+    noClientForSession: "This session names no WorkOS client",
+  },
   bundle: {
     linkExpired:
       "The flow bundle download link has expired. Please run `qawolf flows pull` again to refresh.",

@@ -17,6 +17,7 @@ function makeCtx(
       gap: mock(),
       intro: mock(),
       info: mock(),
+      warn: mock(),
       cancel: mock(),
       error: mock(),
       ...ui,
@@ -124,5 +125,63 @@ describe("handleLogin", () => {
     await handleLogin(ctx, deps);
 
     expect(deps.loginWithDevice).toHaveBeenCalledTimes(1);
+  });
+  // The precedence itself is deliberate; being told "Signed in as ..." while
+  // every later command keeps using the old key is not.
+  it.each([
+    ["env" as const, "unset the variable"],
+    ["keychain" as const, "auth logout"],
+    ["file" as const, "auth logout"],
+  ])(
+    "warns before browser sign-in that a %s API key still wins",
+    async (source, remedy) => {
+      const ctx = makeCtx({
+        mode: "human",
+        confirm: mock(async () => ({ ok: true as const, value: true })),
+        select: mock(async () => ({ ok: true as const, value: "browser" })),
+      });
+      const deps = makeDeps({
+        resolveApiKey: async () => ({ key: "qaw_old", source }),
+      });
+
+      await handleLogin(ctx, deps);
+
+      expect(ctx.ui.warn).toHaveBeenCalledTimes(1);
+      expect(
+        (ctx.ui.warn as ReturnType<typeof mock>).mock.calls[0]?.[0],
+      ).toContain(remedy);
+      expect(deps.loginWithDevice).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it("does not warn when the previous session was itself a browser one", async () => {
+    const ctx = makeCtx({
+      mode: "human",
+      confirm: mock(async () => ({ ok: true as const, value: true })),
+      select: mock(async () => ({ ok: true as const, value: "browser" })),
+    });
+    const deps = makeDeps({
+      resolveApiKey: async () => ({ key: "access_old", source: "browser" }),
+    });
+
+    await handleLogin(ctx, deps);
+
+    expect(ctx.ui.warn).not.toHaveBeenCalled();
+  });
+
+  it("does not warn on the API key path, where nothing is shadowed", async () => {
+    const ctx = makeCtx({
+      mode: "human",
+      confirm: mock(async () => ({ ok: true as const, value: true })),
+      select: mock(async () => ({ ok: true as const, value: "api-key" })),
+    });
+    const deps = makeDeps({
+      resolveApiKey: async () => ({ key: "qaw_old", source: "keychain" }),
+    });
+
+    await handleLogin(ctx, deps);
+
+    expect(ctx.ui.warn).not.toHaveBeenCalled();
+    expect(deps.loginWithApiKey).toHaveBeenCalledTimes(1);
   });
 });

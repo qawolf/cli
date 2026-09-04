@@ -59,7 +59,21 @@ export async function handleLogin(
     return;
   }
 
-  return method.value === browserMethod
-    ? (deps.loginWithDevice ?? realLoginWithDevice)(ctx)
-    : (deps.loginWithApiKey ?? realLoginWithApiKey)(ctx);
+  if (method.value !== browserMethod) {
+    return (deps.loginWithApiKey ?? realLoginWithApiKey)(ctx);
+  }
+
+  // Said before the flow starts rather than after it: the browser round trip
+  // ends in "Signed in as ...", and a caveat printed after that reads as an
+  // afterthought to a sign-in the person believes already took effect. A
+  // previous browser session is simply replaced, so only an API key shadows.
+  if (existing && existing.source !== "browser") {
+    ctx.ui.warn(
+      existing.source === "env"
+        ? authMessages.login.apiKeyPrecedence.env
+        : authMessages.login.apiKeyPrecedence.stored,
+    );
+  }
+
+  return (deps.loginWithDevice ?? realLoginWithDevice)(ctx);
 }

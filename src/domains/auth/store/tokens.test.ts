@@ -185,4 +185,34 @@ describe("deleteTokens", () => {
 
     expect(result.file).toBe("not-found");
   });
+  // The shape a truncated or half-flushed write actually leaves behind. The
+  // parse throws out of parseTokens rather than returning, so this covers the
+  // catch that keeps a corrupt store from crashing the command.
+  it("reports a store holding bytes that are not JSON", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir("/config", { recursive: true });
+    await memFs.writeFile("/config/tokens.json", '{"accessToken": "trunc');
+
+    const result = await loadTokens("/config", {
+      EntryClass: makeEntryClass(() => ""),
+      fs: memFs as unknown as Fs,
+    });
+
+    expect(result.found).toBe(false);
+    if (result.found) return;
+    expect(result.errors?.file).toBeDefined();
+  });
+
+  it("reports a store holding JSON that is not a session", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir("/config", { recursive: true });
+    await memFs.writeFile("/config/tokens.json", '{"nonsense": true}');
+
+    const result = await loadTokens("/config", {
+      EntryClass: makeEntryClass(() => ""),
+      fs: memFs as unknown as Fs,
+    });
+
+    expect(result.found).toBe(false);
+  });
 });

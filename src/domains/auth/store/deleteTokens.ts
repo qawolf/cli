@@ -4,9 +4,9 @@ import { join } from "node:path";
 import { Entry } from "@napi-rs/keyring";
 
 import { service, tokensAccount, tokensFile } from "./constants.js";
-import type { DeleteApiKeyResult } from "./types.js";
+import type { DeleteCredentialResult } from "./types.js";
 
-function deleteFromKeychain(): DeleteApiKeyResult["keychain"] {
+function deleteFromKeychain(): DeleteCredentialResult["keychain"] {
   try {
     new Entry(service, tokensAccount).deletePassword();
     return "deleted";
@@ -18,7 +18,7 @@ function deleteFromKeychain(): DeleteApiKeyResult["keychain"] {
 async function deleteFromFile(
   configDir: string,
   fs: Fs,
-): Promise<DeleteApiKeyResult["file"]> {
+): Promise<DeleteCredentialResult["file"]> {
   try {
     await fs.unlink(join(configDir, tokensFile));
     return "deleted";
@@ -30,7 +30,7 @@ async function deleteFromFile(
 export async function deleteTokens(
   configDir: string,
   fs: Fs,
-): Promise<DeleteApiKeyResult> {
+): Promise<DeleteCredentialResult> {
   const [keychain, file] = await Promise.all([
     Promise.resolve(deleteFromKeychain()),
     deleteFromFile(configDir, fs),

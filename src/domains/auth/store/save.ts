@@ -5,7 +5,7 @@ import { Entry } from "@napi-rs/keyring";
 
 import { errorMessage } from "~/core/errors.js";
 import { account, credentialsFile, service } from "./constants.js";
-import type { CredentialsFile, SaveApiKeyResult } from "./types.js";
+import type { CredentialsFile, SaveCredentialResult } from "./types.js";
 
 async function saveToFile(
   configDir: string,
@@ -27,7 +27,7 @@ export async function saveApiKey(
   configDir: string,
   key: string,
   fs: Fs,
-): Promise<SaveApiKeyResult> {
+): Promise<SaveCredentialResult> {
   try {
     const entry = new Entry(service, account);
     entry.setPassword(key);

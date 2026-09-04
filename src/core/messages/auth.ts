@@ -23,10 +23,21 @@ export const authMessages = {
     methodBrowserHint: "Sign in with your QA Wolf account",
     methodApiKey: "API key",
     methodApiKeyHint: "Paste a team key — needed for flows pull and flows run",
+    // An API key deliberately outranks a browser session, because it carries
+    // team scope a user token does not. Said out loud here because the sign-in
+    // that follows reports success, and without this the person is left
+    // believing they changed which identity their commands use.
+    apiKeyPrecedence: {
+      env: "QAWOLF_API_KEY is set, and an API key takes precedence over a browser session. Commands continue to use that key until you unset the variable.",
+      stored:
+        "A stored API key takes precedence over a browser session. Commands continue to use that key until you run 'qawolf auth logout' and sign in again.",
+    },
   },
   device: {
     unavailable:
-      "This QA Wolf deployment does not offer browser sign-in. Choose 'API key' instead.",
+      "This QA Wolf deployment does not offer browser sign-in. Run 'qawolf auth login' again and choose 'API key'.",
+    configUnreachable:
+      "Could not ask this QA Wolf deployment whether it offers browser sign-in. Check your connection, then try again.",
     confirmCode: (userCode: string) => `Your code is ${userCode}`,
     visitUrl: (url: string) => `Confirm it at ${url}`,
     // RFC 8628 asks a client using the prefilled URL to show the plain one too,
