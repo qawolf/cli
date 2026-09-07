@@ -43,3 +43,14 @@ export type PollStep =
   | { action: "poll"; delayMs: number; state: PollState }
   | { action: "done"; tokens: DeviceTokens }
   | { action: "fail"; reason: PollFailure; detail: string | undefined };
+
+/** What the authorization endpoint hands back to start a flow. */
+export type DeviceAuthorization = {
+  deviceCode: string;
+  userCode: string;
+  verificationUri: string;
+  /** Verification URI with the user code prefilled, when the server sent one. */
+  verificationUriComplete: string | undefined;
+  expiresInSec: number;
+  intervalSec: number;
+};
