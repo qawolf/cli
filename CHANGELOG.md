@@ -1,5 +1,21 @@
 # @qawolf/cli
 
+## 1.23.0
+
+### Minor Changes
+
+- b97950c: Upgrades `@qawolf/api-contracts` to `0.40.0`.
+
+  That release adds three endpoint contracts. The generator adds one public-API command for each contract. `qawolf agent send` tells the QA Wolf AI to do work, in plain language. `qawolf agent get` reads the replies from that work and shows its status. `qawolf run diagnose` records the failed flows of a run as reproductions of a bug report or a maintenance report.
+
+  The release also changes the description of `qawolf issue addFlows`. The new description points to `run.diagnose` for bug reports and maintenance reports.
+
+### Patch Changes
+
+- f39c45b: Built with Bun 1.4.2 instead of 1.3.13. The standalone `qawolf` binary starts about 2.5x faster (492 ms to 188 ms for `qawolf --version` on a laptop). The npm bundle is produced by the same bundler version and is meant to behave exactly as before.
+- fe5bdab: The npm package no longer bundles webdriverio and the rest of the mobile stack. Mobile runs load it from the managed runtime that is installed on first use. `dist/cli.js` shrinks from 6.6 MB to 1.1 MB and every command starts about 25 ms sooner under Node. The compiled binary is unchanged.
+- f42b285: The npm bundle no longer inlines the TypeScript compiler. It loads the installed `typescript` package only when a runner command or the runner SDK walks a flow's imports. `dist/cli.js` shrinks from 16 MB to 6.6 MB, `dist/runner-sdk.js` from 9.3 MB to 0.4 MB, and every command starts about 70 ms sooner under Node.
+
 ## 1.22.1
 
 ### Patch Changes
