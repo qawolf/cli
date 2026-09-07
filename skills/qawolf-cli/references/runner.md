@@ -142,6 +142,14 @@ can forward a tool call rather than translate it:
 echo '{"type":"click","button":"left","x":480,"y":260}' | qawolf runner act -
 ```
 
+Every action in a see-and-act loop is followed by a look at the result, so ask
+for it in the same call: `act ... --screenshot step.jpg` (or `--screenshot -`
+for stdout) performs the action, waits for the screen to settle, and writes the
+frame. Prefer it over `act` and then `screenshot`: there is no delay to guess at
+between the two, and each step is one call instead of two. If the action was
+performed but the screen did not arrive, the message says so and points at
+`screenshot`; do not send the action again to get its picture.
+
 Coordinates are pixels on the same screenshot you just read. The runner serves
 one see-or-act request at a time, so decide what to do next from each answer
 rather than firing several. Bounds are checked before anything is sent, so an
@@ -568,10 +576,9 @@ export QAWOLF_RUNNER_ID=agent-1    # so no command below needs --runner
 qawolf runner launch --id agent-1 --json          # --id, not the variable; read .alreadyRunning
 qawolf runner run flows/smoke.flow.ts --follow    # starts the screen; exit 1 if it failed
 
-qawolf runner act navigate --url https://example.com/login
-qawolf runner screenshot --out page.jpg           # then read page.jpg yourself
-qawolf runner act click --button left --x 480 --y 260
-qawolf runner act type --text "someone@example.com"
+qawolf runner act navigate --url https://example.com/login --screenshot page.jpg   # then read page.jpg yourself
+qawolf runner act click --button left --x 480 --y 260 --screenshot page.jpg
+qawolf runner act type --text "someone@example.com" --screenshot page.jpg
 
 qawolf runner inspect element-html --selector "#email"
 qawolf runner inspect variable --name cart | jq .total
