@@ -212,9 +212,9 @@ and its own vision model can close the see-and-act loop with no other tooling.
 
 When an action is followed by a look at the result, which in a see-and-act loop
 is every action, pass `--screenshot <path>` to `act` (or `-` for stdout) instead
-of calling `act` and then `screenshot`. One call performs the action, waits for
-the screen to settle, and writes the frame, so there is no delay to guess at and
-half the calls per step.
+of calling `act` and then `screenshot`. One call performs the action and writes
+the screen the runner answers with: half the calls per step, and no delay to
+guess at between them.
 
 The full workflow is its own guide: how a runner is billed, why the first call
 must be a run, the order the commands go in, the see-and-act loop, `exec`, the

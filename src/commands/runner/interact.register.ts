@@ -90,7 +90,7 @@ export function registerRunnerInteractCommands(
     .option("--runner <id>", runnerFlagDescription)
     .option(
       "--screenshot <path>",
-      "Also answer with a JPEG of the screen once it has settled after the action, written to this file, or to stdout with - (confirmation, JSON included, then goes to stderr). One call in place of act, a wait and screenshot",
+      "Also save a JPEG of the screen, taken after the action, to this file, in place of a separate screenshot. - writes it to stdout and moves the confirmation, JSON included, to stderr",
     )
     .option("--scroll-x <delta>", "scroll: horizontal wheel delta")
     .option("--scroll-y <delta>", "scroll: vertical wheel delta")

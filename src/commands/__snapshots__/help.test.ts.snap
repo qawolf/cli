@@ -475,10 +475,10 @@ Options:
                        the first and last are used)
   --runner <id>        Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
                        directory's stored runner
-  --screenshot <path>  Also answer with a JPEG of the screen once it has settled
-                       after the action, written to this file, or to stdout with
-                       - (confirmation, JSON included, then goes to stderr). One
-                       call in place of act, a wait and screenshot
+  --screenshot <path>  Also save a JPEG of the screen, taken after the action,
+                       to this file, in place of a separate screenshot. - writes
+                       it to stdout and moves the confirmation, JSON included,
+                       to stderr
   --scroll-x <delta>   scroll: horizontal wheel delta
   --scroll-y <delta>   scroll: vertical wheel delta
   --text <text>        type: the text to type
