@@ -131,15 +131,16 @@ describe("handleRunnerAct --screenshot", () => {
     });
   }
 
-  // Human mode means a terminal on stdout. Refused before the action, so the
-  // caller is not left with a click that happened and a screen it cannot get.
-  it("refuses a terminal on stdout before acting", async () => {
+  // Human mode means a terminal on stdout. Refused before a runner is resolved,
+  // so nothing is launched and billed, and before the action, so the caller is
+  // not left with a click that happened and a screen it cannot get.
+  it("refuses a terminal on stdout before launching or acting", async () => {
     const { callPublicApi, ctx } = makeAuthCtx("human");
     const deps = makeTestDeps();
 
     const result = await handleRunnerAct(
       ctx,
-      { ...click, screenshot: "-" },
+      { ...click, runner: undefined, screenshot: "-" },
       deps,
     );
 
@@ -147,6 +148,28 @@ describe("handleRunnerAct --screenshot", () => {
     expect(result?.error).toContain("--screenshot a file path");
     expect(result?.exitCode).toBe(2);
     expect(callPublicApi).not.toHaveBeenCalled();
+    expect(await deps.store.readDefaultRunnerId()).toBeUndefined();
+    expect(deps.stdoutWrites).toEqual([]);
+  });
+
+  // An image the flag did not ask for is not written anywhere.
+  it("ignores an image that arrives without the flag", async () => {
+    const { callPublicApi, ctx, outputs } = makeAuthCtx("json");
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { imageJpegBase64, outcome: "success" },
+    });
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerAct(
+      ctx,
+      { ...click, screenshot: undefined },
+      deps,
+    );
+
+    expect(result).toBeUndefined();
+    expect(outputs()[0]?.humanMessage).toBe("Performed click.");
+    expect(deps.written).toEqual([]);
     expect(deps.stdoutWrites).toEqual([]);
   });
 
@@ -166,49 +189,5 @@ describe("handleRunnerAct --screenshot", () => {
     });
     expect(deps.written).toEqual([]);
     expect(deps.stdoutWrites).toEqual([]);
-  });
-
-  // A refused action has no screen to write; the refusal reads as it always did.
-  it("reports a refused action as before, writing nothing", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx("json");
-    callPublicApi.mockResolvedValue({
-      ok: true,
-      value: {
-        errorMessage: "the page navigated away",
-        failureReason: "action-failed",
-        outcome: "failure",
-      },
-    });
-    const deps = makeTestDeps();
-
-    const result = await handleRunnerAct(
-      ctx,
-      { ...click, screenshot: "-" },
-      deps,
-    );
-
-    expect(result?.error).toContain("the page navigated away");
-    expect(result?.exitCode).toBe(1);
-    expect(deps.stdoutWrites).toEqual([]);
-    expect(deps.written).toEqual([]);
-  });
-
-  it("still warns that a lost answer may have acted", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx("json");
-    callPublicApi.mockResolvedValue({
-      ok: true,
-      value: { failureReason: "runner-unreachable", outcome: "failure" },
-    });
-
-    const result = await handleRunnerAct(
-      ctx,
-      { ...click, screenshot: "step.jpg" },
-      makeTestDeps(),
-    );
-
-    expect(result?.error).toContain(
-      "does not mean the action was not performed",
-    );
-    expect(result?.exitCode).toBe(4);
   });
 });

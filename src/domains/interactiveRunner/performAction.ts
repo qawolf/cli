@@ -25,11 +25,10 @@ import { announceRunner, resolveRunner } from "./resolveRunner.js";
  * the runner's keyboard into an immediate refusal naming the limit rather than a
  * round trip that holds the runner for ten seconds and then declines.
  *
- * With `screenshot` set, the runner is asked to answer with its screen once it
- * has settled after the action, and the image is written the way
- * `runner screenshot` writes one. One call per step instead of two, and the
- * fixed wait a caller put between them goes away, because the runner waits for
- * the frame to change rather than the caller guessing how long that takes.
+ * With `screenshot` set, the runner is asked to answer with its screen after
+ * the action, and the image is written the way `runner screenshot` writes one.
+ * One call per step instead of two, with no delay for the caller to guess at
+ * between them.
  */
 export async function handleRunnerAct(
   ctx: AuthCommandContext,
@@ -44,6 +43,16 @@ export async function handleRunnerAct(
 ): Promise<CommandResult> {
   const built = await readAction(options.type, options.flags, deps);
   if (!built.ok) return { error: built.error, exitCode: exitCodes.invalidArgs };
+  // Only a terminal on stdout selects human mode, and a terminal cannot read
+  // JPEG bytes. Refused here, before a runner is resolved or launched and
+  // before the action is sent, so nothing is billed or clicked for an answer
+  // that could not have been read.
+  if (options.screenshot === stdoutPath && ctx.outputMode === "human") {
+    return {
+      error: interactiveRunnerMessages.stdoutIsATerminal("--screenshot"),
+      exitCode: exitCodes.invalidArgs,
+    };
+  }
 
   const resolved = await resolveRunner(
     ctx,
@@ -54,15 +63,6 @@ export async function handleRunnerAct(
     return { ...failureFields(resolved), exitCode: resolved.exitCode };
   }
   announceRunner(ctx, resolved);
-  // Only a terminal on stdout selects human mode, and a terminal cannot read
-  // JPEG bytes. Refused before the action rather than after it, so the caller
-  // is not left with an action that happened and a screen it cannot get.
-  if (options.screenshot === stdoutPath && ctx.outputMode === "human") {
-    return {
-      error: interactiveRunnerMessages.stdoutIsATerminal("--screenshot"),
-      exitCode: exitCodes.invalidArgs,
-    };
-  }
 
   const result = await ctx.platformClient.callPublicApi(
     performActionContract,
