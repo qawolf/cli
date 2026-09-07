@@ -17,6 +17,9 @@ const externals = [
   // installed on demand by ensureDeps (also external in the binary — see buildBinary.ts)
   "@qawolf/emails",
   "@qawolf/testkit",
+  // the TypeScript compiler, loaded lazily by the import-graph walk; inlined,
+  // Node parses all of it on every command start
+  "typescript",
 ];
 
 function buildArgs(entry: string, name: string): string[] {
