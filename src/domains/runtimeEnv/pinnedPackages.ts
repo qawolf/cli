@@ -30,6 +30,11 @@ export const pinnedPackages: PinnedPackage[] = [
   // Installing it here keeps it out of the consumer's resolution, and this
   // managed install passes --legacy-peer-deps so the cycle is never explored.
   { name: "expect-webdriverio", version: expectWebdriverioVersion },
+  // The Android runner loads webdriverio from the run's dependency root
+  // (loadWebdriverio); the npm bundle does not ship it, so this pin is what
+  // guarantees every dependency root has it. Same devDependency-only rule as
+  // expect-webdriverio above.
+  { name: "webdriverio", version: webdriverioVersion },
   // expect-webdriverio's own peers. The managed install passes --legacy-peer-deps,
   // which skips peers entirely, so without these `import("expect-webdriverio")`
   // throws ERR_MODULE_NOT_FOUND on @wdio/logger. That import is what
@@ -38,7 +43,6 @@ export const pinnedPackages: PinnedPackage[] = [
   // initFlowRuntime, and initFlowRuntime hardcodes platform "web", so
   // configureFlowRuntime skips its mobile branch. This removes the first blocker
   // only. They carry the same devDependency-only rule as expect-webdriverio above.
-  { name: "webdriverio", version: webdriverioVersion },
   { name: "@wdio/globals", version: wdioGlobalsVersion },
   { name: "@wdio/logger", version: wdioLoggerVersion },
 ];
