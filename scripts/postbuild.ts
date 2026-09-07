@@ -26,9 +26,10 @@ for (const path of bundles) {
       process.exit(1);
     }
   }
-  if (source.length > maxBundleBytes) {
+  const sizeBytes = statSync(path).size;
+  if (sizeBytes > maxBundleBytes) {
     console.error(
-      `${path} is ${source.length} bytes, over the ${maxBundleBytes} byte ceiling`,
+      `${path} is ${sizeBytes} bytes, over the ${maxBundleBytes} byte ceiling`,
     );
     process.exit(1);
   }
