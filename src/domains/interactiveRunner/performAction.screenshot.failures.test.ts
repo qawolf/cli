@@ -24,6 +24,8 @@ const click = {
 
 // Every failure here follows a performed action, so none may read as an
 // invitation to send it again: the caller's next move is a plain screenshot.
+// All exit 4, the code the runner guide reads as "screenshot before repeating";
+// a 2 from act is an argument to fix and re-send, which would be a double click.
 describe("handleRunnerAct --screenshot after the action took effect", () => {
   it("reports an answer that came without the screen it asked for", async () => {
     const { callPublicApi, ctx, outputs } = makeAuthCtx("json");
@@ -42,6 +44,7 @@ describe("handleRunnerAct --screenshot after the action took effect", () => {
     expect(result?.error).toContain("Performed click");
     expect(result?.error).toContain("do not repeat it");
     expect(result?.error).toContain("qawolf runner screenshot");
+    expect(result?.error).toContain("behind the other");
     expect(result?.exitCode).toBe(4);
     expect(deps.written).toEqual([]);
     expect(outputs()).toEqual([]);
@@ -96,8 +99,77 @@ describe("handleRunnerAct --screenshot after the action took effect", () => {
     expect(toFile?.error).toContain('"step.jpg"');
     expect(toFile?.error).toContain("EACCES");
     expect(toFile?.error).toContain("do not repeat it");
-    expect(toFile?.exitCode).toBe(2);
-    expect(toStdout?.error).toContain("stdout");
+    expect(toFile?.exitCode).toBe(4);
+    expect(toStdout?.error).toContain("keep the pipe reading stdout open");
     expect(toStdout?.error).not.toContain('"-"');
+    expect(toStdout?.exitCode).toBe(4);
+  });
+});
+
+// A refusal or a lost answer reads as it always did; nothing is written.
+describe("handleRunnerAct --screenshot when the action did not succeed", () => {
+  it("reports a refused action as before, writing nothing", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx("json");
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: {
+        errorMessage: "the page navigated away",
+        failureReason: "action-failed",
+        outcome: "failure",
+      },
+    });
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerAct(
+      ctx,
+      { ...click, screenshot: "-" },
+      deps,
+    );
+
+    expect(result?.error).toContain("the page navigated away");
+    expect(result?.exitCode).toBe(1);
+    expect(deps.stdoutWrites).toEqual([]);
+    expect(deps.written).toEqual([]);
+  });
+
+  it("still warns that a timed-out request may have acted", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx("json");
+    callPublicApi.mockResolvedValue({
+      error: "request timed out after 15000ms",
+      mayHaveArrived: true,
+      ok: false,
+    });
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerAct(
+      ctx,
+      { ...click, screenshot: "-" },
+      deps,
+    );
+
+    expect(result?.error).toContain(
+      "does not mean the action was not performed",
+    );
+    expect(result?.exitCode).toBe(4);
+    expect(deps.stdoutWrites).toEqual([]);
+  });
+
+  it("still warns that a lost answer may have acted", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx("json");
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { failureReason: "runner-unreachable", outcome: "failure" },
+    });
+
+    const result = await handleRunnerAct(
+      ctx,
+      { ...click, screenshot: "step.jpg" },
+      makeTestDeps(),
+    );
+
+    expect(result?.error).toContain(
+      "does not mean the action was not performed",
+    );
+    expect(result?.exitCode).toBe(4);
   });
 });

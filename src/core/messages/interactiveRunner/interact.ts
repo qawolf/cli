@@ -16,16 +16,18 @@ export const interactMessages = {
     `Performed ${type}, but the screen that came with the answer was not a JPEG, so nothing was written. The action took effect, so do not repeat it: take the screen with qawolf runner screenshot instead, and report it if it keeps happening.`,
   actionPerformedScreenshotToStdout: (type: string) =>
     `Performed ${type} and wrote the runner's screen to stdout as a JPEG. Stdout holds the image bytes alone; this line, and the JSON with --json, is on stderr.`,
+  actionPerformedScreenshotStdoutUnwritable: (type: string, detail: string) =>
+    `Performed ${type}, but its screen could not be written to stdout: ${detail}. The action took effect, so do not repeat it: keep the pipe reading stdout open, or take the screen with qawolf runner screenshot --out <file>.`,
   actionPerformedScreenshotUnwritable: (
     type: string,
-    destination: string,
+    path: string,
     detail: string,
   ) =>
-    `Performed ${type}, but its screen could not be written to ${destination}: ${detail}. The action took effect, so do not repeat it: take the screen with qawolf runner screenshot, giving --out a destination this process can write to.`,
+    `Performed ${type}, but its screen could not be written to "${path}": ${detail}. The action took effect, so do not repeat it: take the screen with qawolf runner screenshot, giving --out a path this process can write to.`,
   actionPerformedScreenshotWritten: (type: string, path: string) =>
     `Performed ${type} and wrote the runner's screen to ${path}.`,
   actionPerformedWithoutScreenshot: (type: string) =>
-    `Performed ${type}, but the runner answered without the screen it was asked for. The action took effect, so do not repeat it: take the screen with qawolf runner screenshot instead.`,
+    `Performed ${type}, but the runner answered without the screen it was asked for. The action took effect, so do not repeat it: take the screen with qawolf runner screenshot instead. If this keeps happening, the platform or this CLI is behind the other: upgrade with npm install -g @qawolf/cli.`,
   actionAnsweredUnknown: (failureReason: string) =>
     `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
   screenshotAnsweredUnknown: (failureReason: string) =>

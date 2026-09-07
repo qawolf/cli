@@ -17,7 +17,10 @@ import type { InteractiveRunnerDeps } from "./deps.js";
  * Every failure here follows a success: the action took effect before the
  * image went wrong. So each message says so and none invites a repeat, because
  * a caller that re-sends a click to get its screenshot clicks twice. The next
- * move it is pointed at is a plain `runner screenshot`.
+ * move it is pointed at is a plain `runner screenshot`, and every one exits 4,
+ * the code the runner guide already reads as "take a screenshot before
+ * repeating": a 2 from `act` is otherwise an argument the caller fixes and
+ * re-sends, which is the double click.
  */
 export async function writeActionScreenshot(
   ctx: AuthCommandContext,
@@ -29,7 +32,6 @@ export async function writeActionScreenshot(
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
   const { type } = options.action;
-  // The API's to fix, not the caller's, so a 4 like a screenshot that is not one.
   if (options.imageJpegBase64 === undefined) {
     return {
       error: interactiveRunnerMessages.actionPerformedWithoutScreenshot(type),
@@ -49,12 +51,18 @@ export async function writeActionScreenshot(
           exitCode: exitCodes.network,
         }
       : {
-          error: interactiveRunnerMessages.actionPerformedScreenshotUnwritable(
-            type,
-            options.out === stdoutPath ? "stdout" : `"${options.out}"`,
-            written.detail,
-          ),
-          exitCode: exitCodes.invalidArgs,
+          error:
+            options.out === stdoutPath
+              ? interactiveRunnerMessages.actionPerformedScreenshotStdoutUnwritable(
+                  type,
+                  written.detail,
+                )
+              : interactiveRunnerMessages.actionPerformedScreenshotUnwritable(
+                  type,
+                  options.out,
+                  written.detail,
+                ),
+          exitCode: exitCodes.network,
         };
   }
 

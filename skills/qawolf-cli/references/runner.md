@@ -143,12 +143,12 @@ echo '{"type":"click","button":"left","x":480,"y":260}' | qawolf runner act -
 ```
 
 Every action in a see-and-act loop is followed by a look at the result, so ask
-for it in the same call: `act ... --screenshot step.jpg` (or `--screenshot -`
-for stdout) performs the action, waits for the screen to settle, and writes the
-frame. Prefer it over `act` and then `screenshot`: there is no delay to guess at
-between the two, and each step is one call instead of two. If the action was
-performed but the screen did not arrive, the message says so and points at
-`screenshot`; do not send the action again to get its picture. As with
+for it in the same call: `act ... --screenshot step-1.jpg` (or `--screenshot -`
+for stdout) performs the action and writes the screen the runner answers with.
+Prefer it over `act` and then `screenshot`: each step is one call instead of
+two, with no delay to guess at between them. A `4` whose message starts with
+"Performed" means the action happened and only the picture is missing: take a
+`screenshot`, never send the action again to get it. As with
 `screenshot --out -`, a terminal on stdout is refused.
 
 Coordinates are pixels on the same screenshot you just read. The runner serves
@@ -577,9 +577,9 @@ export QAWOLF_RUNNER_ID=agent-1    # so no command below needs --runner
 qawolf runner launch --id agent-1 --json          # --id, not the variable; read .alreadyRunning
 qawolf runner run flows/smoke.flow.ts --follow    # starts the screen; exit 1 if it failed
 
-qawolf runner act navigate --url https://example.com/login --screenshot page.jpg   # then read page.jpg yourself
-qawolf runner act click --button left --x 480 --y 260 --screenshot page.jpg
-qawolf runner act type --text "someone@example.com" --screenshot page.jpg
+qawolf runner act navigate --url https://example.com/login --screenshot step-1.jpg   # then read step-1.jpg yourself
+qawolf runner act click --button left --x 480 --y 260 --screenshot step-2.jpg
+qawolf runner act type --text "someone@example.com" --screenshot step-3.jpg
 
 qawolf runner inspect element-html --selector "#email"
 qawolf runner inspect variable --name cart | jq .total
