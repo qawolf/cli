@@ -6,6 +6,8 @@ import { makeTmpDirTracker } from "~/shell/tmpDir.testUtils.js";
 
 import { loadWebdriverio } from "./loadWebdriverio.js";
 
+type FakeRemote = (opts: Record<string, unknown>) => Promise<unknown>;
+
 const tracker = makeTmpDirTracker("qawolf-load-webdriverio-");
 
 afterEach(() => tracker.cleanup());
@@ -34,9 +36,9 @@ describe("loadWebdriverio", () => {
     await writeFakeWebdriverio(envDir);
 
     const { remote } = await loadWebdriverio(envDir);
-    const session = (await remote({ port: 4723 })) as unknown as {
-      opts: { port: number };
-    };
+    const session = (await (remote as unknown as FakeRemote)({
+      port: 4723,
+    })) as { opts: { port: number } };
 
     expect(session.opts.port).toBe(4723);
   });
