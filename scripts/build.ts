@@ -17,8 +17,8 @@ const externals = [
   // installed on demand by ensureDeps (also external in the binary — see buildBinary.ts)
   "@qawolf/emails",
   "@qawolf/testkit",
-  // 9 MB that only the import-graph walk of `runner run` loads (dynamic import);
-  // inlined, Node would parse it on every command start
+  // the TypeScript compiler, loaded lazily by the import-graph walk; inlined,
+  // Node parses all of it on every command start
   "typescript",
 ];
 
