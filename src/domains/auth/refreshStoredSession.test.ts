@@ -94,12 +94,33 @@ describe("refreshStoredSession", () => {
   // their session.
   it("refuses a session that belongs to someone else by the time it is reread", async () => {
     const loadTokens = mock(async () =>
-      found({ ...rotated, email: "someone-else@example.com" }),
+      found({
+        ...rotated,
+        accessToken: "access_theirs",
+        refreshToken: "refresh_theirs",
+        email: "someone-else@example.com",
+      }),
     );
     loadTokens.mockResolvedValueOnce(found(spent));
 
     const result = await refreshStoredSession("/config", fs, {
       loadTokens,
+      resolveOauth: async () => ({
+        key: rotated.accessToken,
+        email: rotated.email,
+        workspaceId: rotated.workspaceId,
+      }),
+    });
+
+    expect(result).toEqual({ kind: "refresh-failed" });
+  });
+
+  // A refresh whose write failed still hands back the new token, but the
+  // store holds the spent pair. Handing that pair on would save a workspace
+  // onto a refresh token that can never be redeemed.
+  it("refuses the reread when it still holds the spent pair", async () => {
+    const result = await refreshStoredSession("/config", fs, {
+      loadTokens: async () => found(spent),
       resolveOauth: async () => ({
         key: rotated.accessToken,
         email: rotated.email,

@@ -53,10 +53,12 @@ export async function refreshStoredSession(
   const after = await resolvedDeps.loadTokens(configDir);
   if (!after.found) return { kind: "refresh-failed" };
 
-  // The store is shared. A sign-in that landed between the two reads is a
-  // different person's session, and choosing a workspace on it would write
-  // this command's choice into theirs.
-  if (after.tokens.email !== before.tokens.email) {
+  // The reread has to be the pair the refresh just produced. The store is
+  // shared, so a sign-in that landed between the two reads is someone else's
+  // session; and a refresh whose write failed leaves the spent pair on disk.
+  // Choosing a workspace on either would write this command's choice into a
+  // session it does not own, or onto a refresh token that is already dead.
+  if (after.tokens.accessToken !== renewed.key) {
     return { kind: "refresh-failed" };
   }
 

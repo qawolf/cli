@@ -28,20 +28,17 @@ export async function handleSwitchWorkspace(
     env["QAWOLF_WORKSPACE"]?.trim() || env["QAWOLF_ORGANIZATION"]?.trim();
 
   if (ctx.ui.mode !== "human" && !preferred) {
-    ctx.ui.error(authMessages.workspace.nonInteractive);
-    return { error: "non-interactive" };
+    return { error: authMessages.workspace.nonInteractive };
   }
 
   const stored = await refreshStoredSession(ctx.configDir, ctx.fs);
 
   if (stored.kind === "not-signed-in") {
-    ctx.ui.error(authMessages.workspace.notSignedIn);
-    return { error: "not signed in" };
+    return { error: authMessages.workspace.notSignedIn };
   }
 
   if (stored.kind === "refresh-failed") {
-    ctx.ui.error(authMessages.workspace.sessionExpired);
-    return { error: "session expired" };
+    return { error: authMessages.workspace.sessionExpired };
   }
 
   ctx.ui.gap();

@@ -32,7 +32,9 @@ describe("handleSwitchWorkspace", () => {
       refreshStoredSession,
     });
 
-    expect(result).toEqual({ error: "non-interactive" });
+    expect(result).toEqual({
+      error: authMessages.workspace.nonInteractive,
+    });
     // The session is never touched: there is nothing this run could do with it.
     expect(refreshStoredSession).not.toHaveBeenCalled();
   });
@@ -45,10 +47,9 @@ describe("handleSwitchWorkspace", () => {
       refreshStoredSession: async () => ({ kind: "not-signed-in" as const }),
     });
 
-    expect(result).toEqual({ error: "not signed in" });
-    expect(ctx.ui.error).toHaveBeenCalledWith(
-      authMessages.workspace.notSignedIn,
-    );
+    expect(result).toEqual({ error: authMessages.workspace.notSignedIn });
+    // Returned only: the command wrapper renders it once.
+    expect(ctx.ui.error).not.toHaveBeenCalled();
   });
 
   // Before this, a spent access token was presented as-is and the platform's
@@ -62,10 +63,11 @@ describe("handleSwitchWorkspace", () => {
       refreshStoredSession: async () => ({ kind: "refresh-failed" as const }),
     });
 
-    expect(result).toEqual({ error: "session expired" });
-    expect(ctx.ui.error).toHaveBeenCalledWith(
-      authMessages.workspace.sessionExpired,
-    );
+    expect(result).toEqual({
+      error: authMessages.workspace.sessionExpired,
+    });
+    // Returned only: the command wrapper renders it once.
+    expect(ctx.ui.error).not.toHaveBeenCalled();
   });
 
   it("renews the session before reaching the picker", async () => {
