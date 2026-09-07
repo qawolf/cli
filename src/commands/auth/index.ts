@@ -16,7 +16,7 @@ export function registerAuthCommand(
     .description("Manage authentication with QA Wolf");
 
   declareCommandKind(auth.command("login"), "local")
-    .description("Authenticate with your QA Wolf API key")
+    .description("Authenticate with QA Wolf in a browser or with an API key")
     .action(withContext(signals, handleLogin));
 
   declareCommandKind(auth.command("logout"), "local")

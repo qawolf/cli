@@ -37,7 +37,7 @@ export type PollState = {
   deadlineMs: number;
 };
 
-type PollFailure = "access-denied" | "expired" | "timeout" | "network";
+export type PollFailure = "access-denied" | "expired" | "timeout" | "network";
 
 export type PollStep =
   | { action: "poll"; delayMs: number; state: PollState }
