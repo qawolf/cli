@@ -5,7 +5,10 @@ import type { RunFiles } from "@qawolf/api-contracts/v1";
 import { makeCtx } from "~/shell/commandContext.testUtils.js";
 import type { Fs } from "~/shell/fs.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
-import { writeScreenshot } from "~/shell/interactiveRunner/writeScreenshot.js";
+import {
+  type ScreenshotStdout,
+  writeScreenshot,
+} from "~/shell/interactiveRunner/writeScreenshot.js";
 import {
   makeCallPublicApiMock,
   makeMockPlatformClient,
@@ -29,6 +32,7 @@ export function makeAuthCtx(mode: OutputMode = "human"): {
   outputs: () => { data: unknown; humanMessage: string }[];
   streamed: () => string[];
   streamedData: () => unknown[];
+  successes: () => string[];
   warnings: () => string[];
 } {
   const callPublicApi = makeCallPublicApiMock();
@@ -50,6 +54,10 @@ export function makeAuthCtx(mode: OutputMode = "human"): {
       ).mock.calls.map(([data, humanMessage]) => ({ data, humanMessage })),
     streamed: () => streamCalls(base).map(([, line]) => line),
     streamedData: () => streamCalls(base).map(([data]) => data),
+    successes: () =>
+      (base.ui.success as Mock<(message: string) => void>).mock.calls.map(
+        ([message]) => message,
+      ),
     warnings: () =>
       (base.ui.warn as Mock<(message: string) => void>).mock.calls.map(
         ([message]) => message,
@@ -67,7 +75,11 @@ export type WrittenScreenshot = { bytes: Uint8Array; path: string };
 
 export function makeTestDeps(
   overrides: Partial<InteractiveRunnerDeps> = {},
-): InteractiveRunnerDeps & { written: WrittenScreenshot[] } {
+): InteractiveRunnerDeps & {
+  /** Every chunk handed to stdout, in order. */
+  stdoutWrites: Uint8Array[];
+  written: WrittenScreenshot[];
+} {
   const files: RunFiles = {
     "flow.ts": "export default {};",
     "package.json": "{}",
@@ -83,6 +95,13 @@ export function makeTestDeps(
     async writeFile(path, data, options) {
       await fs.writeFile(path, data, options);
       written.push({ bytes: Uint8Array.from(data as Uint8Array), path });
+    },
+  };
+  const stdoutWrites: Uint8Array[] = [];
+  const recordingStdout: ScreenshotStdout = {
+    write(chunk, callback) {
+      stdoutWrites.push(Uint8Array.from(chunk));
+      callback();
     },
   };
   return {
@@ -105,8 +124,13 @@ export function makeTestDeps(
     }),
     sleep: async () => {},
     store: makeRunnerStore({ cwd: testCwd, fs: makeMemoryFs() }),
+    stdoutWrites,
     writeScreenshot: (screenshot) =>
-      writeScreenshot({ ...screenshot, fs: recordingFs }),
+      writeScreenshot({
+        ...screenshot,
+        fs: recordingFs,
+        stdout: recordingStdout,
+      }),
     written,
     ...overrides,
   };

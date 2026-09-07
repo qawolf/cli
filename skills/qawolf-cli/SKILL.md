@@ -187,7 +187,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf runner list` | read | List the runners running on your team |
 | `qawolf runner promote-snapshot` | write | Accept a run's screenshot as the new baseline for an image diff, on the runner that produced it |
 | `qawolf runner run` | write | Run a flow on an interactive runner, shipping the flow and what it imports |
-| `qawolf runner screenshot` | read | Save a JPEG of an interactive runner's screen to a file |
+| `qawolf runner screenshot` | read | Save a JPEG of an interactive runner's screen to a file, or write it to stdout with --out - |
 | `qawolf runner stop-run` | write | Stop what a runner is currently executing, leaving the runner up |
 | `qawolf runner terminate` | write | End an interactive runner, and the pod it runs on with it |
 | `qawolf tag create` | write | Create a tag on the caller's team. Tags select flows in run.create. |

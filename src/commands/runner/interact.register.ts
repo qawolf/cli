@@ -16,7 +16,9 @@ const defaultScreenshotPath = "screenshot.jpg";
 const screenshotExamples = `
 Examples:
   $ qawolf runner screenshot
-  $ qawolf runner screenshot --out screens/step-3.jpg`;
+  $ qawolf runner screenshot --out screens/step-3.jpg
+  $ qawolf runner screenshot --out - > step-3.jpg
+  $ qawolf runner screenshot --out - | my-vision-tool`;
 
 const actExamples = `
 Examples:
@@ -51,8 +53,14 @@ export function registerRunnerInteractCommands(
   signals: SignalRegistry,
 ): void {
   declareCommandKind(runner.command("screenshot"), "read")
-    .description("Save a JPEG of an interactive runner's screen to a file")
-    .option("--out <path>", "File to write the image to", defaultScreenshotPath)
+    .description(
+      "Save a JPEG of an interactive runner's screen to a file, or write it to stdout with --out -",
+    )
+    .option(
+      "--out <path>",
+      "File to write the image to. - writes the JPEG bytes to stdout on their own and moves the confirmation, JSON included, to stderr",
+      defaultScreenshotPath,
+    )
     .option("--runner <id>", runnerFlagDescription)
     .addHelpText("after", screenshotExamples)
     .action((opts: { out: string; runner?: string }, command: Command) =>

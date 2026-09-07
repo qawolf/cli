@@ -6,6 +6,10 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
+import {
+  type ScreenshotWrite,
+  stdoutPath,
+} from "~/shell/interactiveRunner/writeScreenshot.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
@@ -13,11 +17,18 @@ import { resolveRunner } from "./resolveRunner.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
 /**
- * Takes one screenshot and writes it to a file.
+ * Takes one screenshot and writes it to a file, or to stdout when `out` is `-`.
  *
- * A file, because that is what a foreign harness can read: every coding agent can
- * open an image on disk and none can read a base64 field out of a JSON answer.
- * The bytes are decoded on the way (see `writeScreenshot`).
+ * A file by default, because that is what a foreign harness can read: every
+ * coding agent can open an image on disk and none can read a base64 field out of
+ * a JSON answer. Stdout for the caller that is a process rather than an agent,
+ * which would otherwise reserve a path, run the command, read the file back and
+ * delete it on every step. The bytes are decoded either way (see
+ * `writeScreenshot`).
+ *
+ * With stdout taken by the image, the confirmation moves to stderr in every
+ * mode, JSON included: a JSON line after the JPEG bytes would corrupt the image
+ * for any reader that takes stdout as the file.
  *
  * The four non-image answers are kept apart at the terminal and in `--json`,
  * because each implies a different next move and only one of them is retrying.
@@ -61,24 +72,15 @@ export async function handleRunnerScreenshot(
     });
     // A payload that is not an image is the API's to fix, not the caller's;
     // a path that cannot be written is the other way round.
-    if (!written.ok) {
-      return written.reason === "not-a-jpeg"
-        ? {
-            error: interactiveRunnerMessages.screenshotNotAnImage,
-            exitCode: exitCodes.network,
-          }
-        : {
-            error: interactiveRunnerMessages.screenshotUnwritable(
-              options.out,
-              written.detail,
-            ),
-            exitCode: exitCodes.invalidArgs,
-          };
+    if (!written.ok) return describeUnwritten(written, options.out);
+    if (options.out === stdoutPath) {
+      ctx.ui.success(interactiveRunnerMessages.screenshotWrittenToStdout);
+    } else {
+      ctx.ui.output(
+        { outcome: "success", path: options.out },
+        interactiveRunnerMessages.screenshotWritten(options.out),
+      );
     }
-    ctx.ui.output(
-      { outcome: "success", path: options.out },
-      interactiveRunnerMessages.screenshotWritten(options.out),
-    );
     return undefined;
   }
 
@@ -118,4 +120,25 @@ export async function handleRunnerScreenshot(
       };
     }
   }
+}
+
+// A payload that is not an image is the API's to fix, not the caller's; a
+// destination that cannot be written is the other way round.
+function describeUnwritten(
+  written: Exclude<ScreenshotWrite, { ok: true }>,
+  out: string,
+): Exclude<CommandResult, void> {
+  if (written.reason === "not-a-jpeg") {
+    return {
+      error: interactiveRunnerMessages.screenshotNotAnImage,
+      exitCode: exitCodes.network,
+    };
+  }
+  return {
+    error:
+      out === stdoutPath
+        ? interactiveRunnerMessages.screenshotStdoutUnwritable(written.detail)
+        : interactiveRunnerMessages.screenshotUnwritable(out, written.detail),
+    exitCode: exitCodes.invalidArgs,
+  };
 }
