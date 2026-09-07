@@ -125,6 +125,8 @@ that `url`; never guess a route and never send a repository link in its place.
 <!-- prettier-ignore -->
 | Command | Kind | What it does |
 | --- | --- | --- |
+| `qawolf agent get` | read | Read what the QA Wolf AI has said and whether it is still working. Poll this after agent.send until the status settles. A status of "waiting-for-you" means the last reply is a question the work is blocked on, and answering it with agent.send is what unblocks it. Replies accumulate, so a caller that polls repeatedly sees the earlier ones again. |
+| `qawolf agent send` | write | Ask the QA Wolf AI to do a piece of work in plain language, such as covering a user journey, investigating a failing run, or fixing a broken flow. This is the one verb that starts work from nothing: every other write acts on a flow, run or issue that already exists. Answers as soon as the request is accepted, with the id to follow it by, because the work runs for minutes to tens of minutes. Poll agent.get for progress, and send here again to answer a question or add context to work already running. |
 | `qawolf auth login` | local | Authenticate with your QA Wolf API key |
 | `qawolf auth logout` | local | Remove stored credentials |
 | `qawolf auth whoami` | read | Show authentication status |
@@ -148,12 +150,13 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf install android` | local | Install Android system images, AVDs, and the Appium driver used by the project's Android flows |
 | `qawolf install browsers` | local | Install Playwright browsers used by the project's web flows |
 | `qawolf install clear` | local | Remove the managed runtime cache (all installed runtime versions) |
-| `qawolf issue addFlows` | write | Add flows to a coverage request owned by the caller's team. Flows already covered stay covered. Bug and maintenance reports link to flows through the runs that reproduce them, so their flows cannot be set directly. |
+| `qawolf issue addFlows` | write | Add flows to a coverage request owned by the caller's team. Flows already covered stay covered. Bug and maintenance reports link to flows through the runs that reproduce them; use run.diagnose to record one. |
 | `qawolf issue create` | write | Create a bug or coverage request issue for the caller's team. Maintenance issues cannot be created through the public API. |
 | `qawolf issue find` | read | List the team's bug reports, maintenance reports, or coverage requests, newest first. |
 | `qawolf issue get` | read | Get an issue by id. |
 | `qawolf issue update` | write | Update an issue owned by the caller's team. Omitted fields remain unchanged. |
 | `qawolf run create` | write | Create a run for the selected flows and/or tags in an environment. |
+| `qawolf run diagnose` | write | Diagnose failed flows in a run as reproductions of a bug or maintenance report owned by the caller's team. The issue's type selects the diagnosis. Each flow must have failed in the run. A flow that is already diagnosed moves to this issue. The diagnosis appears on the run, and the reproduction appears under the issue's reproductions. Coverage requests cannot be diagnosed; use issue.addFlows to cover flows instead. |
 | `qawolf run find` | read | List an environment's recent runs, newest first. |
 | `qawolf run get` | read | Get a run's status, per-flow results, and links. |
 | `qawolf run reattempt` | write | Request new attempts for a run's flows, in the same run. A flow is eligible once its result is failed or canceled and QA Wolf's automatic retries have finished. A fully investigated run no longer accepts reattempts. Attempts run with the latest flow code. Poll run.get for results. |

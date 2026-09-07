@@ -22,6 +22,7 @@ Commands:
                                flows need
   runner                       Drive an interactive runner on the QA Wolf
                                platform
+  agent                        QA Wolf public API agent commands
   automate [options]           Request automation for draft flows. First create
                                a named local .flow.ts draft for every requested
                                journey that does not already have a matching
