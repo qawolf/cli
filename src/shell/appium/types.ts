@@ -32,7 +32,6 @@ export type WriteFileFn = (filePath: string, data: Buffer) => Promise<void>; // 
 export type AndroidLaunchDeps = {
   appiumServer: AppiumServerHandle;
   emulatorPool: EmulatorPoolHandle;
-  /** Required: no default until WebDriverIO is added in the runner wiring ticket. */
   createSession: CreateSessionFn;
   adb?: AdbFn;
   writeFile?: WriteFileFn;

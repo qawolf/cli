@@ -20,6 +20,9 @@ const externals = [
   // the TypeScript compiler, loaded lazily by the import-graph walk; inlined,
   // Node parses all of it on every command start
   "typescript",
+  // loaded from the run's dependency root at runtime (loadWebdriverio); only
+  // the compiled binary, a separate build, takes the bare specifier
+  "webdriverio",
 ];
 
 function buildArgs(entry: string, name: string): string[] {
