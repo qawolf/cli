@@ -26,7 +26,7 @@ const click = {
 // invitation to send it again: the caller's next move is a plain screenshot.
 describe("handleRunnerAct --screenshot after the action took effect", () => {
   it("reports an answer that came without the screen it asked for", async () => {
-    const { callPublicApi, ctx, outputs } = makeAuthCtx();
+    const { callPublicApi, ctx, outputs } = makeAuthCtx("json");
     callPublicApi.mockResolvedValue({
       ok: true,
       value: { outcome: "success" },
@@ -48,7 +48,7 @@ describe("handleRunnerAct --screenshot after the action took effect", () => {
   });
 
   it("reports a screen that did not arrive as a JPEG, writing nothing", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
+    const { callPublicApi, ctx } = makeAuthCtx("json");
     callPublicApi.mockResolvedValue({
       ok: true,
       value: { imageJpegBase64: "not an image", outcome: "success" },
@@ -69,7 +69,7 @@ describe("handleRunnerAct --screenshot after the action took effect", () => {
   });
 
   it("reports a destination it could not write to, naming it", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
+    const { callPublicApi, ctx } = makeAuthCtx("json");
     callPublicApi.mockResolvedValue({
       ok: true,
       value: { imageJpegBase64, outcome: "success" },

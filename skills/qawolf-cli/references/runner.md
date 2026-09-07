@@ -148,7 +148,8 @@ for stdout) performs the action, waits for the screen to settle, and writes the
 frame. Prefer it over `act` and then `screenshot`: there is no delay to guess at
 between the two, and each step is one call instead of two. If the action was
 performed but the screen did not arrive, the message says so and points at
-`screenshot`; do not send the action again to get its picture.
+`screenshot`; do not send the action again to get its picture. As with
+`screenshot --out -`, a terminal on stdout is refused.
 
 Coordinates are pixels on the same screenshot you just read. The runner serves
 one see-or-act request at a time, so decide what to do next from each answer

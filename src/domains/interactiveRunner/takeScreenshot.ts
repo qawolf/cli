@@ -59,7 +59,7 @@ export async function handleRunnerScreenshot(
   // JPEG bytes; the confirmation would land among them rather than on stderr.
   if (options.out === stdoutPath && ctx.outputMode === "human") {
     return {
-      error: interactiveRunnerMessages.screenshotStdoutIsATerminal,
+      error: interactiveRunnerMessages.stdoutIsATerminal("--out"),
       exitCode: exitCodes.invalidArgs,
     };
   }

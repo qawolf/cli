@@ -5,6 +5,7 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
+import { stdoutPath } from "~/shell/interactiveRunner/writeScreenshot.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
@@ -53,6 +54,15 @@ export async function handleRunnerAct(
     return { ...failureFields(resolved), exitCode: resolved.exitCode };
   }
   announceRunner(ctx, resolved);
+  // Only a terminal on stdout selects human mode, and a terminal cannot read
+  // JPEG bytes. Refused before the action rather than after it, so the caller
+  // is not left with an action that happened and a screen it cannot get.
+  if (options.screenshot === stdoutPath && ctx.outputMode === "human") {
+    return {
+      error: interactiveRunnerMessages.stdoutIsATerminal("--screenshot"),
+      exitCode: exitCodes.invalidArgs,
+    };
+  }
 
   const result = await ctx.platformClient.callPublicApi(
     performActionContract,
