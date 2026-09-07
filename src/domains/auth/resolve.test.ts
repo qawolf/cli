@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
+import type { OauthToken } from "./resolveOauthToken.js";
 import type { LoadApiKeyResult } from "./types.js";
 import { requireApiKey, resolveApiKey } from "./resolve.js";
 
@@ -10,99 +11,167 @@ afterEach(() => {
 
 const memFs = makeMemoryFs();
 
+/** Browser sign-in holds nothing, so only the API key paths are exercised. */
+const noOauth = async (): Promise<OauthToken | undefined> => undefined;
+
+function mockLoad(result?: LoadApiKeyResult) {
+  const fn = mock<(configDir: string) => Promise<LoadApiKeyResult>>();
+  if (result) fn.mockResolvedValue(result);
+  return fn;
+}
+
 describe("resolveApiKey", () => {
   it("returns env var when QAWOLF_API_KEY is set", async () => {
-    const mockLoadApiKey =
-      mock<(configDir: string) => Promise<LoadApiKeyResult>>();
+    const loadApiKey = mockLoad();
 
     const result = await resolveApiKey("/tmp/config", memFs, {
-      loadApiKey: mockLoadApiKey,
+      loadApiKey,
+      resolveOauth: noOauth,
       env: { QAWOLF_API_KEY: "qaw_test_key" },
     });
 
-    expect(result).toEqual({ key: "qaw_test_key", source: "env" });
-    expect(mockLoadApiKey).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      key: "qaw_test_key",
+      source: "env",
+    });
+    expect(loadApiKey).not.toHaveBeenCalled();
   });
 
   it("trims whitespace from env var", async () => {
-    const mockLoadApiKey =
-      mock<(configDir: string) => Promise<LoadApiKeyResult>>();
+    const loadApiKey = mockLoad();
 
     const result = await resolveApiKey("/tmp/config", memFs, {
-      loadApiKey: mockLoadApiKey,
+      loadApiKey,
+      resolveOauth: noOauth,
       env: { QAWOLF_API_KEY: "  qaw_test_key  " },
     });
 
-    expect(result).toEqual({ key: "qaw_test_key", source: "env" });
-    expect(mockLoadApiKey).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      key: "qaw_test_key",
+      source: "env",
+    });
+    expect(loadApiKey).not.toHaveBeenCalled();
   });
 
   it("skips whitespace-only env var", async () => {
-    const mockLoadApiKey = mock<
-      (configDir: string) => Promise<LoadApiKeyResult>
-    >().mockResolvedValue({ found: false });
+    const loadApiKey = mockLoad({ found: false });
 
     const result = await resolveApiKey("/tmp/config", memFs, {
-      loadApiKey: mockLoadApiKey,
+      loadApiKey,
+      resolveOauth: noOauth,
       env: { QAWOLF_API_KEY: "   " },
     });
 
     expect(result).toBeUndefined();
-    expect(mockLoadApiKey).toHaveBeenCalledWith("/tmp/config");
+    expect(loadApiKey).toHaveBeenCalledWith("/tmp/config");
   });
 
   it("returns stored key when env var is not set", async () => {
-    const mockLoadApiKey = mock<
-      (configDir: string) => Promise<LoadApiKeyResult>
-    >().mockResolvedValue({
-      found: true,
-      key: "qaw_stored",
-      source: "keychain",
-    });
-
     const result = await resolveApiKey("/tmp/config", memFs, {
-      loadApiKey: mockLoadApiKey,
+      loadApiKey: mockLoad({
+        found: true,
+        key: "qaw_stored",
+        source: "keychain",
+      }),
+      resolveOauth: noOauth,
       env: {},
     });
 
-    expect(result).toEqual({ key: "qaw_stored", source: "keychain" });
+    expect(result).toEqual({
+      key: "qaw_stored",
+      source: "keychain",
+    });
   });
 
   it("returns undefined when nothing found", async () => {
-    const mockLoadApiKey = mock<
-      (configDir: string) => Promise<LoadApiKeyResult>
-    >().mockResolvedValue({ found: false });
-
     const result = await resolveApiKey("/tmp/config", memFs, {
-      loadApiKey: mockLoadApiKey,
+      loadApiKey: mockLoad({ found: false }),
+      resolveOauth: noOauth,
       env: {},
     });
 
     expect(result).toBeUndefined();
+  });
+
+  it("falls back to browser sign-in when no API key is stored", async () => {
+    const result = await resolveApiKey("/tmp/config", memFs, {
+      loadApiKey: mockLoad({ found: false }),
+      resolveOauth: async () => ({
+        key: "access_abc",
+        email: "person@example.com",
+      }),
+      env: {},
+    });
+
+    expect(result).toEqual({
+      key: "access_abc",
+      source: "browser",
+    });
+  });
+
+  it("prefers a stored API key over browser sign-in for its team scope", async () => {
+    const resolveOauth = mock(async () => ({
+      key: "access_abc",
+      email: "person@example.com",
+    }));
+
+    const result = await resolveApiKey("/tmp/config", memFs, {
+      loadApiKey: mockLoad({
+        found: true,
+        key: "qaw_stored",
+        source: "keychain",
+      }),
+      resolveOauth,
+      env: {},
+    });
+
+    expect(result).toEqual({
+      key: "qaw_stored",
+      source: "keychain",
+    });
+    expect(resolveOauth).not.toHaveBeenCalled();
+  });
+
+  it("prefers the environment variable over browser sign-in", async () => {
+    const resolveOauth = mock(async () => ({
+      key: "access_abc",
+      email: "person@example.com",
+    }));
+
+    const result = await resolveApiKey("/tmp/config", memFs, {
+      loadApiKey: mockLoad(),
+      resolveOauth,
+      env: { QAWOLF_API_KEY: "qaw_env" },
+    });
+
+    expect(result).toEqual({
+      key: "qaw_env",
+      source: "env",
+    });
+    expect(resolveOauth).not.toHaveBeenCalled();
   });
 });
 
 describe("requireApiKey", () => {
   it("returns the resolved ApiKeyResult when a key exists", async () => {
-    const mockLoad = mock<(configDir: string) => Promise<LoadApiKeyResult>>();
-
     const result = await requireApiKey("/tmp/config", memFs, {
-      loadApiKey: mockLoad,
+      loadApiKey: mockLoad(),
+      resolveOauth: noOauth,
       env: { QAWOLF_API_KEY: "qaw_key" },
     });
 
-    expect(result).toEqual({ key: "qaw_key", source: "env" });
+    expect(result).toEqual({
+      key: "qaw_key",
+      source: "env",
+    });
   });
 
   it("throws the standard message when no key is found", async () => {
-    const mockLoad = mock<
-      (configDir: string) => Promise<LoadApiKeyResult>
-    >().mockResolvedValue({ found: false });
-
     let caughtError: unknown;
     try {
       await requireApiKey("/tmp/config", memFs, {
-        loadApiKey: mockLoad,
+        loadApiKey: mockLoad({ found: false }),
+        resolveOauth: noOauth,
         env: {},
       });
     } catch (e) {
