@@ -14,13 +14,12 @@ type Deps = {
 const timeoutMs = 10_000;
 
 /**
- * Every organization the caller may act on, which is a wider set than the
- * identity response carries.
+ * Every organization the caller may act on, with the workspaces inside each.
  *
  * Identity lists membership only, because a client reads it on every command.
- * This applies the admin and QA Wolf employee reach as well, so it is read only
- * when the CLI offers a workspace choice. An employee's client workspaces
- * appear here and nowhere else.
+ * This answers what the credential is allowed to reach — for a Connect token,
+ * the one organization it was granted for — so it is read only when the CLI
+ * offers a workspace choice.
  */
 export async function getAccessibleOrganizations(
   apiKey: string,

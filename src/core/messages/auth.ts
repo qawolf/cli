@@ -51,6 +51,12 @@ export const authMessages = {
       "Your session could not be renewed. Run 'qawolf auth login' to sign in again.",
     nonInteractive:
       "auth switch needs an interactive terminal, or set QAWOLF_WORKSPACE to name a workspace.",
+    // A Connect token is consented to one organization. Nothing the CLI stores
+    // can move it, so the only route to another organization is signing in.
+    signInElsewhere:
+      "To work in another organization, run 'qawolf auth login' and sign in to it.",
+    noneInGrant:
+      "None of the organizations this account lists belong to the organization you signed in to. To work in another organization, run 'qawolf auth login' and sign in to it.",
   },
   logout: {
     title: "Log Out",

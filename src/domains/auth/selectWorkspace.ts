@@ -1,3 +1,4 @@
+import { authMessages } from "~/core/messages/index.js";
 import type {
   Organization,
   Workspace,
@@ -11,6 +12,12 @@ import {
 
 export type SelectWorkspaceDeps = {
   organizations: Organization[];
+  /**
+   * The WorkOS organization the token was granted for. The API confines the
+   * session to it, so nothing outside it is offered, whatever the API lists.
+   * Undefined for a token that names none, which is left to the API to refuse.
+   */
+  grantedOrganizationId: string | undefined;
   /** An organization named through the environment, which skips its prompt. */
   preferredOrganization: string | undefined;
   /** A workspace named through the environment, which skips its prompt. */
@@ -32,19 +39,28 @@ export type SelectWorkspaceResult =
  * Settles which workspace a session works in, asking for the organization first
  * when there is more than one.
  *
- * The choice is local. Public API routes take the workspace as an argument and
- * authorize it per request, so working in a workspace needs no change to the
- * credential — which is what lets a QA Wolf employee reach a client workspace
- * their token's organization does not contain, and what stops an ordinary
- * workspace change from depending on the identity provider at all.
- *
- * The organization groups the prompt; it is not a scope that gets stored.
+ * The choice is local within the granted organization. Public API routes take
+ * the workspace as an argument and authorize it per request, so moving between
+ * workspaces of that organization needs no change to the credential. Moving to
+ * another organization does: a Connect token is consented to one, and changing
+ * a stored id cannot change the token's `org_id`. Anything outside the grant is
+ * therefore refused here with a pointer to signing in again, never offered.
  */
 export async function selectWorkspace(
   deps: SelectWorkspaceDeps,
 ): Promise<SelectWorkspaceResult> {
-  const { organizations } = deps;
-  if (organizations.length === 0) return { outcome: "none" };
+  if (deps.organizations.length === 0) return { outcome: "none" };
+
+  const granted = deps.grantedOrganizationId;
+  const organizations = granted
+    ? deps.organizations.filter((o) => o.workOsOrganizationId === granted)
+    : deps.organizations;
+  if (organizations.length === 0) {
+    return { outcome: "failed", error: authMessages.workspace.noneInGrant };
+  }
+  // Appended to every "not found" below: the thing named may well exist, in an
+  // organization this sign-in cannot reach.
+  const hint = granted ? ` ${authMessages.workspace.signInElsewhere}` : "";
 
   let organization: Organization | undefined;
   if (deps.preferredOrganization) {
@@ -52,7 +68,7 @@ export async function selectWorkspace(
     if (!organization) {
       return {
         outcome: "failed",
-        error: `No organization matches '${deps.preferredOrganization}'. Available: ${nameList(organizations)}.`,
+        error: `No organization matches '${deps.preferredOrganization}'. Available: ${nameList(organizations)}.${hint}`,
       };
     }
   } else if (organizations.length === 1) {
@@ -66,7 +82,7 @@ export async function selectWorkspace(
     if (match.kind === "none") {
       return {
         outcome: "failed",
-        error: `No workspace matches '${deps.preferredWorkspace}'. Available: ${nameList(organizations.flatMap((o) => o.workspaces))}.`,
+        error: `No workspace matches '${deps.preferredWorkspace}'. Available: ${nameList(organizations.flatMap((o) => o.workspaces))}.${hint}`,
       };
     }
     if (match.kind === "ambiguous") {
@@ -100,7 +116,7 @@ export async function selectWorkspace(
     if (!workspace) {
       return {
         outcome: "failed",
-        error: `No workspace matches '${deps.preferredWorkspace}' in ${organization.name}. Available: ${nameList(workspaces)}.`,
+        error: `No workspace matches '${deps.preferredWorkspace}' in ${organization.name}. Available: ${nameList(workspaces)}.${hint}`,
       };
     }
   } else if (workspaces.length === 1) {

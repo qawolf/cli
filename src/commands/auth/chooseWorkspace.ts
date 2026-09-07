@@ -33,11 +33,10 @@ export async function chooseWorkspace(
     logger: ctx.log("trpc"),
   });
 
-  // Identity lists membership only. The discovery endpoint also applies admin
-  // and QA Wolf employee reach, which is the difference between an employee
-  // seeing their own workspaces and seeing the client ones they work on. A
-  // server that does not serve it leaves the membership list, which is the
-  // behaviour before it existed.
+  // The discovery endpoint lists what the credential may act on, which for a
+  // Connect token is the organization it was granted for. Identity lists
+  // membership, and stands in for a server that does not serve discovery yet.
+  // Either way the domain keeps the choice inside the grant.
   //
   // Asked together: neither depends on the other, and identity is wanted only
   // as the fallback — so a transient identity failure must not abort a
@@ -58,6 +57,7 @@ export async function chooseWorkspace(
 
   return selectWorkspace({
     organizations,
+    grantedOrganizationId: args.session.organizationId,
     preferredOrganization: args.env["QAWOLF_ORGANIZATION"]?.trim(),
     preferredWorkspace: args.env["QAWOLF_WORKSPACE"]?.trim(),
 
@@ -94,8 +94,8 @@ export async function chooseWorkspace(
     },
 
     // The credential does not move. Routes take the workspace as an argument
-    // and authorize it per request, so the session keeps its tokens and only
-    // records where the person is working.
+    // and authorize it per request inside the token's organization, so the
+    // session keeps its tokens and only records where the person is working.
     saveWorkspace: (workspaceId) =>
       saveTokens(ctx.configDir, { ...args.session, workspaceId }, ctx.fs),
   });

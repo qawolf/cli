@@ -20,8 +20,8 @@ export type IdentityMethods = {
  *
  * `getIdentity` answers what the credential is and the organizations it belongs
  * to, cheaply enough to read on any command. `getAccessibleOrganizations`
- * answers the wider question of what the caller may act on, including admin and
- * QA Wolf employee reach, and is read only when offering a workspace choice.
+ * answers what the caller may act on — for a Connect token, the organization
+ * it was granted for — and is read only when offering a workspace choice.
  */
 export function createIdentityMethods(
   apiKey: string,
