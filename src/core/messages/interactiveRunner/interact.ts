@@ -34,6 +34,8 @@ export const interactMessages = {
     "The runner has a screen and cannot serve this yet. Its virtual desktop restarts when a run changes the display size, and it serves one request at a time, so something already in flight is the usual reason. Retry in a second or two.",
   screenshotNotAnImage:
     "The screen was captured but did not arrive as a JPEG, so nothing was written. Nothing about the command needs changing: try it again, and report it if it keeps happening.",
+  screenshotStdoutIsATerminal:
+    'Stdout is a terminal, so the JPEG bytes would have nowhere to go. Redirect stdout to a file or pipe it into a reader, or give --out a file path instead of "-".',
   screenshotStdoutUnwritable: (detail: string) =>
     `The screen was captured but could not be written to stdout: ${detail}. Keep the pipe reading stdout open, or give --out a file path instead of "-".`,
   screenshotUnwritable: (path: string, detail: string) =>

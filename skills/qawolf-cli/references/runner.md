@@ -130,6 +130,7 @@ because every coding harness can open an image file. Read it with whatever
 vision you have. `--out -` writes the JPEG bytes to stdout instead, on their own,
 for a caller that is a process rather than an agent: the confirmation, and the
 JSON line under `--json`, goes to stderr so nothing follows the image on stdout.
+A terminal on stdout is refused: redirect or pipe it.
 
 `qawolf runner act <action>` performs exactly one action per call, in the
 computer-use tool vocabulary a vision model already emits: `click`,

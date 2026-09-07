@@ -26,9 +26,9 @@ import { runnerCallOptions } from "./runnerCallOptions.js";
  * delete it on every step. The bytes are decoded either way (see
  * `writeScreenshot`).
  *
- * With stdout taken by the image, the confirmation moves to stderr in every
- * mode, JSON included: a JSON line after the JPEG bytes would corrupt the image
- * for any reader that takes stdout as the file.
+ * With stdout taken by the image, the confirmation moves to stderr, JSON
+ * included, so nothing follows the bytes into a reader that takes stdout as the
+ * file. A terminal on stdout is refused, since nothing there can read them.
  *
  * The four non-image answers are kept apart at the terminal and in `--json`,
  * because each implies a different next move and only one of them is retrying.
@@ -55,6 +55,14 @@ export async function handleRunnerScreenshot(
   if (resolved.type === "failed") {
     return { ...failureFields(resolved), exitCode: resolved.exitCode };
   }
+  // Only a terminal on stdout selects human mode, and a terminal cannot read
+  // JPEG bytes; the confirmation would land among them rather than on stderr.
+  if (options.out === stdoutPath && ctx.outputMode === "human") {
+    return {
+      error: interactiveRunnerMessages.screenshotStdoutIsATerminal,
+      exitCode: exitCodes.invalidArgs,
+    };
+  }
 
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.runner.takeScreenshot,
@@ -70,8 +78,6 @@ export async function handleRunnerScreenshot(
       imageJpegBase64: result.value.imageJpegBase64,
       path: options.out,
     });
-    // A payload that is not an image is the API's to fix, not the caller's;
-    // a path that cannot be written is the other way round.
     if (!written.ok) return describeUnwritten(written, options.out);
     if (options.out === stdoutPath) {
       ctx.ui.success(interactiveRunnerMessages.screenshotWrittenToStdout);
