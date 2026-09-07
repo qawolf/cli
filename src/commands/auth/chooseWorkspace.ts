@@ -50,7 +50,9 @@ export async function chooseWorkspace(
   if (discovered.ok) {
     organizations = discovered.value;
   } else if (identity.ok) {
-    organizations = identity.value.organizations;
+    // Only a user identity lists organizations; an API key names a team.
+    organizations =
+      "user" in identity.value ? identity.value.organizations : [];
   } else {
     return { outcome: "failed", error: identity.error };
   }

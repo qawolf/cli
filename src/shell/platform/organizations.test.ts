@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { readOrganizations } from "./organizations.js";
+import { parseOrganizationsResponse } from "./organizations.js";
 
 const grouped = {
   organizations: [
@@ -13,41 +13,20 @@ const grouped = {
   ],
 };
 
-describe("readOrganizations", () => {
+describe("parseOrganizationsResponse", () => {
   it("reads the organizations and the workspaces inside them", () => {
-    expect(readOrganizations(grouped)).toEqual([
-      {
-        id: "qw_org_1",
-        name: "Acme Inc",
-        workOsOrganizationId: "org_1",
-        workspaces: [{ id: "ws_1", name: "Acme", slug: "acme" }],
-      },
-    ]);
+    expect(parseOrganizationsResponse(grouped)).toEqual(grouped.organizations);
   });
 
-  it("returns none when the server sends neither shape", () => {
-    expect(readOrganizations({ user: { email: "a@b.c" } })).toEqual([]);
-  });
-
-  it("returns none rather than throwing on a malformed list", () => {
-    expect(readOrganizations({ organizations: [{ id: 1 }] })).toEqual([]);
-  });
-
-  it("prefers the grouped shape when a server sends both", () => {
-    const result = readOrganizations({
-      ...grouped,
-      workspaces: [
-        { id: "ws_x", name: "Stale", slug: "stale", workOsOrganizationId: "z" },
-      ],
-    });
-
-    expect(result).toEqual([
-      {
-        id: "qw_org_1",
-        name: "Acme Inc",
-        workOsOrganizationId: "org_1",
-        workspaces: [{ id: "ws_1", name: "Acme", slug: "acme" }],
-      },
-    ]);
+  // Undefined rather than an empty list: a caller must be able to tell a
+  // deployment that serves no organizations from one that does not serve the
+  // endpoint at all.
+  it("returns undefined when the body is not the contract", () => {
+    expect(
+      parseOrganizationsResponse({ user: { email: "a@b.c" } }),
+    ).toBeUndefined();
+    expect(
+      parseOrganizationsResponse({ organizations: [{ id: 1 }] }),
+    ).toBeUndefined();
   });
 });

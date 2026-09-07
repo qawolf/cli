@@ -9,7 +9,7 @@ import { createTrpcClient } from "./createTrpcClient.js";
 import { describeRequestError } from "./describeErrors.js";
 import { downloadBundle } from "./downloadBundle.js";
 import { createIdentityMethods } from "./identityMethods.js";
-import type { Identity } from "./getIdentity.js";
+import type { IdentityResponse } from "./getIdentity.js";
 import type { Organization } from "./organizations.js";
 import { type PlatformResult, requestWithRetry } from "./requestWithRetry.js";
 import { listTeamStorageFiles } from "./teamStorage.js";
@@ -26,7 +26,7 @@ import {
 
 export type PlatformClient = {
   callPublicApi: CallPublicApiMethod;
-  getIdentity: () => Promise<PlatformResult<Identity>>;
+  getIdentity: () => Promise<PlatformResult<IdentityResponse>>;
   /** Every organization the caller may act on, including employee reach. */
   getAccessibleOrganizations: () => Promise<PlatformResult<Organization[]>>;
   getFlowsBundleUrl: (
