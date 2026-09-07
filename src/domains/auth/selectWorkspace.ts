@@ -1,3 +1,4 @@
+import { errorMessage } from "~/core/errors.js";
 import { authMessages } from "~/core/messages/index.js";
 import type {
   Organization,
@@ -129,6 +130,16 @@ export async function selectWorkspace(
   // Unreachable, for the same reason as the organization guard above.
   if (!workspace) throw Error("workspace was not settled");
 
-  await deps.saveWorkspace(workspace.id);
+  // Storage is I/O and can refuse. Every other way out of here is a typed
+  // outcome the command layer renders, so a failed write is one too rather
+  // than an exception that escapes after the credential was already stored.
+  try {
+    await deps.saveWorkspace(workspace.id);
+  } catch (err: unknown) {
+    return {
+      outcome: "failed",
+      error: authMessages.workspace.saveFailed(errorMessage(err)),
+    };
+  }
   return { outcome: "selected", organization, workspace };
 }

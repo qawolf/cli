@@ -24,7 +24,7 @@ export function registerAuthCommand(
     .description("Remove stored credentials")
     .action(withContext(signals, handleLogout));
 
-  declareCommandKind(auth.command("switch"), "read")
+  declareCommandKind(auth.command("switch"), "local")
     .description("Choose which workspace to work in")
     .action(withContext(signals, handleSwitchWorkspace));
 

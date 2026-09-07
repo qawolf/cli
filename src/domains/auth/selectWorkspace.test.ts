@@ -188,4 +188,22 @@ describe("selectWorkspace", () => {
     if (result.outcome !== "failed") throw Error("expected a failure");
     expect(result.error).toContain("No workspace matches 'nope'");
   });
+
+  // Every other way out is a typed outcome the command renders. A write that
+  // fails must be one too, not an exception after the credential was stored.
+  it("reports a failed save as a failure rather than throwing", async () => {
+    const { deps } = makeDeps({ organizations: [personal] });
+    const failing = {
+      ...deps,
+      saveWorkspace: async () => {
+        throw Error("EACCES: permission denied");
+      },
+    };
+
+    const result = await selectWorkspace(failing);
+
+    if (result.outcome !== "failed") throw Error("expected a failure");
+    expect(result.error).toContain("Could not save");
+    expect(result.error).toContain("EACCES");
+  });
 });

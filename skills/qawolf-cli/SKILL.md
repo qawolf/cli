@@ -127,7 +127,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | --- | --- | --- |
 | `qawolf auth login` | local | Authenticate with QA Wolf in a browser or with an API key |
 | `qawolf auth logout` | local | Remove stored credentials |
-| `qawolf auth switch` | read | Choose which workspace to work in |
+| `qawolf auth switch` | local | Choose which workspace to work in |
 | `qawolf auth whoami` | read | Show authentication status |
 | `qawolf automate` | write | Request automation for draft flows. First create a named local .flow.ts draft for every requested journey that does not already have a matching draft; never reuse a generic starter or placeholder. Each new draft must start with a JSDoc Goal: description, import flow from @qawolf/flows/web, and use export default flow(...); a comment-only file or direct test(...) call is not a valid draft. Commit and push all changes with Git to publish them, then list remote drafts to resolve every selected ID. Do not use patch to create or rename a selected flow. Finally make one automation request containing all requested flow IDs. |
 | `qawolf doctor` | local | Diagnose problems running flows locally |

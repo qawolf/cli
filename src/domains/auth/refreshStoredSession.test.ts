@@ -1,26 +1,44 @@
 import { describe, expect, it, mock } from "bun:test";
 
+import { makeJwt, testIssuer, testResource } from "./binding.testUtils.js";
 import { refreshStoredSession } from "./refreshStoredSession.js";
 import type { LoadTokensResult, StoredSession } from "./types.js";
 
+function boundToken(label: string, exp: number): string {
+  return makeJwt({
+    iss: testIssuer,
+    aud: testResource,
+    exp,
+    org_id: "org_1",
+    label,
+  });
+}
+
 const spent: StoredSession = {
-  accessToken: "access_spent",
+  accessToken: boundToken("spent", 1),
   refreshToken: "refresh_spent",
   expiresAt: 1,
   email: "person@example.com",
   organizationId: "org_1",
-  issuer: "https://signin.example",
+  issuer: testIssuer,
   clientId: "client_1",
-  resource: "https://app.example/api",
+  resource: testResource,
   workspaceId: "ws_1",
 };
 
 const rotated: StoredSession = {
   ...spent,
-  accessToken: "access_fresh",
+  accessToken: boundToken("fresh", 9_999_999_999),
   refreshToken: "refresh_rotated",
   expiresAt: 9_999_999_999_999,
 };
+
+/** Loads `first` once, then `after` for every later read. */
+function loadsThen(first: StoredSession, after: StoredSession) {
+  const loadTokens = mock(async () => found(after));
+  loadTokens.mockResolvedValueOnce(found(first));
+  return loadTokens;
+}
 
 const fs = {} as never;
 
@@ -66,8 +84,43 @@ describe("refreshStoredSession", () => {
 
     if (result.kind !== "session") throw Error("expected a session");
     expect(result.session.refreshToken).toBe("refresh_rotated");
-    expect(result.session.accessToken).toBe("access_fresh");
+    expect(result.session.accessToken).toBe(rotated.accessToken);
     expect(loadTokens).toHaveBeenCalledTimes(2);
+  });
+
+  // The store is shared. A sign-in that lands between the two reads belongs to
+  // whoever signed in, and a workspace chosen on it would be written into
+  // their session.
+  it("refuses a session that belongs to someone else by the time it is reread", async () => {
+    const result = await refreshStoredSession("/config", fs, {
+      loadTokens: loadsThen(spent, {
+        ...rotated,
+        email: "someone-else@example.com",
+      }),
+      resolveOauth: async () => ({
+        key: rotated.accessToken,
+        email: rotated.email,
+        workspaceId: rotated.workspaceId,
+      }),
+    });
+
+    expect(result).toEqual({ kind: "refresh-failed" });
+  });
+
+  it("refuses a reread session whose token is not bound to the API", async () => {
+    const result = await refreshStoredSession("/config", fs, {
+      loadTokens: loadsThen(spent, {
+        ...rotated,
+        accessToken: makeJwt({ iss: testIssuer, aud: "client_01ENV", exp: 9 }),
+      }),
+      resolveOauth: async () => ({
+        key: rotated.accessToken,
+        email: rotated.email,
+        workspaceId: rotated.workspaceId,
+      }),
+    });
+
+    expect(result).toEqual({ kind: "refresh-failed" });
   });
 
   it("renews before handing the session back", async () => {

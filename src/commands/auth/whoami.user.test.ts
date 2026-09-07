@@ -91,5 +91,53 @@ describe("handleWhoami", () => {
         expect.any(String),
       );
     });
+
+    // The list can name more than the granted organization. A saved workspace
+    // under one of the others is not usable by this token, so it must not be
+    // reported as active.
+    it("does not report a workspace from another listed organization as active", async () => {
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
+      const deps = makeDeps({
+        requireApiKey: mock(() =>
+          Promise.resolve({
+            key: "test-key",
+            source: "browser" as const,
+            workspaceId: "ws_other",
+          }),
+        ),
+        getIdentity: mock(() =>
+          Promise.resolve({
+            ok: true as const,
+            value: {
+              organization: { id: "qw_org_1", name: "Acme Inc" },
+              user: { email: "user@example.com", id: "user_1" },
+              organizations: [
+                {
+                  id: "qw_org_1",
+                  name: "Acme Inc",
+                  workOsOrganizationId: "org_1",
+                  workspaces: [{ id: "ws_1", name: "Acme", slug: "acme" }],
+                },
+                {
+                  id: "qw_org_2",
+                  name: "Other Co",
+                  workOsOrganizationId: "org_2",
+                  workspaces: [
+                    { id: "ws_other", name: "Other", slug: "other" },
+                  ],
+                },
+              ],
+            },
+          }),
+        ),
+      });
+
+      await handleWhoami(ctx, deps);
+
+      expect(ctx.ui.note).toHaveBeenCalledWith(
+        expect.stringContaining("not in the organization you signed in to"),
+        expect.any(String),
+      );
+    });
   });
 });

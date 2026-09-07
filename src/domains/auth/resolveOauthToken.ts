@@ -1,5 +1,5 @@
 import type { DeviceTokens } from "~/core/deviceAuth/types.js";
-import { isBound, isSameSession } from "./sessionBinding.js";
+import { isAdoptable, isBound } from "./sessionBinding.js";
 import type { LoadTokensResult, StoredSession } from "./types.js";
 
 /**
@@ -30,35 +30,6 @@ export type OauthToken = {
   email: string;
   workspaceId: string | undefined;
 };
-/** Whether the API would accept this session's access token as it stands. */
-function isBound(session: StoredSession): boolean {
-  return verifyTokenBinding(session.accessToken, {
-    issuer: session.issuer,
-    resource: session.resource,
-  }).ok;
-}
-
-/**
- * Whether a pair found on disk after a failed refresh is this command's
- * session and still usable: the same deployment, the same organization, a
- * token the API would take, and one that has not already expired. Another
- * command aimed elsewhere writes to the same store, and a pair that sat there
- * long enough to lapse is no better than the one that failed to refresh.
- */
-function isAdoptable(
-  candidate: StoredSession,
-  session: StoredSession,
-  nowMs: number,
-): boolean {
-  return (
-    candidate.resource === session.resource &&
-    candidate.organizationId === session.organizationId &&
-    candidate.expiresAt !== undefined &&
-    candidate.expiresAt > nowMs &&
-    isBound(candidate)
-  );
-}
-
 /**
  * Undefined whenever a token cannot be produced. A failed refresh means "sign
  * in again", which the caller reports as not authenticated rather than as an

@@ -33,11 +33,11 @@ describe("reportWorkspace", () => {
     const ctx = makeCtx("json");
 
     expect(reportWorkspace(ctx, cancelled)).toEqual({
-      error: "workspace not chosen",
+      error: authMessages.workspace.nonInteractive,
     });
-    expect(ctx.ui.error).toHaveBeenCalledWith(
-      authMessages.workspace.nonInteractive,
-    );
+    // Returned only: the command wrapper renders it, so printing it here as
+    // well showed it twice.
+    expect(ctx.ui.error).not.toHaveBeenCalled();
     expect(ctx.ui.info).not.toHaveBeenCalled();
   });
 
@@ -47,6 +47,7 @@ describe("reportWorkspace", () => {
     expect(
       reportWorkspace(ctx, { outcome: "failed", error: "no such workspace" }),
     ).toEqual({ error: "no such workspace" });
+    expect(ctx.ui.warn).not.toHaveBeenCalled();
   });
 
   it("reports a successful choice without failing", () => {

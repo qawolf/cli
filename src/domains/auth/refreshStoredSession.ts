@@ -4,6 +4,7 @@ import type { Fs } from "~/shell/fs.js";
 import { resolveHostUrl } from "~/shell/resolveHostUrl.js";
 import { makeOauthDeps } from "./resolve.js";
 import { type OauthToken, resolveOauthToken } from "./resolveOauthToken.js";
+import { isBound } from "./sessionBinding.js";
 import { loadTokens as realLoadTokens } from "./store/loadTokens.js";
 import type { LoadTokensResult, StoredSession } from "./types.js";
 
@@ -56,6 +57,14 @@ export async function refreshStoredSession(
   // sign the person out on their next command.
   const after = await resolvedDeps.loadTokens(configDir);
   if (!after.found) return { kind: "refresh-failed" };
+
+  // The store is shared. A sign-in that landed between the two reads is a
+  // different person's session, and choosing a workspace on it would write
+  // this command's choice into theirs. Same account and a bound token, or
+  // nothing.
+  if (after.tokens.email !== before.tokens.email || !isBound(after.tokens)) {
+    return { kind: "refresh-failed" };
+  }
 
   return { kind: "session", session: after.tokens };
 }

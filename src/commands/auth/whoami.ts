@@ -4,6 +4,7 @@ import { exitCodes } from "~/shell/exit.js";
 import { requireApiKey } from "~/domains/auth/index.js";
 import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
+import { describeActiveWorkspace } from "./activeWorkspace.js";
 import { reportTeamIdentity } from "./whoamiTeam.js";
 
 type WhoamiDeps = {
@@ -78,22 +79,11 @@ export async function handleWhoami(
   if ("user" in value) {
     const { organization, user } = value;
 
-    // The chosen workspace is what every public API command sends, so the one
-    // command whose job is to report the session has to name it. A stored id
-    // the account can no longer reach is worth showing too — nothing else
-    // surfaces it, and every later request would fail on it.
-    const found = value.organizations
-      .flatMap((candidate) =>
-        candidate.workspaces.map((workspace) => ({
-          organization: candidate.name,
-          workspace: workspace.name,
-          id: workspace.id,
-        })),
-      )
-      .find((entry) => entry.id === resolved.workspaceId);
-    const activeWorkspace = resolved.workspaceId
-      ? authMessages.whoami.activeWorkspace(resolved.workspaceId, found)
-      : undefined;
+    const activeWorkspace = describeActiveWorkspace(
+      resolved.workspaceId,
+      organization.id,
+      value.organizations,
+    );
     if (ctx.ui.mode === "human") {
       ctx.ui.note(
         authMessages.whoami.userNote({

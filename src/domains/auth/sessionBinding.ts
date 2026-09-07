@@ -11,16 +11,21 @@ export function isBound(session: StoredSession): boolean {
 
 /**
  * Whether a pair found on disk after a failed refresh is this command's
- * session: the same deployment, the same organization, and a token the API
- * would take. Another command aimed elsewhere writes to the same store.
+ * session and still usable: the same deployment, the same organization, a
+ * token the API would take, and one that has not already expired. Another
+ * command aimed elsewhere writes to the same store, and a pair that sat there
+ * long enough to lapse is no better than the one that failed to refresh.
  */
-export function isSameSession(
+export function isAdoptable(
   candidate: StoredSession,
   session: StoredSession,
+  nowMs: number,
 ): boolean {
   return (
     candidate.resource === session.resource &&
     candidate.organizationId === session.organizationId &&
+    candidate.expiresAt !== undefined &&
+    candidate.expiresAt > nowMs &&
     isBound(candidate)
   );
 }

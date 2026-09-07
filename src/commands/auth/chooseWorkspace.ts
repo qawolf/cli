@@ -120,18 +120,18 @@ export function reportWorkspace(
     case "none":
       ctx.ui.info(authMessages.workspace.none);
       return undefined;
+    // Failures are returned, not printed: withContext renders every returned
+    // error, so printing here as well showed each one twice.
     case "cancelled":
       // Nothing was cancelled in a non-interactive run: there was no prompt to
       // answer, and the environment did not name enough to settle the choice.
       // Exiting 0 there leaves a script working in the previous workspace.
       if (ctx.ui.mode !== "human") {
-        ctx.ui.error(authMessages.workspace.nonInteractive);
-        return { error: "workspace not chosen" };
+        return { error: authMessages.workspace.nonInteractive };
       }
       ctx.ui.info(authMessages.workspace.cancelled);
       return undefined;
     case "failed":
-      ctx.ui.warn(result.error);
       return { error: result.error };
   }
 }
