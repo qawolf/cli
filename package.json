@@ -107,5 +107,5 @@
   "engines": {
     "node": ">=20.19.0"
   },
-  "packageManager": "bun@1.3.13"
+  "packageManager": "bun@1.4.2"
 }
