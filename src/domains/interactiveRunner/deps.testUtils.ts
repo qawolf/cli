@@ -1,4 +1,5 @@
 import { sep } from "node:path";
+import { Writable } from "node:stream";
 import type { Mock } from "bun:test";
 import type { RunFiles } from "@qawolf/api-contracts/v1";
 
@@ -98,12 +99,12 @@ export function makeTestDeps(
     },
   };
   const stdoutWrites: Uint8Array[] = [];
-  const recordingStdout: ScreenshotStdout = {
-    write(chunk, callback) {
+  const recordingStdout: ScreenshotStdout = new Writable({
+    write(chunk: Uint8Array, _encoding, callback) {
       stdoutWrites.push(Uint8Array.from(chunk));
       callback();
     },
-  };
+  });
   return {
     collectRunFiles: async () => ({ files, unresolvedImports: [] }),
     cwd: testCwd,

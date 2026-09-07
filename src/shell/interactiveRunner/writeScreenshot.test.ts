@@ -1,3 +1,4 @@
+import { Writable } from "node:stream";
 import { describe, expect, it } from "bun:test";
 
 import type { Fs } from "~/shell/fs.js";
@@ -8,25 +9,28 @@ import { type ScreenshotStdout, writeScreenshot } from "./writeScreenshot.js";
 const jpegBytes = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
 const imageJpegBase64 = Buffer.from(jpegBytes).toString("base64");
 
-/** Records what reached stdout, and lets a test close the pipe. */
+/**
+ * Records what reached stdout, and lets a test close the pipe. A real
+ * `Writable` rather than an object with a `write`, because a failed write on a
+ * real stream also emits `error`, and a double that only calls back would pass
+ * a writer that lets that event crash the process.
+ */
 function makeRecordingStdout(failWith?: Error): {
   stdout: ScreenshotStdout;
   chunks: Uint8Array[];
 } {
   const chunks: Uint8Array[] = [];
-  return {
-    chunks,
-    stdout: {
-      write(chunk, callback) {
-        if (failWith) {
-          callback(failWith);
-          return;
-        }
-        chunks.push(Uint8Array.from(chunk));
-        callback();
-      },
+  const stdout = new Writable({
+    write(chunk: Uint8Array, _encoding, callback) {
+      if (failWith) {
+        callback(failWith);
+        return;
+      }
+      chunks.push(Uint8Array.from(chunk));
+      callback();
     },
-  };
+  });
+  return { chunks, stdout };
 }
 
 /** Records what reached the filesystem, which is the only thing worth asserting. */
@@ -174,8 +178,10 @@ describe("writeScreenshot", () => {
     });
 
     // A reader that went away is an unwritable destination, answered before the
-    // command claims success rather than as an EPIPE after it.
-    it("reports a pipe that would not take the bytes", async () => {
+    // command claims success rather than as an EPIPE after it. The stream also
+    // emits `error` after the callback, so the test waits a tick for the event
+    // that would otherwise be uncaught.
+    it("reports a pipe that would not take the bytes, and survives the error event", async () => {
       const { fs } = makeRecordingFs();
       const { stdout } = makeRecordingStdout(new Error("EPIPE: broken pipe"));
 
@@ -185,12 +191,22 @@ describe("writeScreenshot", () => {
         path: "-",
         stdout,
       });
+      await new Promise((resolve) => setImmediate(resolve));
 
       expect(result).toEqual({
         detail: "EPIPE: broken pipe",
         ok: false,
         reason: "unwritable",
       });
+    });
+
+    it("leaves no error listener behind after a successful write", async () => {
+      const { fs } = makeRecordingFs();
+      const { stdout } = makeRecordingStdout();
+
+      await writeScreenshot({ fs, imageJpegBase64, path: "-", stdout });
+
+      expect((stdout as Writable).listenerCount("error")).toBe(0);
     });
   });
 });

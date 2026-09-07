@@ -1,4 +1,5 @@
 import { dirname } from "node:path";
+import type { Writable } from "node:stream";
 
 import { errorMessage } from "~/core/errors.js";
 import type { Fs } from "~/shell/fs.js";
@@ -20,10 +21,8 @@ const jpegStartOfImage = [0xff, 0xd8, 0xff];
  */
 export const stdoutPath = "-";
 
-/** The one stdout method the writer needs, so a test can stand in for it. */
-export type ScreenshotStdout = {
-  write(chunk: Uint8Array, callback: (error?: Error | null) => void): unknown;
-};
+/** What the writer needs of stdout, so a test can stand a `Writable` in for it. */
+export type ScreenshotStdout = Pick<Writable, "off" | "once" | "write">;
 
 export type ScreenshotWrite =
   | { ok: true }
@@ -71,14 +70,27 @@ export async function writeScreenshot(options: {
   return { ok: true };
 }
 
+/**
+ * A closed reader reaches Node twice: the write callback gets the EPIPE, and
+ * the stream emits `error` a tick later, which with no listener is an uncaught
+ * exception that takes the process down after this function already answered.
+ * So the listener goes on before the write and comes off only after a success;
+ * on a failure it stays to absorb the event.
+ */
 function writeToStdout(
   stdout: ScreenshotStdout,
   bytes: Uint8Array,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
+    const onError = (error: Error) => reject(error);
+    stdout.once("error", onError);
     stdout.write(bytes, (error) => {
-      if (error) reject(error);
-      else resolve();
+      if (error) {
+        reject(error);
+        return;
+      }
+      stdout.off("error", onError);
+      resolve();
     });
   });
 }
