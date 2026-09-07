@@ -20,6 +20,9 @@ const externals = [
   // the TypeScript compiler, loaded lazily by the import-graph walk; inlined,
   // Node parses all of it on every command start
   "typescript",
+  // the mobile stack; ensureDeps installs it on demand and loadWebdriverio
+  // imports it from there, so the specifier here is reached only by the binary
+  "webdriverio",
 ];
 
 function buildArgs(entry: string, name: string): string[] {

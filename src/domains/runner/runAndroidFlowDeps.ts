@@ -6,39 +6,27 @@ import { androidSdkHome } from "~/shell/androidSdkHome.js";
 import type { RunAndroidFlowDeps } from "./runAndroidFlow.js";
 import { createRunnerDeps } from "./runnerDeps.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+import { loadWebdriverio } from "./loadWebdriverio.js";
 
-type WdioRemote = {
-  startRecordingScreen(): Promise<void>;
-  stopRecordingScreen(): Promise<string>;
-  deleteSession(): Promise<void>;
-};
-
-async function createSession(
-  port: number,
-  serial: string,
-): Promise<AppiumDriver> {
-  // Deferred so web-only runs never pay to load webdriverio. It is still a
-  // build-time dep, not a published one: Bun inlines this static specifier into
-  // dist/cli.js, so the shipped bundle carries webdriverio and never resolves it
-  // from node_modules. That is why it is a devDependency — see pinnedPackages.ts.
-  const { remote } = (await import("webdriverio")) as unknown as {
-    remote: (opts: Record<string, unknown>) => Promise<WdioRemote>;
-  };
-  const driver = await remote({
-    hostname: "127.0.0.1",
-    port,
-    logLevel: "silent",
-    capabilities: {
-      platformName: "Android",
-      "appium:udid": serial,
-      "appium:automationName": "UiAutomator2",
-      "appium:noReset": true,
-    },
-  });
-  return {
-    startRecordingScreen: () => driver.startRecordingScreen(),
-    stopRecordingScreen: () => driver.stopRecordingScreen(),
-    deleteSession: () => driver.deleteSession(),
+function createSession(envDir: string) {
+  return async (port: number, serial: string): Promise<AppiumDriver> => {
+    const { remote } = await loadWebdriverio(envDir);
+    const driver = await remote({
+      hostname: "127.0.0.1",
+      port,
+      logLevel: "silent",
+      capabilities: {
+        platformName: "Android",
+        "appium:udid": serial,
+        "appium:automationName": "UiAutomator2",
+        "appium:noReset": true,
+      },
+    });
+    return {
+      startRecordingScreen: () => driver.startRecordingScreen(),
+      stopRecordingScreen: () => driver.stopRecordingScreen(),
+      deleteSession: () => driver.deleteSession(),
+    };
   };
 }
 
@@ -65,7 +53,7 @@ export function createAndroidDeps(
     ...createRunnerDeps(signals, envDir),
     appiumServer: serverHandle,
     emulatorPool: pool,
-    createSession,
+    createSession: createSession(envDir),
     adb: defaultAdb,
   };
 
