@@ -26,13 +26,16 @@ Examples:
   $ qawolf runner act keypress --keys Control a
   $ qawolf runner act navigate --url https://example.com
   $ qawolf runner act drag --path '[{"x":10,"y":20},{"x":80,"y":90}]'
-  $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act -`;
+  $ qawolf runner act click --button left --x 480 --y 260 --screenshot step-4.jpg
+  $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act -
+  $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act - --screenshot - > step-5.jpg`;
 
 type ActFlags = {
   button?: string;
   keys?: string[];
   path?: string;
   runner?: string;
+  screenshot?: string;
   scrollX?: string;
   scrollY?: string;
   text?: string;
@@ -85,6 +88,10 @@ export function registerRunnerInteractCommands(
       "drag: JSON array of points to drag through (mobile: only the first and last are used)",
     )
     .option("--runner <id>", runnerFlagDescription)
+    .option(
+      "--screenshot <path>",
+      "Also answer with a JPEG of the screen once it has settled after the action, written to this file, or to stdout with - (confirmation, JSON included, then goes to stderr). One call in place of act, a wait and screenshot",
+    )
     .option("--scroll-x <delta>", "scroll: horizontal wheel delta")
     .option("--scroll-y <delta>", "scroll: vertical wheel delta")
     .option("--text <text>", "type: the text to type")
@@ -109,6 +116,7 @@ export function registerRunnerInteractCommands(
               y: opts.y,
             },
             runner: opts.runner,
+            screenshot: opts.screenshot,
             type: action,
           },
           runnerDeps(ctx),

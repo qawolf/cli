@@ -1,0 +1,195 @@
+import { describe, expect, it } from "bun:test";
+
+import { handleRunnerAct } from "./performAction.js";
+import { performActionContract } from "./performActionContract.js";
+import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
+import { runnerCallOptions } from "./runnerCallOptions.js";
+
+const jpegBytes = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+const imageJpegBase64 = Buffer.from(jpegBytes).toString("base64");
+
+const click = {
+  flags: {
+    button: "left",
+    keys: undefined,
+    path: undefined,
+    scrollX: undefined,
+    scrollY: undefined,
+    text: undefined,
+    url: undefined,
+    x: "1",
+    y: "2",
+  },
+  runner: "ci",
+  type: "click",
+};
+const clickAction = { button: "left", type: "click", x: 1, y: 2 };
+
+describe("handleRunnerAct --screenshot", () => {
+  it("asks the runner for the screen with the answer", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { imageJpegBase64, outcome: "success" },
+    });
+
+    await handleRunnerAct(
+      ctx,
+      { ...click, screenshot: "step.jpg" },
+      makeTestDeps(),
+    );
+
+    expect(callPublicApi).toHaveBeenCalledWith(
+      performActionContract,
+      { action: clickAction, id: "ci", screenshot: true },
+      runnerCallOptions,
+    );
+  });
+
+  // The same trap as `runner screenshot`: the file gets the image, not the text.
+  it("writes the decoded screen to the file and says it did both", async () => {
+    const { callPublicApi, ctx, outputs } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { imageJpegBase64, outcome: "success" },
+    });
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerAct(
+      ctx,
+      { ...click, screenshot: "screens/step-4.jpg" },
+      deps,
+    );
+
+    expect(result).toBeUndefined();
+    expect(deps.written).toEqual([
+      { bytes: jpegBytes, path: "screens/step-4.jpg" },
+    ]);
+    expect(outputs()[0]?.humanMessage).toContain("Performed click");
+    expect(outputs()[0]?.humanMessage).toContain("screens/step-4.jpg");
+    expect(outputs()[0]?.data).toEqual({
+      action: clickAction,
+      outcome: "success",
+      screenshotPath: "screens/step-4.jpg",
+    });
+  });
+
+  // A forwarded tool call in, the frame out on the pipe.
+  it("takes the action from stdin and writes the screen to stdout", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { imageJpegBase64, outcome: "success" },
+    });
+    const deps = makeTestDeps({
+      readStdin: async () => JSON.stringify(clickAction),
+    });
+
+    const result = await handleRunnerAct(
+      ctx,
+      {
+        ...click,
+        flags: {
+          ...click.flags,
+          button: undefined,
+          x: undefined,
+          y: undefined,
+        },
+        screenshot: "-",
+        type: "-",
+      },
+      deps,
+    );
+
+    expect(result).toBeUndefined();
+    expect(callPublicApi.mock.calls[0]?.[1]).toEqual({
+      action: clickAction,
+      id: "ci",
+      screenshot: true,
+    });
+    expect(deps.stdoutWrites).toEqual([jpegBytes]);
+    expect(deps.written).toEqual([]);
+  });
+
+  // Stdout is the image, so the answer line may not follow it there.
+  for (const mode of ["json", "agent"] as const) {
+    it(`keeps the confirmation off stdout in ${mode} mode`, async () => {
+      const { callPublicApi, ctx, outputs, streamed, successes } =
+        makeAuthCtx(mode);
+      callPublicApi.mockResolvedValue({
+        ok: true,
+        value: { imageJpegBase64, outcome: "success" },
+      });
+
+      await handleRunnerAct(ctx, { ...click, screenshot: "-" }, makeTestDeps());
+
+      expect(outputs()).toEqual([]);
+      expect(streamed()).toEqual([]);
+      expect(successes()).toHaveLength(1);
+      expect(successes()[0]).toContain("Performed click");
+      expect(successes()[0]).toContain("stderr");
+    });
+  }
+
+  it("sends no screenshot option and writes nothing without the flag", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { outcome: "success" },
+    });
+    const deps = makeTestDeps();
+
+    await handleRunnerAct(ctx, { ...click, screenshot: undefined }, deps);
+
+    expect(callPublicApi.mock.calls[0]?.[1]).toEqual({
+      action: clickAction,
+      id: "ci",
+    });
+    expect(deps.written).toEqual([]);
+    expect(deps.stdoutWrites).toEqual([]);
+  });
+
+  // A refused action has no screen to write; the refusal reads as it always did.
+  it("reports a refused action as before, writing nothing", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: {
+        errorMessage: "the page navigated away",
+        failureReason: "action-failed",
+        outcome: "failure",
+      },
+    });
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerAct(
+      ctx,
+      { ...click, screenshot: "-" },
+      deps,
+    );
+
+    expect(result?.error).toContain("the page navigated away");
+    expect(result?.exitCode).toBe(1);
+    expect(deps.stdoutWrites).toEqual([]);
+    expect(deps.written).toEqual([]);
+  });
+
+  it("still warns that a lost answer may have acted", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { failureReason: "runner-unreachable", outcome: "failure" },
+    });
+
+    const result = await handleRunnerAct(
+      ctx,
+      { ...click, screenshot: "step.jpg" },
+      makeTestDeps(),
+    );
+
+    expect(result?.error).toContain(
+      "does not mean the action was not performed",
+    );
+    expect(result?.exitCode).toBe(4);
+  });
+});

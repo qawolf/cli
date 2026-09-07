@@ -91,6 +91,7 @@ describe("handleRunnerAct", () => {
         {
           flags: { ...noFlags, ...shape.flags },
           runner: "ci",
+          screenshot: undefined,
           type: shape.type,
         },
         makeTestDeps(),
@@ -116,6 +117,7 @@ describe("handleRunnerAct", () => {
       {
         flags: { ...noFlags, text: "a".repeat(201) },
         runner: "ci",
+        screenshot: undefined,
         type: "type",
       },
       makeTestDeps(),
@@ -134,6 +136,7 @@ describe("handleRunnerAct", () => {
       {
         flags: { ...noFlags, button: "left", x: "999999", y: "1" },
         runner: "ci",
+        screenshot: undefined,
         type: "click",
       },
       makeTestDeps(),
@@ -151,6 +154,7 @@ describe("handleRunnerAct", () => {
       {
         flags: { ...noFlags, url: "file:///etc/passwd" },
         runner: "ci",
+        screenshot: undefined,
         type: "navigate",
       },
       makeTestDeps(),
@@ -171,7 +175,7 @@ describe("handleRunnerAct", () => {
 
     await handleRunnerAct(
       ctx,
-      { flags: noFlags, runner: "ci", type: "-" },
+      { flags: noFlags, runner: "ci", screenshot: undefined, type: "-" },
       makeTestDeps({
         readStdin: async () =>
           '{"type":"click","button":"right","x":3,"y":4}\n',
@@ -189,7 +193,7 @@ describe("handleRunnerAct", () => {
 
     const result = await handleRunnerAct(
       ctx,
-      { flags: noFlags, runner: "ci", type: "-" },
+      { flags: noFlags, runner: "ci", screenshot: undefined, type: "-" },
       makeTestDeps({ readStdin: async () => "  " }),
     );
 
@@ -203,7 +207,7 @@ describe("handleRunnerAct", () => {
 
     const result = await handleRunnerAct(
       ctx,
-      { flags: noFlags, runner: "ci", type: "-" },
+      { flags: noFlags, runner: "ci", screenshot: undefined, type: "-" },
       makeTestDeps({ readStdin: async () => "click 480 260" }),
     );
 
@@ -219,7 +223,12 @@ describe("handleRunnerAct", () => {
 
     const result = await handleRunnerAct(
       ctx,
-      { flags: { ...noFlags, x: "5" }, runner: "ci", type: "-" },
+      {
+        flags: { ...noFlags, x: "5" },
+        runner: "ci",
+        screenshot: undefined,
+        type: "-",
+      },
       makeTestDeps({
         readStdin: async () => '{"type":"click","button":"left","x":1,"y":2}',
       }),

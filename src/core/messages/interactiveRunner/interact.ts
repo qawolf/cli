@@ -12,6 +12,20 @@ export const interactMessages = {
   actionNotSupportedOnMobile: (type: string) =>
     `A mobile runner has a touchscreen, so it cannot perform ${type} as asked. It taps with a left-button click, swipes with drag, and types into whatever the last tap focused.`,
   actionPerformed: (type: string) => `Performed ${type}.`,
+  actionPerformedScreenshotNotAnImage: (type: string) =>
+    `Performed ${type}, but the screen that came with the answer was not a JPEG, so nothing was written. The action took effect, so do not repeat it: take the screen with qawolf runner screenshot instead, and report it if it keeps happening.`,
+  actionPerformedScreenshotToStdout: (type: string) =>
+    `Performed ${type} and wrote the runner's screen to stdout as a JPEG. Stdout holds the image bytes alone; this line, and the JSON with --json, is on stderr.`,
+  actionPerformedScreenshotUnwritable: (
+    type: string,
+    destination: string,
+    detail: string,
+  ) =>
+    `Performed ${type}, but its screen could not be written to ${destination}: ${detail}. The action took effect, so do not repeat it: take the screen with qawolf runner screenshot, giving --out a destination this process can write to.`,
+  actionPerformedScreenshotWritten: (type: string, path: string) =>
+    `Performed ${type} and wrote the runner's screen to ${path}.`,
+  actionPerformedWithoutScreenshot: (type: string) =>
+    `Performed ${type}, but the runner answered without the screen it was asked for. The action took effect, so do not repeat it: take the screen with qawolf runner screenshot instead.`,
   actionAnsweredUnknown: (failureReason: string) =>
     `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
   screenshotAnsweredUnknown: (failureReason: string) =>

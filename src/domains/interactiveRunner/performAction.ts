@@ -1,5 +1,3 @@
-import { publicContractsV1 } from "@qawolf/api-contracts/v1";
-
 import type { BrowserActionFlags } from "~/core/interactiveRunner/browserAction.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
@@ -10,7 +8,9 @@ import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
+import { performActionContract } from "./performActionContract.js";
 import { describePerformActionFailure } from "./performActionFailure.js";
+import { writeActionScreenshot } from "./performActionScreenshot.js";
 import { readAction } from "./readAction.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
@@ -23,12 +23,20 @@ import { announceRunner, resolveRunner } from "./resolveRunner.js";
  * published schema before it is sent, which is what turns a string too long for
  * the runner's keyboard into an immediate refusal naming the limit rather than a
  * round trip that holds the runner for ten seconds and then declines.
+ *
+ * With `screenshot` set, the runner is asked to answer with its screen once it
+ * has settled after the action, and the image is written the way
+ * `runner screenshot` writes one. One call per step instead of two, and the
+ * fixed wait a caller put between them goes away, because the runner waits for
+ * the frame to change rather than the caller guessing how long that takes.
  */
 export async function handleRunnerAct(
   ctx: AuthCommandContext,
   options: {
     flags: BrowserActionFlags;
     runner: string | undefined;
+    /** Where to write the screen that comes with the answer; `-` for stdout. */
+    screenshot: string | undefined;
     type: string;
   },
   deps: InteractiveRunnerDeps,
@@ -47,8 +55,12 @@ export async function handleRunnerAct(
   announceRunner(ctx, resolved);
 
   const result = await ctx.platformClient.callPublicApi(
-    publicContractsV1.runner.performAction,
-    { action: built.action, id: resolved.runnerId },
+    performActionContract,
+    {
+      action: built.action,
+      id: resolved.runnerId,
+      ...(options.screenshot === undefined ? {} : { screenshot: true }),
+    },
     runnerCallOptions,
   );
   if (!result.ok) {
@@ -68,6 +80,17 @@ export async function handleRunnerAct(
   }
 
   if (result.value.outcome === "success") {
+    if (options.screenshot !== undefined) {
+      return writeActionScreenshot(
+        ctx,
+        {
+          action: built.action,
+          imageJpegBase64: result.value.imageJpegBase64,
+          out: options.screenshot,
+        },
+        deps,
+      );
+    }
     ctx.ui.output(
       { action: built.action, outcome: "success" },
       interactiveRunnerMessages.actionPerformed(built.action.type),

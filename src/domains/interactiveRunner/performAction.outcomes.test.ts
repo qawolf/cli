@@ -16,6 +16,7 @@ const click = {
     y: "2",
   },
   runner: "ci",
+  screenshot: undefined,
   type: "click",
 };
 
