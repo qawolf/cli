@@ -11,10 +11,10 @@ const bundles = [outfile, "dist/runner-sdk.js"];
 // Externals that must only ever be reached through a dynamic import(). A static
 // import anywhere in src/ becomes a top-level import here, and Node would load
 // the whole package on every command start again.
-const lazyExternals = ["typescript"];
+const lazyExternals = ["typescript", "webdriverio"];
 // Startup is dominated by parsing the bundle; this catches a heavy dependency
-// slipping back in (typescript alone was 9 MB).
-const maxBundleBytes = 8_000_000;
+// slipping back in (typescript alone was 9 MB, the webdriver stack 5 MB).
+const maxBundleBytes = 2_000_000;
 
 for (const path of bundles) {
   const source = readFileSync(path, "utf8");
