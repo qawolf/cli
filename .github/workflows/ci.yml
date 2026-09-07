@@ -31,6 +31,13 @@ jobs:
       - run: bun run knip
       - run: bun run test
       - run: bun run build
+      # Built before the tarball check so its dist/qawolf exclusion is tested
+      # against a real file. Also the only pre-release run of the binary build
+      # on Linux; release-binaries.yml runs on publish only.
+      - name: Build and smoke the binary
+        run: |
+          bun scripts/buildBinary.ts
+          ./dist/qawolf --version
       - name: Verify tarball contents
         run: |
           output=$(bun pm pack --dry-run 2>&1)
@@ -133,6 +140,13 @@ jobs:
       # runner, which cannot shell out to .sh files (release v1.1.0–v1.4.2
       # Windows binaries all failed on exactly that).
       - run: bun run build
+      # The only pre-release run of the Windows binary build; release-binaries.yml
+      # runs on publish only.
+      - name: Build and smoke the binary
+        shell: bash
+        run: |
+          bun scripts/buildBinary.ts --outfile dist/qawolf.exe
+          ./dist/qawolf.exe --version
       # Bundling resolves the `~/` alias Node cannot. Only spawn.ts needs it;
       # the production-wiring check below runs the shipped bundle instead.
       - name: Bundle defaultSpawn for smoke
