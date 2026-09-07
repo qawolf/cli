@@ -1,62 +1,43 @@
 import { describe, expect, it } from "bun:test";
 
-import type { DeviceAuthorization } from "~/core/deviceAuth/types.js";
 import { deviceLogin } from "./deviceLogin.js";
 import {
-  makeFakeClock,
-  makePoller,
+  approved,
+  boundTokens,
+  makeDeps,
+  session,
   testAuthorization,
-  testTokens,
+  testBinding,
+  testIssuer,
 } from "./deviceLogin.testUtils.js";
 
-function makeDeps(
-  responses: Parameters<typeof makePoller>[0],
-  overrides: {
-    authorization?: DeviceAuthorization;
-    authorizationError?: string;
-    isCancelled?: () => boolean;
-  } = {},
-) {
-  const clock = makeFakeClock();
-  const poller = makePoller(responses);
-  const prompted: DeviceAuthorization[] = [];
-
-  return {
-    clock,
-    poller,
-    prompted,
-    deps: {
-      requestAuthorization: async () =>
-        overrides.authorizationError
-          ? ({ ok: false, error: overrides.authorizationError } as const)
-          : ({
-              ok: true,
-              value: overrides.authorization ?? testAuthorization,
-            } as const),
-      pollToken: poller.poll,
-      onPrompt: (authorization: DeviceAuthorization) => {
-        prompted.push(authorization);
-      },
-      sleep: clock.sleep,
-      now: clock.now,
-      isCancelled: overrides.isCancelled ?? (() => false),
-    },
-  };
-}
-
 describe("deviceLogin", () => {
-  it("returns the tokens once the person approves", async () => {
-    const { deps } = makeDeps([{ kind: "tokens", tokens: testTokens }]);
+  it("returns the resource-bound session once the person approves", async () => {
+    const { deps } = makeDeps([approved]);
 
     const result = await deviceLogin(deps);
 
-    expect(result).toEqual({ ok: true, tokens: testTokens });
+    expect(result).toEqual({ ok: true, session });
+  });
+
+  // The live failure. The device grant answers with a token whose audience is
+  // the environment client id; only the refresh that follows yields one for
+  // the API resource. Nothing may be done with the first.
+  it("exchanges the device grant's refresh token before using anything", async () => {
+    const { deps, refreshCalls, emailCalls } = makeDeps([approved]);
+
+    const result = await deviceLogin(deps);
+
+    expect(refreshCalls).toEqual(["refresh_from_device"]);
+    // Identity was asked once, with the bound token, never the first one.
+    expect(emailCalls).toEqual([boundTokens.accessToken]);
+    if (!result.ok) throw Error("expected success");
+    expect(result.session.accessToken).toBe(boundTokens.accessToken);
+    expect(result.session.refreshToken).toBe("refresh_rotated");
   });
 
   it("shows the code before polling so the person can act on it", async () => {
-    const { deps, prompted, poller } = makeDeps([
-      { kind: "tokens", tokens: testTokens },
-    ]);
+    const { deps, prompted, poller } = makeDeps([approved]);
 
     await deviceLogin(deps);
 
@@ -68,7 +49,7 @@ describe("deviceLogin", () => {
     const { deps, clock } = makeDeps([
       { kind: "pending" },
       { kind: "pending" },
-      { kind: "tokens", tokens: testTokens },
+      approved,
     ]);
 
     await deviceLogin(deps);
@@ -81,7 +62,7 @@ describe("deviceLogin", () => {
       { kind: "pending" },
       { kind: "slow-down" },
       { kind: "pending" },
-      { kind: "tokens", tokens: testTokens },
+      approved,
     ]);
 
     await deviceLogin(deps);
@@ -93,12 +74,12 @@ describe("deviceLogin", () => {
     const { deps, clock, poller } = makeDeps([
       { kind: "pending" },
       { kind: "unreachable", detail: "socket hang up" },
-      { kind: "tokens", tokens: testTokens },
+      approved,
     ]);
 
     const result = await deviceLogin(deps);
 
-    expect(result).toEqual({ ok: true, tokens: testTokens });
+    expect(result).toEqual({ ok: true, session });
     expect(poller.calls.length).toBe(3);
     // 5s as advertised, then doubled after the request that failed.
     expect(clock.slept).toEqual([5_000, 10_000]);
@@ -152,12 +133,7 @@ describe("deviceLogin", () => {
   });
 
   it("stops without polling when cancelled before it starts", async () => {
-    const { deps, poller } = makeDeps(
-      [{ kind: "tokens", tokens: testTokens }],
-      {
-        isCancelled: () => true,
-      },
-    );
+    const { deps, poller } = makeDeps([approved], { isCancelled: () => true });
 
     const result = await deviceLogin(deps);
 
@@ -171,10 +147,9 @@ describe("deviceLogin", () => {
 
   it("stops polling as soon as it is cancelled mid-flow", async () => {
     let cancelled = false;
-    const { deps, poller } = makeDeps(
-      [{ kind: "pending" }, { kind: "tokens", tokens: testTokens }],
-      { isCancelled: () => cancelled },
-    );
+    const { deps, poller } = makeDeps([{ kind: "pending" }, approved], {
+      isCancelled: () => cancelled,
+    });
     const wrapped = {
       ...deps,
       sleep: async (ms: number) => {
@@ -191,5 +166,10 @@ describe("deviceLogin", () => {
       detail: undefined,
     });
     expect(poller.calls.length).toBe(1);
+  });
+
+  it("carries the issuer it was bound against", () => {
+    // Guards the fixture: every token above claims this issuer.
+    expect(testBinding.issuer).toBe(testIssuer);
   });
 });

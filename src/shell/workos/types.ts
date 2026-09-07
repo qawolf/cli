@@ -1,16 +1,37 @@
 import { z } from "zod";
 
-/** WorkOS hosts the device endpoints; the CLI never sends a secret to them. */
-export const defaultWorkosBaseUrl = "https://api.workos.com";
-
 /** Interval the device grant assumes when the server states none. */
 export const defaultIntervalSec = 5;
 
+/**
+ * `offline_access` is what earns a refresh token, and the refresh is the only
+ * exchange observed to yield a token bound to the API resource.
+ */
+export const deviceScope = "openid profile email offline_access";
+
+/** Where the issuer's metadata says the two grants live. */
+export type IssuerEndpoints = {
+  deviceAuthorization: string;
+  token: string;
+};
+
+/**
+ * Everything a Connect request needs. The CLI is a public client: there is no
+ * secret here, and none is ever sent.
+ */
 export type WorkosDeps = {
   fetch: typeof globalThis.fetch;
-  baseUrl: string;
   clientId: string;
+  /** The API resource every grant asks to be bound to. */
+  resource: string;
+  endpoints: IssuerEndpoints;
 };
+
+export const authorizationServerMetadata = z.object({
+  issuer: z.string().min(1),
+  device_authorization_endpoint: z.string().min(1).optional(),
+  token_endpoint: z.string().min(1).optional(),
+});
 
 export const deviceAuthorizationBody = z.object({
   device_code: z.string().min(1),
@@ -21,11 +42,14 @@ export const deviceAuthorizationBody = z.object({
   interval: z.number().int().positive().optional(),
 });
 
-export const deviceTokenBody = z.object({
+/**
+ * A plain OAuth token response. The refresh token is optional on the wire and
+ * required by the CLI, which reports its absence as its own failure rather
+ * than as an unrecognised body.
+ */
+export const connectTokenBody = z.object({
   access_token: z.string().min(1),
-  refresh_token: z.string().min(1),
-  user: z.object({ email: z.string().min(1) }),
-  organization_id: z.string().min(1).optional(),
+  refresh_token: z.string().min(1).optional(),
 });
 
 export const oauthErrorBody = z.object({

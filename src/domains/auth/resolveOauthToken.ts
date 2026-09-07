@@ -1,3 +1,4 @@
+import { verifyTokenBinding } from "~/core/deviceAuth/tokenClaims.js";
 import type { DeviceTokens } from "~/core/deviceAuth/types.js";
 import type { LoadTokensResult, StoredSession } from "./types.js";
 
@@ -11,17 +12,44 @@ export type ResolveOauthTokenDeps = {
   loadTokens: (configDir: string) => Promise<LoadTokensResult>;
   refreshTokens: (args: {
     refreshToken: string;
-    organizationId: string | undefined;
-    clientId: string | undefined;
+    issuer: string;
+    clientId: string;
+    resource: string;
   }) => Promise<
     | { ok: true; value: DeviceTokens }
     | { ok: false; error: string; retryable: boolean }
   >;
   saveTokens: (configDir: string, tokens: StoredSession) => Promise<unknown>;
   now: () => number;
+  /** The API resource of the deployment the CLI is aimed at right now. */
+  resource: string;
 };
 
 export type OauthToken = { key: string; email: string };
+
+/** Whether the API would accept this session's access token as it stands. */
+function isBound(session: StoredSession): boolean {
+  return verifyTokenBinding(session.accessToken, {
+    issuer: session.issuer,
+    resource: session.resource,
+  }).ok;
+}
+
+/**
+ * Whether a pair found on disk after a failed refresh is this command's
+ * session: the same deployment, the same organization, and a token the API
+ * would take. Another command aimed elsewhere writes to the same store.
+ */
+function isSameSession(
+  candidate: StoredSession,
+  session: StoredSession,
+): boolean {
+  return (
+    candidate.resource === session.resource &&
+    candidate.organizationId === session.organizationId &&
+    isBound(candidate)
+  );
+}
 
 /**
  * Undefined whenever a token cannot be produced. A failed refresh means "sign
@@ -36,31 +64,33 @@ export async function resolveOauthToken(
   if (!stored.found) return undefined;
 
   const { tokens } = stored;
+  // A session belongs to the deployment it was bound to. Presenting it to
+  // another would be refused, and refreshing it would spend the other
+  // deployment's session for nothing.
+  if (tokens.resource !== deps.resource) return undefined;
+
   const expiresAt = tokens.expiresAt;
+  const unexpired = expiresAt !== undefined && expiresAt > deps.now();
   const isFresh =
     expiresAt !== undefined && expiresAt - expiryMarginMs > deps.now();
 
-  if (isFresh) {
+  if (isFresh && isBound(tokens)) {
     return { key: tokens.accessToken, email: tokens.email };
   }
 
-  // Pin the refresh to the organization already in use. Without it WorkOS is
-  // free to choose again, so a session could silently move between
-  // organizations partway through a run of commands.
+  // The resource goes on every refresh: without it WorkOS answers with the
+  // environment audience again, and the session ends on the next request.
   const refreshed = await deps.refreshTokens({
     refreshToken: tokens.refreshToken,
-    organizationId: tokens.organizationId,
+    issuer: tokens.issuer,
     clientId: tokens.clientId,
+    resource: tokens.resource,
   });
   if (!refreshed.ok) {
     // The margin is a head start, not an expiry. A dropped packet inside it
     // leaves a token that still works, so ending the session over one would
     // sign someone out mid-command for nothing.
-    if (
-      refreshed.retryable &&
-      expiresAt !== undefined &&
-      expiresAt > deps.now()
-    ) {
+    if (refreshed.retryable && unexpired && isBound(tokens)) {
       return { key: tokens.accessToken, email: tokens.email };
     }
 
@@ -70,23 +100,30 @@ export async function resolveOauthToken(
     // process too, and reporting "not authenticated" over a lost race sends
     // someone to sign in again for nothing.
     const current = await deps.loadTokens(configDir);
-    if (current.found && current.tokens.refreshToken !== tokens.refreshToken) {
-      return {
-        key: current.tokens.accessToken,
-        email: current.tokens.email,
-      };
+    if (
+      current.found &&
+      current.tokens.refreshToken !== tokens.refreshToken &&
+      isSameSession(current.tokens, tokens)
+    ) {
+      return { key: current.tokens.accessToken, email: current.tokens.email };
     }
     return undefined;
   }
 
+  const renewed: StoredSession = {
+    ...refreshed.value,
+    email: tokens.email,
+    issuer: tokens.issuer,
+    clientId: tokens.clientId,
+    resource: tokens.resource,
+  };
+
   // Refresh tokens rotate, so the whole pair has to land in storage. Persisting
   // only the access token would spend the refresh token and lock the next
-  // refresh out.
+  // refresh out. Saved before the audience check for the same reason: the
+  // rotation has happened whether or not the token turns out usable.
   try {
-    await deps.saveTokens(configDir, {
-      ...refreshed.value,
-      clientId: tokens.clientId,
-    });
+    await deps.saveTokens(configDir, renewed);
   } catch {
     // The token in hand works for this command. Failing here as well would cost
     // the caller a working credential and change nothing: the refresh already
@@ -94,5 +131,9 @@ export async function resolveOauthToken(
     // this one succeeds or not.
   }
 
-  return { key: refreshed.value.accessToken, email: refreshed.value.email };
+  // Never present a token the API would refuse; the person would see an
+  // opaque 401 in place of a reason.
+  if (!isBound(renewed)) return undefined;
+
+  return { key: renewed.accessToken, email: renewed.email };
 }

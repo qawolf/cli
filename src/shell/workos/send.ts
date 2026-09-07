@@ -12,13 +12,17 @@ export const unexpectedResponse = authErrorMessages.workos.unexpectedResponse;
  * WorkOS documents as retryable. Every other 4xx is an answer it meant, and
  * repeating that would change nothing.
  */
-function isTransientStatus(status: number): boolean {
+export function isTransientStatus(status: number): boolean {
   return status >= 500 || status === 429 || status === 408;
 }
 
+function isRedirect(status: number): boolean {
+  return status >= 300 && status < 400;
+}
+
 /**
- * One WorkOS device-endpoint round trip, reduced to three outcomes so callers
- * never inspect a thrown error. An OAuth error body is a normal part of this
+ * One token-endpoint round trip, reduced to three outcomes so callers never
+ * inspect a thrown error. An OAuth error body is a normal part of this
  * protocol — `authorization_pending` arrives as HTTP 400 on every poll — so it
  * is a distinct outcome rather than a failure.
  */
@@ -43,6 +47,9 @@ export async function sendWorkosRequest(
       method: "POST",
       headers: init.headers,
       body: init.body,
+      // The body carries a device code or a refresh token. Followed, a
+      // redirect would replay it to whichever host the response named.
+      redirect: "manual",
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (err: unknown) {
@@ -50,6 +57,14 @@ export async function sendWorkosRequest(
       kind: "failure",
       detail: authErrorMessages.workos.unreachable(errorMessage(err)),
       retryable: true,
+    };
+  }
+
+  if (isRedirect(response.status)) {
+    return {
+      kind: "failure",
+      detail: authErrorMessages.workos.redirected,
+      retryable: false,
     };
   }
 

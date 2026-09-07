@@ -1,9 +1,10 @@
 import { Entry } from "@napi-rs/keyring";
 
-import { authErrorMessages } from "~/core/messages/authErrors.js";
+import { apiResource } from "~/core/deviceAuth/resource.js";
 import type { Fs } from "~/shell/fs.js";
+import { resolveHostUrl } from "~/shell/resolveHostUrl.js";
+import { discoverIssuer } from "~/shell/workos/discoverIssuer.js";
 import { refreshAccessToken } from "~/shell/workos/refreshAccessToken.js";
-import { resolveWorkosConfig } from "~/shell/workos/config.js";
 import { loadApiKey as realLoadApiKey } from "./store/index.js";
 import { loadTokens as realLoadTokens } from "./store/loadTokens.js";
 import { saveTokens as realSaveTokens } from "./store/saveTokens.js";
@@ -20,40 +21,38 @@ type ResolveApiKeyDeps = {
   env: Record<string, string | undefined>;
 };
 
-function makeOauthDeps(fs: Fs): ResolveOauthTokenDeps {
+function makeOauthDeps(fs: Fs, apiBaseUrl: string): ResolveOauthTokenDeps {
   return {
     loadTokens: (configDir) =>
       realLoadTokens(configDir, { EntryClass: Entry, fs }),
-    // The stored session names its issuing client, so renewing a token asks
-    // the deployment nothing.
-    refreshTokens: async ({ refreshToken, organizationId, clientId }) => {
-      const config = resolveWorkosConfig(clientId);
-      if (!config.configured) {
-        // Nothing to retry: the session records no client to redeem against.
-        return {
-          ok: false,
-          error: authErrorMessages.workos.noClientForSession,
-          retryable: false,
-        };
-      }
-      return refreshAccessToken(refreshToken, organizationId, {
+    // The stored session names its issuer, client and resource, so renewing a
+    // token asks the deployment nothing. The issuer is still asked where its
+    // token endpoint is: metadata is cheap, and pinning an endpoint would
+    // outlive a provider that moved it.
+    refreshTokens: async ({ refreshToken, issuer, clientId, resource }) => {
+      const endpoints = await discoverIssuer(issuer, globalThis.fetch);
+      if (!endpoints.ok) return endpoints;
+      return refreshAccessToken(refreshToken, {
         fetch: globalThis.fetch,
-        baseUrl: config.baseUrl,
-        clientId: config.clientId,
+        clientId,
+        resource,
+        endpoints: endpoints.value,
       });
     },
     saveTokens: (configDir, tokens) => realSaveTokens(configDir, tokens, fs),
     now: () => Date.now(),
+    resource: apiResource(apiBaseUrl),
   };
 }
 
 function makeDefaultDeps(fs: Fs): ResolveApiKeyDeps {
+  const env = process.env;
   return {
     loadApiKey: (configDir) =>
       realLoadApiKey(configDir, { EntryClass: Entry, fs }),
     resolveOauth: (configDir) =>
-      resolveOauthToken(configDir, makeOauthDeps(fs)),
-    env: process.env,
+      resolveOauthToken(configDir, makeOauthDeps(fs, resolveHostUrl(env))),
+    env,
   };
 }
 

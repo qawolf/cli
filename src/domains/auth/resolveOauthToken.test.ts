@@ -1,58 +1,15 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
-import type { DeviceTokens } from "~/core/deviceAuth/types.js";
+import { testIssuer, testResource } from "./deviceLogin.testUtils.js";
 import { expiryMarginMs, resolveOauthToken } from "./resolveOauthToken.js";
-import type { LoadTokensResult, StoredSession } from "./types.js";
-
-const nowMs = 1_700_000_000_000;
-
-const stored: StoredSession = {
-  accessToken: "access_old",
-  refreshToken: "refresh_old",
-  expiresAt: nowMs + 60_000,
-  email: "person@example.com",
-  organizationId: "org_1",
-  clientId: "client_1",
-};
-
-const refreshed: DeviceTokens = {
-  accessToken: "access_new",
-  refreshToken: "refresh_new",
-  expiresAt: nowMs + 600_000,
-  email: "person@example.com",
-  organizationId: "org_1",
-};
-
-function makeDeps(
-  loadResult: LoadTokensResult,
-  refreshResult:
-    | { ok: true; value: DeviceTokens }
-    | { ok: false; error: string; retryable: boolean } = {
-    ok: true,
-    value: refreshed,
-  },
-) {
-  const saveTokens = mock(async (_configDir: string, _tokens: DeviceTokens) => {
-    // storage is asserted through the spy, not through a filesystem
-  });
-  const refreshTokens = mock(
-    async (_args: {
-      refreshToken: string;
-      organizationId: string | undefined;
-      clientId: string | undefined;
-    }) => refreshResult,
-  );
-  return {
-    saveTokens,
-    refreshTokens,
-    deps: {
-      loadTokens: async () => loadResult,
-      refreshTokens,
-      saveTokens,
-      now: () => nowMs,
-    },
-  };
-}
+import {
+  environmentToken,
+  expectedRefreshArgs,
+  makeDeps,
+  nowMs,
+  refreshed,
+  stored,
+} from "./resolveOauthToken.testUtils.js";
 
 describe("resolveOauthToken", () => {
   it("uses the stored access token while it remains valid", async () => {
@@ -65,13 +22,13 @@ describe("resolveOauthToken", () => {
     const result = await resolveOauthToken("/config", deps);
 
     expect(result).toEqual({
-      key: "access_old",
+      key: stored.accessToken,
       email: "person@example.com",
     });
     expect(refreshTokens).not.toHaveBeenCalled();
   });
 
-  it("refreshes an expired access token", async () => {
+  it("refreshes an expired access token with the session's own binding", async () => {
     const { deps, refreshTokens } = makeDeps({
       found: true,
       tokens: { ...stored, expiresAt: nowMs - 1 },
@@ -81,14 +38,10 @@ describe("resolveOauthToken", () => {
     const result = await resolveOauthToken("/config", deps);
 
     expect(result).toEqual({
-      key: "access_new",
+      key: refreshed.accessToken,
       email: "person@example.com",
     });
-    expect(refreshTokens).toHaveBeenCalledWith({
-      refreshToken: "refresh_old",
-      organizationId: "org_1",
-      clientId: "client_1",
-    });
+    expect(refreshTokens).toHaveBeenCalledWith(expectedRefreshArgs);
   });
 
   it("refreshes a token that expires inside the safety margin", async () => {
@@ -100,11 +53,7 @@ describe("resolveOauthToken", () => {
 
     await resolveOauthToken("/config", deps);
 
-    expect(refreshTokens).toHaveBeenCalledWith({
-      refreshToken: "refresh_old",
-      organizationId: "org_1",
-      clientId: "client_1",
-    });
+    expect(refreshTokens).toHaveBeenCalledWith(expectedRefreshArgs);
   });
 
   it("refreshes when the stored expiry is unknown", async () => {
@@ -116,30 +65,25 @@ describe("resolveOauthToken", () => {
 
     await resolveOauthToken("/config", deps);
 
-    expect(refreshTokens).toHaveBeenCalledWith({
-      refreshToken: "refresh_old",
-      organizationId: "org_1",
-      clientId: "client_1",
-    });
+    expect(refreshTokens).toHaveBeenCalledWith(expectedRefreshArgs);
   });
 
-  it("asks for no particular organization when none was stored", async () => {
+  // An unexpired token is only worth presenting if it is bound to the API.
+  // One stored with another audience would be refused, so it is renewed.
+  it("refreshes an unexpired token that is not bound to the resource", async () => {
     const { deps, refreshTokens } = makeDeps({
       found: true,
-      tokens: { ...stored, expiresAt: nowMs - 1, organizationId: undefined },
+      tokens: { ...stored, accessToken: environmentToken(nowMs + 60_000) },
       source: "keychain",
     });
 
-    await resolveOauthToken("/config", deps);
+    const result = await resolveOauthToken("/config", deps);
 
-    expect(refreshTokens).toHaveBeenCalledWith({
-      refreshToken: "refresh_old",
-      organizationId: undefined,
-      clientId: "client_1",
-    });
+    expect(refreshTokens).toHaveBeenCalledTimes(1);
+    expect(result?.key).toBe(refreshed.accessToken);
   });
 
-  it("persists the rotated refresh token, not just the access token", async () => {
+  it("persists the rotated pair together with the session's binding and email", async () => {
     const { deps, saveTokens } = makeDeps({
       found: true,
       tokens: { ...stored, expiresAt: nowMs - 1 },
@@ -150,7 +94,10 @@ describe("resolveOauthToken", () => {
 
     expect(saveTokens).toHaveBeenCalledWith("/config", {
       ...refreshed,
+      email: "person@example.com",
+      issuer: testIssuer,
       clientId: "client_1",
+      resource: testResource,
     });
   });
 
@@ -170,7 +117,7 @@ describe("resolveOauthToken", () => {
         tokens: { ...stored, expiresAt: nowMs - 1 },
         source: "file",
       },
-      { ok: false, error: "token revoked", retryable: false },
+      [{ ok: false, error: "token revoked", retryable: false }],
     );
 
     const result = await resolveOauthToken("/config", deps);

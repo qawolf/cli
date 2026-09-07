@@ -1,7 +1,7 @@
-import { readAccessTokenExpiry } from "~/core/deviceAuth/tokenExpiry.js";
 import type { PollResponse } from "~/core/deviceAuth/types.js";
-import { sendWorkosRequest, unexpectedResponse } from "./send.js";
-import { deviceTokenBody, type WorkosDeps } from "./types.js";
+import { readConnectTokens } from "./connectTokens.js";
+import { sendWorkosRequest } from "./send.js";
+import type { WorkosDeps } from "./types.js";
 
 const deviceCodeGrantType = "urn:ietf:params:oauth:grant-type:device_code";
 
@@ -9,19 +9,24 @@ const deviceCodeGrantType = "urn:ietf:params:oauth:grant-type:device_code";
  * One attempt at redeeming a device code, translated from OAuth wire codes into
  * the vocabulary the pure state machine understands. Looping and backing off
  * are the caller's job.
+ *
+ * The token this yields is not yet one the API accepts: WorkOS answered the
+ * device grant with the environment client id as the audience whatever
+ * `resource` asked for. The refresh that follows is what binds it.
  */
 export async function pollDeviceToken(
   deviceCode: string,
   deps: WorkosDeps,
 ): Promise<PollResponse> {
   const outcome = await sendWorkosRequest(
-    `${deps.baseUrl}/user_management/authenticate`,
+    deps.endpoints.token,
     {
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
+        client_id: deps.clientId,
         grant_type: deviceCodeGrantType,
         device_code: deviceCode,
-        client_id: deps.clientId,
+        resource: deps.resource,
       }).toString(),
     },
     deps.fetch,
@@ -61,19 +66,8 @@ export async function pollDeviceToken(
     }
   }
 
-  const parsed = deviceTokenBody.safeParse(outcome.json);
-  if (!parsed.success) {
-    return { kind: "error", detail: unexpectedResponse };
-  }
+  const tokens = readConnectTokens(outcome.json);
+  if (!tokens.ok) return { kind: "error", detail: tokens.error };
 
-  return {
-    kind: "tokens",
-    tokens: {
-      accessToken: parsed.data.access_token,
-      refreshToken: parsed.data.refresh_token,
-      expiresAt: readAccessTokenExpiry(parsed.data.access_token),
-      email: parsed.data.user.email,
-      organizationId: parsed.data.organization_id,
-    },
-  };
+  return { kind: "tokens", tokens: tokens.tokens };
 }

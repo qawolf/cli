@@ -9,7 +9,6 @@ const tokens: DeviceTokens = {
   accessToken: "access",
   refreshToken: "refresh",
   expiresAt: undefined,
-  email: "person@example.com",
   organizationId: undefined,
 };
 

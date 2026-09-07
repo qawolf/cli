@@ -4,21 +4,27 @@ import {
   type AuthorizationResult,
   defaultIntervalSec,
   deviceAuthorizationBody,
+  deviceScope,
   type WorkosDeps,
 } from "./types.js";
 
 /**
- * Starts a device flow. Note the content type: this endpoint takes JSON, while
- * the token endpoint it pairs with takes form encoding.
+ * Starts a device flow at the endpoint the issuer advertised. The resource is
+ * asked for here as well as on the grants: RFC 8707 puts it on every request,
+ * even though WorkOS was observed to honour it only on the refresh.
  */
 export async function requestDeviceAuthorization(
   deps: WorkosDeps,
 ): Promise<AuthorizationResult<DeviceAuthorization>> {
   const outcome = await sendWorkosRequest(
-    `${deps.baseUrl}/user_management/authorize/device`,
+    deps.endpoints.deviceAuthorization,
     {
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ client_id: deps.clientId }),
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: deps.clientId,
+        scope: deviceScope,
+        resource: deps.resource,
+      }).toString(),
     },
     deps.fetch,
   );

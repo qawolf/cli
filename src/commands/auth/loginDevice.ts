@@ -1,51 +1,58 @@
-import type { DeviceAuthorization } from "~/core/deviceAuth/types.js";
 import { authMessages } from "~/core/messages/index.js";
 import { sleep } from "~/core/sleep.js";
+import {
+  type ConnectConfig,
+  resolveConnectConfig,
+} from "~/domains/auth/connectConfig.js";
 import { deviceLogin } from "~/domains/auth/deviceLogin.js";
+import { fetchSessionEmail } from "~/domains/auth/sessionEmail.js";
 import { saveTokens } from "~/domains/auth/store/saveTokens.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
-import { openBrowser } from "~/shell/openBrowser.js";
-import { defaultSpawn } from "~/shell/spawn.js";
-import { getAuthConfig } from "~/shell/platform/getAuthConfig.js";
-import { resolveWorkosConfig } from "~/shell/workos/config.js";
 import { pollDeviceToken } from "~/shell/workos/pollDeviceToken.js";
+import { refreshAccessToken } from "~/shell/workos/refreshAccessToken.js";
 import { requestDeviceAuthorization } from "~/shell/workos/requestDeviceAuthorization.js";
+import { defaultOpenBrowser, showDeviceCode } from "./showDeviceCode.js";
 
 export type LoginDeviceDeps = {
   env?: Record<string, string | undefined>;
   platform?: NodeJS.Platform;
+  fetch?: typeof globalThis.fetch;
+  openBrowser?: (url: string) => Promise<boolean>;
 };
 
-/** Browser sign-in. Assumes the caller has already shown the intro. */
-export async function loginWithDevice(
+function describeConfigFailure(
   ctx: CommandContext,
-  deps: LoginDeviceDeps = {},
+  result: Exclude<
+    Awaited<ReturnType<typeof resolveConnectConfig>>,
+    { kind: "configured" }
+  >,
+): CommandResult {
+  const m = authMessages.device;
+  switch (result.kind) {
+    case "unreachable":
+      ctx.log("auth").debug(`auth config unreachable: ${result.detail}`);
+      return { error: m.configUnreachable, errorBody: result.detail };
+    case "unavailable":
+      return { error: m.unavailable };
+    case "legacy-only":
+      return { error: m.legacyOnly };
+    case "misconfigured":
+      return { error: m.misconfigured, errorBody: result.detail };
+    case "discovery-failed":
+      return { error: m.discoveryFailed, errorBody: result.detail };
+  }
+}
+
+async function signIn(
+  ctx: CommandContext,
+  config: ConnectConfig,
+  deps: Required<LoginDeviceDeps>,
 ): Promise<CommandResult> {
-  // The deployment publishes the client id it signs people in with, so the
-  // CLI carries none and follows whatever host it is aimed at.
-  const authConfig = await getAuthConfig({
-    baseUrl: ctx.apiBaseUrl,
-    fetch: globalThis.fetch,
-  });
-  if (authConfig.kind === "unreachable") {
-    ctx.log("auth").debug(`auth config unreachable: ${authConfig.detail}`);
-    return {
-      error: authMessages.device.configUnreachable,
-      errorBody: authConfig.detail,
-    };
-  }
-
-  const config = resolveWorkosConfig(
-    authConfig.kind === "configured" ? authConfig.clientId : undefined,
-  );
-  if (!config.configured) {
-    return { error: authMessages.device.unavailable };
-  }
-
   const workos = {
-    fetch: globalThis.fetch,
-    baseUrl: config.baseUrl,
+    fetch: deps.fetch,
     clientId: config.clientId,
+    resource: config.resource,
+    endpoints: config.endpoints,
   };
 
   // Ctrl-C runs the signal registry, which flips this flag so the polling loop
@@ -55,37 +62,22 @@ export async function loginWithDevice(
     cancelled = true;
   });
 
-  const showCode = async (authorization: DeviceAuthorization) => {
-    const url =
-      authorization.verificationUriComplete ?? authorization.verificationUri;
-    ctx.ui.note(
-      [
-        authMessages.device.confirmCode(authorization.userCode),
-        authMessages.device.visitUrl(url),
-        url === authorization.verificationUri
-          ? undefined
-          : authMessages.device.visitUrlPlain(authorization.verificationUri),
-      ]
-        .filter((line): line is string => Boolean(line))
-        .join("\n"),
-      authMessages.title,
-    );
-
-    const opened = await openBrowser(url, {
-      sleep,
-      spawn: defaultSpawn,
-      platform: deps.platform ?? process.platform,
-    });
-    if (!opened) ctx.ui.info(authMessages.device.openFailed(url));
-
-    ctx.ui.step(authMessages.device.waiting);
-  };
-
   try {
     const result = await deviceLogin({
       requestAuthorization: () => requestDeviceAuthorization(workos),
       pollToken: (deviceCode) => pollDeviceToken(deviceCode, workos),
-      onPrompt: showCode,
+      refreshTokens: (refreshToken) => refreshAccessToken(refreshToken, workos),
+      binding: { issuer: config.issuer, resource: config.resource },
+      fetchEmail: (accessToken) =>
+        fetchSessionEmail(accessToken, {
+          fetch: deps.fetch,
+          baseUrl: ctx.apiBaseUrl,
+        }),
+      onPrompt: (authorization) =>
+        showDeviceCode(ctx, authorization, {
+          platform: deps.platform,
+          openBrowser: deps.openBrowser,
+        }),
       sleep,
       now: () => Date.now(),
       isCancelled: () => cancelled,
@@ -101,15 +93,46 @@ export async function loginWithDevice(
       };
     }
 
+    // Only the resource-bound pair the API has accepted is worth keeping. The
+    // binding rides with it so a later refresh asks the deployment nothing.
     await saveTokens(
       ctx.configDir,
-      { ...result.tokens, clientId: config.clientId },
+      {
+        ...result.session,
+        issuer: config.issuer,
+        clientId: config.clientId,
+        resource: config.resource,
+      },
       ctx.fs,
     );
 
-    ctx.ui.outro(authMessages.device.signedIn(result.tokens.email));
+    ctx.ui.outro(authMessages.device.signedIn(result.session.email));
     return;
   } finally {
     unregister();
   }
+}
+
+/** Browser sign-in. Assumes the caller has already shown the intro. */
+export async function loginWithDevice(
+  ctx: CommandContext,
+  deps: LoginDeviceDeps = {},
+): Promise<CommandResult> {
+  const platform = deps.platform ?? process.platform;
+  const resolved: Required<LoginDeviceDeps> = {
+    env: deps.env ?? process.env,
+    platform,
+    fetch: deps.fetch ?? globalThis.fetch,
+    openBrowser: deps.openBrowser ?? defaultOpenBrowser(platform),
+  };
+
+  // The deployment publishes the issuer and client id it signs people in
+  // with, so the CLI carries none and follows whatever host it is aimed at.
+  const config = await resolveConnectConfig({
+    apiBaseUrl: ctx.apiBaseUrl,
+    fetch: resolved.fetch,
+  });
+  if (config.kind !== "configured") return describeConfigFailure(ctx, config);
+
+  return signIn(ctx, config.config, resolved);
 }

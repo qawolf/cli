@@ -18,11 +18,16 @@ function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
 
 const baseUrl = "https://test.qawolf.com";
 
+/** What a Connect-enabled deployment publishes. The two ids are distinct. */
+const connect = {
+  workOsClientId: "client_01ENV",
+  authorizationServer: "https://signin.example",
+  workOsConnectClientId: "client_01CONNECT",
+};
+
 describe("getAuthConfig", () => {
   it("reads the deployment's sign-in configuration without credentials", async () => {
-    const mockFetch = createFetchMock(
-      jsonResponse({ workOsClientId: "client_1" }),
-    );
+    const mockFetch = createFetchMock(jsonResponse(connect));
 
     await getAuthConfig({ baseUrl, fetch: mockFetch });
 
@@ -33,13 +38,58 @@ describe("getAuthConfig", () => {
     expect(init.headers).toBeUndefined();
   });
 
-  it("returns the client id the deployment publishes", async () => {
+  // The environment client id is what the legacy flow signed in with. Tokens
+  // it issues carry that id as their audience, which the API rejects.
+  it("selects the Connect client id and issuer, not the environment id", async () => {
     const result = await getAuthConfig({
       baseUrl,
-      fetch: createFetchMock(jsonResponse({ workOsClientId: "client_1" })),
+      fetch: createFetchMock(jsonResponse(connect)),
     });
 
-    expect(result).toEqual({ kind: "configured", clientId: "client_1" });
+    expect(result).toEqual({
+      kind: "configured",
+      issuer: "https://signin.example",
+      clientId: "client_01CONNECT",
+    });
+  });
+
+  it("reads a deployment publishing only the environment id as legacy-only", async () => {
+    const result = await getAuthConfig({
+      baseUrl,
+      fetch: createFetchMock(jsonResponse({ workOsClientId: "client_01ENV" })),
+    });
+
+    expect(result).toEqual({ kind: "legacy-only" });
+  });
+
+  // Half a Connect configuration is a deployment mistake, and substituting the
+  // environment id would sign someone in to a token the API then refuses.
+  it.each([
+    ["the issuer", "authorizationServer"],
+    ["the Connect client id", "workOsConnectClientId"],
+  ])("reads a configuration missing %s as misconfigured", async (_l, field) => {
+    const { [field]: _dropped, ...partial } = connect as Record<string, string>;
+
+    const result = await getAuthConfig({
+      baseUrl,
+      fetch: createFetchMock(jsonResponse(partial)),
+    });
+
+    if (result.kind !== "misconfigured") {
+      throw Error(`expected misconfigured, got ${result.kind}`);
+    }
+    expect(result.detail).toContain(field);
+  });
+
+  it("treats a blank Connect field as absent", async () => {
+    const result = await getAuthConfig({
+      baseUrl,
+      fetch: createFetchMock(
+        jsonResponse({ ...connect, workOsConnectClientId: "  " }),
+      ),
+    });
+
+    expect(result.kind).toBe("misconfigured");
   });
 
   it("reads a deployment that does not serve the route as offering none", async () => {

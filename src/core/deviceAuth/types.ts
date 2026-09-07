@@ -1,13 +1,17 @@
+/**
+ * What the token endpoint hands back, as far as the CLI keeps it. No email:
+ * a Connect token response is a plain OAuth one, and who the person is comes
+ * from the API once it has accepted the token.
+ */
 export type DeviceTokens = {
   accessToken: string;
   refreshToken: string;
   /** Epoch ms; absent when the token carried no readable expiry. */
   expiresAt: number | undefined;
-  email: string;
   /**
-   * WorkOS organization the session is scoped to. WorkOS picks one when the
-   * person belongs to several and the device flow never asks, so it is kept
-   * both to show which was chosen and to pin refreshes to it.
+   * WorkOS organization the token is scoped to, read from its `org_id` claim.
+   * The API confines the session to it, so it is kept to show which one was
+   * granted and to notice when a refresh lands somewhere else.
    */
   organizationId: string | undefined;
 };

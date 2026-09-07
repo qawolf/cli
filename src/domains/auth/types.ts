@@ -17,15 +17,21 @@ export type LoadApiKeyResult =
   | { found: true; key: string; source: StorageSource }
   | { found: false; errors?: { keychain?: string; file?: string } };
 
-/** What browser sign-in persists: the WorkOS tokens plus their issuing client. */
+/**
+ * What browser sign-in persists: the token pair, who it belongs to, and what
+ * it is bound to. A refresh token is only redeemable against its issuer and
+ * client, and only yields a usable token when it asks for the same resource,
+ * so all three ride with the session rather than being asked of the
+ * deployment again — which could answer differently once the CLI is pointed
+ * elsewhere.
+ */
 export type StoredSession = DeviceTokens & {
-  /**
-   * WorkOS client that issued these tokens. A refresh token is only redeemable
-   * against its issuing client, so the session records it rather than asking
-   * the deployment again — which could answer differently if the CLI has since
-   * been pointed elsewhere.
-   */
-  clientId: string | undefined;
+  /** From the API's identity response, not from the token. */
+  email: string;
+  issuer: string;
+  clientId: string;
+  /** The API resource the tokens are bound to; also names the deployment. */
+  resource: string;
 };
 
 export type LoadTokensResult =

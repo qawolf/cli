@@ -1,20 +1,7 @@
 import { describe, expect, it, mock } from "bun:test";
 
 import { requestDeviceAuthorization } from "./requestDeviceAuthorization.js";
-
-function createFetchMock(resolvedValue: Response) {
-  return mock<typeof fetch>().mockResolvedValue(
-    resolvedValue,
-  ) as unknown as typeof fetch;
-}
-
-function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
-  return new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { "content-type": "application/json" },
-    ...init,
-  });
-}
+import { createFetchMock, jsonResponse, testDeps } from "./workos.testUtils.js";
 
 const authorization = {
   device_code: "device_abc",
@@ -23,11 +10,6 @@ const authorization = {
   verification_uri_complete: "https://example.com/device?user_code=WDJB-MJHT",
   expires_in: 300,
   interval: 5,
-};
-
-const deps = {
-  baseUrl: "https://api.example.com",
-  clientId: "client_123",
 };
 
 type Result = Awaited<ReturnType<typeof requestDeviceAuthorization>>;
@@ -43,24 +25,30 @@ function expectError(result: Result): string {
 }
 
 describe("requestDeviceAuthorization", () => {
-  it("posts the client id as JSON to the device authorization endpoint", async () => {
+  it("posts the grant request as form fields to the discovered endpoint", async () => {
     const mockFetch = createFetchMock(jsonResponse(authorization));
 
-    await requestDeviceAuthorization({ ...deps, fetch: mockFetch });
+    await requestDeviceAuthorization({ ...testDeps, fetch: mockFetch });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.example.com/user_management/authorize/device",
+      "https://signin.example/oauth2/device_authorization",
       expect.objectContaining({
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ client_id: "client_123" }),
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: "client_123",
+          // offline_access is what earns a refresh token, and the refresh is
+          // the only exchange that yields a token the API accepts.
+          scope: "openid profile email offline_access",
+          resource: "https://app.example/api",
+        }).toString(),
       }),
     );
   });
 
   it("returns the authorization in the shape the poller expects", async () => {
     const result = await requestDeviceAuthorization({
-      ...deps,
+      ...testDeps,
       fetch: createFetchMock(jsonResponse(authorization)),
     });
 
@@ -81,7 +69,7 @@ describe("requestDeviceAuthorization", () => {
   it("falls back to a five second interval when the server omits one", async () => {
     const { interval: _interval, ...withoutInterval } = authorization;
     const result = await requestDeviceAuthorization({
-      ...deps,
+      ...testDeps,
       fetch: createFetchMock(jsonResponse(withoutInterval)),
     });
 
@@ -91,7 +79,7 @@ describe("requestDeviceAuthorization", () => {
   it("reports a missing complete URI as undefined rather than omitting it", async () => {
     const { verification_uri_complete: _complete, ...partial } = authorization;
     const result = await requestDeviceAuthorization({
-      ...deps,
+      ...testDeps,
       fetch: createFetchMock(jsonResponse(partial)),
     });
 
@@ -100,7 +88,7 @@ describe("requestDeviceAuthorization", () => {
 
   it("fails when the device grant is not enabled for the client", async () => {
     const result = await requestDeviceAuthorization({
-      ...deps,
+      ...testDeps,
       fetch: createFetchMock(
         jsonResponse(
           { error: "unauthorized_client", error_description: "not enabled" },
@@ -118,7 +106,7 @@ describe("requestDeviceAuthorization", () => {
 
   it("fails with the error code when no description is given", async () => {
     const result = await requestDeviceAuthorization({
-      ...deps,
+      ...testDeps,
       fetch: createFetchMock(
         jsonResponse({ error: "invalid_client" }, { status: 400 }),
       ),
@@ -133,7 +121,7 @@ describe("requestDeviceAuthorization", () => {
 
   it("fails when the response body does not match the contract", async () => {
     const result = await requestDeviceAuthorization({
-      ...deps,
+      ...testDeps,
       fetch: createFetchMock(jsonResponse({ nonsense: true })),
     });
 
@@ -146,10 +134,29 @@ describe("requestDeviceAuthorization", () => {
     ) as unknown as typeof fetch;
 
     const result = await requestDeviceAuthorization({
-      ...deps,
+      ...testDeps,
       fetch: mockFetch,
     });
 
     expect(expectError(result)).toContain("connect ECONNREFUSED");
+  });
+
+  // The endpoint receives a public client id and nothing else worth stealing,
+  // but the token endpoint it pairs with does. Same transport, same rule.
+  it("does not follow a redirect", async () => {
+    const result = await requestDeviceAuthorization({
+      ...testDeps,
+      fetch: createFetchMock(
+        new Response(undefined, {
+          status: 307,
+          headers: { location: "https://elsewhere.example" },
+        }),
+      ),
+    });
+
+    const error = expectError(result);
+    expect(error).toContain("redirect");
+    if (result.ok) return;
+    expect(result.retryable).toBe(false);
   });
 });
