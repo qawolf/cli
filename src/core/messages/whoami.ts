@@ -38,7 +38,7 @@ export const whoamiMessages = {
   ) =>
     found
       ? `${found.workspace} (${found.organization})`
-      : `${workspaceId} — no longer in reach; run 'qawolf auth switch'`,
+      : `${workspaceId} — not in the organization you signed in to. Run 'qawolf auth switch' to pick one that is, or 'qawolf auth login' to sign in to another organization.`,
   userNote: (input: {
     user: { email: string; id: string };
     organization: { id: string; name: string };

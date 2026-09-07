@@ -1,61 +1,15 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
-import type {
-  Organization,
-  Workspace,
-} from "~/shell/platform/organizations.js";
+import type { Organization } from "~/shell/platform/organizations.js";
 import { selectWorkspace } from "./selectWorkspace.js";
-
-const acmeMain: Workspace = { id: "ws_main", name: "Main", slug: "main" };
-const acmeStaging: Workspace = { id: "ws_stg", name: "Staging", slug: "stg" };
-
-const acme: Organization = {
-  id: "qw_acme",
-  name: "Acme",
-  workOsOrganizationId: "org_acme",
-  workspaces: [acmeMain, acmeStaging],
-};
-
-const solo: Workspace = { id: "ws_solo", name: "Solo", slug: "solo" };
-
-const personal: Organization = {
-  id: "qw_personal",
-  name: "Chase J",
-  workOsOrganizationId: "org_personal",
-  workspaces: [solo],
-};
-
-function makeDeps(
-  overrides: {
-    organizations?: Organization[];
-    preferredOrganization?: string | undefined;
-    preferredWorkspace?: string | undefined;
-    chosenOrganization?: Organization | undefined;
-    chosenWorkspace?: Workspace | undefined;
-  } = {},
-) {
-  const chooseOrganization = mock(async (_organizations: Organization[]) =>
-    "chosenOrganization" in overrides ? overrides.chosenOrganization : acme,
-  );
-  const chooseWorkspace = mock(async (_workspaces: Workspace[]) =>
-    "chosenWorkspace" in overrides ? overrides.chosenWorkspace : acmeMain,
-  );
-  const saveWorkspace = mock(async (_workspaceId: string) => {});
-
-  return {
-    chooseOrganization,
-    chooseWorkspace,
-    saveWorkspace,
-    deps: {
-      organizations: overrides.organizations ?? [acme, personal],
-      preferredOrganization: overrides.preferredOrganization,
-      preferredWorkspace: overrides.preferredWorkspace,
-      chooseOrganization,
-      chooseWorkspace,
-      saveWorkspace,
-    },
-  };
-}
+import {
+  acme,
+  acmeMain,
+  acmeStaging,
+  makeDeps,
+  personal,
+  solo,
+} from "./selectWorkspace.testUtils.js";
 
 describe("selectWorkspace", () => {
   it("does nothing when the account reaches no organizations", async () => {
@@ -88,9 +42,6 @@ describe("selectWorkspace", () => {
   });
 
   it("uses the only organization it is given without asking", async () => {
-    // Employee reach: the API authorizes by workspace, so choosing one outside
-    // the credential's organization needs no token change and cannot be
-    // refused by the identity provider.
     const { deps, saveWorkspace } = makeDeps({
       organizations: [acme],
       chosenWorkspace: acmeStaging,

@@ -68,5 +68,28 @@ describe("handleWhoami", () => {
         expect.any(String),
       );
     });
+
+    // The saved workspace lives outside the organization this sign-in was
+    // granted, so every request naming it is refused. Nothing switches access
+    // locally: the person has to pick one in reach, or sign in to the other
+    // organization.
+    it("says a saved workspace outside the grant needs a switch or a new sign-in", async () => {
+      const ctx = makeCtx("human", { apiBaseUrl: "https://app.qawolf.com" });
+      const deps = makeUserDeps();
+      deps.requireApiKey = mock(() =>
+        Promise.resolve({
+          key: "test-key",
+          source: "browser" as const,
+          workspaceId: "ws_elsewhere",
+        }),
+      );
+
+      await handleWhoami(ctx, deps);
+
+      expect(ctx.ui.note).toHaveBeenCalledWith(
+        expect.stringContaining("qawolf auth login"),
+        expect.any(String),
+      );
+    });
   });
 });
