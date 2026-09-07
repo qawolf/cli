@@ -1,4 +1,7 @@
+import { deviceMessages } from "./authDevice.js";
+import { pluralize } from "~/core/pluralize.js";
 import { authErrorMessages } from "./authErrors.js";
+import { whoamiMessages } from "./whoami.js";
 
 export const authMessages = {
   title: "QA Wolf Authentication",
@@ -33,42 +36,29 @@ export const authMessages = {
         "A stored API key takes precedence over a browser session. Commands continue to use that key until you run 'qawolf auth logout' and sign in again.",
     },
   },
-  device: {
-    unavailable:
-      "This QA Wolf deployment does not offer browser sign-in. Run 'qawolf auth login' again and choose 'API key'.",
-    configUnreachable:
-      "Could not ask this QA Wolf deployment whether it offers browser sign-in. Check your connection, then try again.",
-    legacyOnly:
-      "Browser sign-in is unavailable: this QA Wolf deployment does not offer WorkOS Connect sign-in yet. Run 'qawolf auth login' again and choose 'API key'.",
-    misconfigured:
-      "This QA Wolf deployment publishes an incomplete browser sign-in configuration. Ask whoever runs it to check its WorkOS Connect settings.",
-    discoveryFailed:
-      "The sign-in provider this QA Wolf deployment names did not answer as one. Ask whoever runs the deployment to check its WorkOS Connect settings.",
-    confirmCode: (userCode: string) => `Your code is ${userCode}`,
-    visitUrl: (url: string) => `Confirm it at ${url}`,
-    // RFC 8628 asks a client using the prefilled URL to show the plain one too,
-    // for anyone who cannot follow the shortcut — a wrapped or truncated long
-    // URL in a narrow terminal being exactly that case.
-    visitUrlPlain: (url: string) => `Or go to ${url} and enter the code`,
-    openFailed: (url: string) =>
-      `Could not open a browser automatically. Open ${url} yourself to continue.`,
-    waiting: "Waiting for you to finish in the browser",
-    signedIn: (email: string) => `Signed in as ${email}.`,
-    failed: {
-      "access-denied": "The sign-in request was rejected.",
-      expired: "The sign-in request expired. Run 'qawolf auth login' to retry.",
-      timeout:
-        "The sign-in request timed out. Run 'qawolf auth login' to retry.",
-      network: "Could not reach WorkOS to complete sign-in.",
-      unavailable: "Could not start browser sign-in.",
-      cancelled: "Sign-in cancelled.",
-      "refresh-failed":
-        "Sign-in was approved, but WorkOS did not issue a token for this QA Wolf deployment.",
-      "token-rejected":
-        "Sign-in was approved, but WorkOS issued a token this QA Wolf deployment would not accept. Ask whoever runs the deployment to check that its API URL is registered with WorkOS.",
-      "identity-rejected":
-        "Sign-in was approved, but the QA Wolf API did not accept the new session.",
-    },
+  device: deviceMessages,
+  workspace: {
+    chooseOrganization: "Which organization do you want to work in?",
+    choose: "Which workspace do you want to use?",
+    workspaceCount: (count: number) => pluralize(count, "workspace"),
+    working: (organization: string, workspace: string) =>
+      `Working in ${workspace} (${organization}).`,
+    none: "This account reaches no organizations yet.",
+    cancelled: "Workspace not changed.",
+    notSignedIn:
+      "Workspace switching needs a browser sign-in. Run 'qawolf auth login' and choose Browser.",
+    sessionExpired:
+      "Your session could not be renewed. Run 'qawolf auth login' to sign in again.",
+    nonInteractive:
+      "auth switch needs an interactive terminal, or set QAWOLF_WORKSPACE to name a workspace.",
+    // A Connect token is consented to one organization. Nothing the CLI stores
+    // can move it, so the only route to another organization is signing in.
+    saveFailed: (detail: string) =>
+      `Could not save the workspace choice: ${detail}`,
+    signInElsewhere:
+      "To work in another organization, run 'qawolf auth login' and sign in to it.",
+    noneInGrant:
+      "None of the organizations this account lists belong to the organization you signed in to. To work in another organization, run 'qawolf auth login' and sign in to it.",
   },
   logout: {
     title: "Log Out",
@@ -82,47 +72,5 @@ export const authMessages = {
     cancelled: "Logout cancelled.",
   },
   errors: authErrorMessages,
-  whoami: {
-    source: (source: string) => `Source: ${source}`,
-    authFailed: (source: string, error: string) =>
-      `Authentication failed (source: ${source}): ${error}`,
-    authenticatedAs: (teamName: string, source: string) =>
-      `Authenticated as ${teamName} (source: ${source})`,
-    teamNote: (input: {
-      team: { id: string; name: string; slug?: string | undefined };
-      teamUrl: string | undefined;
-      source: string;
-    }) =>
-      [
-        `Team:   ${input.team.name}`,
-        `ID:     ${input.team.id}`,
-        input.team.slug ? `Slug:   ${input.team.slug}` : undefined,
-        input.teamUrl ? `URL:    ${input.teamUrl}` : undefined,
-        `Source: ${input.source}`,
-      ]
-        .filter((line): line is string => Boolean(line))
-        .join("\n"),
-    organizationNote: (input: {
-      organization: { id: string; name: string };
-      source: string;
-    }) =>
-      [
-        `Organization: ${input.organization.name}`,
-        `ID:           ${input.organization.id}`,
-        `Source:       ${input.source}`,
-      ].join("\n"),
-    userNote: (input: {
-      user: { email: string; id: string };
-      organization: { id: string; name: string };
-      source: string;
-    }) =>
-      [
-        `User:         ${input.user.email}`,
-        `ID:           ${input.user.id}`,
-        `Organization: ${input.organization.name}`,
-        `Source:       ${input.source}`,
-      ]
-        .filter((line): line is string => Boolean(line))
-        .join("\n"),
-  },
+  whoami: whoamiMessages,
 } as const;

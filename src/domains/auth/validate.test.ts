@@ -31,6 +31,7 @@ describe("validateApiKey", () => {
           name: "Acme Corp",
           slug: "acme",
         },
+        organizations: [],
       },
     });
 
@@ -42,7 +43,10 @@ describe("validateApiKey", () => {
   it("returns valid on successful organization verification", async () => {
     const deps = makeDeps({
       ok: true,
-      value: { organization: { id: "org_1", name: "Acme Org" } },
+      value: {
+        organization: { id: "org_1", name: "Acme Org" },
+        organizations: [],
+      },
     });
 
     const result = await validateApiKey(deps);

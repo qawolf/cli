@@ -1,0 +1,137 @@
+import { authMessages } from "~/core/messages/index.js";
+import {
+  selectWorkspace,
+  type SelectWorkspaceResult,
+} from "~/domains/auth/selectWorkspace.js";
+import { saveTokens } from "~/domains/auth/store/saveTokens.js";
+import type { StoredSession } from "~/domains/auth/types.js";
+import type { CommandContext } from "~/shell/commandContext.js";
+import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
+import type {
+  Organization,
+  Workspace,
+} from "~/shell/platform/organizations.js";
+
+type ChooseWorkspaceArgs = {
+  session: StoredSession;
+  env: Record<string, string | undefined>;
+  fetch: typeof globalThis.fetch;
+};
+
+/**
+ * Asks the platform which organizations the session reaches, then settles the
+ * organization and the workspace. Wiring only — the decision lives in the auth
+ * domain.
+ */
+export async function chooseWorkspace(
+  ctx: CommandContext,
+  args: ChooseWorkspaceArgs,
+): Promise<SelectWorkspaceResult> {
+  const client = createPlatformClient(args.session.accessToken, {
+    baseUrl: ctx.apiBaseUrl,
+    fetch: args.fetch,
+    logger: ctx.log("trpc"),
+  });
+
+  // The discovery endpoint lists what the credential may act on, which for a
+  // Connect token is the organization it was granted for. Identity lists
+  // membership, and stands in for a server that does not serve discovery yet.
+  // Either way the domain keeps the choice inside the grant.
+  //
+  // Asked together: neither depends on the other, and identity is wanted only
+  // as the fallback — so a transient identity failure must not abort a
+  // selection that discovery could have answered on its own.
+  const [identity, discovered] = await Promise.all([
+    client.getIdentity(),
+    client.getAccessibleOrganizations(),
+  ]);
+
+  let organizations;
+  if (discovered.ok) {
+    organizations = discovered.value;
+  } else if (identity.ok) {
+    // Only a user identity lists organizations; an API key names a team.
+    organizations =
+      "user" in identity.value ? identity.value.organizations : [];
+  } else {
+    return { outcome: "failed", error: identity.error };
+  }
+
+  return selectWorkspace({
+    organizations,
+    grantedOrganizationId: args.session.organizationId,
+    preferredOrganization: args.env["QAWOLF_ORGANIZATION"]?.trim(),
+    preferredWorkspace: args.env["QAWOLF_WORKSPACE"]?.trim(),
+
+    chooseOrganization: async (organizations: Organization[]) => {
+      if (ctx.ui.mode !== "human") return undefined;
+      const picked = await ctx.ui.select(
+        authMessages.workspace.chooseOrganization,
+        organizations.map((organization) => ({
+          value: organization.workOsOrganizationId,
+          label: organization.name,
+          hint: authMessages.workspace.workspaceCount(
+            organization.workspaces.length,
+          ),
+        })),
+      );
+      if (!picked.ok) return undefined;
+      return organizations.find(
+        (organization) => organization.workOsOrganizationId === picked.value,
+      );
+    },
+
+    chooseWorkspace: async (workspaces: Workspace[]) => {
+      if (ctx.ui.mode !== "human") return undefined;
+      const picked = await ctx.ui.select(
+        authMessages.workspace.choose,
+        workspaces.map((workspace) => ({
+          value: workspace.id,
+          label: workspace.name,
+          ...(workspace.slug ? { hint: workspace.slug } : {}),
+        })),
+      );
+      if (!picked.ok) return undefined;
+      return workspaces.find((workspace) => workspace.id === picked.value);
+    },
+
+    // The credential does not move. Routes take the workspace as an argument
+    // and authorize it per request inside the token's organization, so the
+    // session keeps its tokens and only records where the person is working.
+    saveWorkspace: (workspaceId) =>
+      saveTokens(ctx.configDir, { ...args.session, workspaceId }, ctx.fs),
+  });
+}
+
+/** Reports the outcome, and says whether the command should fail. */
+export function reportWorkspace(
+  ctx: CommandContext,
+  result: SelectWorkspaceResult,
+): { error: string } | undefined {
+  switch (result.outcome) {
+    case "selected":
+      ctx.ui.info(
+        authMessages.workspace.working(
+          result.organization.name,
+          result.workspace.name,
+        ),
+      );
+      return undefined;
+    case "none":
+      ctx.ui.info(authMessages.workspace.none);
+      return undefined;
+    // Failures are returned, not printed: withContext renders every returned
+    // error, so printing here as well showed each one twice.
+    case "cancelled":
+      // Nothing was cancelled in a non-interactive run: there was no prompt to
+      // answer, and the environment did not name enough to settle the choice.
+      // Exiting 0 there leaves a script working in the previous workspace.
+      if (ctx.ui.mode !== "human") {
+        return { error: authMessages.workspace.nonInteractive };
+      }
+      ctx.ui.info(authMessages.workspace.cancelled);
+      return undefined;
+    case "failed":
+      return { error: result.error };
+  }
+}

@@ -12,6 +12,7 @@ import { pollDeviceToken } from "~/shell/workos/pollDeviceToken.js";
 import { refreshAccessToken } from "~/shell/workos/refreshAccessToken.js";
 import { requestDeviceAuthorization } from "~/shell/workos/requestDeviceAuthorization.js";
 import { defaultOpenBrowser, showDeviceCode } from "./showDeviceCode.js";
+import { chooseWorkspace, reportWorkspace } from "./chooseWorkspace.js";
 
 export type LoginDeviceDeps = {
   env?: Record<string, string | undefined>;
@@ -84,9 +85,8 @@ async function signIn(
     });
 
     if (!result.ok) {
-      // Returned rather than printed: withContext already renders a
-      // CommandResult, so printing here too showed the copy followed by the
-      // bare reason code.
+      // Returned rather than printed: withContext renders a CommandResult, so
+      // printing here too showed the copy followed by the bare reason code.
       return {
         error: authMessages.device.failed[result.reason],
         ...(result.detail ? { errorBody: result.detail } : {}),
@@ -95,16 +95,28 @@ async function signIn(
 
     // Only the resource-bound pair the API has accepted is worth keeping. The
     // binding rides with it so a later refresh asks the deployment nothing.
-    await saveTokens(
-      ctx.configDir,
-      {
-        ...result.session,
-        issuer: config.issuer,
-        clientId: config.clientId,
-        resource: config.resource,
-      },
-      ctx.fs,
-    );
+    const session = {
+      ...result.session,
+      workspaceId: undefined,
+      issuer: config.issuer,
+      clientId: config.clientId,
+      resource: config.resource,
+    };
+    await saveTokens(ctx.configDir, session, ctx.fs);
+
+    // WorkOS puts the session in an organization of its choosing, so settle
+    // which workspace to work in before declaring success.
+    const workspace = await chooseWorkspace(ctx, {
+      session,
+      env: deps.env,
+      fetch: deps.fetch,
+    });
+    // Honoured rather than discarded, as its sibling handleSwitchWorkspace
+    // does. The credential is saved either way, but a session with no workspace
+    // fails every public API command, so reporting plain success would send the
+    // person away believing they are ready.
+    const failure = reportWorkspace(ctx, workspace);
+    if (failure) return failure;
 
     ctx.ui.outro(authMessages.device.signedIn(result.session.email));
     return;

@@ -8,6 +8,7 @@ export const tokens: StoredSession = {
   expiresAt: 1_700_000_000_000,
   email: "person@example.com",
   organizationId: "org_1",
+  workspaceId: "ws_1",
   issuer: "https://signin.example",
   clientId: "client_1",
   resource: "https://app.example/api",

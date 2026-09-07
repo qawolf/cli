@@ -21,7 +21,10 @@ type ResolveApiKeyDeps = {
   env: Record<string, string | undefined>;
 };
 
-function makeOauthDeps(fs: Fs, apiBaseUrl: string): ResolveOauthTokenDeps {
+export function makeOauthDeps(
+  fs: Fs,
+  apiBaseUrl: string,
+): ResolveOauthTokenDeps {
   return {
     loadTokens: (configDir) =>
       realLoadTokens(configDir, { EntryClass: Entry, fs }),
@@ -71,17 +74,21 @@ export async function resolveApiKey(
   const resolvedDeps = deps ?? makeDefaultDeps(fs);
   const envKey = resolvedDeps.env["QAWOLF_API_KEY"];
   if (envKey?.trim()) {
-    return { key: envKey.trim(), source: "env" };
+    return { key: envKey.trim(), source: "env", workspaceId: undefined };
   }
 
   const stored = await resolvedDeps.loadApiKey(configDir);
   if (stored.found) {
-    return { key: stored.key, source: stored.source };
+    return { key: stored.key, source: stored.source, workspaceId: undefined };
   }
 
   const oauth = await resolvedDeps.resolveOauth(configDir);
   if (oauth) {
-    return { key: oauth.key, source: "browser" };
+    return {
+      key: oauth.key,
+      source: "browser",
+      workspaceId: oauth.workspaceId,
+    };
   }
 
   return undefined;

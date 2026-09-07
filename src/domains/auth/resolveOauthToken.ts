@@ -1,5 +1,5 @@
-import { verifyTokenBinding } from "~/core/deviceAuth/tokenClaims.js";
 import type { DeviceTokens } from "~/core/deviceAuth/types.js";
+import { isAdoptable, isBound } from "./sessionBinding.js";
 import type { LoadTokensResult, StoredSession } from "./types.js";
 
 /**
@@ -25,37 +25,11 @@ export type ResolveOauthTokenDeps = {
   resource: string;
 };
 
-export type OauthToken = { key: string; email: string };
-
-/** Whether the API would accept this session's access token as it stands. */
-function isBound(session: StoredSession): boolean {
-  return verifyTokenBinding(session.accessToken, {
-    issuer: session.issuer,
-    resource: session.resource,
-  }).ok;
-}
-
-/**
- * Whether a pair found on disk after a failed refresh is this command's
- * session and still usable: the same deployment, the same organization, a
- * token the API would take, and one that has not already expired. Another
- * command aimed elsewhere writes to the same store, and a pair that sat there
- * long enough to lapse is no better than the one that failed to refresh.
- */
-function isAdoptable(
-  candidate: StoredSession,
-  session: StoredSession,
-  nowMs: number,
-): boolean {
-  return (
-    candidate.resource === session.resource &&
-    candidate.organizationId === session.organizationId &&
-    candidate.expiresAt !== undefined &&
-    candidate.expiresAt > nowMs &&
-    isBound(candidate)
-  );
-}
-
+export type OauthToken = {
+  key: string;
+  email: string;
+  workspaceId: string | undefined;
+};
 /**
  * Undefined whenever a token cannot be produced. A failed refresh means "sign
  * in again", which the caller reports as not authenticated rather than as an
@@ -80,7 +54,11 @@ export async function resolveOauthToken(
     expiresAt !== undefined && expiresAt - expiryMarginMs > deps.now();
 
   if (isFresh && isBound(tokens)) {
-    return { key: tokens.accessToken, email: tokens.email };
+    return {
+      key: tokens.accessToken,
+      email: tokens.email,
+      workspaceId: tokens.workspaceId,
+    };
   }
 
   // The resource goes on every refresh: without it WorkOS answers with the
@@ -96,7 +74,11 @@ export async function resolveOauthToken(
     // leaves a token that still works, so ending the session over one would
     // sign someone out mid-command for nothing.
     if (refreshed.retryable && unexpired && isBound(tokens)) {
-      return { key: tokens.accessToken, email: tokens.email };
+      return {
+        key: tokens.accessToken,
+        email: tokens.email,
+        workspaceId: tokens.workspaceId,
+      };
     }
 
     // Another command may have refreshed while this one was in flight — the
@@ -110,7 +92,11 @@ export async function resolveOauthToken(
       current.tokens.refreshToken !== tokens.refreshToken &&
       isAdoptable(current.tokens, tokens, deps.now())
     ) {
-      return { key: current.tokens.accessToken, email: current.tokens.email };
+      return {
+        key: current.tokens.accessToken,
+        email: current.tokens.email,
+        workspaceId: current.tokens.workspaceId,
+      };
     }
     return undefined;
   }
@@ -118,6 +104,7 @@ export async function resolveOauthToken(
   const renewed: StoredSession = {
     ...refreshed.value,
     email: tokens.email,
+    workspaceId: tokens.workspaceId,
     issuer: tokens.issuer,
     clientId: tokens.clientId,
     resource: tokens.resource,
@@ -140,5 +127,9 @@ export async function resolveOauthToken(
   // opaque 401 in place of a reason.
   if (!isBound(renewed)) return undefined;
 
-  return { key: renewed.accessToken, email: renewed.email };
+  return {
+    key: renewed.accessToken,
+    email: renewed.email,
+    workspaceId: renewed.workspaceId,
+  };
 }

@@ -61,7 +61,10 @@ describe("getIdentity", () => {
       baseUrl: "https://test.qawolf.com",
     });
 
-    expect(result).toEqual({ ok: true, data: { organization } });
+    expect(result).toEqual({
+      ok: true,
+      data: { organization },
+    });
   });
 
   it("returns http WireError with status on auth failure", async () => {

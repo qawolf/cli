@@ -4,6 +4,8 @@ import { exitCodes } from "~/shell/exit.js";
 import { requireApiKey } from "~/domains/auth/index.js";
 import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
+import { describeActiveWorkspace } from "./activeWorkspace.js";
+import { reportTeamIdentity } from "./whoamiTeam.js";
 
 type WhoamiDeps = {
   requireApiKey?: typeof requireApiKey;
@@ -76,12 +78,20 @@ export async function handleWhoami(
 
   if ("user" in value) {
     const { organization, user } = value;
+
+    const activeWorkspace = describeActiveWorkspace(
+      resolved.workspaceId,
+      organization.id,
+      value.organizations,
+    );
     if (ctx.ui.mode === "human") {
       ctx.ui.note(
         authMessages.whoami.userNote({
           organization,
           source: resolved.source,
           user,
+          activeWorkspace,
+          organizations: value.organizations,
         }),
         authMessages.whoamiAuthenticated,
       );
@@ -93,6 +103,8 @@ export async function handleWhoami(
           organization,
           source: resolved.source,
           user,
+          workspaceId: resolved.workspaceId,
+          organizations: value.organizations,
         },
         authMessages.whoami.authenticatedAs(user.email, resolved.source),
       );
@@ -124,26 +136,5 @@ export async function handleWhoami(
     return;
   }
 
-  const { team } = value;
-  const teamUrl = team.slug
-    ? new URL("/" + encodeURIComponent(team.slug), ctx.apiBaseUrl).toString()
-    : undefined;
-
-  if (ctx.ui.mode === "human") {
-    ctx.ui.note(
-      authMessages.whoami.teamNote({ team, teamUrl, source: resolved.source }),
-      authMessages.whoamiAuthenticated,
-    );
-    ctx.ui.outro(authMessages.outroReady);
-  } else {
-    ctx.ui.output(
-      {
-        authenticated: true,
-        source: resolved.source,
-        team,
-        teamUrl,
-      },
-      authMessages.whoami.authenticatedAs(team.name, resolved.source),
-    );
-  }
+  reportTeamIdentity(ctx, value, resolved.source);
 }
