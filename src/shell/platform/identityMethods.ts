@@ -1,6 +1,6 @@
 import { describeIdentityError } from "./describeErrors.js";
 import { getAccessibleOrganizations } from "./getAccessibleOrganizations.js";
-import { getIdentity, type Identity } from "./getIdentity.js";
+import { getIdentity, type IdentityResponse } from "./getIdentity.js";
 import type { Organization } from "./organizations.js";
 import { type PlatformResult, requestWithRetry } from "./requestWithRetry.js";
 
@@ -11,7 +11,7 @@ type Deps = {
 };
 
 export type IdentityMethods = {
-  getIdentity: () => Promise<PlatformResult<Identity>>;
+  getIdentity: () => Promise<PlatformResult<IdentityResponse>>;
   getAccessibleOrganizations: () => Promise<PlatformResult<Organization[]>>;
 };
 

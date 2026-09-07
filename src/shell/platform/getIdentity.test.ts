@@ -51,7 +51,7 @@ describe("getIdentity", () => {
       baseUrl: "https://test.qawolf.com",
     });
 
-    expect(result).toEqual({ ok: true, data: { team, organizations: [] } });
+    expect(result).toEqual({ ok: true, data: { team } });
   });
 
   it("returns ok with parsed data for an organization identity", async () => {
@@ -63,7 +63,7 @@ describe("getIdentity", () => {
 
     expect(result).toEqual({
       ok: true,
-      data: { organization, organizations: [] },
+      data: { organization },
     });
   });
 
@@ -161,6 +161,6 @@ describe("getIdentity", () => {
       baseUrl: "https://test.qawolf.com",
     });
 
-    expect(result).toEqual({ ok: true, data: { team, organizations: [] } });
+    expect(result).toEqual({ ok: true, data: { team } });
   });
 });

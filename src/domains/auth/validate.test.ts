@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, mock } from "bun:test";
 
 import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
 import type { PlatformResult } from "~/shell/platform/requestWithRetry.js";
-import type { Identity } from "~/shell/platform/getIdentity.js";
+import type { IdentityResponse } from "~/shell/platform/getIdentity.js";
 import { makeMockPlatformClient } from "~/shell/platform/createPlatformClient.testUtils.js";
 
 import { validateApiKey } from "./validate.js";
@@ -11,7 +11,7 @@ afterEach(() => {
   mock.restore();
 });
 
-function makeDeps(result: PlatformResult<Identity>) {
+function makeDeps(result: PlatformResult<IdentityResponse>) {
   return {
     platformClient: makeMockPlatformClient({
       getIdentity:

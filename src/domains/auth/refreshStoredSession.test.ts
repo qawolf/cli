@@ -88,4 +88,25 @@ describe("refreshStoredSession", () => {
     expect(result.kind).toBe("session");
     expect(calls).toEqual(["load", "refresh", "load"]);
   });
+
+  // The store is shared. A sign-in that lands between the two reads belongs to
+  // whoever signed in, and a workspace chosen on it would be written into
+  // their session.
+  it("refuses a session that belongs to someone else by the time it is reread", async () => {
+    const loadTokens = mock(async () =>
+      found({ ...rotated, email: "someone-else@example.com" }),
+    );
+    loadTokens.mockResolvedValueOnce(found(spent));
+
+    const result = await refreshStoredSession("/config", fs, {
+      loadTokens,
+      resolveOauth: async () => ({
+        key: rotated.accessToken,
+        email: rotated.email,
+        workspaceId: rotated.workspaceId,
+      }),
+    });
+
+    expect(result).toEqual({ kind: "refresh-failed" });
+  });
 });
