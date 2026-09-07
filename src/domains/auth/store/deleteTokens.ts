@@ -4,12 +4,12 @@ import { join } from "node:path";
 
 import { Entry } from "@napi-rs/keyring";
 
-import { account, credentialsFile, service } from "./constants.js";
+import { service, tokensAccount, tokensFile } from "./constants.js";
 import type { DeleteCredentialResult } from "./types.js";
 
 function deleteFromKeychain(): DeleteCredentialResult["keychain"] {
   try {
-    new Entry(service, account).deletePassword();
+    new Entry(service, tokensAccount).deletePassword();
     return "deleted";
   } catch {
     return "unavailable";
@@ -21,7 +21,7 @@ async function deleteFromFile(
   fs: Fs,
 ): Promise<DeleteCredentialResult["file"]> {
   try {
-    await fs.unlink(join(configDir, credentialsFile));
+    await fs.unlink(join(configDir, tokensFile));
     return "deleted";
   } catch (err: unknown) {
     // Only a missing file is "not-found". Swallowing a permission or I/O error
@@ -32,7 +32,7 @@ async function deleteFromFile(
   }
 }
 
-export async function deleteApiKey(
+export async function deleteTokens(
   configDir: string,
   fs: Fs,
 ): Promise<DeleteCredentialResult> {
