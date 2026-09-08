@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { exitCodes, exit, flushAndExit } from "./exit.js";
+import { exitCodes, exit, exitWhenIdle } from "./exit.js";
 
 function createFakeProcess() {
   const stderr: string[] = [];
@@ -64,75 +64,34 @@ describe("exit", () => {
   });
 });
 
-function createFlushFakeProcess() {
+function createIdleFakeProcess() {
   const exitCalls: number[] = [];
-  let stdoutCb: (() => void) | undefined;
-  let stderrCb: (() => void) | undefined;
   const proc = {
-    stdout: {
-      write: (_chunk: string, cb: () => void): boolean => {
-        stdoutCb = cb;
-        return true;
-      },
-    },
-    stderr: {
-      write: (_chunk: string, cb: () => void): boolean => {
-        stderrCb = cb;
-        return true;
-      },
-    },
+    exitCode: undefined as number | string | undefined,
     exit: (code: number): never => {
       exitCalls.push(code);
       throw Error("__fake-exit__");
     },
   };
-  return {
-    proc,
-    exitCalls,
-    flushStdout: () => stdoutCb?.(),
-    flushStderr: () => stderrCb?.(),
-  };
+  return { proc, exitCalls };
 }
 
-describe("flushAndExit", () => {
-  it("exits with the given code once both streams have flushed", () => {
-    const { proc, exitCalls, flushStdout, flushStderr } =
-      createFlushFakeProcess();
-    flushAndExit(exitCodes.testFailure, proc, () => {});
-    flushStdout();
-    expect(exitCalls).toEqual([]);
-    expect(() => flushStderr()).toThrow("__fake-exit__");
-    expect(exitCalls).toEqual([1]);
-  });
-
-  it("does not exit until both streams have flushed", () => {
-    const { proc, exitCalls, flushStdout } = createFlushFakeProcess();
-    flushAndExit(exitCodes.success, proc, () => {});
-    flushStdout();
+describe("exitWhenIdle", () => {
+  it("records the exit code without killing the process", () => {
+    const { proc, exitCalls } = createIdleFakeProcess();
+    exitWhenIdle(exitCodes.testFailure, proc, () => {});
+    expect(proc.exitCode).toBe(1);
     expect(exitCalls).toEqual([]);
   });
 
-  it("forces exit via the backstop when a stream stalls", () => {
-    const { proc, exitCalls } = createFlushFakeProcess();
+  it("forces the exit from the backstop when the loop stays busy", () => {
+    const { proc, exitCalls } = createIdleFakeProcess();
     let backstop: (() => void) | undefined;
-    flushAndExit(exitCodes.testFailure, proc, (fn) => {
+    exitWhenIdle(exitCodes.payment, proc, (fn) => {
       backstop = fn;
     });
     expect(exitCalls).toEqual([]);
     expect(() => backstop?.()).toThrow("__fake-exit__");
-    expect(exitCalls).toEqual([1]);
-  });
-
-  it("exits at most once when flush and backstop both fire", () => {
-    const { proc, exitCalls, flushStdout, flushStderr } =
-      createFlushFakeProcess();
-    let backstop: (() => void) | undefined;
-    flushAndExit(exitCodes.testFailure, proc, (fn) => {
-      backstop = fn;
-    });
-    flushStdout();
-    expect(() => flushStderr()).toThrow("__fake-exit__");
-    backstop?.();
-    expect(exitCalls).toEqual([1]);
+    expect(exitCalls).toEqual([7]);
   });
 });

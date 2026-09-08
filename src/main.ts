@@ -1,6 +1,6 @@
 import { createSignalRegistry } from "./shell/signals/createSignalRegistry.js";
 import { createProgram } from "./commands/program.js";
-import { flushAndExit } from "./shell/exit.js";
+import { exitWhenIdle } from "./shell/exit.js";
 
 const signals = createSignalRegistry();
 
@@ -16,12 +16,13 @@ const onSignal = (sig: "SIGINT" | "SIGTERM") => () => {
 process.on("SIGINT", onSignal("SIGINT"));
 process.on("SIGTERM", onSignal("SIGTERM"));
 
-// Exit deterministically once the command resolves — see flushAndExit for why.
+// Settle the exit status once the command resolves — see exitWhenIdle for why
+// the process is not killed here.
 void createProgram({ signals })
   .parseAsync()
   .catch(() => {
     if (process.exitCode === undefined) process.exitCode = 1;
   })
   .finally(() =>
-    flushAndExit(typeof process.exitCode === "number" ? process.exitCode : 0),
+    exitWhenIdle(typeof process.exitCode === "number" ? process.exitCode : 0),
   );

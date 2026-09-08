@@ -27,44 +27,38 @@ export function exit(
   return proc.exit(code);
 }
 
-type FlushExitProcess = {
-  readonly stdout: {
-    readonly write: (chunk: string, cb: () => void) => unknown;
-  };
-  readonly stderr: {
-    readonly write: (chunk: string, cb: () => void) => unknown;
-  };
+type ExitingProcess = {
+  exitCode: number | string | undefined;
   readonly exit: (code: number) => never;
 };
 
 /**
- * Flush stdout and stderr, then exit with `code`. The flow runtime can leave
- * browser processes and CDP sockets the event loop never drains, so the CLI
- * exits deterministically once its command resolves. The empty-`write`
- * callbacks flush buffered output first; the backstop forces exit if a stream
- * stalls (e.g. EPIPE on a closed pipe).
+ * How long a process that cannot drain on its own is left to finish. Long
+ * enough for an outstanding socket teardown or a stdout write to a slow reader
+ * to land, and only ever waited out by a command that holds the loop open.
  */
-export function flushAndExit(
+const backstopMs = 2000;
+
+/**
+ * Records `code` as the exit status and lets the event loop drain, rather than
+ * killing the process where the command finished. Tearing down mid-flight I/O
+ * aborts a Windows build of Node ("Assertion failed:
+ * !(handle->flags & UV_HANDLE_CLOSING), src\\win\\async.c"), which replaces the
+ * command's own exit code with a crash code — so a caller reads a successful
+ * command as a failure.
+ *
+ * The flow runtime still leaves browser processes and CDP sockets the loop
+ * never drains, so the backstop forces the exit those runs need. Its timer is
+ * unref'd: it fires only while something else holds the loop open, and a
+ * command that has nothing left in flight exits before it ever comes due.
+ */
+export function exitWhenIdle(
   code: number,
-  proc: FlushExitProcess = process,
+  proc: ExitingProcess = process,
   scheduleBackstop: (fn: () => void) => void = (fn) => {
-    setTimeout(fn, 2000).unref();
+    setTimeout(fn, backstopMs).unref();
   },
 ): void {
-  let exited = false;
-  const exitOnce = (): void => {
-    if (exited) return;
-    exited = true;
-    proc.exit(code);
-  };
-
-  let pending = 2;
-  const onFlushed = (): void => {
-    pending -= 1;
-    if (pending === 0) exitOnce();
-  };
-  proc.stdout.write("", onFlushed);
-  proc.stderr.write("", onFlushed);
-
-  scheduleBackstop(exitOnce);
+  proc.exitCode = code;
+  scheduleBackstop(() => proc.exit(code));
 }
