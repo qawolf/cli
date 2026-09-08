@@ -15,12 +15,15 @@ function listed(...runners: ListedRunner[]): { ok: true; value: unknown } {
   return { ok: true, value: { outcome: "success", runners } };
 }
 
+const everywhere = { here: false };
+const onlyHere = { here: true };
+
 describe("handleRunnerList", () => {
   it("says so when the team has no runner running", async () => {
     const { callPublicApi, ctx, infos } = makeAuthCtx();
     callPublicApi.mockResolvedValue(listed());
 
-    const result = await handleRunnerList(ctx, makeTestDeps());
+    const result = await handleRunnerList(ctx, everywhere, makeTestDeps());
 
     expect(result).toBeUndefined();
     expect(infos()[0]).toContain("no runner running");
@@ -34,7 +37,7 @@ describe("handleRunnerList", () => {
       listed(runner("ci"), runner("review", "android")),
     );
 
-    await handleRunnerList(ctx, deps);
+    await handleRunnerList(ctx, everywhere, deps);
 
     const written = callsOf(ctx.ui.write)
       .map((call) => String(call[0]))
@@ -42,6 +45,88 @@ describe("handleRunnerList", () => {
     expect(written).toContain("ci");
     expect(written).toContain("review");
     expect(written).toContain("android");
+    expect(written).toContain("launched here");
+  });
+
+  it("marks the runners this directory launched", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx("json");
+    const deps = makeTestDeps();
+    await deps.store.rememberLaunch({ id: "ci", runnerName: "playwright" });
+    callPublicApi.mockResolvedValue(
+      listed(runner("elsewhere", "android"), runner("ci")),
+    );
+
+    await handleRunnerList(ctx, everywhere, deps);
+
+    expect(ctx.ui.json).toHaveBeenCalledWith([
+      {
+        id: "ci",
+        isDefault: true,
+        launchedHere: true,
+        runnerName: "playwright",
+      },
+      {
+        id: "elsewhere",
+        isDefault: false,
+        launchedHere: false,
+        runnerName: "android",
+      },
+    ]);
+  });
+
+  it("orders the default first, then this directory's, then the rest by id", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx("json");
+    const deps = makeTestDeps();
+    await deps.store.rememberLaunch({ id: "mine-b" });
+    await deps.store.rememberLaunch({ id: "mine-a" });
+    await deps.store.rememberLaunch({ id: "chosen" });
+    callPublicApi.mockResolvedValue(
+      listed(
+        runner("theirs-b"),
+        runner("mine-b"),
+        runner("chosen"),
+        runner("theirs-a"),
+        runner("mine-a"),
+      ),
+    );
+
+    await handleRunnerList(ctx, everywhere, deps);
+
+    const ids = callsOf(ctx.ui.json).map((call) =>
+      (call[0] as { id: string }[]).map((item) => item.id),
+    );
+    expect(ids).toEqual([
+      ["chosen", "mine-a", "mine-b", "theirs-a", "theirs-b"],
+    ]);
+  });
+
+  it("keeps only this directory's runners with --here", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx("json");
+    const deps = makeTestDeps();
+    await deps.store.rememberLaunch({ id: "ci", runnerName: "playwright" });
+    callPublicApi.mockResolvedValue(
+      listed(runner("elsewhere", "android"), runner("ci")),
+    );
+
+    await handleRunnerList(ctx, onlyHere, deps);
+
+    expect(ctx.ui.json).toHaveBeenCalledWith([
+      {
+        id: "ci",
+        isDefault: true,
+        launchedHere: true,
+        runnerName: "playwright",
+      },
+    ]);
+  });
+
+  it("says so when --here finds nothing but the team has runners", async () => {
+    const { callPublicApi, ctx, infos } = makeAuthCtx();
+    callPublicApi.mockResolvedValue(listed(runner("elsewhere")));
+
+    await handleRunnerList(ctx, onlyHere, makeTestDeps());
+
+    expect(infos()[0]).toContain("This directory has no runner running");
   });
 
   it("forgets a held runner the platform no longer has", async () => {
@@ -51,10 +136,15 @@ describe("handleRunnerList", () => {
     await deps.store.rememberLaunch({ id: "ci", runnerName: "playwright" });
     callPublicApi.mockResolvedValue(listed(runner("ci")));
 
-    await handleRunnerList(ctx, deps);
+    await handleRunnerList(ctx, everywhere, deps);
 
     expect(ctx.ui.json).toHaveBeenCalledWith([
-      { id: "ci", isDefault: true, runnerName: "playwright" },
+      {
+        id: "ci",
+        isDefault: true,
+        launchedHere: true,
+        runnerName: "playwright",
+      },
     ]);
     expect((await deps.store.readRunners()).map((held) => held.id)).toEqual([
       "ci",
@@ -71,10 +161,15 @@ describe("handleRunnerList", () => {
     await deps.store.rememberLaunch({ id: "idled-out" });
     callPublicApi.mockResolvedValue(listed(runner("ci")));
 
-    await handleRunnerList(ctx, deps);
+    await handleRunnerList(ctx, everywhere, deps);
 
     expect(ctx.ui.json).toHaveBeenCalledWith([
-      { id: "ci", isDefault: false, runnerName: "playwright" },
+      {
+        id: "ci",
+        isDefault: false,
+        launchedHere: true,
+        runnerName: "playwright",
+      },
     ]);
     expect(await deps.store.readDefaultRunnerId()).toBe("idled-out");
   });
@@ -87,11 +182,21 @@ describe("handleRunnerList", () => {
       listed(runner("stored"), runner("from-env", "basic")),
     );
 
-    await handleRunnerList(ctx, deps);
+    await handleRunnerList(ctx, everywhere, deps);
 
     expect(ctx.ui.json).toHaveBeenCalledWith([
-      { id: "from-env", isDefault: true, runnerName: "basic" },
-      { id: "stored", isDefault: false, runnerName: "playwright" },
+      {
+        id: "from-env",
+        isDefault: true,
+        launchedHere: false,
+        runnerName: "basic",
+      },
+      {
+        id: "stored",
+        isDefault: false,
+        launchedHere: true,
+        runnerName: "playwright",
+      },
     ]);
   });
 
@@ -101,10 +206,10 @@ describe("handleRunnerList", () => {
     await deps.store.rememberLaunch({ id: "ci" });
     callPublicApi.mockResolvedValue(listed(runner("ci", "android")));
 
-    await handleRunnerList(ctx, deps);
+    await handleRunnerList(ctx, everywhere, deps);
 
     expect(ctx.ui.json).toHaveBeenCalledWith([
-      { id: "ci", isDefault: true, runnerName: "android" },
+      { id: "ci", isDefault: true, launchedHere: true, runnerName: "android" },
     ]);
   });
 
@@ -117,7 +222,7 @@ describe("handleRunnerList", () => {
       ok: false,
     });
 
-    const result = await handleRunnerList(ctx, deps);
+    const result = await handleRunnerList(ctx, everywhere, deps);
 
     expect(result?.error).toContain("network unreachable");
     expect(ctx.ui.json).not.toHaveBeenCalled();
@@ -130,7 +235,7 @@ describe("handleRunnerList", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue(listed());
 
-    await handleRunnerList(ctx, makeTestDeps());
+    await handleRunnerList(ctx, everywhere, makeTestDeps());
 
     const contracts = callsOf(callPublicApi).map(
       (call) => (call[0] as { kind: string; name: string }).name,

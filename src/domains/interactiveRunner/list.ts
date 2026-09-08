@@ -20,6 +20,8 @@ import { runnerCallOptions } from "./runnerCallOptions.js";
 type RunnerListItem = {
   id: string;
   isDefault: boolean;
+  /** Whether this directory launched the runner, as opposed to another checkout, machine or session. */
+  launchedHere: boolean;
   runnerName: string;
 };
 
@@ -30,8 +32,14 @@ export type ListedRunners =
 const columns: readonly TableColumn<RunnerListItem>[] = [
   { header: "id", value: (row) => row.id },
   { header: "family", value: (row) => row.runnerName },
+  { header: "launched here", value: (row) => (row.launchedHere ? "yes" : "") },
   { header: "default", value: (row) => (row.isDefault ? "yes" : "") },
 ];
+
+function rank(item: RunnerListItem): number {
+  if (item.isDefault) return 0;
+  return item.launchedHere ? 1 : 2;
+}
 
 async function readDefaultRunnerId(
   deps: InteractiveRunnerDeps,
@@ -44,8 +52,8 @@ async function readDefaultRunnerId(
 /**
  * The team's active runners: a runner launched from another checkout, another
  * machine, or an earlier session is listed alongside this directory's own.
- * The directory's records are only consulted to forget the runners that are no
- * longer active.
+ * The directory's records only say which runners were launched here, and are
+ * pruned of the runners that are no longer active.
  */
 export async function listRunners(
   ctx: RunnerApiContext,
@@ -66,38 +74,45 @@ export async function listRunners(
     .map((runner) => runner.id);
   await deps.store.dropRunners(gone).catch(() => undefined);
 
-  const byId = [...listed.value.runners].sort((left, right) =>
-    left.id.localeCompare(right.id),
-  );
+  const heldIds = new Set(held.map((runner) => runner.id));
+  const items = listed.value.runners.map((runner) => ({
+    id: runner.id,
+    isDefault: runner.id === defaultRunnerId,
+    launchedHere: heldIds.has(runner.id),
+    runnerName: runner.runnerName,
+  }));
   return {
-    items: [
-      ...byId.filter((runner) => runner.id === defaultRunnerId),
-      ...byId.filter((runner) => runner.id !== defaultRunnerId),
-    ].map((runner) => ({
-      id: runner.id,
-      isDefault: runner.id === defaultRunnerId,
-      runnerName: runner.runnerName,
-    })),
+    items: items.sort(
+      (left, right) =>
+        rank(left) - rank(right) || left.id.localeCompare(right.id),
+    ),
     ok: true,
   };
 }
 
 export async function handleRunnerList(
   ctx: AuthCommandContext,
+  options: { here: boolean },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
   const listed = await listRunners(ctx, deps);
   if (!listed.ok) {
     return { ...failureFields(listed), exitCode: exitCodes.network };
   }
-  const items = listed.items;
+  const items = options.here
+    ? listed.items.filter((item) => item.launchedHere)
+    : listed.items;
 
   if (ctx.ui.mode === "json") {
     ctx.ui.json(items);
     return;
   }
   if (items.length === 0) {
-    ctx.ui.info(interactiveRunnerMessages.noRunners);
+    ctx.ui.info(
+      options.here
+        ? interactiveRunnerMessages.noRunnersHere
+        : interactiveRunnerMessages.noRunners,
+    );
     return;
   }
   if (ctx.ui.mode === "agent") {
