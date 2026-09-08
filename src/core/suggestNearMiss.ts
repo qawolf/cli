@@ -1,12 +1,4 @@
-// Case and separators are presentation, not identity: a group folder named
-// `smoke-tests` is shown as "Smoke Tests" in the map UI, so both spellings
-// have to collapse to the same thing before comparing.
-function normalize(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[-_\s]+/g, " ")
-    .trim();
-}
+import { normalizeForSearch as normalize } from "./textSearch.js";
 
 function editDistance(a: string, b: string): number {
   // Single-row Levenshtein: `row[j]` is the distance from a[0..i] to b[0..j].
