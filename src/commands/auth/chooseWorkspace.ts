@@ -3,7 +3,10 @@ import {
   selectWorkspace,
   type SelectWorkspaceResult,
 } from "~/domains/auth/selectWorkspace.js";
-import { saveTokens } from "~/domains/auth/store/saveTokens.js";
+import {
+  makeSaveWorkspaceIdDeps,
+  saveWorkspaceId,
+} from "~/domains/auth/store/saveWorkspaceId.js";
 import type { StoredSession } from "~/domains/auth/types.js";
 import type { CommandContext } from "~/shell/commandContext.js";
 import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
@@ -98,7 +101,11 @@ export async function chooseWorkspace(
     // and authorize it per request, so the session keeps its tokens and only
     // records where the person is working.
     saveWorkspace: (workspaceId) =>
-      saveTokens(ctx.configDir, { ...args.session, workspaceId }, ctx.fs),
+      saveWorkspaceId(
+        args.session,
+        workspaceId,
+        makeSaveWorkspaceIdDeps(ctx.configDir, ctx.fs),
+      ),
   });
 }
 

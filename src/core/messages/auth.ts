@@ -74,6 +74,8 @@ export const authMessages = {
       "Your session could not be renewed. Run 'qawolf auth login' to sign in again.",
     nonInteractive:
       "auth switch needs an interactive terminal, or set QAWOLF_WORKSPACE to name a workspace.",
+    sessionChanged:
+      "The stored sign-in changed while you made your choice. Run the command again.",
     saveFailed: (detail: string) =>
       `Could not save the workspace choice: ${detail}`,
   },
