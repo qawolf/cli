@@ -78,7 +78,8 @@ export function buildBaseContext(
     currentVersion: packageJson.version,
     configDir: getConfigDir(),
     fs,
-    fetchLatestVersion: () => fetchLatestVersion(packageJson.name),
+    fetchLatestVersion: (signal) =>
+      fetchLatestVersion(packageJson.name, { signal }),
     renderNotice: (body, title) => ui.note(body, title),
   });
   return {
