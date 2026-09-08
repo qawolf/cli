@@ -20,6 +20,7 @@ Examples:
 const listExamples = `
 Examples:
   $ qawolf runner list
+  $ qawolf runner list --here
   $ qawolf runner list --json`;
 
 const keepaliveExamples = `
@@ -52,13 +53,13 @@ export function registerRunnerLifecycleCommands(
     );
 
   declareCommandKind(runner.command("list"), "read")
-    .description("List the runners this directory holds that are still running")
+    .description("List the runners running on your team")
+    .option("--here", "Only the runners this directory launched")
     .addHelpText("after", listExamples)
-    .action((opts: Record<string, never>, command: Command) =>
-      withAuthContext(signals, (ctx) => handleRunnerList(ctx, runnerDeps(ctx)))(
-        opts,
-        command,
-      ),
+    .action((opts: { here?: boolean }, command: Command) =>
+      withAuthContext(signals, (ctx) =>
+        handleRunnerList(ctx, { here: opts.here === true }, runnerDeps(ctx)),
+      )(opts, command),
     );
 
   declareCommandKind(runner.command("terminate"), "write")

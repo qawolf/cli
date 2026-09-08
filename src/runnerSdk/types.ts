@@ -115,11 +115,15 @@ export type SubmittedRun = {
   runId: string;
 };
 
-/** Runners this working directory launched, which the API has no notion of. */
+/**
+ * A runner running on the team. `isDefault` and `launchedHere` are this working
+ * directory's own knowledge, which the API has no notion of.
+ */
 export type ListedRunner = {
   id: string;
   isDefault: boolean;
-  runnerName: string | undefined;
+  launchedHere: boolean;
+  runnerName: string;
 };
 
 export type KeptAlive = { id: string };

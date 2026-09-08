@@ -132,6 +132,11 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf auth whoami` | read | Show authentication status |
 | `qawolf automate` | write | Request automation for draft flows. First create a named local .flow.ts draft for every requested journey that does not already have a matching draft; never reuse a generic starter or placeholder. Each new draft must start with a JSDoc Goal: description, import flow from @qawolf/flows/web, and use export default flow(...); a comment-only file or direct test(...) call is not a valid draft. Commit and push all changes with Git to publish them, then list remote drafts to resolve every selected ID. Do not use patch to create or rename a selected flow. Finally make one automation request containing all requested flow IDs. |
 | `qawolf doctor` | local | Diagnose problems running flows locally |
+| `qawolf email find` | read | List the workspace's inbox, or its sent mail, newest first. Read a message body with email.get. |
+| `qawolf email get` | read | Read one email of the workspace, with its plain text and HTML bodies. Use it to pull a sign-in code or a verification link out of a message. |
+| `qawolf email getAttachment` | read | Read one attachment of a workspace email as base64 content, by file name or by position. email.get lists both. |
+| `qawolf email listAddresses` | read | List the workspace's inbox addresses, alphabetical. A flow can sign up with a plus-suffixed form of any of them, and email.find reads what arrives. |
+| `qawolf email send` | write | Send an email from one of the workspace's inbox addresses, for example to exercise a flow that reacts to incoming mail. Returns the sent email; read it back with email.get. |
 | `qawolf environment create` | write | Create an environment on the caller's team and return it in the environment.get shape. |
 | `qawolf environment deleteVariable` | write | Remove one environment variable by name. Succeeds whether or not the variable existed. |
 | `qawolf environment find` | read | List the team's environments, newest first. |
@@ -140,7 +145,8 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf environment listVariableNames` | read | Use this to answer which QA Wolf environment variables are available to test code. Returns names only; values never leave the server. |
 | `qawolf environment setVariable` | write | Create or replace an environment variable. If the user asks to create one for "my email" without naming it, use DEFAULT_EMAIL. The value is never returned. |
 | `qawolf environment update` | write | Update an environment owned by the caller's team and return it in the environment.get shape. Omitted fields remain unchanged. |
-| `qawolf flow addTag` | write | Assign an existing tag to the selected flows. Create tags with tag.create. |
+| `qawolf flow addTag` | write | Assign an existing tag to the selected flows. Create tags with tag.create. Flows that already carry the tag are reported in skippedFlows. |
+| `qawolf flow removeTag` | write | Remove a tag from the selected flows. Succeeds whether or not each flow carried the tag; the flows that did not are reported in skippedFlows. |
 | `qawolf flow update` | write | Move a flow between draft and active readiness. The other statuses shown in the app are derived and cannot be set. |
 | `qawolf flows list` | local (read with --remote) | List flows matching [pattern] from the local project, or from a QA Wolf environment with --remote |
 | `qawolf flows pull` | read | Download an environment's flows into the local .qawolf/<env>/ cache |
@@ -154,6 +160,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf issue create` | write | Create a bug or coverage request issue for the caller's team. Maintenance issues cannot be created through the public API. |
 | `qawolf issue find` | read | List the team's bug reports, maintenance reports, or coverage requests, newest first. |
 | `qawolf issue get` | read | Get an issue by id. |
+| `qawolf issue removeFlows` | write | Remove flows from a coverage request owned by the caller's team. Flows the request does not cover are left alone. Bug and maintenance reports link to flows through the runs that reproduce them, so their flows cannot be set directly. |
 | `qawolf issue update` | write | Update an issue owned by the caller's team. Omitted fields remain unchanged. |
 | `qawolf run create` | write | Create a run for the selected flows and/or tags in an environment. |
 | `qawolf run diagnose` | write | Diagnose failed flows in a run as reproductions of a bug or maintenance report owned by the caller's team. The issue's type selects the diagnosis. Each flow must have failed in the run. A flow that is already diagnosed moves to this issue. The diagnosis appears on the run, and the reproduction appears under the issue's reproductions. Coverage requests cannot be diagnosed; use issue.addFlows to cover flows instead. |
@@ -174,7 +181,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf runner inspect variable` | read | Print a top-level variable's value from the running workflow |
 | `qawolf runner keepalive` | read | Reset a runner's inactivity clock, for a caller that pauses between actions |
 | `qawolf runner launch` | write | Launch an interactive runner and make it this directory's default |
-| `qawolf runner list` | read | List the runners this directory holds that are still running |
+| `qawolf runner list` | read | List the runners running on your team |
 | `qawolf runner promote-snapshot` | write | Accept a run's screenshot as the new baseline for an image diff, on the runner that produced it |
 | `qawolf runner run` | write | Run a flow on an interactive runner, shipping the flow and what it imports |
 | `qawolf runner screenshot` | read | Save a JPEG of an interactive runner's screen to a file |

@@ -24,7 +24,7 @@ const storeSchema = z.object({
   defaultRunnerId: z.string().optional(),
 });
 
-export type StoredRunner = z.output<typeof storedRunnerSchema>;
+type StoredRunner = z.output<typeof storedRunnerSchema>;
 
 function parseJson(text: string): unknown {
   try {
