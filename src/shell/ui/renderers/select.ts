@@ -1,4 +1,4 @@
-import { matchesSearchTerm } from "~/core/textSearch.js";
+import { createSearchIndex } from "~/core/textSearch.js";
 import type { StyledClack } from "~/shell/ui/clack/index.js";
 import type { OutputMode } from "~/shell/ui/env.js";
 import { assertHumanMode } from "./assertHumanMode.js";
@@ -32,11 +32,13 @@ const searchPlaceholder = "Type to filter";
  * they can put in a script are the same set. Slugs and ids arrive as the
  * option's hint and value.
  */
-function matchesSearch(
-  search: string,
-  option: { value: string; label?: string; hint?: string },
-): boolean {
-  return matchesSearchTerm(search, [option.label, option.hint, option.value]);
+/** clack's option shape, where every field but `value` may be absent. */
+type ClackOption = { value: string; label?: string; hint?: string };
+
+function searchableFields(
+  option: ClackOption,
+): readonly (string | undefined)[] {
+  return [option.label, option.hint, option.value];
 }
 
 export type SelectFn = (
@@ -61,7 +63,14 @@ export function createSelect({ mode, clack }: SelectDeps): SelectFn {
             // tenth of the rows it used to show, so filtering arrived at the
             // cost of seeing far less at once.
             placeholder: searchPlaceholder,
-            filter: matchesSearch,
+            // Indexed once for this prompt. clack re-tests every option on
+            // every keystroke, and the placeholder makes it walk the whole
+            // list again to decide whether tab completion applies, so the
+            // work per key is a multiple of the list length.
+            filter: createSearchIndex<ClackOption>(
+              [...options],
+              searchableFields,
+            ),
           })
         : await clack.select({ message, options: [...options] });
 
