@@ -52,7 +52,7 @@ export function registerRunnerLifecycleCommands(
     );
 
   declareCommandKind(runner.command("list"), "read")
-    .description("List the runners this directory holds that are still running")
+    .description("List the runners running on your team")
     .addHelpText("after", listExamples)
     .action((opts: Record<string, never>, command: Command) =>
       withAuthContext(signals, (ctx) => handleRunnerList(ctx, runnerDeps(ctx)))(

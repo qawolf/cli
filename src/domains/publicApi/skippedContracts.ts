@@ -25,6 +25,7 @@ export const skippedContractNames: ReadonlySet<string> = new Set([
   "runner.inspect",
   "runner.inspectMobile",
   "runner.launch",
+  "runner.list",
   "runner.performAction",
   "runner.promoteSnapshot",
   "runner.readJournal",

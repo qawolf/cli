@@ -37,6 +37,7 @@ Commands:
                                Do not use patch to create or rename a selected
                                flow. Finally make one automation request
                                containing all requested flow IDs.
+  email                        QA Wolf public API email commands
   environment                  QA Wolf public API environment commands
   flow                         QA Wolf public API flow commands
   issue                        QA Wolf public API issue commands
@@ -291,7 +292,7 @@ Options:
 
 Commands:
   launch [options]                         Launch an interactive runner and make it this directory's default
-  list                                     List the runners this directory holds that are still running
+  list                                     List the runners running on your team
   terminate [options]                      End an interactive runner, and the pod it runs on with it
   stop-run [options]                       Stop what a runner is currently executing, leaving the runner up
   keepalive [options]                      Reset a runner's inactivity clock, for a caller that pauses between actions
