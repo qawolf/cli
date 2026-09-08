@@ -42,10 +42,10 @@ async function readDefaultRunnerId(
 }
 
 /**
- * The team's running runners, as the platform sees them: a runner launched from
- * another checkout, another machine, or an earlier session is listed alongside
- * this directory's own. The directory's records are only consulted to forget
- * the runners the platform no longer has.
+ * The team's active runners: a runner launched from another checkout, another
+ * machine, or an earlier session is listed alongside this directory's own.
+ * The directory's records are only consulted to forget the runners that are no
+ * longer active.
  */
 export async function listRunners(
   ctx: RunnerApiContext,
