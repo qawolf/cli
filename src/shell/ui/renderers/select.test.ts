@@ -170,3 +170,27 @@ describe("createSelect with a long list", () => {
     expect(capturedFilter(clack)("ws", { value: "ws_1" })).toBe(true);
   });
 });
+
+describe("createSelect search prompt options", () => {
+  afterEach(() => {
+    mock.restore();
+  });
+
+  // A cap would show a tenth of the rows the plain list shows, so filtering
+  // would arrive at the cost of seeing far less of the list at once.
+  it("does not cap how much of the list is visible", async () => {
+    const clack = makeClack();
+    clack.autocomplete.mockResolvedValue("env-0");
+    clack.isCancel.mockReturnValue(false);
+    const select = createSelect({ mode: "human", clack });
+
+    await select("Which organization?", makeOptions(9));
+
+    const opts = clack.autocomplete.mock.calls[0]?.[0] as {
+      maxItems?: number;
+      placeholder?: string;
+    };
+    expect(opts.maxItems).toBeUndefined();
+    expect(opts.placeholder).toBe("Type to filter");
+  });
+});

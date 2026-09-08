@@ -24,9 +24,6 @@ type SelectOption = {
  */
 const searchThreshold = 8;
 
-/** How much of a filtered list to show at once, so the prompt stays in view. */
-const maxSearchItems = 10;
-
 const searchPlaceholder = "Type to filter";
 
 /**
@@ -59,8 +56,11 @@ export function createSelect({ mode, clack }: SelectDeps): SelectFn {
         ? await clack.autocomplete({
             message,
             options: [...options],
+            // No `maxItems`: clack then fills the terminal, which is what the
+            // plain list has always done. Capping it shrank a long list to a
+            // tenth of the rows it used to show, so filtering arrived at the
+            // cost of seeing far less at once.
             placeholder: searchPlaceholder,
-            maxItems: maxSearchItems,
             filter: matchesSearch,
           })
         : await clack.select({ message, options: [...options] });
