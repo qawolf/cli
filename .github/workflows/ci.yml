@@ -113,6 +113,18 @@ jobs:
             node dist/cli.js --version
             node test/node20/smoke.mjs
           fi
+      # A command whose reply arrives over the network must exit with its own
+      # status code, and must exit at all — see src/shell/exit.ts. The reply is
+      # served locally, so the smoke needs no API key and no network.
+      - name: Smoke — a networked command exits with its own code
+        env:
+          RUNTIME: ${{ matrix.name }}
+        run: |
+          if [ "$RUNTIME" = "bun" ]; then
+            bun test/exit/networkExitSmoke.mjs bun dist/cli.js
+          else
+            node test/exit/networkExitSmoke.mjs
+          fi
 
   # Only a Windows runner reaches CreateProcess, so only this job catches a
   # win32 spawn regression. WIZ-11274 (`spawn npm ENOENT`) shipped through that
@@ -161,6 +173,15 @@ jobs:
       - name: Smoke — cmd.exe argument escaping round-trips
         shell: bash
         run: node test/spawn/cmdEscapeSmoke.mjs
+      # Only win32 aborts when Node tears down a reply still in flight
+      # ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), src\\win\\async.c"),
+      # which replaced the command's exit code with a crash code. Both the npm
+      # build and the released binary are smoked: they ship different I/O stacks.
+      - name: Smoke — a networked command exits with its own code
+        shell: bash
+        run: |
+          node test/exit/networkExitSmoke.mjs
+          node test/exit/networkExitSmoke.mjs ./dist/qawolf.exe
       # Only Node-on-win32 rejects raw absolute paths in import() ("protocol
       # 'c:'"), so only this job catches a regression in the file:// URL
       # conversion. WIZ-11313 shipped through that gap.
