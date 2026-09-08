@@ -52,8 +52,9 @@ async function readDefaultRunnerId(
 /**
  * The team's active runners: a runner launched from another checkout, another
  * machine, or an earlier session is listed alongside this directory's own.
- * The directory's records only say which runners were launched here, and are
- * pruned of the runners that are no longer active.
+ * The directory's records supply the default runner when QAWOLF_RUNNER_ID is
+ * unset, say which runners were launched here, and are pruned of the runners
+ * that are no longer active.
  */
 export async function listRunners(
   ctx: RunnerApiContext,
