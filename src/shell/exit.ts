@@ -110,6 +110,11 @@ export function createSignalExit(deps: {
     signalled = true;
     void deps
       .shutdown(signal)
+      // A shutdown that rejects would reach the process as an unhandled
+      // rejection, and the default handling replaces the signal's code with 1
+      // — the loss this function exists to prevent. The registry settles its
+      // own cleanups, so this guards the type rather than a caller we have.
+      .catch(() => {})
       .finally(() => exitWhenIdle(code, proc, scheduleGrace));
   };
 }

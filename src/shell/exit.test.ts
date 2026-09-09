@@ -162,6 +162,18 @@ describe("createSignalExit", () => {
     expect(shutdownReasons).toEqual(["SIGINT"]);
   });
 
+  it("keeps the exit code when shutdown rejects", async () => {
+    const { proc } = createIdleFakeProcess();
+    const onSignal = createSignalExit({
+      proc,
+      scheduleGrace: () => {},
+      shutdown: () => Promise.reject(new Error("cleanup failed")),
+    });
+    onSignal("SIGINT")();
+    await settle();
+    expect(proc.exitCode).toBe(130);
+  });
+
   it("shares the signalled flag across signals", async () => {
     const { onSignal, exitCalls } = createSignalFake();
     onSignal("SIGINT")();
