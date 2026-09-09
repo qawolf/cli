@@ -4,26 +4,42 @@ import { handleRunnerLaunch } from "./launch.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { launched } from "./launch.testUtils.js";
 
-const watchUrl = "https://app.qawolf.com/runner/ci";
+const url = "https://app.qawolf.com/acme/runners/ci";
 
-describe("handleRunnerLaunch", () => {
+async function launch(apiKeySource: string, alreadyRunning: boolean) {
+  const { callPublicApi, ctx, outputs } = makeAuthCtx("human", apiKeySource);
+  callPublicApi.mockResolvedValue({
+    ok: true,
+    value: { ...launched, id: "ci", alreadyRunning, url },
+  });
+
+  await handleRunnerLaunch(ctx, { id: "ci", name: undefined }, makeTestDeps());
+
+  return outputs()[0];
+}
+
+describe("handleRunnerLaunch runner page url", () => {
   // Relaunching an id attaches rather than billing a second pod, so that path
   // needs the address as much as a fresh launch does.
-  it("says where to watch the runner, whether launched or attached to", async () => {
-    for (const alreadyRunning of [false, true]) {
-      const { callPublicApi, ctx, outputs } = makeAuthCtx();
-      callPublicApi.mockResolvedValue({
-        ok: true,
-        value: { ...launched, id: "ci", alreadyRunning, url: watchUrl },
-      });
+  it("tells a signed-in person where to watch, whether launched or attached to", async () => {
+    expect((await launch("browser", false))?.humanMessage).toBe(
+      `Launched runner ci. Watch its screen at ${url}`,
+    );
+    expect((await launch("browser", true))?.humanMessage).toBe(
+      `Runner ci was already running. Watch its screen at ${url}`,
+    );
+  });
 
-      await handleRunnerLaunch(
-        ctx,
-        { id: "ci", name: undefined },
-        makeTestDeps(),
-      );
+  // An API key may be a team key, whose runner belongs to the team's automation
+  // user and plays its screen for nobody, so the page is offered without the
+  // promise.
+  it("only offers the page to a caller holding an api key", async () => {
+    expect((await launch("env", false))?.humanMessage).toBe(
+      `Launched runner ci. Its runner page is at ${url}`,
+    );
+  });
 
-      expect(outputs()[0]?.humanMessage).toContain(watchUrl);
-    }
+  it("carries the url in machine-readable output", async () => {
+    expect((await launch("browser", false))?.data).toMatchObject({ url });
   });
 });
