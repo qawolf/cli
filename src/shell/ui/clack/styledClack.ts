@@ -1,4 +1,5 @@
 import {
+  autocomplete,
   cancel,
   confirm,
   intro,
@@ -31,6 +32,17 @@ export type StyledClack = {
     initialValue?: boolean;
   }): Promise<boolean | symbol>;
   password(opts: { message: string }): Promise<string | symbol>;
+  autocomplete(opts: {
+    message: string;
+    options: { value: string; label: string; hint?: string }[];
+    placeholder?: string;
+    maxItems?: number;
+    /** Option shape is clack's, where every field but `value` is optional. */
+    filter?: (
+      search: string,
+      option: { value: string; label?: string; hint?: string },
+    ) => boolean;
+  }): Promise<string | symbol>;
   select(opts: {
     message: string;
     options: { value: string; label: string; hint?: string }[];
@@ -58,6 +70,7 @@ export function createStyledClack(): StyledClack {
     cancel,
     confirm,
     password,
+    autocomplete,
     select,
     isCancel,
     spinner,

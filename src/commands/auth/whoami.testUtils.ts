@@ -33,7 +33,13 @@ export function makeDeps(
   return {
     requireApiKey:
       overrides.requireApiKey ??
-      mock(() => Promise.resolve({ key: "test-key", source: "env" as const })),
+      mock(() =>
+        Promise.resolve({
+          key: "test-key",
+          source: "env" as const,
+          workspaceId: undefined,
+        }),
+      ),
     createPlatform: mock(() => ({ getIdentity }) as unknown as PlatformClient),
   };
 }

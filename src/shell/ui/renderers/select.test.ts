@@ -57,3 +57,140 @@ describe("createSelect", () => {
     );
   });
 });
+
+function makeOptions(count: number) {
+  return Array.from({ length: count }, (_unused, index) => ({
+    value: `env-${index}`,
+    label: `Environment ${index}`,
+  }));
+}
+
+/** Pulls the filter clack was handed, so the matching rule is testable. */
+function capturedFilter(clack: ReturnType<typeof makeClack>) {
+  const call = clack.autocomplete.mock.calls[0]?.[0] as
+    | {
+        filter?: (
+          search: string,
+          option: { value: string; label?: string; hint?: string },
+        ) => boolean;
+      }
+    | undefined;
+  const filter = call?.filter;
+  if (!filter) throw Error("autocomplete was called without a filter");
+  return filter;
+}
+
+describe("createSelect with a long list", () => {
+  afterEach(() => {
+    mock.restore();
+  });
+
+  // Nine is the first count an employee-sized list stands in for: the
+  // arrow-key prompt stops being scannable well before hundreds of entries.
+  it("asks with a searchable prompt once the list passes the threshold", async () => {
+    const clack = makeClack();
+    clack.autocomplete.mockResolvedValue("env-4");
+    clack.isCancel.mockReturnValue(false);
+    const select = createSelect({ mode: "human", clack });
+
+    const result = await select("Which organization?", makeOptions(9));
+
+    expect(result).toEqual({ ok: true, value: "env-4" });
+    expect(clack.select).not.toHaveBeenCalled();
+    expect(clack.autocomplete).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the plain list at the threshold, where typing would only slow it", async () => {
+    const clack = makeClack();
+    clack.select.mockResolvedValue("env-1");
+    clack.isCancel.mockReturnValue(false);
+    const select = createSelect({ mode: "human", clack });
+
+    await select("Which organization?", makeOptions(8));
+
+    expect(clack.select).toHaveBeenCalledTimes(1);
+    expect(clack.autocomplete).not.toHaveBeenCalled();
+  });
+
+  it("returns not ok when the search prompt is cancelled", async () => {
+    const clack = makeClack();
+    clack.autocomplete.mockResolvedValue(Symbol("cancel"));
+    clack.isCancel.mockReturnValue(true);
+    const select = createSelect({ mode: "human", clack });
+
+    expect(await select("Which organization?", makeOptions(9))).toEqual({
+      ok: false,
+    });
+  });
+
+  it("matches name, slug and id, and ignores case", async () => {
+    const clack = makeClack();
+    clack.autocomplete.mockResolvedValue("env-0");
+    clack.isCancel.mockReturnValue(false);
+    const select = createSelect({ mode: "human", clack });
+    await select("Which workspace?", makeOptions(9));
+    const filter = capturedFilter(clack);
+
+    const option = {
+      value: "ws_123",
+      label: "Acme Retail",
+      hint: "acme-retail",
+    };
+
+    expect(filter("acme", option)).toBe(true);
+    expect(filter("RETAIL", option)).toBe(true);
+    expect(filter("acme-ret", option)).toBe(true);
+    expect(filter("ws_123", option)).toBe(true);
+    // Typed with a space, stored with a hyphen.
+    expect(filter("acme retail", option)).toBe(true);
+    expect(filter("nothing", option)).toBe(false);
+  });
+
+  // An empty box must not read as "nothing matches", or the list would vanish
+  // the moment someone clears what they typed.
+  it("matches everything while the box is empty", async () => {
+    const clack = makeClack();
+    clack.autocomplete.mockResolvedValue("env-0");
+    clack.isCancel.mockReturnValue(false);
+    const select = createSelect({ mode: "human", clack });
+    await select("Which workspace?", makeOptions(9));
+
+    expect(capturedFilter(clack)("   ", { value: "ws_1", label: "Acme" })).toBe(
+      true,
+    );
+  });
+
+  it("tolerates an option that carries no label", async () => {
+    const clack = makeClack();
+    clack.autocomplete.mockResolvedValue("env-0");
+    clack.isCancel.mockReturnValue(false);
+    const select = createSelect({ mode: "human", clack });
+    await select("Which workspace?", makeOptions(9));
+
+    expect(capturedFilter(clack)("ws", { value: "ws_1" })).toBe(true);
+  });
+});
+
+describe("createSelect search prompt options", () => {
+  afterEach(() => {
+    mock.restore();
+  });
+
+  // A cap would show a tenth of the rows the plain list shows, so filtering
+  // would arrive at the cost of seeing far less of the list at once.
+  it("does not cap how much of the list is visible", async () => {
+    const clack = makeClack();
+    clack.autocomplete.mockResolvedValue("env-0");
+    clack.isCancel.mockReturnValue(false);
+    const select = createSelect({ mode: "human", clack });
+
+    await select("Which organization?", makeOptions(9));
+
+    const opts = clack.autocomplete.mock.calls[0]?.[0] as {
+      maxItems?: number;
+      placeholder?: string;
+    };
+    expect(opts.maxItems).toBeUndefined();
+    expect(opts.placeholder).toBe("Type to filter");
+  });
+});

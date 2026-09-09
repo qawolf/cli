@@ -4,6 +4,7 @@ import { exitCodes } from "~/shell/exit.js";
 import { requireApiKey } from "~/domains/auth/index.js";
 import { createPlatformClient } from "~/shell/platform/createPlatformClient.js";
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
+import { reportTeamIdentity } from "./whoamiTeam.js";
 
 type WhoamiDeps = {
   requireApiKey?: typeof requireApiKey;
@@ -76,12 +77,31 @@ export async function handleWhoami(
 
   if ("user" in value) {
     const { organization, user } = value;
+
+    // The chosen workspace is what every public API command sends, so the one
+    // command whose job is to report the session has to name it. A stored id
+    // the account can no longer reach is worth showing too — nothing else
+    // surfaces it, and every later request would fail on it.
+    const found = value.organizations
+      .flatMap((candidate) =>
+        candidate.workspaces.map((workspace) => ({
+          organization: candidate.name,
+          workspace: workspace.name,
+          id: workspace.id,
+        })),
+      )
+      .find((entry) => entry.id === resolved.workspaceId);
+    const activeWorkspace = resolved.workspaceId
+      ? authMessages.whoami.activeWorkspace(resolved.workspaceId, found)
+      : undefined;
     if (ctx.ui.mode === "human") {
       ctx.ui.note(
         authMessages.whoami.userNote({
           organization,
           source: resolved.source,
           user,
+          activeWorkspace,
+          organizations: value.organizations,
         }),
         authMessages.whoamiAuthenticated,
       );
@@ -93,6 +113,8 @@ export async function handleWhoami(
           organization,
           source: resolved.source,
           user,
+          workspaceId: resolved.workspaceId,
+          organizations: value.organizations,
         },
         authMessages.whoami.authenticatedAs(user.email, resolved.source),
       );
@@ -124,26 +146,5 @@ export async function handleWhoami(
     return;
   }
 
-  const { team } = value;
-  const teamUrl = team.slug
-    ? new URL("/" + encodeURIComponent(team.slug), ctx.apiBaseUrl).toString()
-    : undefined;
-
-  if (ctx.ui.mode === "human") {
-    ctx.ui.note(
-      authMessages.whoami.teamNote({ team, teamUrl, source: resolved.source }),
-      authMessages.whoamiAuthenticated,
-    );
-    ctx.ui.outro(authMessages.outroReady);
-  } else {
-    ctx.ui.output(
-      {
-        authenticated: true,
-        source: resolved.source,
-        team,
-        teamUrl,
-      },
-      authMessages.whoami.authenticatedAs(team.name, resolved.source),
-    );
-  }
+  reportTeamIdentity(ctx, value, resolved.source);
 }
