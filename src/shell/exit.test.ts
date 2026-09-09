@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { exitCodes, exit, exitWhenIdle } from "./exit.js";
+import { exitCodes, exit, createSignalExit, exitWhenIdle } from "./exit.js";
 
 function createFakeProcess() {
   const stderr: string[] = [];
@@ -93,5 +93,80 @@ describe("exitWhenIdle", () => {
     expect(exitCalls).toEqual([]);
     expect(() => backstop?.()).toThrow("__fake-exit__");
     expect(exitCalls).toEqual([7]);
+  });
+});
+
+// Let the shutdown promise's .finally chain run before reading the result.
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+function createSignalFake() {
+  const { proc, exitCalls } = createIdleFakeProcess();
+  const shutdownReasons: string[] = [];
+  let grace: (() => void) | undefined;
+  const onSignal = createSignalExit({
+    proc,
+    scheduleGrace: (fn) => {
+      grace = fn;
+    },
+    shutdown: (reason) => {
+      shutdownReasons.push(reason);
+      return Promise.resolve();
+    },
+  });
+  return {
+    exitCalls,
+    onSignal,
+    proc,
+    shutdownReasons,
+    endGrace: () => grace?.(),
+  };
+}
+
+describe("createSignalExit", () => {
+  it("records the exit code after shutdown without killing the process", async () => {
+    const { onSignal, proc, exitCalls } = createSignalFake();
+    onSignal("SIGINT")();
+    await settle();
+    expect(proc.exitCode).toBe(130);
+    expect(exitCalls).toEqual([]);
+  });
+
+  it("forces the exit when the grace period ends", async () => {
+    const { onSignal, exitCalls, endGrace } = createSignalFake();
+    onSignal("SIGINT")();
+    await settle();
+    expect(() => endGrace()).toThrow("__fake-exit__");
+    expect(exitCalls).toEqual([130]);
+  });
+
+  it("records 143 for SIGTERM", async () => {
+    const { onSignal, proc } = createSignalFake();
+    onSignal("SIGTERM")();
+    await settle();
+    expect(proc.exitCode).toBe(143);
+  });
+
+  it("shuts down with the signal as the reason", async () => {
+    const { onSignal, shutdownReasons } = createSignalFake();
+    onSignal("SIGTERM")();
+    await settle();
+    expect(shutdownReasons).toEqual(["SIGTERM"]);
+  });
+
+  it("exits at once on a second signal, without waiting for shutdown", async () => {
+    const { onSignal, exitCalls, shutdownReasons } = createSignalFake();
+    onSignal("SIGINT")();
+    await settle();
+    expect(() => onSignal("SIGINT")()).toThrow("__fake-exit__");
+    expect(exitCalls).toEqual([130]);
+    expect(shutdownReasons).toEqual(["SIGINT"]);
+  });
+
+  it("shares the signalled flag across signals", async () => {
+    const { onSignal, exitCalls } = createSignalFake();
+    onSignal("SIGINT")();
+    await settle();
+    expect(() => onSignal("SIGTERM")()).toThrow("__fake-exit__");
+    expect(exitCalls).toEqual([143]);
   });
 });

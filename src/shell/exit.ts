@@ -62,3 +62,54 @@ export function exitWhenIdle(
   proc.exitCode = code;
   scheduleBackstop(() => proc.exit(code));
 }
+
+type SignalName = "SIGINT" | "SIGTERM";
+
+const signalExitCodes: Record<SignalName, number> = {
+  SIGINT: 130,
+  SIGTERM: 143,
+};
+
+/**
+ * How long a signalled process is left to finish. Long enough for the I/O that
+ * was in flight when the signal landed, short enough to read as immediate.
+ */
+const signalGraceMs = 150;
+
+/**
+ * Builds the handler for `signal`, sharing one "already signalled" flag across
+ * every signal it builds.
+ *
+ * The first signal runs `shutdown`, then records the exit status and leaves a
+ * short moment for work in flight — killing the process here reaches the same
+ * win32 abort `exitWhenIdle` describes, and loses the 130 or 143 with it. The
+ * moment is short rather than absent because a signal, unlike a finished
+ * command, arrives while the event loop is still busy: waiting for it to drain
+ * would mean the command runs to completion and prints, which is not what an
+ * interrupt asks for.
+ *
+ * A second signal exits at once. That is the deliberate escape hatch for a
+ * process whose cleanup will not finish, so it keeps its hard exit.
+ */
+export function createSignalExit(deps: {
+  shutdown: (reason: string) => Promise<void>;
+  proc?: ExitingProcess;
+  scheduleGrace?: (fn: () => void) => void;
+}): (signal: SignalName) => () => void {
+  const proc = deps.proc ?? process;
+  const scheduleGrace =
+    deps.scheduleGrace ??
+    ((fn: () => void) => {
+      setTimeout(fn, signalGraceMs).unref();
+    });
+
+  let signalled = false;
+  return (signal) => () => {
+    const code = signalExitCodes[signal];
+    if (signalled) proc.exit(code);
+    signalled = true;
+    void deps
+      .shutdown(signal)
+      .finally(() => exitWhenIdle(code, proc, scheduleGrace));
+  };
+}
