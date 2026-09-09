@@ -124,6 +124,8 @@ export type ListedRunner = {
   isDefault: boolean;
   launchedHere: boolean;
   runnerName: string;
+  /** The QA Wolf page showing this runner's live screen. */
+  url: string;
 };
 
 export type KeptAlive = { id: string };

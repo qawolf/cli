@@ -137,6 +137,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf email get` | read | Read one email of the workspace, with its plain text and HTML bodies. Use it to pull a sign-in code or a verification link out of a message. |
 | `qawolf email getAttachment` | read | Read one attachment of a workspace email as base64 content, by file name or by position. email.get lists both. |
 | `qawolf email listAddresses` | read | List the workspace's inbox addresses, alphabetical. A flow can sign up with a plus-suffixed form of any of them, and email.find reads what arrives. |
+| `qawolf email registerAddress` | write | Register an inbox address for the workspace. Registering an address the workspace already has changes nothing. A refusal names the domains the workspace can use. |
 | `qawolf email send` | write | Send an email from one of the workspace's inbox addresses, for example to exercise a flow that reacts to incoming mail. Returns the sent email; read it back with email.get. |
 | `qawolf environment create` | write | Create an environment on the caller's team and return it in the environment.get shape. |
 | `qawolf environment deleteVariable` | write | Remove one environment variable by name. Succeeds whether or not the variable existed. |
@@ -168,6 +169,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf run find` | read | List an environment's recent runs, newest first. |
 | `qawolf run get` | read | Get a run's status, per-flow results, and links. |
 | `qawolf run reattempt` | write | Request new attempts for a run's flows, in the same run. A flow is eligible once its result is failed or canceled and QA Wolf's automatic retries have finished. A fully investigated run no longer accepts reattempts. Attempts run with the latest flow code. Poll run.get for results. |
+| `qawolf run stop` | write | Stop a run, including its queued flows and automatic retries. Stopping is asynchronous. Repeated requests are safe, and finished runs keep their results. A run that is still being created returns not found; retry once run.get returns the run. If run.get returns a different runId, use that ID. Poll run.get for results. |
 | `qawolf runner act` | write | Perform one raw action on a runner's screen: click, double_click, scroll, move, drag, keypress, navigate or type. Use - to read a whole action as JSON from stdin. On a mobile runner only click (button left), drag and type have a touchscreen equivalent; the rest answer action-not-supported-on-mobile |
 | `qawolf runner events` | read | Print a runner's journal, one entry per line. QA Wolf writes console, recorder, run-events, run-logs, run-status |
 | `qawolf runner exec` | write | Evaluate a snippet against a runner's live page. Use - to read the snippet from stdin |

@@ -13,6 +13,14 @@ of starting and billing a second one, and the answer says which happened: read
 cheap and safe pattern, and the same id with a different `--name` is refused
 rather than silently ignored.
 
+Either answer carries a `url`, which `qawolf runner launch` also prints: a QA
+Wolf page showing what the runner is doing right now. Hand it to a person who
+asks what your runner is up to. The live screen on that page authorizes the QA
+Wolf user that launched the runner, and a runner launched with a team API key
+belongs to the team's automation user, so a person opening that page sees the
+runner but not its screen. You read the screen with `screenshot`, not with the
+page.
+
 Commands that target a runner find one in this order: `--runner`, then
 `QAWOLF_RUNNER_ID`, then the runner stored for the current directory (which
 `qawolf runner launch` sets). Setting the environment variable once is the most
@@ -82,6 +90,13 @@ The list includes the runner named by `QAWOLF_RUNNER_ID` even though this
 directory did not launch it, so a harness handed a runner sees it alongside the
 ones it started itself. Use the `id` column with `--runner` to address any of
 them; addressing one does not make it the default.
+
+The table leaves out the watch address, which beside a 63-character id outgrows
+a terminal. `--json` carries it as `url` on every runner:
+
+```sh
+qawolf runner list --json | jq -r '.[] | [.id, .url] | @tsv'
+```
 
 ## The order that matters
 
@@ -562,7 +577,7 @@ the screen, so it is not optional even though the goal here is to drive by hand.
 export QAWOLF_API_KEY=...          # the only credential
 export QAWOLF_RUNNER_ID=agent-1    # so no command below needs --runner
 
-qawolf runner launch --id agent-1 --json          # --id, not the variable; read .alreadyRunning
+qawolf runner launch --id agent-1 --json          # --id, not the variable; read .alreadyRunning and .url
 qawolf runner run flows/smoke.flow.ts --follow    # starts the screen; exit 1 if it failed
 
 qawolf runner act navigate --url https://example.com/login
