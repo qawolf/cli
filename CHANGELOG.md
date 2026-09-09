@@ -1,5 +1,25 @@
 # @qawolf/cli
 
+## 1.25.0
+
+### Minor Changes
+
+- b1ed5f7: `qawolf auth login` now asks how you want to sign in. Choose `Browser` to sign in with your QA Wolf account, or `API key` to paste a team key as before. The browser option shows a short code, opens the verification page, and waits until you confirm the code. If the CLI cannot open a browser, it prints the URL for you to open.
+
+  The CLI keeps the session in the system keychain, and falls back to a file that only its owner can read. It refreshes the session automatically before the access token expires, and `qawolf auth logout` removes both the session and the API key. An API key still takes precedence over a browser session.
+
+  Browser sign-in needs no local configuration: the CLI asks the QA Wolf deployment it points at which sign-in application to use, so it works against any host that publishes browser sign-in. A deployment that offers no browser sign-in says so, and you can run the command again and choose the API key path.
+
+- da4e44e: A prompt that shows more than eight items now lets you type to filter the list. This applies to the organization and the workspace prompts, where an account that reaches many organizations gets a long list.
+
+  The filter matches a name, a slug, or an id. It ignores letter case, and it reads a space and a hyphen as the same character, so `acme retail` finds `acme-retail`. The arrow keys and Enter continue to operate as before, and an empty filter box shows the full list.
+
+- 12f031b: After a browser sign-in, the CLI now asks which organization to work in, then which workspace inside it. It asks only when there is more than one to choose from.
+
+  The new `qawolf auth switch` command changes the workspace later without signing in again. Set `QAWOLF_WORKSPACE` to choose without a prompt. It accepts a workspace name, slug, or id, and finds the organization for you. Add `QAWOLF_ORGANIZATION`, which accepts an organization name or id, when the same workspace name occurs in more than one organization.
+
+  Public API commands send the workspace you chose, so a change takes effect immediately. Changing workspace needs no new token. `qawolf auth whoami` lists the workspaces each of your organizations contains.
+
 ## 1.24.0
 
 ### Minor Changes
