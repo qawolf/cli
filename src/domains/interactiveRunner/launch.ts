@@ -52,11 +52,12 @@ export async function handleRunnerLaunch(
     );
   }
 
+  const runner = launched.value;
   ctx.ui.output(
-    launched.value,
-    launched.value.alreadyRunning
-      ? interactiveRunnerMessages.alreadyRunning(launched.value.id)
-      : interactiveRunnerMessages.launched(launched.value.id),
+    runner,
+    runner.alreadyRunning
+      ? interactiveRunnerMessages.alreadyRunning(runner.id, runner.url)
+      : interactiveRunnerMessages.launched(runner.id, runner.url),
   );
   return undefined;
 }
