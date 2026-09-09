@@ -5,10 +5,14 @@
 // crash code replaced the command's, so a caller could not tell success from
 // an auth or a billing refusal.
 //
-// The reply has to be large enough to arrive compressed: the API compresses
-// replies past about a kilobyte, and only a compressed, chunked body left work
-// in flight at the exit. This server mirrors that shape, so the smoke needs no
-// API key and reaches no network.
+// The refusals are checked for their exact documented codes, 3 and 7, because
+// losing those is the damage a caller feels: the reported symptom was an auth
+// failure returning 3, 3, then a crash code.
+//
+// Every reply has to be large enough to arrive compressed, the refusals
+// included: the API compresses replies past about a kilobyte, and only a
+// compressed, chunked body left work in flight at the exit. This server mirrors
+// that shape, so the smoke needs no API key and reaches no network.
 //
 // Usage: node test/exit/networkExitSmoke.mjs [command ...args]
 //        defaults to the shipped bundle, `node dist/cli.js`.
@@ -29,28 +33,36 @@ const tags = Array.from({ length: 40 }, (_, index) => ({
   name: `smoke-tag-${index}`,
   url: "http://127.0.0.1/settings/tags",
 }));
-const payload = gzipSync(
+const okBody = gzipSync(
   Buffer.from(JSON.stringify({ result: { data: { json: { tags } } } })),
 );
+// The failure path reads the body with text() rather than json(), so it needs
+// its own oversized body to reach the same decompression.
+const refusalBody = gzipSync(
+  Buffer.from(
+    JSON.stringify({ error: { json: { message: "refused ".repeat(200) } } }),
+  ),
+);
 
-const server = createServer((_request, response) => {
+const server = createServer((request, response) => {
+  const refusal = /\/refuse-(401|402)\//.exec(request.url);
   // No content-length: a compressed reply arrives chunked.
-  response.writeHead(200, {
+  response.writeHead(refusal ? Number(refusal[1]) : 200, {
     "content-encoding": "gzip",
     "content-type": "application/json",
   });
-  response.end(payload);
+  response.end(refusal ? refusalBody : okBody);
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const { port } = server.address();
 
-function runCli() {
+function runCli(basePath) {
   return new Promise((resolve) => {
     const child = spawn(command, [...leadingArgs, "tag", "list", "--json"], {
       env: {
         ...process.env,
         QAWOLF_API_KEY: "smoke-key",
-        QAWOLF_HOST_URL: `http://127.0.0.1:${port}`,
+        QAWOLF_HOST_URL: `http://127.0.0.1:${port}${basePath}`,
         QAWOLF_NO_UPDATE_CHECK: "1",
       },
       stdio: ["ignore", "pipe", "pipe"],
@@ -75,23 +87,32 @@ function runCli() {
   });
 }
 
+// A refusal body is long by design; a failing job does not need all of it.
+const excerpt = (text) =>
+  text.length > 300 ? `${text.slice(0, 300)}… (${text.length} bytes)` : text;
+
+const cases = [
+  { basePath: "", expected: 0, label: "success", wantsTags: true },
+  { basePath: "/refuse-401", expected: 3, label: "auth refusal" },
+  { basePath: "/refuse-402", expected: 7, label: "payment refusal" },
+];
+
 const failures = [];
-for (let attempt = 1; attempt <= attempts; attempt += 1) {
-  const result = await runCli();
-  if (result.launchError) {
-    failures.push(
-      `attempt ${attempt} failed to launch: ${result.launchError.message}`,
-    );
-  } else if (result.timedOut) {
-    failures.push(
-      `attempt ${attempt} never exited within ${attemptTimeoutMs}ms`,
-    );
-  } else if (result.status !== 0) {
-    failures.push(
-      `attempt ${attempt} exited ${result.status} (signal ${result.signal})\n${result.stdout}\n${result.stderr}`,
-    );
-  } else if (!result.stdout.includes("smoke-tag-39")) {
-    failures.push(`attempt ${attempt} printed no tags\n${result.stdout}`);
+for (const testCase of cases) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const result = await runCli(testCase.basePath);
+    const where = `${testCase.label} attempt ${attempt}`;
+    if (result.launchError) {
+      failures.push(`${where} failed to launch: ${result.launchError.message}`);
+    } else if (result.timedOut) {
+      failures.push(`${where} never exited within ${attemptTimeoutMs}ms`);
+    } else if (result.status !== testCase.expected) {
+      failures.push(
+        `${where} exited ${result.status}, expected ${testCase.expected} (signal ${result.signal})\n${excerpt(result.stdout)}\n${excerpt(result.stderr)}`,
+      );
+    } else if (testCase.wantsTags && !result.stdout.includes("smoke-tag-39")) {
+      failures.push(`${where} printed no tags\n${excerpt(result.stdout)}`);
+    }
   }
 }
 
@@ -103,5 +124,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `network exit smoke OK on ${process.platform}: ${attempts}/${attempts} exited 0 (${command})`,
+  `network exit smoke OK on ${process.platform}: ${cases.length * attempts} runs, exit codes 0/3/7 as documented (${command})`,
 );
