@@ -13,13 +13,7 @@ of starting and billing a second one, and the answer says which happened: read
 cheap and safe pattern, and the same id with a different `--name` is refused
 rather than silently ignored.
 
-Either answer carries a `url`, which `qawolf runner launch` also prints: a QA
-Wolf page showing what the runner is doing right now. Hand it to a person who
-asks what your runner is up to. The live screen on that page authorizes the QA
-Wolf user that launched the runner, and a runner launched with a team API key
-belongs to the team's automation user, so a person opening that page sees the
-runner but not its screen. You read the screen with `screenshot`, not with the
-page.
+Either answer carries a `url`, which `qawolf runner launch` prints, as does a command that launched its own runner. It is a QA Wolf page showing what the runner is doing right now, where a person can also take over with their own mouse and keyboard. Hand it to a person who asks what your runner is up to. The screen on that page plays only for the QA Wolf user that launched the runner, so a runner launched with a team API key, which belongs to the team's automation user, shows a person the page but not the screen — which is why the printed line promises the screen only when you are signed in through the browser. You read the screen with `screenshot`, not with the page.
 
 Commands that target a runner find one in this order: `--runner`, then
 `QAWOLF_RUNNER_ID`, then the runner stored for the current directory (which
@@ -91,8 +85,7 @@ directory did not launch it, so a harness handed a runner sees it alongside the
 ones it started itself. Use the `id` column with `--runner` to address any of
 them; addressing one does not make it the default.
 
-The table leaves out the watch address, which beside a 63-character id outgrows
-a terminal. `--json` carries it as `url` on every runner:
+The table leaves out the page address, which beside a 63-character id outgrows a terminal. `--json` carries it as `url` on every runner:
 
 ```sh
 qawolf runner list --json | jq -r '.[] | [.id, .url] | @tsv'

@@ -23,7 +23,7 @@ type RunnerListItem = {
   /** Whether this directory launched the runner, as opposed to another checkout, machine or session. */
   launchedHere: boolean;
   runnerName: string;
-  /** The QA Wolf page showing this runner's live screen. Too wide for the table, so it is carried in --json only. */
+  /** The QA Wolf page showing this runner's live screen. */
   url: string;
 };
 
@@ -31,6 +31,8 @@ export type ListedRunners =
   | { items: RunnerListItem[]; ok: true }
   | ({ ok: false } & PlatformFailure);
 
+// No url column: an address beside a 63-character id outgrows a terminal, so
+// --json carries it instead.
 const columns: readonly TableColumn<RunnerListItem>[] = [
   { header: "id", value: (row) => row.id },
   { header: "family", value: (row) => row.runnerName },

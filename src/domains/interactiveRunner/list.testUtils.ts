@@ -5,7 +5,8 @@ type ListedRunner = {
   url: string;
 };
 
-export const watchUrl = (id: string) => `https://app.qawolf.com/runner/${id}`;
+export const watchUrl = (id: string) =>
+  `https://app.qawolf.com/acme/runners/${id}`;
 
 export function runner(id: string, runnerName = "playwright"): ListedRunner {
   return { gpuAccelerated: false, id, runnerName, url: watchUrl(id) };
