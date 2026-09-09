@@ -3,15 +3,8 @@ import { describe, expect, it } from "bun:test";
 
 import { handleRunnerLaunch } from "./launch.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
+import { launched } from "./launch.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
-
-const launched = {
-  gpuAccelerated: false,
-  id: "cli-minted",
-  alreadyRunning: false as const,
-  outcome: "success" as const,
-  runnerName: "playwright" as const,
-};
 
 describe("handleRunnerLaunch", () => {
   it("launches under a minted id and stores it as the directory's default", async () => {

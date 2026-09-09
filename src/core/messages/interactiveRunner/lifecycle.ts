@@ -1,8 +1,13 @@
+// Ends the line with no period: a terminal that linkifies takes the period as
+// part of the address.
+const watchAt = (url: string) => `Watch its screen at ${url}`;
+
 const noRunnerId =
   "No runner id. Pass --runner, set QAWOLF_RUNNER_ID, or run qawolf runner launch first.";
 
 export const lifecycleMessages = {
-  alreadyRunning: (id: string) => `Runner ${id} was already running.`,
+  alreadyRunning: (id: string, url: string) =>
+    `Runner ${id} was already running. ${watchAt(url)}`,
   defaultNotRemembered: (id: string) =>
     `Runner ${id} could not be written to .qawolf as this directory's default, so later commands will not find it on their own. Pass --runner ${id}, or set QAWOLF_RUNNER_ID=${id}.`,
   defaultNotForgotten: (id: string) =>
@@ -15,7 +20,8 @@ export const lifecycleMessages = {
     `Launching runner ${id} failed. ${error}`,
   launchLost: (id: string, error: string) =>
     `Launching runner ${id} failed. ${error}. The request may still have reached QA Wolf and started a runner, so relaunch the same id with qawolf runner launch --id ${id} to attach to it rather than start a second one, or terminate it with qawolf runner terminate --runner ${id}.`,
-  launched: (id: string) => `Launched runner ${id}.`,
+  launched: (id: string, url: string) =>
+    `Launched runner ${id}. ${watchAt(url)}`,
   launchedForCommand: (id: string) =>
     `No runner was given, so launched ${id} for this command. Its browser is fresh: nothing has been run on it and nothing is signed in. It bills until it is terminated or idles out, so terminate it with qawolf runner terminate --runner ${id} when you are done.`,
   noRunnerIdForImport: `${noRunnerId} An install also needs a live run to go into, which a runner gets from qawolf runner run.`,
