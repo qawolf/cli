@@ -23,6 +23,8 @@ type RunnerListItem = {
   /** Whether this directory launched the runner, as opposed to another checkout, machine or session. */
   launchedHere: boolean;
   runnerName: string;
+  /** The QA Wolf page showing this runner's live screen. Too wide for the table, so it is carried in --json only. */
+  url: string;
 };
 
 export type ListedRunners =
@@ -81,6 +83,7 @@ export async function listRunners(
     isDefault: runner.id === defaultRunnerId,
     launchedHere: heldIds.has(runner.id),
     runnerName: runner.runnerName,
+    url: runner.url,
   }));
   return {
     items: items.sort(
