@@ -26,7 +26,10 @@ import type { InteractiveRunnerDeps } from "./deps.js";
 
 export const testCwd = "/workspace";
 
-export function makeAuthCtx(mode: OutputMode = "human"): {
+export function makeAuthCtx(
+  mode: OutputMode = "human",
+  apiKeySource = "env",
+): {
   callPublicApi: ReturnType<typeof makeCallPublicApiMock>;
   ctx: AuthCommandContext;
   infos: () => string[];
@@ -42,7 +45,7 @@ export function makeAuthCtx(mode: OutputMode = "human"): {
     callPublicApi,
     ctx: {
       ...base,
-      apiKeySource: "env",
+      apiKeySource,
       platformClient: makeMockPlatformClient({ callPublicApi }),
     },
     infos: () =>

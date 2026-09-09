@@ -7,6 +7,7 @@ import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
+import { canWatchRunnerScreen } from "./canWatchRunnerScreen.js";
 import { launchAndRemember } from "./launchAndRemember.js";
 import { runnerIdEnvironmentVariable } from "./resolveRunner.js";
 import { parseRunnerId, parseRunnerName } from "./runnerIds.js";
@@ -56,8 +57,16 @@ export async function handleRunnerLaunch(
   ctx.ui.output(
     runner,
     runner.alreadyRunning
-      ? interactiveRunnerMessages.alreadyRunning(runner.id, runner.url)
-      : interactiveRunnerMessages.launched(runner.id, runner.url),
+      ? interactiveRunnerMessages.alreadyRunning(
+          runner.id,
+          runner.url,
+          canWatchRunnerScreen(ctx),
+        )
+      : interactiveRunnerMessages.launched(
+          runner.id,
+          runner.url,
+          canWatchRunnerScreen(ctx),
+        ),
   );
   return undefined;
 }
