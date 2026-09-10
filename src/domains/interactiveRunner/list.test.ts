@@ -4,19 +4,7 @@ import { callsOf } from "~/shell/commandContext.testUtils.js";
 
 import { handleRunnerList } from "./list.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
-
-type ListedRunner = { gpuAccelerated: boolean; id: string; runnerName: string };
-
-function runner(id: string, runnerName = "playwright"): ListedRunner {
-  return { gpuAccelerated: false, id, runnerName };
-}
-
-function listed(...runners: ListedRunner[]): { ok: true; value: unknown } {
-  return { ok: true, value: { outcome: "success", runners } };
-}
-
-const everywhere = { here: false };
-const onlyHere = { here: true };
+import { everywhere, listed, runner, watchUrl } from "./list.testUtils.js";
 
 describe("handleRunnerList", () => {
   it("says so when the team has no runner running", async () => {
@@ -46,6 +34,7 @@ describe("handleRunnerList", () => {
     expect(written).toContain("review");
     expect(written).toContain("android");
     expect(written).toContain("launched here");
+    expect(written).not.toContain(watchUrl("ci"));
   });
 
   it("marks the runners this directory launched", async () => {
@@ -64,12 +53,14 @@ describe("handleRunnerList", () => {
         isDefault: true,
         launchedHere: true,
         runnerName: "playwright",
+        url: watchUrl("ci"),
       },
       {
         id: "elsewhere",
         isDefault: false,
         launchedHere: false,
         runnerName: "android",
+        url: watchUrl("elsewhere"),
       },
     ]);
   });
@@ -100,35 +91,6 @@ describe("handleRunnerList", () => {
     ]);
   });
 
-  it("keeps only this directory's runners with --here", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx("json");
-    const deps = makeTestDeps();
-    await deps.store.rememberLaunch({ id: "ci", runnerName: "playwright" });
-    callPublicApi.mockResolvedValue(
-      listed(runner("elsewhere", "android"), runner("ci")),
-    );
-
-    await handleRunnerList(ctx, onlyHere, deps);
-
-    expect(ctx.ui.json).toHaveBeenCalledWith([
-      {
-        id: "ci",
-        isDefault: true,
-        launchedHere: true,
-        runnerName: "playwright",
-      },
-    ]);
-  });
-
-  it("says so when --here finds nothing but the team has runners", async () => {
-    const { callPublicApi, ctx, infos } = makeAuthCtx();
-    callPublicApi.mockResolvedValue(listed(runner("elsewhere")));
-
-    await handleRunnerList(ctx, onlyHere, makeTestDeps());
-
-    expect(infos()[0]).toContain("This directory has no runner running");
-  });
-
   it("forgets a held runner the platform no longer has", async () => {
     const { callPublicApi, ctx } = makeAuthCtx("json");
     const deps = makeTestDeps();
@@ -144,6 +106,7 @@ describe("handleRunnerList", () => {
         isDefault: true,
         launchedHere: true,
         runnerName: "playwright",
+        url: watchUrl("ci"),
       },
     ]);
     expect((await deps.store.readRunners()).map((held) => held.id)).toEqual([
@@ -169,6 +132,7 @@ describe("handleRunnerList", () => {
         isDefault: false,
         launchedHere: true,
         runnerName: "playwright",
+        url: watchUrl("ci"),
       },
     ]);
     expect(await deps.store.readDefaultRunnerId()).toBe("idled-out");
@@ -190,12 +154,14 @@ describe("handleRunnerList", () => {
         isDefault: true,
         launchedHere: false,
         runnerName: "basic",
+        url: watchUrl("from-env"),
       },
       {
         id: "stored",
         isDefault: false,
         launchedHere: true,
         runnerName: "playwright",
+        url: watchUrl("stored"),
       },
     ]);
   });
@@ -209,7 +175,13 @@ describe("handleRunnerList", () => {
     await handleRunnerList(ctx, everywhere, deps);
 
     expect(ctx.ui.json).toHaveBeenCalledWith([
-      { id: "ci", isDefault: true, launchedHere: true, runnerName: "android" },
+      {
+        id: "ci",
+        isDefault: true,
+        launchedHere: true,
+        runnerName: "android",
+        url: watchUrl("ci"),
+      },
     ]);
   });
 
