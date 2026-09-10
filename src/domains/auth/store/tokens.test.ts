@@ -29,6 +29,10 @@ describe("saveTokens", () => {
     spyOn(Entry.prototype, "setPassword").mockImplementation(() => {
       throw Error("keychain unavailable");
     });
+    // Not decoration: saveTokens clears the entry it could not overwrite, and
+    // an unmocked deletePassword reaches the real keychain under the real
+    // service and account, deleting the session of whoever ran the tests.
+    spyOn(Entry.prototype, "deletePassword").mockReturnValue(true);
     const memFs = makeMemoryFs();
     await memFs.mkdir("/config", { recursive: true });
 
