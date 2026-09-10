@@ -51,7 +51,7 @@ describe("handleRunnerAct --screenshot when the action was refused", () => {
       deps,
     );
 
-    expect(result?.error).toContain("the click hit nothing");
+    expect(result?.error).toContain("the click hit nothing.");
     expect(result?.error).toContain("missed.jpg");
     expect(result?.error).toContain("rather than sending the action again");
     expect(result?.exitCode).toBe(1);

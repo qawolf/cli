@@ -1,6 +1,7 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
 import type { BrowserActionFlags } from "~/core/interactiveRunner/browserAction.js";
+import { appendSentence } from "~/core/sentences.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
   AuthCommandContext,
@@ -88,7 +89,10 @@ export async function handleRunnerAct(
       ...fields,
       ...(result.mayHaveArrived
         ? {
-            error: `${fields.error} ${interactiveRunnerMessages.actionMayHaveHappened}`,
+            error: appendSentence(
+              fields.error,
+              interactiveRunnerMessages.actionMayHaveHappened,
+            ),
           }
         : {}),
       exitCode: exitCodes.network,

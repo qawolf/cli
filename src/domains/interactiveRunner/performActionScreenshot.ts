@@ -1,6 +1,7 @@
 import type { BrowserAction } from "@qawolf/api-contracts/v1";
 
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
+import { appendSentence } from "~/core/sentences.js";
 import type {
   AuthCommandContext,
   CommandResult,
@@ -102,7 +103,10 @@ export async function addFailureScreenshot(
   deps: InteractiveRunnerDeps,
 ): Promise<Exclude<CommandResult, void>> {
   const note = await describeFailureScreenshot(options, deps);
-  return { ...options.failure, error: `${options.failure.error} ${note}` };
+  return {
+    ...options.failure,
+    error: appendSentence(options.failure.error, note),
+  };
 }
 
 /** Writes the refused action's screen, and says where it went. */
