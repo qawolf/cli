@@ -1,5 +1,31 @@
 # @qawolf/cli
 
+## 1.26.0
+
+### Minor Changes
+
+- 9db7b9c: Upgrades `@qawolf/api-contracts` to `0.52.0`.
+
+  That release adds two endpoint contracts, and the generator adds one public-API command for each. `qawolf email registerAddress` registers an inbox address for the workspace. `qawolf run stop` stops a run, including its queued flows and automatic retries.
+
+  The release also rewrites the descriptions of `qawolf agent send` and `qawolf agent get`. Both now say to share the session URL the send returns, and how often to poll while work is running.
+
+  It adds a `withScreenshot` option to `runner.performAction` as well, which no command uses yet.
+
+### Patch Changes
+
+- d56f70b: `qawolf flows pull` now downloads team-storage assets when you sign in through the browser. Before, the pull stopped with "Team storage requires a team API key" after it had already downloaded the flows and the environment variables.
+
+  The CLI asked the API who the credential belonged to, and used the team from the answer. A browser session has an organization and a user in that answer, but no team, so the CLI refused it. A browser session does name the workspace you chose, and a workspace is a team, so the CLI now uses that.
+
+  An organization API key with no workspace still gets the same message, because such a key reaches many teams and names none.
+
+- b1fc890: Commands that read the platform API now exit with their own status code on Windows. The CLI stopped the process as soon as a command was complete. If the reply was still in the process of teardown, Windows builds of Node stopped with an assertion failure, and the crash code replaced the code of the command. The output was correct, but a script could not tell success from an authentication failure or a refused payment. The CLI now records the status code and lets the work that is in progress complete. A 2 second backstop stops a run that keeps the event loop busy, which is what a flow run does with its browsers.
+
+  The CLI makes a background request to the npm registry to find a new version. It now stops that request when the command is complete.
+
+  An interrupt also keeps its exit code. Ctrl+C gave the same crash code when it stopped a command during a reply. The CLI now runs the cleanup, then gives the work in progress 150 ms to complete before it stops. A second interrupt stops the process immediately.
+
 ## 1.25.0
 
 ### Minor Changes
