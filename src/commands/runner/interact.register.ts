@@ -2,7 +2,6 @@ import type { Command } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext } from "~/commands/context.js";
-import { handleRunnerExec } from "~/domains/interactiveRunner/evaluateSnippet.js";
 import { handleRunnerAct } from "~/domains/interactiveRunner/performAction.js";
 import { handleRunnerScreenshot } from "~/domains/interactiveRunner/takeScreenshot.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
@@ -27,19 +26,16 @@ Examples:
   $ qawolf runner act keypress --keys Control a
   $ qawolf runner act navigate --url https://example.com
   $ qawolf runner act drag --path '[{"x":10,"y":20},{"x":80,"y":90}]'
-  $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act -`;
-
-const execExamples = `
-Examples:
-  $ qawolf runner exec snippet.ts
-  $ echo 'console.log(await page.title())' | qawolf runner exec -
-  $ qawolf runner exec snippet.ts --file flows/checkout.flow.ts`;
+  $ qawolf runner act click --button left --x 480 --y 260 --screenshot step-4.jpg
+  $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act -
+  $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act - --screenshot - > step-5.jpg`;
 
 type ActFlags = {
   button?: string;
   keys?: string[];
   path?: string;
   runner?: string;
+  screenshot?: string;
   scrollX?: string;
   scrollY?: string;
   text?: string;
@@ -92,6 +88,10 @@ export function registerRunnerInteractCommands(
       "drag: JSON array of points to drag through (mobile: only the first and last are used)",
     )
     .option("--runner <id>", runnerFlagDescription)
+    .option(
+      "--screenshot <path>",
+      "Also save a JPEG of the screen, taken after the action, to this file, in place of a separate screenshot. An action that did not take effect answers with one too. - writes it to stdout and moves the confirmation, JSON included, to stderr",
+    )
     .option("--scroll-x <delta>", "scroll: horizontal wheel delta")
     .option("--scroll-y <delta>", "scroll: vertical wheel delta")
     .option("--text <text>", "type: the text to type")
@@ -116,35 +116,11 @@ export function registerRunnerInteractCommands(
               y: opts.y,
             },
             runner: opts.runner,
+            screenshot: opts.screenshot,
             type: action,
           },
           runnerDeps(ctx),
         ),
       )(opts, command),
-    );
-
-  declareCommandKind(runner.command("exec <file>"), "write")
-    .description(
-      "Evaluate a snippet against a runner's live page. Use - to read the snippet from stdin",
-    )
-    .option(
-      "--file <path>",
-      "File whose scope the snippet is evaluated in; it and the directory's other files travel with it",
-    )
-    .option("--runner <id>", runnerFlagDescription)
-    .addHelpText("after", execExamples)
-    .action(
-      (
-        file: string,
-        opts: { file?: string; runner?: string },
-        command: Command,
-      ) =>
-        withAuthContext(signals, (ctx) =>
-          handleRunnerExec(
-            ctx,
-            { contextFile: opts.file, runner: opts.runner, source: file },
-            runnerDeps(ctx),
-          ),
-        )(opts, command),
     );
 }

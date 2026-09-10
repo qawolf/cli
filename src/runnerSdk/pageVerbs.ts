@@ -31,11 +31,16 @@ export function createPageVerbs({ platformClient }: SdkContext) {
     async act({
       action,
       runnerId,
+      withScreenshot,
     }: ActRequest): Promise<SdkResult<PerformedAction>> {
       return toSdkResult(
         await platformClient.callPublicApi(
           performAction,
-          { action, id: runnerId },
+          {
+            action,
+            id: runnerId,
+            ...(withScreenshot === undefined ? {} : { withScreenshot }),
+          },
           runnerCallOptions,
         ),
       );

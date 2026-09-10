@@ -11,7 +11,31 @@ export const interactMessages = {
     'Stdin did not hold a JSON action. Pipe one object, for example \'{"type":"click","button":"left","x":480,"y":260}\'.',
   actionNotSupportedOnMobile: (type: string) =>
     `A mobile runner has a touchscreen, so it cannot perform ${type} as asked. It taps with a left-button click, swipes with drag, and types into whatever the last tap focused.`,
+  actionFailedScreenshotToStdout:
+    "Its screen was written to stdout as a JPEG, so look at that rather than sending the action again.",
+  actionFailedScreenshotUnwritten: (detail: string) =>
+    `Its screen could not be written, because ${detail}, so take one with qawolf runner screenshot rather than sending the action again.`,
+  actionFailedScreenshotWritten: (path: string) =>
+    `Its screen was written to ${path}, so look at that rather than sending the action again.`,
+  actionFailedWithoutScreenshot:
+    "The runner answered without a screen, so nothing was written; take one with qawolf runner screenshot rather than sending the action again.",
   actionPerformed: (type: string) => `Performed ${type}.`,
+  actionPerformedScreenshotNotAnImage: (type: string) =>
+    `Performed ${type}, but the screen that came with the answer was not a JPEG, so nothing was written. The action took effect, so do not repeat it: take the screen with qawolf runner screenshot instead, and report it if it keeps happening.`,
+  actionPerformedScreenshotToStdout: (type: string) =>
+    `Performed ${type} and wrote the runner's screen to stdout as a JPEG. Stdout holds the image bytes alone; this line, and the JSON with --json, is on stderr.`,
+  actionPerformedScreenshotStdoutUnwritable: (type: string, detail: string) =>
+    `Performed ${type}, but its screen could not be written to stdout: ${detail}. The action took effect, so do not repeat it: keep the pipe reading stdout open, or take the screen with qawolf runner screenshot --out <file>.`,
+  actionPerformedScreenshotUnwritable: (
+    type: string,
+    path: string,
+    detail: string,
+  ) =>
+    `Performed ${type}, but its screen could not be written to "${path}": ${detail}. The action took effect, so do not repeat it: take the screen with qawolf runner screenshot, giving --out a path this process can write to.`,
+  actionPerformedScreenshotWritten: (type: string, path: string) =>
+    `Performed ${type} and wrote the runner's screen to ${path}.`,
+  actionPerformedWithoutScreenshot: (type: string) =>
+    `Performed ${type}, but the runner answered without the screen it was asked for. The action took effect, so do not repeat it: take the screen with qawolf runner screenshot instead. If this keeps happening, the platform or this CLI is behind the other: upgrade with npm install -g @qawolf/cli.`,
   actionAnsweredUnknown: (failureReason: string) =>
     `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
   screenshotAnsweredUnknown: (failureReason: string) =>
@@ -34,8 +58,8 @@ export const interactMessages = {
     "The runner has a screen and cannot serve this yet. Its virtual desktop restarts when a run changes the display size, and it serves one request at a time, so something already in flight is the usual reason. Retry in a second or two.",
   screenshotNotAnImage:
     "The screen was captured but did not arrive as a JPEG, so nothing was written. Nothing about the command needs changing: try it again, and report it if it keeps happening.",
-  screenshotStdoutIsATerminal:
-    'Stdout is a terminal, so the JPEG bytes would have nowhere to go. Redirect stdout to a file or pipe it into a reader, or give --out a file path instead of "-".',
+  stdoutIsATerminal: (flag: string) =>
+    `Stdout is a terminal, so the JPEG bytes would have nowhere to go. Redirect stdout to a file or pipe it into a reader, or give ${flag} a file path instead of "-".`,
   screenshotStdoutUnwritable: (detail: string) =>
     `The screen was captured but could not be written to stdout: ${detail}. Keep the pipe reading stdout open, or give --out a file path instead of "-".`,
   screenshotUnwritable: (path: string, detail: string) =>

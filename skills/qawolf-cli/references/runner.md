@@ -142,6 +142,19 @@ can forward a tool call rather than translate it:
 echo '{"type":"click","button":"left","x":480,"y":260}' | qawolf runner act -
 ```
 
+Every action in a see-and-act loop is followed by a look at the result, so ask
+for it in the same call: `act ... --screenshot step-1.jpg` (or `--screenshot -`
+for stdout) performs the action and writes the screen the runner answers with.
+Prefer it over `act` and then `screenshot`: each step is one call instead of
+two, with no delay to guess at between them. The screen the runner answers with
+is taken once it has changed from just before the action or half a second has
+passed, whichever comes first. An action that reached the screen and did not
+take effect answers with one too, so a `1` from `act --screenshot` still leaves
+you a picture of why the click missed. A `4` whose message starts with
+"Performed" means the action happened and only the picture is missing: take a
+`screenshot`, never send the action again to get it. As with
+`screenshot --out -`, a terminal on stdout is refused.
+
 Coordinates are pixels on the same screenshot you just read. The runner serves
 one see-or-act request at a time, so decide what to do next from each answer
 rather than firing several. Bounds are checked before anything is sent, so an
@@ -568,10 +581,9 @@ export QAWOLF_RUNNER_ID=agent-1    # so no command below needs --runner
 qawolf runner launch --id agent-1 --json          # --id, not the variable; read .alreadyRunning
 qawolf runner run flows/smoke.flow.ts --follow    # starts the screen; exit 1 if it failed
 
-qawolf runner act navigate --url https://example.com/login
-qawolf runner screenshot --out page.jpg           # then read page.jpg yourself
-qawolf runner act click --button left --x 480 --y 260
-qawolf runner act type --text "someone@example.com"
+qawolf runner act navigate --url https://example.com/login --screenshot step-1.jpg   # then read step-1.jpg yourself
+qawolf runner act click --button left --x 480 --y 260 --screenshot step-2.jpg
+qawolf runner act type --text "someone@example.com" --screenshot step-3.jpg
 
 qawolf runner inspect element-html --selector "#email"
 qawolf runner inspect variable --name cart | jq .total

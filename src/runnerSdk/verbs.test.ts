@@ -42,6 +42,26 @@ function makeContext(answer: unknown = { outcome: "success" }) {
 }
 
 describe("the input each verb sends", () => {
+  // Absent rather than false when unasked, so the request stays the shape a
+  // caller that never heard of the option sends.
+  it("asks for a screenshot with an action only when told to", async () => {
+    const { page, sent } = makeContext();
+    const action = { button: "left", type: "click", x: 1, y: 2 } as const;
+
+    await page.act({ action, runnerId: "agent-1" });
+    await page.act({ action, runnerId: "agent-1", withScreenshot: true });
+
+    expect(sent[0]).toEqual({
+      input: { action, id: "agent-1" },
+      name: "runner.performAction",
+    });
+    expect(sent[1]?.input).toEqual({
+      action,
+      id: "agent-1",
+      withScreenshot: true,
+    });
+  });
+
   it("names the runner family only when one is chosen", async () => {
     const { lifecycle, sent } = makeContext();
 

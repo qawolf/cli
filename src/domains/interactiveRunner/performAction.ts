@@ -1,16 +1,22 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
 import type { BrowserActionFlags } from "~/core/interactiveRunner/browserAction.js";
+import { appendSentence } from "~/core/sentences.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
   AuthCommandContext,
   CommandResult,
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
+import { stdoutPath } from "~/shell/interactiveRunner/writeScreenshot.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { describePerformActionFailure } from "./performActionFailure.js";
+import {
+  addFailureScreenshot,
+  writeActionScreenshot,
+} from "./performActionScreenshot.js";
 import { readAction } from "./readAction.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
@@ -23,18 +29,37 @@ import { announceRunner, resolveRunner } from "./resolveRunner.js";
  * published schema before it is sent, which is what turns a string too long for
  * the runner's keyboard into an immediate refusal naming the limit rather than a
  * round trip that holds the runner for ten seconds and then declines.
+ *
+ * With `screenshot` set, the runner is asked to answer with its screen after
+ * the action, and the image is written the way `runner screenshot` writes one.
+ * One call per step instead of two, with no delay for the caller to guess at
+ * between them. An action that reached the screen and did not take effect
+ * answers with one too, and it is written as well: seeing why a click missed is
+ * the reason the screen was asked for.
  */
 export async function handleRunnerAct(
   ctx: AuthCommandContext,
   options: {
     flags: BrowserActionFlags;
     runner: string | undefined;
+    /** Where to write the screen that comes with the answer; `-` for stdout. */
+    screenshot: string | undefined;
     type: string;
   },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
   const built = await readAction(options.type, options.flags, deps);
   if (!built.ok) return { error: built.error, exitCode: exitCodes.invalidArgs };
+  // Only a terminal on stdout selects human mode, and a terminal cannot read
+  // JPEG bytes. Refused here, before a runner is resolved or launched and
+  // before the action is sent, so nothing is billed or clicked for an answer
+  // that could not have been read.
+  if (options.screenshot === stdoutPath && ctx.outputMode === "human") {
+    return {
+      error: interactiveRunnerMessages.stdoutIsATerminal("--screenshot"),
+      exitCode: exitCodes.invalidArgs,
+    };
+  }
 
   const resolved = await resolveRunner(
     ctx,
@@ -48,7 +73,11 @@ export async function handleRunnerAct(
 
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.runner.performAction,
-    { action: built.action, id: resolved.runnerId },
+    {
+      action: built.action,
+      id: resolved.runnerId,
+      ...(options.screenshot === undefined ? {} : { withScreenshot: true }),
+    },
     runnerCallOptions,
   );
   if (!result.ok) {
@@ -60,14 +89,29 @@ export async function handleRunnerAct(
       ...fields,
       ...(result.mayHaveArrived
         ? {
-            error: `${fields.error} ${interactiveRunnerMessages.actionMayHaveHappened}`,
+            error: appendSentence(
+              fields.error,
+              interactiveRunnerMessages.actionMayHaveHappened,
+            ),
           }
         : {}),
       exitCode: exitCodes.network,
     };
   }
 
-  if (result.value.outcome === "success") {
+  const answer = result.value;
+  if (answer.outcome === "success") {
+    if (options.screenshot !== undefined) {
+      return writeActionScreenshot(
+        ctx,
+        {
+          action: built.action,
+          imageJpegBase64: answer.imageJpegBase64,
+          out: options.screenshot,
+        },
+        deps,
+      );
+    }
     ctx.ui.output(
       { action: built.action, outcome: "success" },
       interactiveRunnerMessages.actionPerformed(built.action.type),
@@ -75,8 +119,25 @@ export async function handleRunnerAct(
     return undefined;
   }
 
-  return describePerformActionFailure({
+  const failure = describePerformActionFailure({
     actionType: built.action.type,
-    failure: result.value,
+    failure: answer,
   });
+  // Only `action-failed` reached the screen, so it is the only refusal that can
+  // carry one. The refusal is the news and keeps its exit code; where its screen
+  // went is a sentence on the end.
+  if (
+    options.screenshot === undefined ||
+    answer.failureReason !== "action-failed"
+  ) {
+    return failure;
+  }
+  return addFailureScreenshot(
+    {
+      failure,
+      imageJpegBase64: answer.imageJpegBase64,
+      out: options.screenshot,
+    },
+    deps,
+  );
 }

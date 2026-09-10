@@ -139,6 +139,12 @@ your actions into Playwright locators), `keepalive` to hold it open, and
 when done. Everything is a plain request to one host, so a shell with an API key
 and its own vision model can close the see-and-act loop with no other tooling.
 
+When an action is followed by a look at the result, which in a see-and-act loop
+is every action, pass `--screenshot <path>` to `act` (or `-` for stdout) instead
+of calling `act` and then `screenshot`. One call performs the action and writes
+the screen the runner answers with: half the calls per step, and no delay to
+guess at between them.
+
 The full workflow is its own guide: how a runner is billed, why the first call
 must be a run, the order the commands go in, the see-and-act loop, `exec`, the
 recorder, reading history, staying alive, and an end-to-end example. **Read
