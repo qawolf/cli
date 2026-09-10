@@ -12,8 +12,10 @@ const noRunnerId =
   "No runner id. Pass --runner, set QAWOLF_RUNNER_ID, or run qawolf runner launch first.";
 
 export const lifecycleMessages = {
-  alreadyRunning: (id: string, url: string, canWatch: boolean) =>
-    `Runner ${id} was already running. ${pageAt(url, canWatch)}`,
+  // Never promises the screen: a runner already running under this id may have
+  // been launched by someone else, or by a key, and plays for them alone.
+  alreadyRunning: (id: string, url: string) =>
+    `Runner ${id} was already running. Its runner page is at ${url}`,
   defaultNotRemembered: (id: string) =>
     `Runner ${id} could not be written to .qawolf as this directory's default, so later commands will not find it on their own. Pass --runner ${id}, or set QAWOLF_RUNNER_ID=${id}.`,
   defaultNotForgotten: (id: string) =>

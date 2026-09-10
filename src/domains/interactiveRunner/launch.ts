@@ -57,11 +57,7 @@ export async function handleRunnerLaunch(
   ctx.ui.output(
     runner,
     runner.alreadyRunning
-      ? interactiveRunnerMessages.alreadyRunning(
-          runner.id,
-          runner.url,
-          canWatchRunnerScreen(ctx),
-        )
+      ? interactiveRunnerMessages.alreadyRunning(runner.id, runner.url)
       : interactiveRunnerMessages.launched(
           runner.id,
           runner.url,
