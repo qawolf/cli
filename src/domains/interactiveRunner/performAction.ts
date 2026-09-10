@@ -1,3 +1,5 @@
+import { publicContractsV1 } from "@qawolf/api-contracts/v1";
+
 import type { BrowserActionFlags } from "~/core/interactiveRunner/browserAction.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
@@ -9,7 +11,6 @@ import { stdoutPath } from "~/shell/interactiveRunner/writeScreenshot.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
-import { performActionContract } from "./performActionContract.js";
 import { describePerformActionFailure } from "./performActionFailure.js";
 import {
   addFailureScreenshot,
@@ -70,7 +71,7 @@ export async function handleRunnerAct(
   announceRunner(ctx, resolved);
 
   const result = await ctx.platformClient.callPublicApi(
-    performActionContract,
+    publicContractsV1.runner.performAction,
     {
       action: built.action,
       id: resolved.runnerId,

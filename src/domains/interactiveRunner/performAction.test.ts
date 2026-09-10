@@ -1,10 +1,10 @@
 import type { BrowserAction } from "@qawolf/api-contracts/v1";
+import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
 import type { BrowserActionFlags } from "~/core/interactiveRunner/browserAction.js";
 
 import { handleRunnerAct } from "./performAction.js";
-import { performActionContract } from "./performActionContract.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
@@ -97,7 +97,7 @@ describe("handleRunnerAct", () => {
 
       expect(result).toBeUndefined();
       expect(callPublicApi).toHaveBeenCalledWith(
-        performActionContract,
+        publicContractsV1.runner.performAction,
         { action: shape.action, id: "ci" },
         runnerCallOptions,
       );

@@ -1,7 +1,7 @@
+import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
 import { handleRunnerAct } from "./performAction.js";
-import { performActionContract } from "./performActionContract.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
@@ -40,7 +40,7 @@ describe("handleRunnerAct --screenshot", () => {
     );
 
     expect(callPublicApi).toHaveBeenCalledWith(
-      performActionContract,
+      publicContractsV1.runner.performAction,
       { action: clickAction, id: "ci", withScreenshot: true },
       runnerCallOptions,
     );
