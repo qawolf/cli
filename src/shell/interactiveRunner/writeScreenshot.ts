@@ -1,4 +1,5 @@
 import { dirname } from "node:path";
+import type { Writable } from "node:stream";
 
 import { errorMessage } from "~/core/errors.js";
 import type { Fs } from "~/shell/fs.js";
@@ -12,13 +13,24 @@ import type { Fs } from "~/shell/fs.js";
  */
 const jpegStartOfImage = [0xff, 0xd8, 0xff];
 
+/**
+ * The `--out` value that sends the image to stdout instead of a file, the same
+ * `-` that reads stdin for `act` and `exec`. A caller that wants the bytes in a
+ * process reads them off the pipe rather than reserving a path, running the
+ * command, reading the file back and deleting it.
+ */
+export const stdoutPath = "-";
+
+/** What the writer needs of stdout, so a test can stand a `Writable` in for it. */
+export type ScreenshotStdout = Pick<Writable, "off" | "once" | "write">;
+
 export type ScreenshotWrite =
   | { ok: true }
   | { ok: false; reason: "not-a-jpeg" }
   | { ok: false; detail: string; reason: "unwritable" };
 
 /**
- * Writes a screenshot the API answered with to a file.
+ * Writes a screenshot the API answered with to a file, or to stdout.
  *
  * The decode is the whole job. The contract carries the image as base64 because
  * every answer on the API is JSON, so a caller that writes what it received
@@ -29,21 +41,56 @@ export type ScreenshotWrite =
  *
  * The parent directory is created because `--out` is how a caller files its
  * screenshots, and a run of them into `screens/` should not need a mkdir first.
+ *
+ * Stdout is awaited rather than fire-and-forget: on a pipe the write is
+ * asynchronous on some platforms, and a closed reader has to be answered as an
+ * unwritable destination rather than lost in an EPIPE after the command reported
+ * success.
  */
 export async function writeScreenshot(options: {
   fs: Fs;
   imageJpegBase64: string;
   path: string;
+  stdout?: ScreenshotStdout;
 }): Promise<ScreenshotWrite> {
   const bytes = Buffer.from(options.imageJpegBase64, "base64");
   if (jpegStartOfImage.some((byte, index) => bytes[index] !== byte)) {
     return { ok: false, reason: "not-a-jpeg" };
   }
   try {
-    await options.fs.mkdir(dirname(options.path), { recursive: true });
-    await options.fs.writeFile(options.path, bytes);
+    if (options.path === stdoutPath) {
+      await writeToStdout(options.stdout ?? process.stdout, bytes);
+    } else {
+      await options.fs.mkdir(dirname(options.path), { recursive: true });
+      await options.fs.writeFile(options.path, bytes);
+    }
   } catch (error) {
     return { detail: errorMessage(error), ok: false, reason: "unwritable" };
   }
   return { ok: true };
+}
+
+/**
+ * A closed reader reaches Node twice: the write callback gets the EPIPE, and
+ * the stream emits `error` a tick later, which with no listener is an uncaught
+ * exception that takes the process down after this function already answered.
+ * So the listener goes on before the write and comes off only after a success;
+ * on a failure it stays to absorb the event.
+ */
+function writeToStdout(
+  stdout: ScreenshotStdout,
+  bytes: Uint8Array,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onError = (error: Error) => reject(error);
+    stdout.once("error", onError);
+    stdout.write(bytes, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      stdout.off("error", onError);
+      resolve();
+    });
+  });
 }

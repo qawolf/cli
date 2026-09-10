@@ -33,6 +33,7 @@ describe("handleRunnerScreenshot", () => {
       runnerCallOptions,
     );
     expect(deps.written).toEqual([{ bytes: jpegBytes, path: "shot.jpg" }]);
+    expect(deps.stdoutWrites).toEqual([]);
   });
 
   it("says where it wrote the image", async () => {

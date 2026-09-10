@@ -298,7 +298,7 @@ Commands:
   keepalive [options]                      Reset a runner's inactivity clock, for a caller that pauses between actions
   run [options] <flowFile>                 Run a flow on an interactive runner, shipping the flow and what it imports
   events [options] <stream>                Print a runner's journal, one entry per line. QA Wolf writes console, recorder, run-events, run-logs, run-status
-  screenshot [options]                     Save a JPEG of an interactive runner's screen to a file
+  screenshot [options]                     Save a JPEG of an interactive runner's screen to a file, or write it to stdout with --out -
   act [options] <action>                   Perform one raw action on a runner's screen: click, double_click, scroll, move, drag, keypress, navigate or type. Use - to read a whole action as JSON from stdin. On a mobile runner only click (button left), drag and type have a touchscreen equivalent; the rest answer action-not-supported-on-mobile
   exec [options] <file>                    Evaluate a snippet against a runner's live page. Use - to read the snippet from stdin
   inspect                                  Read one thing off a runner's live page (browser) or Appium session (mobile)
@@ -440,10 +440,13 @@ Examples:
 exports[`--help output qawolf runner screenshot 1`] = `
 "Usage: qawolf runner screenshot [options]
 
-Save a JPEG of an interactive runner's screen to a file
+Save a JPEG of an interactive runner's screen to a file, or write it to stdout
+with --out -
 
 Options:
-  --out <path>   File to write the image to (default: "screenshot.jpg")
+  --out <path>   File to write the image to. - writes the JPEG bytes to stdout
+                 on their own and moves the confirmation, JSON included, to
+                 stderr (default: "screenshot.jpg")
   --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
                  directory's stored runner
   -h, --help     display help for command
@@ -451,6 +454,8 @@ Options:
 Examples:
   $ qawolf runner screenshot
   $ qawolf runner screenshot --out screens/step-3.jpg
+  $ qawolf runner screenshot --out - > step-3.jpg
+  $ qawolf runner screenshot --out - | my-vision-tool
 "
 `;
 
