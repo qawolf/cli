@@ -19,14 +19,18 @@ async function launch(apiKeySource: string, alreadyRunning: boolean) {
 }
 
 describe("handleRunnerLaunch runner page url", () => {
-  // Relaunching an id attaches rather than billing a second pod, so that path
-  // needs the address as much as a fresh launch does.
-  it("tells a signed-in person where to watch, whether launched or attached to", async () => {
+  it("tells a signed-in person where to watch the runner it launched", async () => {
     expect((await launch("browser", false))?.humanMessage).toBe(
       `Launched runner ci. Watch its screen at ${url}`,
     );
+  });
+
+  // Relaunching an id attaches rather than billing a second pod, so that path
+  // needs the address as much as a fresh launch does — but whoever launched the
+  // runner first is who its screen plays for, and it need not be this caller.
+  it("offers the page without the screen for a runner it only attached to", async () => {
     expect((await launch("browser", true))?.humanMessage).toBe(
-      `Runner ci was already running. Watch its screen at ${url}`,
+      `Runner ci was already running. Its runner page is at ${url}`,
     );
   });
 
