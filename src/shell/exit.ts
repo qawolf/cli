@@ -76,6 +76,17 @@ const signalExitCodes: Record<SignalName, number> = {
  */
 const signalGraceMs = 150;
 
+/** Schedules the grace period between a signal and the exit it forces. */
+export function scheduleSignalGrace(
+  fn: () => void,
+): ReturnType<typeof setTimeout> {
+  // Holds the event loop open, unlike the backstop in `exitWhenIdle`. The exit
+  // status is one mutable value: a command that settles inside the grace
+  // overwrites the signal's code with its own, so only a timer certain to fire
+  // can exit on the code the signal chose.
+  return setTimeout(fn, signalGraceMs);
+}
+
 /**
  * Builds the handler for `signal`, sharing one "already signalled" flag across
  * every signal it builds.
@@ -97,11 +108,7 @@ export function createSignalExit(deps: {
   scheduleGrace?: (fn: () => void) => void;
 }): (signal: SignalName) => () => void {
   const proc = deps.proc ?? process;
-  const scheduleGrace =
-    deps.scheduleGrace ??
-    ((fn: () => void) => {
-      setTimeout(fn, signalGraceMs).unref();
-    });
+  const scheduleGrace = deps.scheduleGrace ?? scheduleSignalGrace;
 
   let signalled = false;
   return (signal) => () => {

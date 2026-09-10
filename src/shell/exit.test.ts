@@ -1,6 +1,12 @@
 import { describe, expect, it } from "bun:test";
 
-import { exitCodes, exit, createSignalExit, exitWhenIdle } from "./exit.js";
+import {
+  exitCodes,
+  exit,
+  createSignalExit,
+  exitWhenIdle,
+  scheduleSignalGrace,
+} from "./exit.js";
 
 function createFakeProcess() {
   const stderr: string[] = [];
@@ -180,5 +186,15 @@ describe("createSignalExit", () => {
     await settle();
     expect(() => onSignal("SIGTERM")()).toThrow("__fake-exit__");
     expect(exitCalls).toEqual([143]);
+  });
+});
+
+describe("scheduleSignalGrace", () => {
+  it("schedules a timer that holds the event loop open", () => {
+    // Unref'd, the loop can drain first and the process exits on whatever the
+    // command last wrote, not on the code the signal chose.
+    const timer = scheduleSignalGrace(() => {});
+    expect(timer.hasRef()).toBe(true);
+    clearTimeout(timer);
   });
 });
