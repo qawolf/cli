@@ -1,4 +1,3 @@
-import { flowsMessages } from "~/core/messages/index.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import type { Logger } from "~/shell/logger.js";
 import {
@@ -12,11 +11,8 @@ import { createIdentityMethods } from "./identityMethods.js";
 import type { IdentityResponse } from "./getIdentity.js";
 import type { Organization } from "./organizations.js";
 import { type PlatformResult, requestWithRetry } from "./requestWithRetry.js";
-import { listTeamStorageFiles } from "./teamStorage.js";
-import {
-  downloadTeamStorageAssets,
-  type SyncTeamStorageAssetsResult,
-} from "./teamStorageAssets.js";
+import type { SyncTeamStorageAssetsResult } from "./teamStorageAssets.js";
+import { createTeamStorageMethods } from "./teamStorageMethods.js";
 import type { TeamStorageAssetProgress } from "./writeAssetSnapshot.js";
 import {
   environmentWithVariablesResponseSchema,
@@ -85,8 +81,11 @@ export function createPlatformClient(
     return { ok: true, value: { signedUrl: result.value.url } };
   }
 
+  const identityMethods = createIdentityMethods(apiKey, deps, requestBackoffMs);
+
   return {
-    ...createIdentityMethods(apiKey, deps, requestBackoffMs),
+    ...identityMethods,
+    ...createTeamStorageMethods(trpc, deps, fs, identityMethods.getIdentity),
 
     getFlowsBundleUrl: getFlowsBundleUrlImpl,
 
@@ -106,31 +105,6 @@ export function createPlatformClient(
       });
       if (!result.ok) return result;
       return { ok: true, value: result.value.environmentVariables };
-    },
-
-    async listTeamStorageFiles() {
-      const identity = await this.getIdentity();
-      if (!identity.ok) return identity;
-      if (!("team" in identity.value)) {
-        return {
-          ok: false,
-          error: flowsMessages.pull.teamStorageRequiresTeamKey,
-        };
-      }
-      return listTeamStorageFiles(
-        trpc,
-        { teamId: identity.value.team.id },
-        deps,
-      );
-    },
-
-    async syncTeamStorageAssets(assetsAbs, opts) {
-      const files = await this.listTeamStorageFiles();
-      if (!files.ok) return files;
-      return downloadTeamStorageAssets(
-        { assetsAbs, files: files.value },
-        { fetch: deps.fetch, fs, onProgress: opts?.onProgress },
-      );
     },
 
     async downloadBundle(envId) {
