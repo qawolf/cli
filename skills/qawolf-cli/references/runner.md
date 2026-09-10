@@ -146,7 +146,11 @@ Every action in a see-and-act loop is followed by a look at the result, so ask
 for it in the same call: `act ... --screenshot step-1.jpg` (or `--screenshot -`
 for stdout) performs the action and writes the screen the runner answers with.
 Prefer it over `act` and then `screenshot`: each step is one call instead of
-two, with no delay to guess at between them. A `4` whose message starts with
+two, with no delay to guess at between them. The screen the runner answers with
+is taken once it has changed from just before the action or half a second has
+passed, whichever comes first. An action that reached the screen and did not
+take effect answers with one too, so a `1` from `act --screenshot` still leaves
+you a picture of why the click missed. A `4` whose message starts with
 "Performed" means the action happened and only the picture is missing: take a
 `screenshot`, never send the action again to get it. As with
 `screenshot --out -`, a terminal on stdout is refused.
