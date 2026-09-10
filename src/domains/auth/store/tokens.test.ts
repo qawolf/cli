@@ -13,6 +13,22 @@ afterEach(() => {
   mock.restore();
 });
 
+// Both spies, always. saveTokens clears the entry it could not overwrite, so a
+// test that only makes setPassword throw sends the real deletePassword to the
+// real keychain, under the real service and account, and deletes the session
+// of whoever ran the tests. It is slow as well: one such test took seven
+// seconds and was the suite's only intermittent failure.
+function keychainRefusesWrites() {
+  spyOn(Entry.prototype, "setPassword").mockImplementation(() => {
+    throw Error("keychain unavailable");
+  });
+  const deletePassword = spyOn(
+    Entry.prototype,
+    "deletePassword",
+  ).mockReturnValue(true);
+  return { deletePassword };
+}
+
 describe("saveTokens", () => {
   it("stores tokens in the keychain when it is available", async () => {
     spyOn(Entry.prototype, "setPassword").mockReturnValue(undefined);
@@ -26,9 +42,7 @@ describe("saveTokens", () => {
   });
 
   it("falls back to a token file when the keychain throws", async () => {
-    spyOn(Entry.prototype, "setPassword").mockImplementation(() => {
-      throw Error("keychain unavailable");
-    });
+    keychainRefusesWrites();
     const memFs = makeMemoryFs();
     await memFs.mkdir("/config", { recursive: true });
 
@@ -40,13 +54,7 @@ describe("saveTokens", () => {
   });
 
   it("clears a keychain entry it could not overwrite", async () => {
-    spyOn(Entry.prototype, "setPassword").mockImplementation(() => {
-      throw Error("keychain unavailable");
-    });
-    const deletePassword = spyOn(
-      Entry.prototype,
-      "deletePassword",
-    ).mockReturnValue(true);
+    const { deletePassword } = keychainRefusesWrites();
     const memFs = makeMemoryFs();
     await memFs.mkdir("/config", { recursive: true });
 
@@ -57,10 +65,7 @@ describe("saveTokens", () => {
   });
 
   it("keeps two saves in one process apart", async () => {
-    spyOn(Entry.prototype, "setPassword").mockImplementation(() => {
-      throw Error("keychain unavailable");
-    });
-    spyOn(Entry.prototype, "deletePassword").mockReturnValue(true);
+    keychainRefusesWrites();
     const memFs = makeMemoryFs();
     await memFs.mkdir("/config", { recursive: true });
     const other = { ...tokens, refreshToken: "refresh_other" };
@@ -81,10 +86,7 @@ describe("saveTokens", () => {
   // The staging file holds both tokens. A rename that fails must not leave it
   // on disk to outlive the session it was written for.
   it("removes the staging file when it cannot be published", async () => {
-    spyOn(Entry.prototype, "setPassword").mockImplementation(() => {
-      throw Error("keychain unavailable");
-    });
-    spyOn(Entry.prototype, "deletePassword").mockReturnValue(true);
+    keychainRefusesWrites();
     const memFs = makeMemoryFs();
     await memFs.mkdir("/config", { recursive: true });
     const refusing: Fs = {
@@ -108,10 +110,7 @@ describe("saveTokens", () => {
   });
 
   it("removes a staging file whose write did not complete", async () => {
-    spyOn(Entry.prototype, "setPassword").mockImplementation(() => {
-      throw Error("keychain unavailable");
-    });
-    spyOn(Entry.prototype, "deletePassword").mockReturnValue(true);
+    keychainRefusesWrites();
     const memFs = makeMemoryFs();
     await memFs.mkdir("/config", { recursive: true });
     const truncating: Fs = {
@@ -135,9 +134,7 @@ describe("saveTokens", () => {
   });
 
   it("leaves no partial file behind, and no temporary one", async () => {
-    spyOn(Entry.prototype, "setPassword").mockImplementation(() => {
-      throw Error("keychain unavailable");
-    });
+    keychainRefusesWrites();
     const memFs = makeMemoryFs();
     await memFs.mkdir("/config", { recursive: true });
     const written: string[] = [];
@@ -157,9 +154,7 @@ describe("saveTokens", () => {
   });
 
   it("writes the token file so only its owner can read it", async () => {
-    spyOn(Entry.prototype, "setPassword").mockImplementation(() => {
-      throw Error("keychain unavailable");
-    });
+    keychainRefusesWrites();
     const memFs = makeMemoryFs();
     await memFs.mkdir("/config", { recursive: true });
     const modes: (number | undefined)[] = [];
