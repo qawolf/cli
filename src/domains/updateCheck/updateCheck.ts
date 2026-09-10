@@ -9,7 +9,8 @@ const noticeFile = "last-update-notice";
 export type UpdateNotifier = {
   /**
    * Announces only if the check already settled on a newer, not-yet-announced
-   * version. Never waits on the network; never throws.
+   * version, and gives up on a check that has not. Never waits on the network;
+   * never throws.
    */
   notifyIfOutdated(): Promise<void>;
 };
@@ -28,15 +29,16 @@ export function startUpdateCheck(deps: {
   currentVersion: string;
   configDir: string;
   fs: Fs;
-  fetchLatestVersion: () => Promise<string | undefined>;
+  fetchLatestVersion: (signal: AbortSignal) => Promise<string | undefined>;
   renderNotice: (body: string, title: string) => void;
 }): UpdateNotifier {
   if (deps.env["QAWOLF_NO_UPDATE_CHECK"]) {
     return noopNotifier;
   }
 
+  const controller = new AbortController();
   let latest: string | undefined;
-  void deps.fetchLatestVersion().then(
+  void deps.fetchLatestVersion(controller.signal).then(
     (version) => {
       latest = version;
     },
@@ -45,6 +47,9 @@ export function startUpdateCheck(deps: {
 
   return {
     async notifyIfOutdated() {
+      // The command is over, so a request still in flight has nothing left to
+      // announce — and an open socket would hold the event loop past the exit.
+      controller.abort();
       if (latest === undefined) return;
       if (!isNewerVersion(deps.currentVersion, latest)) return;
 

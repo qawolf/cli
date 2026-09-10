@@ -1,6 +1,12 @@
 import { describe, expect, it } from "bun:test";
 
-import { exitCodes, exit, flushAndExit } from "./exit.js";
+import {
+  exitCodes,
+  exit,
+  createSignalExit,
+  exitWhenIdle,
+  scheduleSignalGrace,
+} from "./exit.js";
 
 function createFakeProcess() {
   const stderr: string[] = [];
@@ -64,75 +70,131 @@ describe("exit", () => {
   });
 });
 
-function createFlushFakeProcess() {
+function createIdleFakeProcess() {
   const exitCalls: number[] = [];
-  let stdoutCb: (() => void) | undefined;
-  let stderrCb: (() => void) | undefined;
   const proc = {
-    stdout: {
-      write: (_chunk: string, cb: () => void): boolean => {
-        stdoutCb = cb;
-        return true;
-      },
-    },
-    stderr: {
-      write: (_chunk: string, cb: () => void): boolean => {
-        stderrCb = cb;
-        return true;
-      },
-    },
+    exitCode: undefined as number | string | undefined,
     exit: (code: number): never => {
       exitCalls.push(code);
       throw Error("__fake-exit__");
     },
   };
-  return {
-    proc,
-    exitCalls,
-    flushStdout: () => stdoutCb?.(),
-    flushStderr: () => stderrCb?.(),
-  };
+  return { proc, exitCalls };
 }
 
-describe("flushAndExit", () => {
-  it("exits with the given code once both streams have flushed", () => {
-    const { proc, exitCalls, flushStdout, flushStderr } =
-      createFlushFakeProcess();
-    flushAndExit(exitCodes.testFailure, proc, () => {});
-    flushStdout();
-    expect(exitCalls).toEqual([]);
-    expect(() => flushStderr()).toThrow("__fake-exit__");
-    expect(exitCalls).toEqual([1]);
-  });
-
-  it("does not exit until both streams have flushed", () => {
-    const { proc, exitCalls, flushStdout } = createFlushFakeProcess();
-    flushAndExit(exitCodes.success, proc, () => {});
-    flushStdout();
+describe("exitWhenIdle", () => {
+  it("records the exit code without killing the process", () => {
+    const { proc, exitCalls } = createIdleFakeProcess();
+    exitWhenIdle(exitCodes.testFailure, proc, () => {});
+    expect(proc.exitCode).toBe(1);
     expect(exitCalls).toEqual([]);
   });
 
-  it("forces exit via the backstop when a stream stalls", () => {
-    const { proc, exitCalls } = createFlushFakeProcess();
+  it("forces the exit from the backstop when the loop stays busy", () => {
+    const { proc, exitCalls } = createIdleFakeProcess();
     let backstop: (() => void) | undefined;
-    flushAndExit(exitCodes.testFailure, proc, (fn) => {
+    exitWhenIdle(exitCodes.payment, proc, (fn) => {
       backstop = fn;
     });
     expect(exitCalls).toEqual([]);
     expect(() => backstop?.()).toThrow("__fake-exit__");
-    expect(exitCalls).toEqual([1]);
+    expect(exitCalls).toEqual([7]);
+  });
+});
+
+// Let the shutdown promise's .finally chain run before reading the result.
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+function createSignalFake() {
+  const { proc, exitCalls } = createIdleFakeProcess();
+  const shutdownReasons: string[] = [];
+  let grace: (() => void) | undefined;
+  const onSignal = createSignalExit({
+    proc,
+    scheduleGrace: (fn) => {
+      grace = fn;
+    },
+    shutdown: (reason) => {
+      shutdownReasons.push(reason);
+      return Promise.resolve();
+    },
+  });
+  return {
+    exitCalls,
+    onSignal,
+    proc,
+    shutdownReasons,
+    endGrace: () => grace?.(),
+  };
+}
+
+describe("createSignalExit", () => {
+  it("records the exit code after shutdown without killing the process", async () => {
+    const { onSignal, proc, exitCalls } = createSignalFake();
+    onSignal("SIGINT")();
+    await settle();
+    expect(proc.exitCode).toBe(130);
+    expect(exitCalls).toEqual([]);
   });
 
-  it("exits at most once when flush and backstop both fire", () => {
-    const { proc, exitCalls, flushStdout, flushStderr } =
-      createFlushFakeProcess();
-    let backstop: (() => void) | undefined;
-    flushAndExit(exitCodes.testFailure, proc, (fn) => {
-      backstop = fn;
+  it("forces the exit when the grace period ends", async () => {
+    const { onSignal, exitCalls, endGrace } = createSignalFake();
+    onSignal("SIGINT")();
+    await settle();
+    expect(() => endGrace()).toThrow("__fake-exit__");
+    expect(exitCalls).toEqual([130]);
+  });
+
+  it("records 143 for SIGTERM", async () => {
+    const { onSignal, proc } = createSignalFake();
+    onSignal("SIGTERM")();
+    await settle();
+    expect(proc.exitCode).toBe(143);
+  });
+
+  it("shuts down with the signal as the reason", async () => {
+    const { onSignal, shutdownReasons } = createSignalFake();
+    onSignal("SIGTERM")();
+    await settle();
+    expect(shutdownReasons).toEqual(["SIGTERM"]);
+  });
+
+  it("exits at once on a second signal, without waiting for shutdown", async () => {
+    const { onSignal, exitCalls, shutdownReasons } = createSignalFake();
+    onSignal("SIGINT")();
+    await settle();
+    expect(() => onSignal("SIGINT")()).toThrow("__fake-exit__");
+    expect(exitCalls).toEqual([130]);
+    expect(shutdownReasons).toEqual(["SIGINT"]);
+  });
+
+  it("keeps the exit code when shutdown rejects", async () => {
+    const { proc } = createIdleFakeProcess();
+    const onSignal = createSignalExit({
+      proc,
+      scheduleGrace: () => {},
+      shutdown: () => Promise.reject(new Error("cleanup failed")),
     });
-    flushStdout();
-    expect(() => flushStderr()).toThrow("__fake-exit__");
-    backstop?.();
-    expect(exitCalls).toEqual([1]);
+    onSignal("SIGINT")();
+    await settle();
+    expect(proc.exitCode).toBe(130);
+  });
+
+  it("shares the signalled flag across signals", async () => {
+    const { onSignal, exitCalls } = createSignalFake();
+    onSignal("SIGINT")();
+    await settle();
+    expect(() => onSignal("SIGTERM")()).toThrow("__fake-exit__");
+    expect(exitCalls).toEqual([143]);
+  });
+});
+
+describe("scheduleSignalGrace", () => {
+  it("schedules a timer that holds the event loop open", () => {
+    // Unref'd, the loop can drain first and the process exits on whatever the
+    // command last wrote, not on the code the signal chose.
+    const timer = scheduleSignalGrace(() => {});
+    expect(timer.hasRef()).toBe(true);
+    clearTimeout(timer);
   });
 });

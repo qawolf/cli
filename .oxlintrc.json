@@ -106,6 +106,7 @@
     "dist/",
     "node_modules/",
     "knip.config.ts",
+    "test/exit/",
     "test/node20/",
     "test/spawn/",
     "test/testkit/"

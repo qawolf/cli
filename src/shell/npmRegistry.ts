@@ -8,17 +8,21 @@ type FetchLike = (
 
 /**
  * Reads the registry's `latest` dist-tag. Returns undefined on any failure
- * (offline, timeout, bad payload), because the update check must never break
- * a command.
+ * (offline, timeout, bad payload, `deps.signal` aborted), because the update
+ * check must never break a command.
  */
 export async function fetchLatestVersion(
   packageName: string,
-  deps: { fetchFn?: FetchLike } = {},
+  deps: { fetchFn?: FetchLike; signal?: AbortSignal } = {},
 ): Promise<string | undefined> {
   const fetchFn = deps.fetchFn ?? globalThis.fetch;
+  const deadline = AbortSignal.timeout(timeoutMs);
+  const signal = deps.signal
+    ? AbortSignal.any([deps.signal, deadline])
+    : deadline;
   try {
     const response = await fetchFn(`${registryUrl}/${packageName}/latest`, {
-      signal: AbortSignal.timeout(timeoutMs),
+      signal,
     });
     if (!response.ok) return undefined;
     const body: unknown = await response.json();
