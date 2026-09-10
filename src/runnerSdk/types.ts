@@ -63,7 +63,16 @@ export type EventsRequest = RunnerRequest & {
   window: JournalWindow;
 };
 
-export type ActRequest = RunnerRequest & { action: BrowserAction };
+export type ActRequest = RunnerRequest & {
+  action: BrowserAction;
+  /**
+   * Ask the runner to answer with a screenshot taken after the action, on
+   * `imageJpegBase64`. One call instead of an act and a screenshot, with no
+   * fixed wait between them. An action that did not take effect answers with
+   * one too, and the screen can be absent even when asked for.
+   */
+  withScreenshot?: boolean;
+};
 
 export type EvaluateSnippetRequest = RunnerRequest & {
   scope: SnippetScope;
