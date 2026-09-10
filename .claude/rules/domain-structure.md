@@ -18,7 +18,7 @@ There are two registration patterns. Commands that expose a platform public-API 
 
 1. Create the handler directory under `src/commands/<domain>/`
 2. Export a registration function (`registerXCommand`) that takes a Commander `program` instance
-3. In the registration function, use `withContext` from `~/commands/context.js` to wrap each action
+3. In the registration function, wrap each action in a context wrapper from `~/commands/context.js`: `withAuthContext` when the command calls the QA Wolf API, since it resolves the API key and builds the platform client, and `withContext` when it does not. A handler that takes an `AuthCommandContext` needs `withAuthContext`; `withContext` supplies a `CommandContext`, which has no `platformClient`.
 4. Extract pure business logic to `src/domains/<domain>/`; keep commands/ files as thin wiring
 5. Import I/O utilities (spawn, playwright, UI) from `src/shell/`
 6. Import pure helpers and types from `src/core/`

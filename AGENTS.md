@@ -75,7 +75,7 @@ src/
 │   ├── runner/          # the LOCAL execution engine: flowsRun, runWebFlow, runAndroidFlow, worker dispatch + pool
 │   └── updateCheck/     # startUpdateCheck: new-version notice after commands
 ├── commands/            # Thin CLI glue — Commander registration + composite root
-    ├── context.ts       # withContext() Commander action wrapper
+    ├── context.ts       # withContext() / withAuthContext() action wrappers
     ├── program.ts       # createProgram() factory
     ├── auth/            # login, logout, whoami handlers
     ├── doctor/          # doctor handler
