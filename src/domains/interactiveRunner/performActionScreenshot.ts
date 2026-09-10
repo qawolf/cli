@@ -83,3 +83,48 @@ export async function writeActionScreenshot(
   );
   return undefined;
 }
+
+/**
+ * Writes the screen an action that did not take effect came back with, and folds
+ * where it went into the refusal being reported.
+ *
+ * The refusal is the news and keeps its own exit code: the action was attempted
+ * and declined, which is not made better or worse by the picture. But the
+ * picture is what the caller asked for in order to see why, so a refusal that
+ * carries one must not read as though nothing was written.
+ */
+export async function addFailureScreenshot(
+  options: {
+    failure: Exclude<CommandResult, void>;
+    imageJpegBase64: string | undefined;
+    out: string;
+  },
+  deps: InteractiveRunnerDeps,
+): Promise<Exclude<CommandResult, void>> {
+  const note = await describeFailureScreenshot(options, deps);
+  return { ...options.failure, error: `${options.failure.error} ${note}` };
+}
+
+/** Writes the refused action's screen, and says where it went. */
+async function describeFailureScreenshot(
+  options: { imageJpegBase64: string | undefined; out: string },
+  deps: InteractiveRunnerDeps,
+): Promise<string> {
+  if (options.imageJpegBase64 === undefined) {
+    return interactiveRunnerMessages.actionFailedWithoutScreenshot;
+  }
+  const written = await deps.writeScreenshot({
+    imageJpegBase64: options.imageJpegBase64,
+    path: options.out,
+  });
+  if (!written.ok) {
+    return interactiveRunnerMessages.actionFailedScreenshotUnwritten(
+      written.reason === "not-a-jpeg"
+        ? "it did not arrive as a JPEG"
+        : written.detail,
+    );
+  }
+  return options.out === stdoutPath
+    ? interactiveRunnerMessages.actionFailedScreenshotToStdout
+    : interactiveRunnerMessages.actionFailedScreenshotWritten(options.out);
+}

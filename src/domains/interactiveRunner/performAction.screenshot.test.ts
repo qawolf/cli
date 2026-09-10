@@ -41,7 +41,7 @@ describe("handleRunnerAct --screenshot", () => {
 
     expect(callPublicApi).toHaveBeenCalledWith(
       performActionContract,
-      { action: clickAction, id: "ci", screenshot: true },
+      { action: clickAction, id: "ci", withScreenshot: true },
       runnerCallOptions,
     );
   });
@@ -105,7 +105,7 @@ describe("handleRunnerAct --screenshot", () => {
     expect(callPublicApi.mock.calls[0]?.[1]).toEqual({
       action: clickAction,
       id: "ci",
-      screenshot: true,
+      withScreenshot: true,
     });
     expect(deps.stdoutWrites).toEqual([jpegBytes]);
     expect(deps.written).toEqual([]);

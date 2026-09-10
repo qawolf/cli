@@ -11,6 +11,14 @@ export const interactMessages = {
     'Stdin did not hold a JSON action. Pipe one object, for example \'{"type":"click","button":"left","x":480,"y":260}\'.',
   actionNotSupportedOnMobile: (type: string) =>
     `A mobile runner has a touchscreen, so it cannot perform ${type} as asked. It taps with a left-button click, swipes with drag, and types into whatever the last tap focused.`,
+  actionFailedScreenshotToStdout:
+    "Its screen was written to stdout as a JPEG, so look at that rather than sending the action again.",
+  actionFailedScreenshotUnwritten: (detail: string) =>
+    `Its screen could not be written, because ${detail}, so take one with qawolf runner screenshot rather than sending the action again.`,
+  actionFailedScreenshotWritten: (path: string) =>
+    `Its screen was written to ${path}, so look at that rather than sending the action again.`,
+  actionFailedWithoutScreenshot:
+    "The runner answered without a screen, so nothing was written; take one with qawolf runner screenshot rather than sending the action again.",
   actionPerformed: (type: string) => `Performed ${type}.`,
   actionPerformedScreenshotNotAnImage: (type: string) =>
     `Performed ${type}, but the screen that came with the answer was not a JPEG, so nothing was written. The action took effect, so do not repeat it: take the screen with qawolf runner screenshot instead, and report it if it keeps happening.`,

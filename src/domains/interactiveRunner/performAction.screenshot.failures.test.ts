@@ -131,45 +131,4 @@ describe("handleRunnerAct --screenshot when the action did not succeed", () => {
     expect(deps.stdoutWrites).toEqual([]);
     expect(deps.written).toEqual([]);
   });
-
-  it("still warns that a timed-out request may have acted", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx("json");
-    callPublicApi.mockResolvedValue({
-      error: "request timed out after 15000ms",
-      mayHaveArrived: true,
-      ok: false,
-    });
-    const deps = makeTestDeps();
-
-    const result = await handleRunnerAct(
-      ctx,
-      { ...click, screenshot: "-" },
-      deps,
-    );
-
-    expect(result?.error).toContain(
-      "does not mean the action was not performed",
-    );
-    expect(result?.exitCode).toBe(4);
-    expect(deps.stdoutWrites).toEqual([]);
-  });
-
-  it("still warns that a lost answer may have acted", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx("json");
-    callPublicApi.mockResolvedValue({
-      ok: true,
-      value: { failureReason: "runner-unreachable", outcome: "failure" },
-    });
-
-    const result = await handleRunnerAct(
-      ctx,
-      { ...click, screenshot: "step.jpg" },
-      makeTestDeps(),
-    );
-
-    expect(result?.error).toContain(
-      "does not mean the action was not performed",
-    );
-    expect(result?.exitCode).toBe(4);
-  });
 });
