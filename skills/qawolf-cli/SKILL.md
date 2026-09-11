@@ -177,7 +177,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf runner import-package` | write | Install a package into a runner's live run, so a snippet or a selection can import it |
 | `qawolf runner inspect contexts` | read | List the WebView contexts available, and which is current |
 | `qawolf runner inspect element-html` | read | Print the HTML of the first element a selector matches |
-| `qawolf runner inspect elements` | read | Find elements at a screen point, or elements carrying some text |
+| `qawolf runner inspect elements` | read | Find elements at a screen point, carrying some text, or matching a selector |
 | `qawolf runner inspect page-html` | read | Print the page's HTML, simplified for a model to read |
 | `qawolf runner inspect page-source` | read | Print the current context's page source, as a tree |
 | `qawolf runner inspect session` | read | Print the Appium session's status: ready, or why not |

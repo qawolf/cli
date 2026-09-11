@@ -6,9 +6,10 @@ import { handleRunnerInspectMobile } from "./inspectMobile.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
 const noFlags = {
-  by: undefined,
   context: undefined,
   partial: undefined,
+  selector: undefined,
+  strategy: undefined,
   text: undefined,
   x: undefined,
   y: undefined,
@@ -151,7 +152,7 @@ describe("handleRunnerInspectMobile", () => {
     await handleRunnerInspectMobile(
       ctx,
       {
-        flags: { ...noFlags, by: "point", x: "100", y: "200" },
+        flags: { ...noFlags, x: "100", y: "200" },
         runner: "ci",
         what: "elements",
       },
@@ -169,76 +170,39 @@ describe("handleRunnerInspectMobile", () => {
     expect(streamed()).toEqual([JSON.stringify({ matches })]);
   });
 
-  it("refuses an invalid request without addressing a runner", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
+  it("streams matching elements as JSON and carries a selector request through", async () => {
+    const { callPublicApi, ctx, streamed } = makeAuthCtx();
+    const matches = [
+      { attributes: {}, selectors: [], tag: "android.widget.Button" },
+    ];
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: { matches, outcome: "success", what: "elements" },
+    });
 
-    const result = await handleRunnerInspectMobile(
+    await handleRunnerInspectMobile(
       ctx,
       {
-        flags: { ...noFlags, by: "point", x: "100" },
+        flags: { ...noFlags, selector: "//button" },
         runner: "ci",
         what: "elements",
       },
       makeTestDeps(),
     );
 
-    expect(result?.exitCode).toBe(2);
-    expect(callPublicApi).not.toHaveBeenCalled();
-  });
-
-  it("never launches a runner", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
-
-    const result = await handleRunnerInspectMobile(
-      ctx,
-      { flags: noFlags, runner: undefined, what: "session" },
-      makeTestDeps(),
+    expect(callPublicApi).toHaveBeenCalledWith(
+      publicContractsV1.runner.inspectMobile,
+      {
+        id: "ci",
+        request: {
+          by: "selector",
+          selector: "//button",
+          strategy: "xpath",
+          what: "elements",
+        },
+      },
+      runnerCallOptions,
     );
-
-    expect(result?.error).toContain("qawolf runner run");
-    expect(result?.exitCode).toBe(2);
-    expect(callPublicApi).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ["runner-is-not-mobile", "not a mobile device", 2],
-    ["screen-needs-a-run", "qawolf runner run", 2],
-    ["screen-not-ready", "Retry", 4],
-    ["runner-unreachable", "Retry", 4],
-  ] as const)(
-    "reads failureReason %j as %j (exit %i)",
-    async (failureReason, errorSubstring, exitCode) => {
-      const { callPublicApi, ctx } = makeAuthCtx();
-      callPublicApi.mockResolvedValue({
-        ok: true,
-        value: { failureReason, outcome: "failure" },
-      });
-
-      const result = await handleRunnerInspectMobile(
-        ctx,
-        { flags: noFlags, runner: "ci", what: "session" },
-        makeTestDeps(),
-      );
-
-      expect(result?.error).toContain(errorSubstring);
-      expect(result?.exitCode).toBe(exitCode);
-    },
-  );
-
-  it("says it does not recognize an unknown failure reason", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
-    callPublicApi.mockResolvedValue({
-      ok: true,
-      value: { failureReason: "something-new", outcome: "failure" },
-    });
-
-    const result = await handleRunnerInspectMobile(
-      ctx,
-      { flags: noFlags, runner: "ci", what: "session" },
-      makeTestDeps(),
-    );
-
-    expect(result?.error).toContain("something-new");
-    expect(result?.exitCode).toBe(4);
+    expect(streamed()).toEqual([JSON.stringify({ matches })]);
   });
 });

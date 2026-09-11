@@ -8,10 +8,11 @@ import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 import { runnerDeps, runnerFlagDescription } from "./context.js";
 
 type InspectElementsFlags = {
-  by: string;
   context?: string;
   partial?: boolean;
   runner?: string;
+  selector?: string;
+  strategy?: string;
   text?: string;
   x?: string;
   y?: string;
@@ -31,9 +32,10 @@ export function registerRunnerInspectMobileCommands(
           ctx,
           {
             flags: {
-              by: undefined,
               context: undefined,
               partial: undefined,
+              selector: undefined,
+              strategy: undefined,
               text: undefined,
               x: undefined,
               y: undefined,
@@ -55,9 +57,10 @@ export function registerRunnerInspectMobileCommands(
           ctx,
           {
             flags: {
-              by: undefined,
               context: undefined,
               partial: undefined,
+              selector: undefined,
+              strategy: undefined,
               text: undefined,
               x: undefined,
               y: undefined,
@@ -80,9 +83,10 @@ export function registerRunnerInspectMobileCommands(
           ctx,
           {
             flags: {
-              by: undefined,
               context: opts.context,
               partial: undefined,
+              selector: undefined,
+              strategy: undefined,
               text: undefined,
               x: undefined,
               y: undefined,
@@ -97,15 +101,22 @@ export function registerRunnerInspectMobileCommands(
 
   declareCommandKind(inspect.command("elements"), "read")
     .description(
-      "Find elements at a screen point, or elements carrying some text",
+      "Find elements at a screen point, carrying some text, or matching a selector",
     )
-    .requiredOption("--by <by>", "point or text")
     .option("--context <name>", "Read this context instead of the current one")
     .option(
       "--partial",
       "text: match text containing this, rather than exactly this",
     )
     .option("--runner <id>", runnerFlagDescription)
+    .option(
+      "--selector <selector>",
+      "Resolved the same way a screen object's own selector is",
+    )
+    .option(
+      "--strategy <strategy>",
+      "selector: xpath, ios-predicate, or shadow (defaults to xpath)",
+    )
     .option("--text <text>", "text: the text to match")
     .option("--x <pixels>", "point: whole pixels on the device's own screen")
     .option("--y <pixels>", "point: whole pixels on the device's own screen")
@@ -115,9 +126,10 @@ export function registerRunnerInspectMobileCommands(
           ctx,
           {
             flags: {
-              by: opts.by,
               context: opts.context,
               partial: opts.partial,
+              selector: opts.selector,
+              strategy: opts.strategy,
               text: opts.text,
               x: opts.x,
               y: opts.y,
