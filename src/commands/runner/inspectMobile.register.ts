@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 
+import { blankInspectMobileFlags } from "~/core/interactiveRunner/inspectMobileRequest.js";
 import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext } from "~/commands/context.js";
 import { handleRunnerInspectMobile } from "~/domains/interactiveRunner/inspectMobile.js";
@@ -31,15 +32,7 @@ export function registerRunnerInspectMobileCommands(
         handleRunnerInspectMobile(
           ctx,
           {
-            flags: {
-              context: undefined,
-              partial: undefined,
-              selector: undefined,
-              strategy: undefined,
-              text: undefined,
-              x: undefined,
-              y: undefined,
-            },
+            flags: blankInspectMobileFlags,
             runner: opts.runner,
             what: "session",
           },
@@ -56,15 +49,7 @@ export function registerRunnerInspectMobileCommands(
         handleRunnerInspectMobile(
           ctx,
           {
-            flags: {
-              context: undefined,
-              partial: undefined,
-              selector: undefined,
-              strategy: undefined,
-              text: undefined,
-              x: undefined,
-              y: undefined,
-            },
+            flags: blankInspectMobileFlags,
             runner: opts.runner,
             what: "contexts",
           },
@@ -82,15 +67,7 @@ export function registerRunnerInspectMobileCommands(
         handleRunnerInspectMobile(
           ctx,
           {
-            flags: {
-              context: opts.context,
-              partial: undefined,
-              selector: undefined,
-              strategy: undefined,
-              text: undefined,
-              x: undefined,
-              y: undefined,
-            },
+            flags: { ...blankInspectMobileFlags, context: opts.context },
             runner: opts.runner,
             what: "page",
           },

@@ -1,19 +1,11 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
+import { blankInspectMobileFlags as noFlags } from "~/core/interactiveRunner/inspectMobileRequest.js";
+
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { handleRunnerInspectMobile } from "./inspectMobile.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
-
-const noFlags = {
-  context: undefined,
-  partial: undefined,
-  selector: undefined,
-  strategy: undefined,
-  text: undefined,
-  x: undefined,
-  y: undefined,
-};
 
 describe("handleRunnerInspectMobile", () => {
   it.each([
