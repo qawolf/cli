@@ -4,15 +4,7 @@ import {
 } from "@qawolf/api-contracts/v1";
 import { z } from "zod";
 
-/**
- * The mobile inspect flags as the command line hands them over. There is no
- * `by` here: which one of a point, some text, or a selector was given is
- * evident from which fields are set, so asking the caller to also name it
- * separately would be redundant — the wire request still carries `by`
- * (`buildInspectMobileRequest` fills it in), because the published schema is
- * a discriminated union and zod cannot nest a plain, presence-discriminated
- * union inside another discriminated union.
- */
+/** No `by` here: which of a point, some text, or a selector was given is evident from which fields are set. */
 export type InspectMobileFlags = {
   context: string | undefined;
   partial: boolean | undefined;
@@ -26,6 +18,16 @@ export type InspectMobileFlags = {
 export type BuiltInspectMobileRequest =
   | { ok: true; request: InspectMobileRequest }
   | { ok: false; error: string };
+
+export const blankInspectMobileFlags: InspectMobileFlags = {
+  context: undefined,
+  partial: undefined,
+  selector: undefined,
+  strategy: undefined,
+  text: undefined,
+  x: undefined,
+  y: undefined,
+};
 
 /** Blank reads as NaN rather than pixel 0, so the schema refuses it by name. */
 function toNumber(value: string): number {

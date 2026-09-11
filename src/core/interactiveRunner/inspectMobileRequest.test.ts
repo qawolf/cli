@@ -1,16 +1,9 @@
 import { describe, expect, it } from "bun:test";
 
-import { buildInspectMobileRequest } from "./inspectMobileRequest.js";
-
-const noFlags = {
-  context: undefined,
-  partial: undefined,
-  selector: undefined,
-  strategy: undefined,
-  text: undefined,
-  x: undefined,
-  y: undefined,
-};
+import {
+  blankInspectMobileFlags as noFlags,
+  buildInspectMobileRequest,
+} from "./inspectMobileRequest.js";
 
 describe("buildInspectMobileRequest", () => {
   it("asks for the session with no other flags", () => {

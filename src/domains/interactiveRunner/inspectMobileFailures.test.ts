@@ -1,17 +1,9 @@
 import { describe, expect, it } from "bun:test";
 
+import { blankInspectMobileFlags as noFlags } from "~/core/interactiveRunner/inspectMobileRequest.js";
+
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { handleRunnerInspectMobile } from "./inspectMobile.js";
-
-const noFlags = {
-  context: undefined,
-  partial: undefined,
-  selector: undefined,
-  strategy: undefined,
-  text: undefined,
-  x: undefined,
-  y: undefined,
-};
 
 describe("handleRunnerInspectMobile failures", () => {
   it("refuses an invalid request without addressing a runner", async () => {
