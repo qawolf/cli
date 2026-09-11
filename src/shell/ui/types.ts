@@ -1,7 +1,9 @@
 import type { OutputMode } from "./env.js";
 import type { PromptResult } from "./renderers/types.js";
 import type { SelectFn } from "./renderers/select.js";
+import type { TextFn } from "./renderers/text.js";
 import type { WithProgressFn } from "./renderers/modes/progress.js";
+import type { TranscriptEntry } from "./renderers/modes/types.js";
 
 export type UI = {
   readonly mode: OutputMode;
@@ -24,6 +26,7 @@ export type UI = {
   ): Promise<PromptResult<boolean>>;
   password(message: string, hint?: string): Promise<PromptResult<string>>;
   select: SelectFn;
+  text: TextFn;
   withProgress: WithProgressFn;
   step(message: string, progress?: { current: number; total: number }): void;
   success(message: string): void;
@@ -41,6 +44,13 @@ export type UI = {
   // one line of primary command data to stdout, in every mode: `line` verbatim
   // for a human or an agent, `data` as JSON in json mode
   stream(data: unknown, line: string): void;
+
+  // one message from the QA Wolf AI, framed to suit the mode
+  transcript(entry: TranscriptEntry): void;
+
+  // a spinner for a stretch with nothing to print, in a terminal only; `stop`
+  // erases it so the record on screen keeps no trace of the waiting
+  wait(message: string): { stop(): void };
 
   // raw output — stdout in human mode, stderr in agent mode, no-op in json mode
   write(text: string): void;
