@@ -1,6 +1,7 @@
 import { Command } from "commander";
 
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
+import { registerAgentCommand } from "./agent/index.js";
 import { registerAuthCommand } from "./auth/index.js";
 import { registerDoctorCommand } from "./doctor/index.js";
 import { registerFlowsCommand } from "./flows/index.js";
@@ -27,6 +28,7 @@ export function createProgram({
       exit(err.exitCode === 0 ? exitCodes.success : exitCodes.invalidArgs);
     });
 
+  registerAgentCommand(program, signals);
   registerAuthCommand(program, signals);
   registerDoctorCommand(program, signals);
   registerFlowsCommand(program, signals);
