@@ -29,6 +29,10 @@ export const agentMessages = {
     `Stopped following after ${formatSeconds(seconds * 1000)}. The session may still be going: pick it back up with ${followAgain(sessionId)}, or pass --timeout to wait longer.`,
   noSession:
     "No session named. Pass --session, set QAWOLF_SESSION_ID, or start one with qawolf agent send.",
+  // The send succeeded; only the convenience was lost. Said so, because a later
+  // bare `agent get` would otherwise read the previous session, or none.
+  sessionNotRemembered: (sessionId: string) =>
+    `The session id could not be saved to .qawolf/agent.json, so pass --session ${sessionId} to pick it up later.`,
   sessionCancelled: (url: string) =>
     `The session was cancelled before it finished. Read how far it got at ${url}.`,
   sessionCompleted: "QA Wolf finished the work.",

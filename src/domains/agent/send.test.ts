@@ -52,6 +52,20 @@ describe("handleAgentSend", () => {
     expect(await deps.store.readLastSessionId()).toBe("sess_1");
   });
 
+  it("says so when the session could not be remembered, and how to name it later", async () => {
+    const { callPublicApi, ctx, warnings } = makeAuthCtx();
+    const deps = makeTestDeps();
+    deps.store.rememberSession = async () => {
+      throw Error("EACCES");
+    };
+    callPublicApi.mockResolvedValue(started);
+
+    const result = await handleAgentSend(ctx, base, deps);
+
+    expect(result).toBeUndefined();
+    expect(warnings()[0]).toContain("--session sess_1");
+  });
+
   it("opens a new session rather than continuing the last one", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     const deps = makeTestDeps();
