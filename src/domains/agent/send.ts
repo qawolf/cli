@@ -75,17 +75,16 @@ export async function handleAgentSend(
   // A message into a session that is still being followed afterwards may be
   // the answer to its open question, and the session's status lags the send.
   // The reply count from before the send is what tells the follow which
-  // question is already answered and which arrived since.
+  // question is already answered and which arrived since. A read that fails
+  // costs only that: the message still goes, and the follow may ask the
+  // question once more rather than never sending what was typed.
   let repliesAtAnswer: number | undefined;
   if (options.follow && options.session !== undefined) {
     const before = await ctx.platformClient.callPublicApi(
       publicContractsV1.agent.get,
       { sessionId: options.session },
     );
-    if (!before.ok) {
-      return { exitCode: exitCodes.network, ...failureFields(before) };
-    }
-    repliesAtAnswer = before.value.replies.length;
+    if (before.ok) repliesAtAnswer = before.value.replies.length;
   }
 
   const sent = await ctx.platformClient.callPublicApi(

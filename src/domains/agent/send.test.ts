@@ -144,6 +144,25 @@ describe("handleAgentSend", () => {
     expect(select).toHaveBeenCalledTimes(1);
   });
 
+  it("still sends the message when the read before it fails", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi
+      .mockResolvedValueOnce({ error: "no route to host", ok: false })
+      .mockResolvedValueOnce(started)
+      .mockResolvedValueOnce(session({ status: "completed" }));
+
+    const result = await handleAgentSend(
+      ctx,
+      { ...base, follow: true, message: "a", session: "sess_1" },
+      makeTestDeps(),
+    );
+
+    expect(result).toBeUndefined();
+    expect(callPublicApi.mock.calls[1]?.[0]).toMatchObject({
+      name: "agent.send",
+    });
+  });
+
   it("keeps the client's exit code when the platform refuses the request", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
