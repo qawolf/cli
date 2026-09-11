@@ -224,7 +224,7 @@ mode the CLI prints the question and **exits 0** — a session that asked someth
 has handed the work back, it has not failed. Answer it, then pick the session
 back up:
 
-```
+```bash
 qawolf agent send "<your answer>" --session <sessionId>
 qawolf agent get --follow
 ```

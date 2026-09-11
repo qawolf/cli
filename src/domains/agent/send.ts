@@ -98,7 +98,9 @@ export async function handleAgentSend(
     sent.value,
     agentMessages.started(sent.value.sessionId, sent.value.url),
   );
-  await deps.store.rememberSession(sent.value.sessionId).catch(() => undefined);
+  await deps.store.rememberSession(sent.value.sessionId).catch(() => {
+    ctx.ui.warn(agentMessages.sessionNotRemembered(sent.value.sessionId));
+  });
   if (!options.follow) return undefined;
 
   return followSession(
