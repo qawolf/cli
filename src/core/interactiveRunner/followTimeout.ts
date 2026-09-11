@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 /**
  * How long `run --follow` waits before it stops following.
  *
@@ -10,17 +8,3 @@ import { z } from "zod";
  * short enough that a forgotten terminal is not an overnight bill.
  */
 export const defaultFollowTimeoutSeconds = 3600;
-
-const followTimeoutSchema = z.coerce.number().int().positive();
-
-export function parseFollowTimeout(
-  seconds: string | undefined,
-): { ok: true; seconds: number } | { ok: false; error: string } {
-  if (seconds === undefined) {
-    return { ok: true, seconds: defaultFollowTimeoutSeconds };
-  }
-  const parsed = followTimeoutSchema.safeParse(seconds);
-  if (!parsed.success)
-    return { error: z.prettifyError(parsed.error), ok: false };
-  return { ok: true, seconds: parsed.data };
-}

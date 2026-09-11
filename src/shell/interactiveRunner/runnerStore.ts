@@ -1,8 +1,10 @@
 import { join } from "node:path";
 import { z } from "zod";
 
+import { parseJson } from "~/core/parseJson.js";
 import { qawolfDir } from "~/core/paths.js";
 import type { Fs } from "~/shell/fs.js";
+import { readJsonFile, writeJsonFileAtomically } from "~/shell/jsonFile.js";
 
 /**
  * The runners a workspace has launched, and which one its commands go back to
@@ -26,14 +28,6 @@ const storeSchema = z.object({
 
 type StoredRunner = z.output<typeof storedRunnerSchema>;
 
-function parseJson(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return undefined;
-  }
-}
-
 export type RunnerStore = {
   forgetRunner: (runnerId: string) => Promise<void>;
   readDefaultRunnerId: () => Promise<string | undefined>;
@@ -43,37 +37,20 @@ export type RunnerStore = {
   writeDefaultRunnerId: (runnerId: string) => Promise<void>;
 };
 
-let pendingWrites = 0;
-
 export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
   const directory = join(options.cwd, qawolfDir);
   const path = join(directory, storeFileName);
   const runnersDir = join(directory, runnersDirName);
-  // Unique per write: two commands writing at once must not share a temp file,
-  // or one rename pulls the other's out from under it.
-  const nextPendingPath = (target: string) =>
-    `${target}.${process.pid}.${++pendingWrites}.tmp`;
 
   const runnerPath = (runnerId: string) =>
     join(runnersDir, `${encodeURIComponent(runnerId)}.json`);
 
-  const writeAtomically = async (
-    target: string,
-    contents: unknown,
-  ): Promise<void> => {
-    const pendingPath = nextPendingPath(target);
-    await options.fs.writeFile(
-      pendingPath,
-      `${JSON.stringify(contents, undefined, 2)}\n`,
-    );
-    await options.fs.rename(pendingPath, target);
-  };
+  const writeAtomically = (target: string, contents: unknown) =>
+    writeJsonFileAtomically(options.fs, target, contents);
 
   const readDefaultRunnerId = async (): Promise<string | undefined> => {
-    const contents = await options.fs.readFile(path).catch(() => undefined);
-    if (contents === undefined) return undefined;
-    const parsed = storeSchema.safeParse(parseJson(contents));
-    return parsed.success ? parsed.data.defaultRunnerId : undefined;
+    const stored = await readJsonFile(options.fs, path, storeSchema);
+    return stored?.defaultRunnerId;
   };
 
   const writeDefaultRunnerId = async (
@@ -103,14 +80,9 @@ export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
 
     async readRunners() {
       const runners = await Promise.all(
-        (await readRunnerFileNames()).map(async (name) => {
-          const contents = await options.fs
-            .readFile(join(runnersDir, name))
-            .catch(() => undefined);
-          if (contents === undefined) return undefined;
-          const parsed = storedRunnerSchema.safeParse(parseJson(contents));
-          return parsed.success ? parsed.data : undefined;
-        }),
+        (await readRunnerFileNames()).map((name) =>
+          readJsonFile(options.fs, join(runnersDir, name), storedRunnerSchema),
+        ),
       );
       return runners
         .filter((runner): runner is StoredRunner => !!runner)
@@ -132,6 +104,9 @@ export function makeRunnerStore(options: { cwd: string; fs: Fs }): RunnerStore {
       const names = await readRunnerFileNames();
       await Promise.all(
         names.map(async (name) => {
+          // Unreadable is not malformed: a file that could not be read this
+          // once may be a good record, and pruning is the one place a wrong
+          // guess destroys one.
           const runnerFile = join(runnersDir, name);
           const contents = await options.fs
             .readFile(runnerFile)

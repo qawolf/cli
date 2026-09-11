@@ -1,7 +1,19 @@
+import { wrapText } from "~/core/wrapText.js";
 import type { StyledClack } from "~/shell/ui/clack/index.js";
+import { replySymbol } from "~/shell/ui/clack/theme.js";
+import { startWaitLine } from "~/shell/ui/renderers/waitLine.js";
 import { writeStdoutRaw } from "~/shell/ui/renderers/write.js";
 import { finalizeResults } from "./progress.js";
 import type { RendererSet } from "./types.js";
+
+// The rail and the mark take four columns. Capped well short of a wide
+// monitor: a paragraph a hundred and sixty columns wide is harder to read
+// than one that wraps.
+function transcriptWidth(): number {
+  // `||`, not `??`: a pty with no window size reports zero columns.
+  const columns = process.stdout.columns || 80;
+  return Math.min(Math.max(columns - 4, 20), 100);
+}
 
 export function createHumanRenderers(
   clack: StyledClack,
@@ -28,6 +40,11 @@ export function createHumanRenderers(
     output: (_data, humanMessage) => clack.log.info(humanMessage),
     gap: () => process.stderr.write("\n"),
     stream: (_data, line) => writeStdoutRaw(`${line}\n`),
+    transcript: ({ body, headline }) => {
+      const lines = wrapText(body, transcriptWidth()).split("\n");
+      clack.log.message([headline, ...lines], { symbol: replySymbol() });
+    },
+    wait: (message) => startWaitLine(message),
     write: (text) => writeStdoutRaw(text),
     withProgress: async (steps, done) => {
       const results: unknown[] = [];
