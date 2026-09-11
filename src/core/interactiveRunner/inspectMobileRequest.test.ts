@@ -1,15 +1,9 @@
 import { describe, expect, it } from "bun:test";
 
-import { buildInspectMobileRequest } from "./inspectMobileRequest.js";
-
-const noFlags = {
-  by: undefined,
-  context: undefined,
-  partial: undefined,
-  text: undefined,
-  x: undefined,
-  y: undefined,
-};
+import {
+  blankInspectMobileFlags as noFlags,
+  buildInspectMobileRequest,
+} from "./inspectMobileRequest.js";
 
 describe("buildInspectMobileRequest", () => {
   it("asks for the session with no other flags", () => {
@@ -42,11 +36,10 @@ describe("buildInspectMobileRequest", () => {
     });
   });
 
-  it("turns whole-pixel x/y strings into a point request", () => {
+  it("turns whole-pixel x/y strings into a point request from --x/--y alone", () => {
     expect(
       buildInspectMobileRequest("elements", {
         ...noFlags,
-        by: "point",
         x: "100",
         y: "200",
       }),
@@ -56,11 +49,10 @@ describe("buildInspectMobileRequest", () => {
     });
   });
 
-  it("carries text and partial into a text request", () => {
+  it("carries text and partial into a text request from --text alone", () => {
     expect(
       buildInspectMobileRequest("elements", {
         ...noFlags,
-        by: "text",
         partial: true,
         text: "Log in",
       }),
@@ -72,24 +64,51 @@ describe("buildInspectMobileRequest", () => {
 
   it("omits partial from a text request when it was not given", () => {
     expect(
-      buildInspectMobileRequest("elements", {
-        ...noFlags,
-        by: "text",
-        text: "Log in",
-      }),
+      buildInspectMobileRequest("elements", { ...noFlags, text: "Log in" }),
     ).toEqual({
       ok: true,
       request: { by: "text", text: "Log in", what: "elements" },
     });
   });
 
-  it("refuses a point request missing y", () => {
+  it("turns --selector alone into a selector request, defaulting the strategy", () => {
     expect(
       buildInspectMobileRequest("elements", {
         ...noFlags,
-        by: "point",
-        x: "100",
-      }).ok,
+        selector: "//button",
+      }),
+    ).toEqual({
+      ok: true,
+      request: {
+        by: "selector",
+        selector: "//button",
+        strategy: "xpath",
+        what: "elements",
+      },
+    });
+  });
+
+  it("carries --strategy alongside --selector", () => {
+    expect(
+      buildInspectMobileRequest("elements", {
+        ...noFlags,
+        selector: "@label == 'Sign in'",
+        strategy: "ios-predicate",
+      }),
+    ).toEqual({
+      ok: true,
+      request: {
+        by: "selector",
+        selector: "@label == 'Sign in'",
+        strategy: "ios-predicate",
+        what: "elements",
+      },
+    });
+  });
+
+  it("refuses a point request missing y", () => {
+    expect(
+      buildInspectMobileRequest("elements", { ...noFlags, x: "100" }).ok,
     ).toBe(false);
   });
 
@@ -97,12 +116,7 @@ describe("buildInspectMobileRequest", () => {
   // rather than silently landing on the top-left corner.
   it("reads a blank x as NaN rather than pixel 0, and refuses it", () => {
     expect(
-      buildInspectMobileRequest("elements", {
-        ...noFlags,
-        by: "point",
-        x: "",
-        y: "200",
-      }).ok,
+      buildInspectMobileRequest("elements", { ...noFlags, x: "", y: "200" }).ok,
     ).toBe(false);
   });
 
@@ -110,20 +124,26 @@ describe("buildInspectMobileRequest", () => {
     expect(
       buildInspectMobileRequest("elements", {
         ...noFlags,
-        by: "point",
         x: "100.5",
         y: "200",
       }).ok,
     ).toBe(false);
   });
 
-  it("refuses a text request with no text to match", () => {
+  it("refuses --strategy without --selector", () => {
     expect(
-      buildInspectMobileRequest("elements", { ...noFlags, by: "text" }).ok,
+      buildInspectMobileRequest("elements", { ...noFlags, strategy: "xpath" })
+        .ok,
     ).toBe(false);
   });
 
-  it("refuses an elements request naming neither point nor text", () => {
+  it("refuses an empty --selector", () => {
+    expect(
+      buildInspectMobileRequest("elements", { ...noFlags, selector: "" }).ok,
+    ).toBe(false);
+  });
+
+  it("refuses an elements request naming neither a point, text, nor a selector", () => {
     expect(buildInspectMobileRequest("elements", noFlags).ok).toBe(false);
   });
 
@@ -132,39 +152,12 @@ describe("buildInspectMobileRequest", () => {
   });
 
   // The schema strips fields the chosen `by` does not define rather than
-  // refusing them, so `--by point --text ...` would otherwise answer the
-  // point and silently ignore the text — the flag has to be refused before
-  // it reaches the schema, not dropped there.
-  it("refuses --text alongside --by point rather than silently ignoring it", () => {
+  // refusing them, so `--x/--y --text ...` would otherwise answer the point
+  // and silently ignore the text — the flags have to be refused before they
+  // reach the schema, not dropped there.
+  it("refuses --text alongside --x/--y rather than silently ignoring it", () => {
     const built = buildInspectMobileRequest("elements", {
       ...noFlags,
-      by: "point",
-      text: "Sign in",
-      x: "100",
-      y: "200",
-    });
-
-    expect(built.ok).toBe(false);
-    if (built.ok) return;
-    expect(built.error).toContain("--text");
-  });
-
-  it("refuses --partial alongside --by point", () => {
-    expect(
-      buildInspectMobileRequest("elements", {
-        ...noFlags,
-        by: "point",
-        partial: true,
-        x: "100",
-        y: "200",
-      }).ok,
-    ).toBe(false);
-  });
-
-  it("refuses --x/--y alongside --by text rather than silently ignoring them", () => {
-    const built = buildInspectMobileRequest("elements", {
-      ...noFlags,
-      by: "text",
       text: "Sign in",
       x: "100",
       y: "200",
@@ -173,5 +166,40 @@ describe("buildInspectMobileRequest", () => {
     expect(built.ok).toBe(false);
     if (built.ok) return;
     expect(built.error).toContain("--x/--y");
+    expect(built.error).toContain("--text/--partial");
+  });
+
+  it("refuses --partial alongside --x/--y", () => {
+    expect(
+      buildInspectMobileRequest("elements", {
+        ...noFlags,
+        partial: true,
+        x: "100",
+        y: "200",
+      }).ok,
+    ).toBe(false);
+  });
+
+  it("refuses --selector alongside --x/--y", () => {
+    const built = buildInspectMobileRequest("elements", {
+      ...noFlags,
+      selector: "//button",
+      x: "100",
+      y: "200",
+    });
+
+    expect(built.ok).toBe(false);
+    if (built.ok) return;
+    expect(built.error).toContain("--selector/--strategy");
+  });
+
+  it("refuses --selector alongside --text", () => {
+    expect(
+      buildInspectMobileRequest("elements", {
+        ...noFlags,
+        selector: "//button",
+        text: "Sign in",
+      }).ok,
+    ).toBe(false);
   });
 });

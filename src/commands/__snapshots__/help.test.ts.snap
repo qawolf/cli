@@ -535,8 +535,8 @@ Commands:
   contexts [options]      List the WebView contexts available, and which is
                           current
   page-source [options]   Print the current context's page source, as a tree
-  elements [options]      Find elements at a screen point, or elements carrying
-                          some text
+  elements [options]      Find elements at a screen point, carrying some text,
+                          or matching a selector
   help [command]          display help for command
 
 Examples:
@@ -630,18 +630,21 @@ Options:
 exports[`--help output qawolf runner inspect elements 1`] = `
 "Usage: qawolf runner inspect elements [options]
 
-Find elements at a screen point, or elements carrying some text
+Find elements at a screen point, carrying some text, or matching a selector
 
 Options:
-  --by <by>         point or text
-  --context <name>  Read this context instead of the current one
-  --partial         text: match text containing this, rather than exactly this
-  --runner <id>     Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
-                    directory's stored runner
-  --text <text>     text: the text to match
-  --x <pixels>      point: whole pixels on the device's own screen
-  --y <pixels>      point: whole pixels on the device's own screen
-  -h, --help        display help for command
+  --context <name>       Read this context instead of the current one
+  --partial              text: match text containing this, rather than exactly
+                         this
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then
+                         this directory's stored runner
+  --selector <selector>  Resolved the same way a screen object's own selector is
+  --strategy <strategy>  selector: xpath, ios-predicate, or shadow (defaults to
+                         xpath)
+  --text <text>          text: the text to match
+  --x <pixels>           point: whole pixels on the device's own screen
+  --y <pixels>           point: whole pixels on the device's own screen
+  -h, --help             display help for command
 "
 `;
 
