@@ -125,8 +125,8 @@ that `url`; never guess a route and never send a repository link in its place.
 <!-- prettier-ignore -->
 | Command | Kind | What it does |
 | --- | --- | --- |
-| `qawolf agent get` | read | Monitor a QA Wolf AI session by reading its status and replies. After agent.send, share the returned session URL before monitoring. Wait 30 to 60 seconds between checks; do not call this in a tight loop. Replies accumulate, so compare them with what you have already seen. Continue monitoring silently when the status and replies are unchanged; do not narrate waiting, announce the next check, or ask whether to keep monitoring. Report only substantive new progress, questions, blockers, or the final outcome. A status of "waiting-for-you" means the last reply is a question the work is blocked on, and answering it with agent.send is what unblocks it. Surface an explicit request for user input even if the status still says "working". Include the session URL when reporting a blocker or final outcome. On "completed", stop status checks and verify the requested result before claiming success. For new flows, validation, publication in the target environment, and readiness are separate checks; a Git push or final reply does not prove the flow is active. If every requested result is verified but status remains "working", report the mismatch and stop monitoring. Stop on "failed" or "cancelled" and report any confirmed partial result. |
-| `qawolf agent send` | write | Start or continue work with the QA Wolf AI and return a live session URL to share with the user. Use it to cover a user journey, investigate a failing run, or fix a broken flow. This is the one verb that starts work from nothing: every other write acts on a flow, run or issue that already exists. Returns sessionId, status, and url as soon as the request is accepted; work can take minutes to tens of minutes. After each send, make the next action a normal user-visible assistant message containing the exact returned url, before any tool call or wait. Tool output and internal reasoning do not count as sharing the link. Do not run a timer or monitoring call alongside this send. Acceptance does not mean the work is complete. Then monitor the session with agent.get, reporting new progress, blockers, and the final outcome rather than unchanged status. Send here again to answer a question or add context to the same session. |
+| `qawolf agent get` | read | Read what the QA Wolf AI has said and whether it is still working |
+| `qawolf agent send` | write | Ask the QA Wolf AI to do a piece of work, such as covering a journey or fixing a broken flow |
 | `qawolf auth login` | local | Authenticate with QA Wolf in a browser or with an API key |
 | `qawolf auth logout` | local | Remove stored credentials |
 | `qawolf auth switch` | local | Choose which workspace to work in |
@@ -199,6 +199,54 @@ Kinds: `read` calls the QA Wolf API without changing anything; `write`
 changes team state; `local` only affects this machine. A parenthesized
 note like `local (read with --remote)` means that flag makes the command
 call the QA Wolf API and require auth.
+
+## Asking QA Wolf to do the work: the `agent` group
+
+`qawolf agent send "<what you want>"` is the one verb that starts work from
+nothing. Every other write acts on a flow, run or issue that already exists.
+Name the journey, the part of the app it covers, and anything the AI cannot
+discover for itself, such as a test account, a feature flag, or how to reach a
+staging environment. For a long message, put it in a file and pass
+`"$(cat prompt.md)"`, so shell quoting cannot split it into arguments.
+
+`--environment-id <id-or-alias>` picks the environment and reads
+`QAWOLF_ENVIRONMENT`. A credential that is not bound to one workspace, such as
+an organization or user API key, needs `--workspace-id`.
+
+The work runs for minutes to tens of minutes. **Pass `--follow` and do not poll.**
+The CLI reads the session for you, prints each reply once as it arrives, and
+exits when the session settles: 0 when the work is complete, non-zero when it
+failed or was cancelled. Looping `qawolf agent get` yourself costs a round trip
+per tick and shows you replies you have already seen.
+
+A session can stop and ask a question. With `--follow` in `--agent` or `--json`
+mode the CLI prints the question and **exits 0** — a session that asked something
+has handed the work back, it has not failed. Answer it, then pick the session
+back up:
+
+```bash
+qawolf agent send "<your answer>" --session <sessionId>
+qawolf agent get --follow
+```
+
+In `--agent` or `--json` mode a follow ends with one JSON line holding the whole
+session: `sessionId`, `status`, `url` and `replies`. It is the same object a
+plain `qawolf agent get` answers with. Read the final `status` from that line;
+the exit code alone does not tell a blocked session from a completed one.
+
+`agent send` remembers the session it started, so a later `agent get --follow`
+in the same directory needs no id. `--session <id>` or `QAWOLF_SESSION_ID`
+override that.
+
+Every session has a `url`, which the CLI prints when it starts or attaches.
+A session opens in whichever workspace the credential is pointed at, which is not
+always the one the user has open in the app, so send that `url` when you report
+on a session rather than describing where it went.
+
+Expect quiet stretches. QA Wolf reports a session as working and says nothing
+more until the AI speaks, so several minutes with no output is the session
+working, not the command hanging. `--timeout` bounds the wait; it is 30 minutes
+by default.
 
 ## Driving a browser: the `runner` group
 

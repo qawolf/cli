@@ -129,6 +129,54 @@ changes team state; `local` only affects this machine. A parenthesized
 note like `local (read with --remote)` means that flag makes the command
 call the QA Wolf API and require auth.
 
+## Asking QA Wolf to do the work: the `agent` group
+
+`qawolf agent send "<what you want>"` is the one verb that starts work from
+nothing. Every other write acts on a flow, run or issue that already exists.
+Name the journey, the part of the app it covers, and anything the AI cannot
+discover for itself, such as a test account, a feature flag, or how to reach a
+staging environment. For a long message, put it in a file and pass
+`"$(cat prompt.md)"`, so shell quoting cannot split it into arguments.
+
+`--environment-id <id-or-alias>` picks the environment and reads
+`QAWOLF_ENVIRONMENT`. A credential that is not bound to one workspace, such as
+an organization or user API key, needs `--workspace-id`.
+
+The work runs for minutes to tens of minutes. **Pass `--follow` and do not poll.**
+The CLI reads the session for you, prints each reply once as it arrives, and
+exits when the session settles: 0 when the work is complete, non-zero when it
+failed or was cancelled. Looping `qawolf agent get` yourself costs a round trip
+per tick and shows you replies you have already seen.
+
+A session can stop and ask a question. With `--follow` in `--agent` or `--json`
+mode the CLI prints the question and **exits 0** — a session that asked something
+has handed the work back, it has not failed. Answer it, then pick the session
+back up:
+
+```bash
+qawolf agent send "<your answer>" --session <sessionId>
+qawolf agent get --follow
+```
+
+In `--agent` or `--json` mode a follow ends with one JSON line holding the whole
+session: `sessionId`, `status`, `url` and `replies`. It is the same object a
+plain `qawolf agent get` answers with. Read the final `status` from that line;
+the exit code alone does not tell a blocked session from a completed one.
+
+`agent send` remembers the session it started, so a later `agent get --follow`
+in the same directory needs no id. `--session <id>` or `QAWOLF_SESSION_ID`
+override that.
+
+Every session has a `url`, which the CLI prints when it starts or attaches.
+A session opens in whichever workspace the credential is pointed at, which is not
+always the one the user has open in the app, so send that `url` when you report
+on a session rather than describing where it went.
+
+Expect quiet stretches. QA Wolf reports a session as working and says nothing
+more until the AI speaks, so several minutes with no output is the session
+working, not the command hanging. `--timeout` bounds the wait; it is 30 minutes
+by default.
+
 ## Driving a browser: the `runner` group
 
 The `runner` commands drive a live cloud browser: `launch` one, `screenshot` to
