@@ -33,6 +33,12 @@ export async function writeJsonFileAtomically(
   value: unknown,
 ): Promise<void> {
   const pendingPath = `${path}.${String(process.pid)}.${String(++pendingWrites)}.tmp`;
-  await fs.writeFile(pendingPath, `${JSON.stringify(value, undefined, 2)}\n`);
-  await fs.rename(pendingPath, path);
+  try {
+    await fs.writeFile(pendingPath, `${JSON.stringify(value, undefined, 2)}\n`);
+    await fs.rename(pendingPath, path);
+  } finally {
+    // Best effort, and never in place of the write's own error: a staging
+    // file left behind by a failed write would otherwise pile up.
+    await fs.rm(pendingPath, { force: true }).catch(() => {});
+  }
 }

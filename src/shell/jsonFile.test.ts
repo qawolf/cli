@@ -29,6 +29,27 @@ describe("readJsonFile", () => {
 });
 
 describe("writeJsonFileAtomically", () => {
+  it("leaves no staging file behind when the write cannot be published", async () => {
+    const fs = makeMemoryFs();
+    await fs.mkdir("/w", { recursive: true });
+    const refusing = {
+      ...fs,
+      rename: async () => {
+        throw Error("EACCES");
+      },
+    };
+
+    let caught: unknown;
+    try {
+      await writeJsonFileAtomically(refusing, "/w/a.json", { id: "one" });
+    } catch (err) {
+      caught = err;
+    }
+
+    expect((caught as Error | undefined)?.message).toBe("EACCES");
+    expect(await fs.readdir("/w")).toEqual([]);
+  });
+
   it("leaves only the target behind, holding the record", async () => {
     const fs = makeMemoryFs();
     await fs.mkdir("/w", { recursive: true });
