@@ -4,11 +4,20 @@ import {
 } from "@qawolf/api-contracts/v1";
 import { z } from "zod";
 
-/** The mobile inspect flags as the command line hands them over. */
+/**
+ * The mobile inspect flags as the command line hands them over. There is no
+ * `by` here: which one of a point, some text, or a selector was given is
+ * evident from which fields are set, so asking the caller to also name it
+ * separately would be redundant — the wire request still carries `by`
+ * (`buildInspectMobileRequest` fills it in), because the published schema is
+ * a discriminated union and zod cannot nest a plain, presence-discriminated
+ * union inside another discriminated union.
+ */
 export type InspectMobileFlags = {
-  by: string | undefined;
   context: string | undefined;
   partial: boolean | undefined;
+  selector: string | undefined;
+  strategy: string | undefined;
   text: string | undefined;
   x: string | undefined;
   y: string | undefined;
@@ -23,6 +32,24 @@ function toNumber(value: string): number {
   return value.trim() === "" ? Number.NaN : Number(value);
 }
 
+const groupsOf = (flags: InspectMobileFlags) => ({
+  point: flags.x !== undefined || flags.y !== undefined,
+  selector: flags.selector !== undefined || flags.strategy !== undefined,
+  text: flags.text !== undefined || flags.partial !== undefined,
+});
+
+/** Names which of a point's, text's, or a selector's flags were passed. */
+function describeGroup(group: keyof ReturnType<typeof groupsOf>): string {
+  switch (group) {
+    case "point":
+      return "--x/--y";
+    case "selector":
+      return "--selector/--strategy";
+    case "text":
+      return "--text/--partial";
+  }
+}
+
 /**
  * Turns a subcommand and its flags into one mobile inspect request, put to the
  * published schema rather than checked by hand — same reasoning as
@@ -32,33 +59,26 @@ export function buildInspectMobileRequest(
   what: string,
   flags: InspectMobileFlags,
 ): BuiltInspectMobileRequest {
-  // The schema strips fields the chosen `by` does not define rather than
-  // refusing them, so a flag from the other `by` would be silently ignored
-  // rather than reported — the same reason a flag alongside stdin is refused
-  // in `readAction.ts` rather than dropped.
-  if (
-    flags.by === "point" &&
-    (flags.text !== undefined || flags.partial !== undefined)
-  ) {
+  const groups = groupsOf(flags);
+  const present = (["point", "text", "selector"] as const).filter(
+    (group) => groups[group],
+  );
+
+  if (present.length > 1) {
     return {
-      error:
-        "--by point matches by pixel, so --text/--partial would be ignored rather than searching by text. Pass --by text instead, or drop --text/--partial.",
-      ok: false,
-    };
-  }
-  if (flags.by === "text" && (flags.x !== undefined || flags.y !== undefined)) {
-    return {
-      error:
-        "--by text matches by text, so --x/--y would be ignored rather than matching a point. Pass --by point instead, or drop --x/--y.",
+      error: `${describeGroup(present[0]!)} and ${describeGroup(present[1]!)} were both passed, but elements are found by a point, by text, or by a selector — never more than one at once. Drop all but one of them.`,
       ok: false,
     };
   }
 
+  const by = present[0];
   const candidate = {
     what,
-    ...(flags.by === undefined ? {} : { by: flags.by }),
+    ...(by === undefined ? {} : { by }),
     ...(flags.context === undefined ? {} : { context: flags.context }),
     ...(flags.partial === undefined ? {} : { partial: flags.partial }),
+    ...(flags.selector === undefined ? {} : { selector: flags.selector }),
+    ...(flags.strategy === undefined ? {} : { strategy: flags.strategy }),
     ...(flags.text === undefined ? {} : { text: flags.text }),
     ...(flags.x === undefined ? {} : { x: toNumber(flags.x) }),
     ...(flags.y === undefined ? {} : { y: toNumber(flags.y) }),

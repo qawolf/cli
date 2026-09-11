@@ -232,8 +232,10 @@ qawolf runner inspect session
 qawolf runner inspect contexts
 qawolf runner inspect page-source
 qawolf runner inspect page-source --context WEBVIEW_1     # a specific context, not the current one
-qawolf runner inspect elements --by point --x 240 --y 480
-qawolf runner inspect elements --by text --text "Sign in" --partial
+qawolf runner inspect elements --x 240 --y 480
+qawolf runner inspect elements --text "Sign in" --partial
+qawolf runner inspect elements --selector "//android.widget.Button[@text='Sign in']"
+qawolf runner inspect elements --selector "@label == 'Sign in'" --strategy ios-predicate
 ```
 
 `session` prints one summary line — ready, or why not — because that line is
@@ -253,15 +255,21 @@ runner yet — run a flow that opens one, then inspect again; `screen-not-ready`
 exits `4` and means the session exists but did not answer this instant, or more
 than one is somehow live — retry once, and relaunch the runner if it persists.
 
-`elements` takes one of two ways to search, chosen with `--by`: `point` needs
-whole-pixel `--x`/`--y` on the device's own screen, the same coordinates a
-screenshot is measured in; `text` needs `--text` and matches it exactly unless
-`--partial` is passed. The two do not mix — `--by point` with `--text` set, or
-`--by text` with `--x`/`--y` set, is refused before a runner is addressed
-rather than silently searching by the one it picked, since the schema itself
-just strips whichever field the chosen `by` does not define. `--context` on
-`page-source` or `elements` reads a context other than the current one —
-useful once `contexts` has told you which are available.
+`elements` takes one of three ways to search: whole-pixel `--x`/`--y` on the
+device's own screen, the same coordinates a screenshot is measured in;
+`--text`, which matches exactly unless `--partial` is passed; or `--selector`,
+resolved the same way a screen object's own selector is, with `--strategy`
+naming how (`xpath`, `ios-predicate` or `shadow`; defaults to `xpath`). Prefer
+`--selector` when checking a selector you are about to write: it answers what
+that exact string resolves to, where `--text`/`--x`/`--y` only approximate it.
+The three do not mix — passing flags from more than one at once is refused
+before a runner is addressed rather than silently searching by whichever one
+it picked. An unparseable selector answers `invalid-selector`, exit `2`,
+distinctly from a selector that parsed fine but matched nothing, which answers
+an empty `matches` list, exit `0` — the same distinction `highlight-selector`
+draws on a browser runner. `--context` on `page-source` or `elements` reads a
+context other than the current one — useful once `contexts` has told you which
+are available.
 
 A browser runner answers `runner-is-not-mobile` to all four, exit `2`, since
 retrying never helps: launch with `--name android` or `--name ios` instead.
