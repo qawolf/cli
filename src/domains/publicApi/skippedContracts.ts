@@ -5,6 +5,14 @@
 // serves it, and until then stays out and lets the generator report what it
 // cannot express.
 //
+// The whole `agent.*` family is hand-written as `qawolf agent`. Both verbs have
+// a flag shape the generator could express, and a one-shot request-and-render is
+// what it would give them. What they need instead is a `--follow` that stays and
+// reads the session until it settles, and that puts the AI's question to the
+// person watching and sends the answer back through the other verb. No value in
+// a contract's input can make the generated handler loop, and no description of
+// one endpoint can reach across to another.
+//
 // The whole `runner.*` family is hand-written as `qawolf runner`, and the whole
 // family is listed. Some of these inputs carry a file list or an action union and
 // have no flag shape at all; the ones that do need UX the generator cannot give
@@ -17,6 +25,8 @@
 // the group does not match.
 /** Every contract the generator passes over. */
 export const skippedContractNames: ReadonlySet<string> = new Set([
+  "agent.get",
+  "agent.send",
   "flow.list",
   "runner.evaluateSnippet",
   "runner.get",

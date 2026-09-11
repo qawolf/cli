@@ -13,6 +13,8 @@ Options:
   -h, --help                   display help for command
 
 Commands:
+  agent                        Ask the QA Wolf AI for work and follow what it
+                               does
   auth                         Manage authentication with QA Wolf
   doctor [options]             Diagnose problems running flows locally
   flows                        Manage and run QA Wolf flows
@@ -22,7 +24,6 @@ Commands:
                                flows need
   runner                       Drive an interactive runner on the QA Wolf
                                platform
-  agent                        QA Wolf public API agent commands
   automate [options]           Request automation for draft flows. First create
                                a named local .flow.ts draft for every requested
                                journey that does not already have a matching

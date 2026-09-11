@@ -5,8 +5,10 @@ import type { CommandSpec } from "~/domains/publicApi/commandSpecs.js";
 // Generated options a variable can fill, keyed by contract path and input path
 // (`public.run.create.aiTaskId`) or by input path alone, which covers the field
 // wherever it appears (`environmentId`).
+export const environmentIdEnvironmentVariable = "QAWOLF_ENVIRONMENT";
+
 const optionEnvironmentVariables = new Map([
-  ["environmentId", "QAWOLF_ENVIRONMENT"],
+  ["environmentId", environmentIdEnvironmentVariable],
   ["public.run.create.aiTaskId", "QAWOLF_AI_TASK_ID"],
   ["public.run.create.chatSessionId", "QAWOLF_CHAT_SESSION_ID"],
 ]);
