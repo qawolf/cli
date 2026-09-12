@@ -40,6 +40,11 @@ afterEach(() => {
 // see which id the CLI chose.
 function makeNotificationContract() {
   return {
+    annotations: {
+      destructiveHint: true,
+      openWorldHint: true,
+      readOnlyHint: false,
+    },
     description: "Create a run.",
     input: z.object({
       aiTaskId: z.string().optional(),
@@ -76,6 +81,11 @@ function registerRunCreate(
 
 it("defaults public API options from their environment variables", async () => {
   const contract = {
+    annotations: {
+      destructiveHint: true,
+      openWorldHint: true,
+      readOnlyHint: false,
+    },
     description: "Create a run.",
     input: z.object({
       aiTaskId: z.string().optional(),

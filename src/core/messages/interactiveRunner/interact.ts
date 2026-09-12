@@ -50,6 +50,8 @@ export const interactMessages = {
     `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
   inspectMobileAnsweredUnknown: (failureReason: string) =>
     `The runner answered "${failureReason}", which this version of the CLI does not know how to report. Upgrade with npm install -g @qawolf/cli.`,
+  inspectMobileInvalidSelector:
+    "The runner could not parse that selector under the strategy it was given. Retrying it unchanged will never help: correct the selector, or pick the strategy that matches it.",
   runnerIsNotMobile:
     "This runner is not a mobile device, so there is nothing here to inspect. Retrying will never help: launch an android or ios runner instead.",
   screenNeedsARun:

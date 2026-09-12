@@ -20,6 +20,11 @@ export const runCreateSpec = (): CommandSpec => {
 // contract uses yet.
 export const countSpec = (): CommandSpec => {
   const contract = {
+    annotations: {
+      destructiveHint: false,
+      openWorldHint: false,
+      readOnlyHint: false,
+    },
     name: "fake.count",
     kind: "write" as const,
     description: "synthetic number-flag contract",

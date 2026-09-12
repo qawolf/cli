@@ -28,6 +28,11 @@ afterEach(() => {
 // input to reassemble. Unit tests hand Commander's output to assembleInput,
 // so only this test would catch the derivations drifting apart.
 const contract = {
+  annotations: {
+    destructiveHint: false,
+    openWorldHint: false,
+    readOnlyHint: false,
+  },
   name: "fake.reportStatus",
   kind: "write" as const,
   description: "Synthetic nested contract.",

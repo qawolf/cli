@@ -38,6 +38,11 @@ describe("buildCommandSpecs", () => {
     // Unmappable input proves the skip happens before flag building: a
     // hand-written contract never has to be expressible as generated flags.
     const skipped = {
+      annotations: {
+        destructiveHint: false,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
       description: "Hand-written elsewhere",
       input: z.object({ config: z.object({ counts: z.array(z.number()) }) }),
       kind: "read",
@@ -45,6 +50,11 @@ describe("buildCommandSpecs", () => {
       output: z.object({}),
     } as const;
     const kept = {
+      annotations: {
+        destructiveHint: false,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
       description: "Generated",
       input: z.object({ runId: z.string() }),
       kind: "read",
@@ -62,6 +72,11 @@ describe("buildCommandSpecs", () => {
 
   it("throws when a contract name does not match its position in the tree", () => {
     const contract = {
+      annotations: {
+        destructiveHint: false,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
       description: "Mismatched",
       input: z.object({}),
       kind: "read",
@@ -76,6 +91,11 @@ describe("buildCommandSpecs", () => {
 
   it("throws when a contract input cannot be expressed as flags", () => {
     const contract = {
+      annotations: {
+        destructiveHint: false,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
       description: "Unmappable",
       input: z.object({ config: z.object({ counts: z.array(z.number()) }) }),
       kind: "read",

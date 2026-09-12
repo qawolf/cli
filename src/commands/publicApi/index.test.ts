@@ -155,6 +155,11 @@ describe("registerPublicApiCommands", () => {
 
   it("skips contracts served by hand-written commands", () => {
     const listContract = {
+      annotations: {
+        destructiveHint: false,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
       description: "List the flows of an environment.",
       input: z.object({ environmentId: z.string() }),
       kind: "read",
@@ -162,6 +167,11 @@ describe("registerPublicApiCommands", () => {
       output: z.object({ flows: z.array(z.object({ flowId: z.string() })) }),
     } as const;
     const getContract = {
+      annotations: {
+        destructiveHint: false,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
       description: "Look up a run.",
       input: z.object({ runId: z.string() }),
       kind: "read",
@@ -198,6 +208,11 @@ describe("registerPublicApiCommands", () => {
 
   it("registers nested namespaces from custom contract trees", () => {
     const contract = {
+      annotations: {
+        destructiveHint: false,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
       description: "Look up a run attempt.",
       input: z.object({ runId: z.string() }),
       kind: "read",

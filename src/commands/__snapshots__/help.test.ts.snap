@@ -39,10 +39,12 @@ Commands:
                                containing all requested flow IDs.
   email                        QA Wolf public API email commands
   environment                  QA Wolf public API environment commands
+  file                         QA Wolf public API file commands
   flow                         QA Wolf public API flow commands
   issue                        QA Wolf public API issue commands
   run                          Trigger and manage QA Wolf runs on the platform
   tag                          QA Wolf public API tag commands
+  trigger                      QA Wolf public API trigger commands
   help [command]               display help for command
 "
 `;
