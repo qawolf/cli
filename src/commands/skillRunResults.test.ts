@@ -20,6 +20,11 @@ const runResultsTemplatePath = join(
 describe("renderResponseFields", () => {
   it("renders one bullet per documented field", () => {
     const contract = {
+      annotations: {
+        destructiveHint: false,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
       description: "Look up a run.",
       input: z.object({ runId: z.string() }),
       kind: "read",
@@ -37,6 +42,11 @@ describe("renderResponseFields", () => {
 
   it("throws when the contract documents nothing, rather than emitting an empty reference", () => {
     const contract = {
+      annotations: {
+        destructiveHint: false,
+        openWorldHint: false,
+        readOnlyHint: true,
+      },
       description: "Look up a run.",
       input: z.object({ runId: z.string() }),
       kind: "read",
