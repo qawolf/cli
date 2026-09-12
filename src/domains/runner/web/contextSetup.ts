@@ -109,14 +109,18 @@ export function buildContextSetup(
     harPath !== undefined
       ? buildHarContextOpts(harPath, options.harContent ?? "omit")
       : {};
+  // Send a concrete Accept-Language so the app resolves a real locale instead
+  // of falling back to the first configured one (which can be non-English,
+  // e.g. Afrikaans, and would break English text assertions / OTP parsing).
+  const base = {
+    viewport: videoSize,
+    screen: videoSize,
+    locale: "en-US",
+    ...harOpts,
+  };
   return options.video !== "off"
-    ? {
-        viewport: videoSize,
-        screen: videoSize,
-        recordVideo: { dir: videosDir, size: videoSize },
-        ...harOpts,
-      }
-    : { viewport: videoSize, screen: videoSize, ...harOpts };
+    ? { ...base, recordVideo: { dir: videosDir, size: videoSize } }
+    : base;
 }
 
 /**
