@@ -21,6 +21,7 @@ export function makeClack() {
   const createdTaskLogs: MockTaskLog[] = [];
   const clack = {
     log: {
+      message: mock(),
       info: mock(),
       error: mock(),
       step: mock(),
@@ -33,6 +34,7 @@ export function makeClack() {
     cancel: mock(),
     confirm: mock(),
     password: mock(),
+    text: mock(),
     autocomplete: mock(),
     select: mock(),
     isCancel: isCancel as typeof isCancel & StyledClack["isCancel"],

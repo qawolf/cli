@@ -27,6 +27,8 @@ export function createJsonRenderers(): RendererSet {
     output: (data, _humanMessage) => writeJsonLine(data),
     gap: () => {},
     stream: (data, _line) => writeJsonLine(data),
+    transcript: ({ data }) => writeJsonLine(data),
+    wait: () => ({ stop: () => {} }),
     write: () => {},
     withProgress: async (steps, done) => {
       const results: unknown[] = [];

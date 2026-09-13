@@ -1,4 +1,5 @@
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
+import { resolveIdFrom } from "~/core/resolveId.js";
 import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
@@ -22,19 +23,16 @@ export type ResolvedRunner =
 
 export const runnerIdEnvironmentVariable = "QAWOLF_RUNNER_ID";
 
-/**
- * Flag, then environment, then the workspace's stored default: most explicit
- * wins, and each level is one a caller can see and change.
- */
-async function chooseRunnerId(
+const chooseRunnerId = (
   runner: string | undefined,
   deps: InteractiveRunnerDeps,
-): Promise<string | undefined> {
-  if (runner !== undefined) return runner;
-  const fromEnvironment = deps.env[runnerIdEnvironmentVariable]?.trim();
-  if (fromEnvironment) return fromEnvironment;
-  return deps.store.readDefaultRunnerId();
-}
+): Promise<string | undefined> =>
+  resolveIdFrom({
+    env: deps.env,
+    environmentVariable: runnerIdEnvironmentVariable,
+    given: runner,
+    readStored: deps.store.readDefaultRunnerId,
+  });
 
 export async function resolveRunner(
   ctx: AuthCommandContext,

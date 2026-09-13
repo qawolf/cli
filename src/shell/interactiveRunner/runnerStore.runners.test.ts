@@ -76,6 +76,33 @@ describe("makeRunnerStore runners", () => {
     ]);
   });
 
+  // Pruning is the one place a wrong guess destroys a record, so a file that
+  // could not be read this once is left where it is; only one that reads as
+  // not a runner at all goes.
+  it("prunes a malformed record but keeps one it could not read", async () => {
+    const fs = makeMemoryFs();
+    const store = makeRunnerStore({
+      cwd,
+      fs: {
+        ...fs,
+        readFile: async (path) => {
+          if (path.endsWith("/flaky.json")) throw Error("EIO");
+          return fs.readFile(path);
+        },
+      },
+    });
+    await store.rememberLaunch({ id: "flaky" });
+    await store.rememberLaunch({ id: "ci" });
+    await fs.writeFile(`${cwd}/.qawolf/runners/broken.json`, "{not json");
+
+    await store.dropRunners([]);
+
+    expect((await fs.readdir(`${cwd}/.qawolf/runners`)).sort()).toEqual([
+      "ci.json",
+      "flaky.json",
+    ]);
+  });
+
   it("ignores an id it is told to drop that it never held", async () => {
     const store = makeStore();
     await store.rememberLaunch({ id: "ci" });
