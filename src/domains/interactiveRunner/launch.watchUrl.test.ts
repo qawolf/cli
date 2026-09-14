@@ -19,27 +19,25 @@ async function launch(apiKeySource: string, alreadyRunning: boolean) {
 }
 
 describe("handleRunnerLaunch runner page url", () => {
-  it("tells a signed-in person where to watch the runner it launched", async () => {
+  it("tells the caller where to watch the runner it launched", async () => {
     expect((await launch("browser", false))?.humanMessage).toBe(
       `Launched runner ci. Watch its screen at ${url}`,
     );
   });
 
   // Relaunching an id attaches rather than billing a second pod, so that path
-  // needs the address as much as a fresh launch does — but whoever launched the
-  // runner first is who its screen plays for, and it need not be this caller.
-  it("offers the page without the screen for a runner it only attached to", async () => {
+  // needs the address as much as a fresh launch does.
+  it("tells the caller where to watch a runner it only attached to", async () => {
     expect((await launch("browser", true))?.humanMessage).toBe(
-      `Runner ci was already running. Its runner page is at ${url}`,
+      `Runner ci was already running. Watch its screen at ${url}`,
     );
   });
 
-  // An API key may be a team key, whose runner belongs to the team's automation
-  // user and plays its screen for nobody, so the page is offered without the
-  // promise.
-  it("only offers the page to a caller holding an api key", async () => {
+  // The runner's screen plays for anyone on its team, so how the caller signed
+  // in makes no difference to what they are promised.
+  it("promises the same screen to a caller holding an api key", async () => {
     expect((await launch("env", false))?.humanMessage).toBe(
-      `Launched runner ci. Its runner page is at ${url}`,
+      `Launched runner ci. Watch its screen at ${url}`,
     );
   });
 

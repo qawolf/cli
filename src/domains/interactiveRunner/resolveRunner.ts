@@ -4,7 +4,6 @@ import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
-import { canWatchRunnerScreen } from "./canWatchRunnerScreen.js";
 import { launchAndRemember } from "./launchAndRemember.js";
 import { parseRunnerId } from "./runnerIds.js";
 
@@ -100,7 +99,6 @@ export function announceRunner(
       interactiveRunnerMessages.launchedForCommand(
         resolved.runnerId,
         resolved.url,
-        canWatchRunnerScreen(ctx),
       ),
     );
   }
