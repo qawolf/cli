@@ -66,7 +66,12 @@ describe("copyFlowActions", () => {
   });
 
   for (const shell of ["sh", "bash", "zsh"]) {
-    it.skipIf(spawnSync(shell, ["-c", "exit 0"]).error !== undefined)(
+    // This corpus includes POSIX filenames with control characters. Windows
+    // copies PowerShell syntax, covered by clipboardPaths.test.ts.
+    it.skipIf(
+      process.platform === "win32" ||
+        spawnSync(shell, ["-c", "exit 0"]).error !== undefined,
+    )(
       `preserves each copied path as one literal argument in ${shell}`,
       async () => {
         const { copy, run } = setup();

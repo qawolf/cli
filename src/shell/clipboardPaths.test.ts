@@ -10,6 +10,18 @@ describe("formatClipboardPaths", () => {
     ).toEqual({ text: "src/a.flow.ts src/b.flow.ts", syntax: undefined });
   });
 
+  it("preserves POSIX carriage returns and newlines before shell invocation", () => {
+    expect(
+      formatClipboardPaths(
+        ["src/carriage.flow.ts\r", "src/first\nsecond.flow.ts"],
+        "linux",
+      ),
+    ).toEqual({
+      text: "'src/carriage.flow.ts\r' 'src/first\nsecond.flow.ts'",
+      syntax: undefined,
+    });
+  });
+
   it("keeps simple Windows paths bare", () => {
     expect(formatClipboardPaths(["C:\\flows\\a.flow.ts"], "win32")).toEqual({
       text: "C:\\flows\\a.flow.ts",
