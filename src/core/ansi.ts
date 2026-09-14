@@ -8,5 +8,7 @@ export const dim = (text: string): string => `\x1b[2m${text}\x1b[22m`;
 export const strike = (text: string): string => `\x1b[9m${text}\x1b[29m`;
 export const inverse = (text: string): string => `\x1b[7m${text}\x1b[27m`;
 export const cyan = (text: string): string => `\x1b[36m${text}\x1b[39m`;
+export const green = (text: string): string => `\x1b[32m${text}\x1b[39m`;
+export const yellow = (text: string): string => `\x1b[33m${text}\x1b[39m`;
 
 export const visibleLength = displayWidth;

@@ -247,8 +247,9 @@ Options:
   --tag <name>             Only list flows carrying this tag; repeat for
                            several. Without --remote, matches against tags
                            cached by the last pull (default: [])
-  -i, --interactive        Open the flow table to filter as you type; the
-                           default at a terminal
+  -i, --interactive        Open the flow table to filter as you type, mark flows
+                           and copy their paths or ids; the default at a
+                           terminal
   --no-interactive         Print the flow table instead of opening it
   --ai-task-id <aiTaskId>  List the flows on this AI task's branch, including
                            drafts, instead of the ones in the environment

@@ -14,7 +14,11 @@ const frame = (over: Partial<FilterFrame> = {}): FilterFrame => ({
   rowCount: 20,
   line: (index) => `flow ${String(index + 1)}`,
   focus: 0,
+  marked: new Set(),
+  markedCount: 0,
   detail: "id flow-1 · src/flows/1.flow.ts",
+  notice: undefined,
+  hints: "^Y copy path",
   columns: 100,
   // Leaves room for 4 rows once the frame's other lines are counted.
   terminalRows: 12,
@@ -59,6 +63,28 @@ describe("renderFilterFrame", () => {
     expect(lines()).toContain("│  id flow-1 · src/flows/1.flow.ts");
   });
 
+  it("shows a confirmation in place of the count while it lasts", () => {
+    const footer = lines({
+      notice: { tone: "success", text: "Copied src/flows/1.flow.ts" },
+    }).at(-2);
+    expect(footer).toContain("✓ Copied src/flows/1.flow.ts");
+    expect(footer).not.toContain("20 of 100");
+  });
+
+  // "No flow id yet" is not a success; a green tick would say it was.
+  it("marks a notice that is not a success with a warning sign", () => {
+    const footer = lines({
+      notice: { tone: "warning", text: "No flow id yet." },
+    }).at(-2);
+    expect(footer).toContain("▲ No flow id yet.");
+    expect(footer).not.toContain("✓");
+  });
+
+  it("lists the action keys beside the navigation keys", () => {
+    expect(lines().join("\n")).toContain("^Y copy path");
+    expect(lines().at(-1)).toContain("Tab mark · ↑/↓ move");
+  });
+
   // A frame taller than the screen scrolls the terminal.
   it("never draws more lines than the terminal has", () => {
     expect(lines().length).toBeLessThanOrEqual(12);
@@ -87,6 +113,14 @@ describe("renderFilterFrame", () => {
       expect(Bun.stringWidth(line)).toBeLessThanOrEqual(40);
   });
 
+  it("keeps Enter and Esc instructions visible at 80 columns", () => {
+    const out = lines({ columns: 80, hints: "^Y copy path · ^O copy id" }).join(
+      "\n",
+    );
+    expect(out).toContain("Enter prints matches");
+    expect(out).toContain("Esc cancels");
+  });
+
   it("keeps multiline metadata and controls on single display lines", () => {
     const over = {
       message: "Filter\nflows",
@@ -96,6 +130,7 @@ describe("renderFilterFrame", () => {
       line: () => "Log in\nwith password\t!",
       detail: "src/flow\r\nname.flow.ts",
       count: "20\nflows",
+      hints: "copy\bpath",
       terminalRows: 24,
     };
     const out = lines(over);
@@ -106,6 +141,28 @@ describe("renderFilterFrame", () => {
     expect(out.join("\n")).not.toMatch(/[\t\r\b]/);
     expect(lines({ ...over, state: "submit" }).length).toBe(3);
     expect(over.search).toBe("with\npassword");
+  });
+
+  it("marks marked rows in the gutter, the highlighted one included", () => {
+    const out = lines({ focus: 1, marked: new Set([1, 2]), markedCount: 2 });
+    expect(out.find((line) => line.includes("flow 2"))).toStartWith("│◼ ");
+    expect(out.find((line) => line.includes("flow 3"))).toStartWith("│◼ ");
+    expect(out.find((line) => line.includes("flow 1"))).toStartWith("│  ");
+  });
+
+  // Marks can come from other searches, so the count includes hidden ones.
+  it("counts the marked items, and says Enter prints them", () => {
+    const footer = lines({
+      marked: new Set([0]),
+      markedCount: 3,
+      columns: 140,
+    }).at(-2);
+    expect(footer).toContain("20 of 100 flows · 3 marked");
+    expect(lines({ markedCount: 3 }).at(-1)).toContain("Enter prints marked");
+  });
+
+  it("says Enter prints the matches when nothing is marked", () => {
+    expect(lines().at(-1)).toContain("Enter prints matches");
   });
 
   it("says when nothing matches", () => {
@@ -120,6 +177,12 @@ describe("renderFilterFrame", () => {
     expect(out.join("\n")).not.toContain("flow 1");
     expect(out.at(-1)).toContain("exam  20 of 100 flows");
     expect(out).toHaveLength(3);
+  });
+
+  it("collapses to the marked count when marked items were kept", () => {
+    expect(lines({ state: "submit", markedCount: 3 }).at(-1)).toContain(
+      "3 marked",
+    );
   });
 
   it("collapses to the struck-out search when cancelled", () => {

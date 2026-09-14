@@ -121,10 +121,14 @@ that `url`; never guess a route and never send a repository link in its place.
 ## Flow lists
 
 At an interactive terminal, `qawolf flows list` opens a searchable table.
-Search by flow name, path, target, environment, or tag; press Enter to print the
-matches or Esc to leave. Use `--no-interactive` to print directly. Agents and
+Search by flow name, path, target, environment, or tag. Tab marks flows across
+searches. Ctrl-Y copies paths and Ctrl-O copies IDs for marked flows, or for the
+highlighted flow when none are marked. Enter prints marked flows, or all matches
+when none are marked; Esc leaves. Use `--no-interactive` to print directly. Agents and
 JSON output print directly by default; `-i` requires an interactive terminal.
 Pulled flows include cached IDs in JSON when the last pull recorded them.
+Copied paths use POSIX shell quoting on macOS/Linux and PowerShell quoting on
+Windows. Missing IDs produce a notice; pull again to populate older caches.
 
 ## Commands
 
