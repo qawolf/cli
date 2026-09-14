@@ -1,0 +1,91 @@
+import type ts from "typescript";
+
+import type { EnvReads } from "./types.js";
+
+function isProcessEnv(compiler: typeof ts, node: ts.Node): boolean {
+  return (
+    compiler.isPropertyAccessExpression(node) &&
+    node.name.text === "env" &&
+    compiler.isIdentifier(node.expression) &&
+    node.expression.text === "process"
+  );
+}
+
+function isReadAccess(compiler: typeof ts, node: ts.Node): boolean {
+  let target = node;
+  while (
+    compiler.isParenthesizedExpression(target.parent) ||
+    compiler.isAsExpression(target.parent) ||
+    compiler.isNonNullExpression(target.parent) ||
+    (compiler.isPropertyAssignment(target.parent) &&
+      target.parent.initializer === target) ||
+    compiler.isObjectLiteralExpression(target.parent) ||
+    compiler.isArrayLiteralExpression(target.parent) ||
+    compiler.isSpreadAssignment(target.parent) ||
+    compiler.isSpreadElement(target.parent)
+  ) {
+    target = target.parent;
+  }
+  const parent = target.parent;
+  return (
+    !compiler.isDeleteExpression(parent) &&
+    !(
+      compiler.isBinaryExpression(parent) &&
+      parent.left === target &&
+      parent.operatorToken.kind === compiler.SyntaxKind.EqualsToken
+    )
+  );
+}
+
+/** Reads on one visited syntax node; execution scope is controlled by the caller. */
+export function readEnvVarsFrom(compiler: typeof ts, node: ts.Node): EnvReads {
+  const names = new Set<string>();
+  let dynamic = false;
+  if (
+    compiler.isPropertyAccessExpression(node) &&
+    isProcessEnv(compiler, node.expression) &&
+    isReadAccess(compiler, node)
+  ) {
+    names.add(node.name.text);
+  }
+  if (
+    compiler.isElementAccessExpression(node) &&
+    isProcessEnv(compiler, node.expression) &&
+    isReadAccess(compiler, node)
+  ) {
+    const argument = node.argumentExpression;
+    if (
+      compiler.isStringLiteralLike(argument) &&
+      !argument.text.includes("${")
+    ) {
+      names.add(argument.text);
+    } else {
+      dynamic = true;
+    }
+  }
+  if (
+    compiler.isVariableDeclaration(node) &&
+    node.initializer !== undefined &&
+    isProcessEnv(compiler, node.initializer) &&
+    compiler.isObjectBindingPattern(node.name)
+  ) {
+    for (const element of node.name.elements) {
+      if (element.dotDotDotToken !== undefined) {
+        dynamic = true;
+        continue;
+      }
+      const key = element.propertyName ?? element.name;
+      if (compiler.isIdentifier(key) || compiler.isStringLiteralLike(key)) {
+        names.add(key.text);
+      } else if (
+        compiler.isComputedPropertyName(key) &&
+        compiler.isStringLiteralLike(key.expression)
+      ) {
+        names.add(key.expression.text);
+      } else {
+        dynamic = true;
+      }
+    }
+  }
+  return { names, dynamic };
+}
