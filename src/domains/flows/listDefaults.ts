@@ -10,7 +10,7 @@ import {
   makePeekFlowMeta,
 } from "./expand.js";
 import { flowsList } from "./list.js";
-import { readCachedTags as defaultReadCachedTags } from "./readCachedTags.js";
+import { readCachedFlows as defaultReadCachedFlows } from "./readCachedFlows.js";
 import { readEnvLabel as defaultReadEnvLabel } from "./readEnvLabel.js";
 
 export function handleFlowsList(
@@ -27,7 +27,7 @@ export function handleFlowsList(
       expandPatterns: (patterns, cwd) =>
         defaultExpandPatterns(patterns, cwd, undefined, fs),
       peekFlowMeta: makePeekFlowMeta(fs),
-      readCachedTags: (files) => defaultReadCachedTags(files, fs),
+      readCachedFlows: (files) => defaultReadCachedFlows(files, fs),
       readEnvLabel: (envDir) => defaultReadEnvLabel(envDir, fs),
       findPulledEnv: (ref) => defaultFindPulledEnv(ref, process.cwd(), fs),
       listPulledEnvDirs: () => defaultListPulledEnvDirs(process.cwd(), fs),
