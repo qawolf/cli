@@ -133,7 +133,7 @@ export type ListedRunner = {
   isDefault: boolean;
   launchedHere: boolean;
   runnerName: string;
-  /** The QA Wolf page showing this runner's live screen. */
+  /** The QA Wolf page for this runner, showing its screen once it has one. */
   url: string;
 };
 

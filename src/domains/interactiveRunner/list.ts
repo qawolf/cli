@@ -23,7 +23,7 @@ type RunnerListItem = {
   /** Whether this directory launched the runner, as opposed to another checkout, machine or session. */
   launchedHere: boolean;
   runnerName: string;
-  /** The QA Wolf page showing this runner's live screen. */
+  /** The QA Wolf page for this runner, showing its screen once it has one. */
   url: string;
 };
 
