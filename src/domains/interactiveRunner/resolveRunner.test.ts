@@ -78,9 +78,10 @@ describe("resolveRunner", () => {
   });
 
   // A command that launched its own runner is the one case where nobody chose
-  // the runner, so the address is the only way to see what it is doing.
-  it("says where the runner it launched for a command can be watched", async () => {
-    const { callPublicApi, ctx, infos } = makeAuthCtx("human", "browser");
+  // the runner, so the whole line matters: what it started, that it bills until
+  // stopped, how to stop it, and where to find it.
+  it("says what it launched for a command, and what that costs", async () => {
+    const { callPublicApi, ctx, infos } = makeAuthCtx();
     callPublicApi.mockResolvedValue({ ok: true, value: launched });
 
     const resolved = await resolveRunner(
@@ -91,7 +92,9 @@ describe("resolveRunner", () => {
     if (resolved.type === "failed") throw Error(resolved.error);
     announceRunner(ctx, resolved);
 
-    expect(infos()[0]).toEndWith(`Watch its screen at ${launched.url}`);
+    expect(infos()[0]).toBe(
+      `No runner was given, so launched ${launched.id} for this command. Its browser is fresh: nothing has been run on it and nothing is signed in. It bills until it is terminated or idles out, so terminate it with qawolf runner terminate --runner ${launched.id} when you are done. Its runner page is at ${launched.url}`,
+    );
   });
 
   it("refuses rather than launching when the caller asked it not to", async () => {

@@ -1,6 +1,10 @@
 // Ends the line with no period: a terminal that linkifies takes the period as
 // part of the address.
-const pageAt = (url: string) => `Watch its screen at ${url}`;
+//
+// Offers the page rather than promising a screen: the virtual desktop starts
+// with the runner's first run, so a person following this link before then
+// finds the page waiting rather than a picture.
+const pageAt = (url: string) => `Its runner page is at ${url}`;
 
 const noRunnerId =
   "No runner id. Pass --runner, set QAWOLF_RUNNER_ID, or run qawolf runner launch first.";

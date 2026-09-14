@@ -13,7 +13,7 @@ of starting and billing a second one, and the answer says which happened: read
 cheap and safe pattern, and the same id with a different `--name` is refused
 rather than silently ignored.
 
-Either answer carries a `url`, which `qawolf runner launch` prints, as does a command that launched its own runner. It is a QA Wolf page showing what the runner is doing right now, where a person can also take over with their own mouse and keyboard. Hand it to a person who asks what your runner is up to. The page opens for anyone on the runner's team, however the runner was launched. You read the screen with `screenshot`, not with the page.
+Either answer carries a `url`, which `qawolf runner launch` prints, as does a command that launched its own runner. It is a QA Wolf page showing what the runner is doing, where a person can also take over with their own mouse and keyboard. Hand it to a person who asks what your runner is up to. The page opens for anyone on the runner's team, however the runner was launched. There is nothing to see until the runner's first run starts its screen, so the page waits until then. You read the screen with `screenshot`, not with the page.
 
 Commands that target a runner find one in this order: `--runner`, then
 `QAWOLF_RUNNER_ID`, then the runner stored for the current directory (which
