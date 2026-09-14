@@ -5,6 +5,8 @@ type ManifestFlowEntry = {
   // absent both on pre-tags manifests and on flows the tag fetch skipped —
   // `Manifest.tagsFetchedAt` distinguishes those from a genuinely untagged flow.
   tags: string[] | undefined;
+  // Absent on older manifests and flows the listing did not cover.
+  flowId: string | undefined;
 };
 
 // Identifies a flow run against a pulled env: derived by walking the

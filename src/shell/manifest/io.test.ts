@@ -12,6 +12,7 @@ import {
   writeManifest,
 } from "./io.js";
 import type { Manifest } from "./types.js";
+import { makeManifestFlow } from "./manifest.testUtils.js";
 
 const envDir = "/qawolf/manifest-test";
 
@@ -26,7 +27,7 @@ const sample: Manifest = {
   tagsFetchedAt: undefined,
   envVarsFetchedAt: "2026-05-10T12:30:00.000Z",
   flows: [
-    { path: "src/checkout.flow.ts", contentHash: "deadbeef", tags: undefined },
+    makeManifestFlow({ path: "src/checkout.flow.ts", contentHash: "deadbeef" }),
   ],
 };
 
@@ -79,7 +80,6 @@ describe("readManifest", () => {
           {
             path: "src/checkout.flow.ts",
             contentHash: "deadbeef",
-            tags: undefined,
           },
         ],
       }),
@@ -99,12 +99,16 @@ describe("readManifest", () => {
       ...sample,
       tagsFetchedAt: "2026-05-10T12:45:00.000Z",
       flows: [
-        {
+        makeManifestFlow({
           path: "src/checkout.flow.ts",
           contentHash: "deadbeef",
           tags: ["smoke", "auth"],
-        },
-        { path: "src/untagged.flow.ts", contentHash: "cafe", tags: [] },
+        }),
+        makeManifestFlow({
+          path: "src/untagged.flow.ts",
+          contentHash: "cafe",
+          tags: [],
+        }),
       ],
     };
 
