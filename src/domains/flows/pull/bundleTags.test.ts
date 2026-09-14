@@ -27,6 +27,7 @@ async function stage(names: string[]): Promise<void> {
 }
 
 const baseArgs = () => ({
+  envVarsByFlow: undefined,
   envId: "env-x",
   envSlug: undefined,
   envName: undefined,
