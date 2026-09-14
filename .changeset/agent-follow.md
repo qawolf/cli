@@ -10,6 +10,8 @@ In `--json` and `--agent` mode, a follow ends with one line that holds the whole
 
 `qawolf agent send` remembers the session it starts. A later `qawolf agent get --follow` in the same directory needs no id. `--session <id>` and `QAWOLF_SESSION_ID` name a different session. `--timeout` sets how long a follow waits. The default is 30 minutes.
 
+`qawolf agent send --file-paths <path...>` names files the request is about, uploaded first with `qawolf file requestUpload`. The AI reads them from team storage instead of the message.
+
 Two flags changed name from the generated commands in 1.23.0. The message is now the first argument of `agent send`, not `--message`. `--session-id` is now `--session` on both commands. `--environment-id` still reads `QAWOLF_ENVIRONMENT`, and `--workspace-id` is still available for a credential that is not bound to one workspace.
 
 The QA Wolf platform reports only that a session is at work. A follow prints each reply as it arrives and shows a wait line between them. It shows more when the platform reports more.

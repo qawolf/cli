@@ -41,6 +41,7 @@ export function session(snapshot: SessionSnapshot): {
         text: reply.text,
         ...(reply.choices ? { choices: reply.choices } : {}),
       })),
+      nextCursor: "c1",
       sessionId: "sess_1",
       status: snapshot.status,
       url: "https://app.qawolf.com/sessions/sess_1",

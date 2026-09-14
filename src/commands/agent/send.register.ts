@@ -14,10 +14,12 @@ Examples:
   $ qawolf agent send "cover the checkout journey"
   $ qawolf agent send "cover the checkout journey" --follow
   $ qawolf agent send "use the staging login test@example.com" --session <id>
-  $ qawolf agent send "cover signup" --environment-id staging --follow`;
+  $ qawolf agent send "cover signup" --environment-id staging --follow
+  $ qawolf agent send "cover every journey in the sheet" --file-paths uploads/journeys.csv --follow`;
 
 type SendFlags = {
   environmentId?: string;
+  filePaths?: string[];
   follow: boolean;
   session?: string;
   timeout: string;
@@ -52,6 +54,10 @@ export function registerAgentSendCommand(
       "The workspace to work in. Required when authenticating with an organization or user API key",
     )
     .option(
+      "--file-paths <path...>",
+      "Team-storage paths of files this request is about, from qawolf file requestUpload. The AI reads them from storage rather than the message, so a plan of hundreds of journeys costs nothing to send. Up to 20",
+    )
+    .option(
       "--timeout <seconds>",
       timeoutFlagDescription,
       String(defaultAgentFollowTimeoutSeconds),
@@ -63,6 +69,7 @@ export function registerAgentSendCommand(
           ctx,
           {
             environmentId: opts.environmentId,
+            filePaths: opts.filePaths,
             follow: opts.follow,
             message,
             session: opts.session,

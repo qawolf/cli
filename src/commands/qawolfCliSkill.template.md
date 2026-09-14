@@ -142,6 +142,12 @@ staging environment. For a long message, put it in a file and pass
 `QAWOLF_ENVIRONMENT`. A credential that is not bound to one workspace, such as
 an organization or user API key, needs `--workspace-id`.
 
+To give the AI a file, such as a spreadsheet of journeys, upload it first with
+`qawolf file requestUpload --file-name <name>`, PUT the bytes to the returned
+URL with the returned content type, then pass the returned path as
+`--file-paths <path>` on the send. The AI reads it from storage, so a plan of
+hundreds of journeys costs nothing to send. Up to 20 paths per send.
+
 The work runs for minutes to tens of minutes. **Pass `--follow` and do not poll.**
 The CLI reads the session for you, prints each reply once as it arrives, and
 exits when the session settles: 0 when the work is complete, non-zero when it

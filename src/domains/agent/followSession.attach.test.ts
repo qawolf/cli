@@ -18,6 +18,7 @@ describe("followSession, attaching to a session", () => {
   it("follows from a read already in hand instead of fetching it again", async () => {
     const { callPublicApi, ctx, transcripts } = makeAuthCtx();
     const initial: AgentSession = {
+      nextCursor: "c1",
       replies: [{ askedAt: "2026-09-09T12:00:00.000Z", text: "Looking." }],
       sessionId: "sess_1",
       status: "working",

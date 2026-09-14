@@ -18,6 +18,7 @@ const base = {
   environmentId: undefined,
   follow: false,
   message: "cover the checkout journey",
+  filePaths: undefined,
   session: undefined,
   timeout: undefined,
   workspaceId: undefined,
@@ -174,6 +175,34 @@ describe("handleAgentSend", () => {
     const result = await handleAgentSend(ctx, base, makeTestDeps());
 
     expect(result?.exitCode).toBe(exitCodes.payment);
+  });
+
+  it("names the files the request is about, for the AI to read from storage", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue(started);
+
+    await handleAgentSend(
+      ctx,
+      { ...base, filePaths: ["uploads/journeys.csv"] },
+      makeTestDeps(),
+    );
+
+    expect(callPublicApi.mock.calls[0]?.[1]).toMatchObject({
+      filePaths: ["uploads/journeys.csv"],
+    });
+  });
+
+  it("refuses a file path that could climb out of storage, before any request", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+
+    const result = await handleAgentSend(
+      ctx,
+      { ...base, filePaths: ["../secrets.csv"] },
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.invalidArgs);
+    expect(callPublicApi).not.toHaveBeenCalled();
   });
 
   it("refuses an empty message before any request goes out", async () => {

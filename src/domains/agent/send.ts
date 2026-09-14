@@ -16,6 +16,8 @@ import { followSession } from "./followSession.js";
 
 export type AgentSendOptions = {
   environmentId: string | undefined;
+  /** Team-storage paths from `file requestUpload`, read by the AI instead of the message. */
+  filePaths: readonly string[] | undefined;
   follow: boolean;
   message: string;
   session: string | undefined;
@@ -38,6 +40,9 @@ function parseInput(options: AgentSendOptions) {
     ...(options.environmentId === undefined
       ? {}
       : { environmentId: options.environmentId }),
+    ...(options.filePaths === undefined
+      ? {}
+      : { filePaths: options.filePaths }),
     ...(options.session === undefined ? {} : { sessionId: options.session }),
     ...(options.workspaceId === undefined
       ? {}
