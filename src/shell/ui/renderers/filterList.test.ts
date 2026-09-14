@@ -1,10 +1,11 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import { PassThrough } from "node:stream";
 
 import { sleep } from "~/core/sleep.js";
 
 import { createFilterList } from "./filterList.js";
 import { fakeTerminal, open, typed, paints } from "./filterList.testUtils.js";
+import type { FilterNotice } from "./types.js";
 
 const enterAltScreen = "\x1b[?1049h";
 const leaveAltScreen = "\x1b[?1049l";
@@ -64,6 +65,7 @@ describe("createFilterList", () => {
         table: () => ({ header: "name", line: (item) => item }),
         describeCount: () => "1 of 1",
         detail: (item) => item,
+        actions: [],
       });
     } catch (error) {
       caught = error;
@@ -87,6 +89,94 @@ describe("createFilterList", () => {
     expect(after).toContain("be");
     expect(after).toContain("1 of 3");
     expect(after).not.toContain("gamma");
+  });
+
+  it("runs an action on the highlighted row and shows its confirmation", async () => {
+    const terminal = fakeTerminal();
+    const run = mock((items: readonly string[]) =>
+      Promise.resolve<FilterNotice>({
+        tone: "success",
+        text: `Copied ${items.join(" ")}`,
+      }),
+    );
+    const { input, result } = open(terminal, [
+      { key: "y", label: "copy", run },
+    ]);
+
+    await typed(input, "\x1b[B"); // ↓ moves the highlight to "beta"
+    await typed(input, "\x19"); // Ctrl-Y
+
+    expect(run).toHaveBeenCalledWith(["beta"]);
+    expect(paints(terminal).at(-1)).toContain("Copied beta");
+    input.write("\x03");
+    await result;
+  });
+
+  it("marks rows with Tab, moving down, and keeps the marked on Enter", async () => {
+    const terminal = fakeTerminal();
+    const { input, result } = open(terminal);
+
+    await typed(input, "\t"); // marks alpha, moves to beta
+    await typed(input, "\x1b[B"); // on to gamma
+    await typed(input, "\t");
+    input.write("\r");
+
+    expect(await result).toEqual({ ok: true, value: ["alpha", "gamma"] });
+  });
+
+  // Tab is the mark key, so it must not end up in the search.
+  it("does not type Tab into the search", async () => {
+    const terminal = fakeTerminal();
+    const { input, result } = open(terminal);
+
+    await typed(input, "a\t");
+
+    expect(paints(terminal).at(-1)).toContain("Search: a█");
+    input.write("\x03");
+    await result;
+  });
+
+  it("keeps marks across searches, in list order", async () => {
+    const terminal = fakeTerminal();
+    const { input, result } = open(terminal);
+
+    await typed(input, "gam");
+    await typed(input, "\t");
+    await typed(input, "\x7f\x7f\x7fal");
+    await typed(input, "\t");
+    input.write("\r");
+
+    expect(await result).toEqual({ ok: true, value: ["alpha", "gamma"] });
+  });
+
+  it("runs an action on the marked rows when there are any", async () => {
+    const terminal = fakeTerminal();
+    const run = mock(() =>
+      Promise.resolve<FilterNotice>({ tone: "success", text: "done" }),
+    );
+    const { input, result } = open(terminal, [
+      { key: "y", label: "copy", run },
+    ]);
+
+    await typed(input, "\t\t"); // alpha, then beta
+    await typed(input, "\x19"); // Ctrl-Y
+
+    expect(run).toHaveBeenCalledWith(["alpha", "beta"]);
+    input.write("\x03");
+    await result;
+  });
+
+  // clack's cursor wraps, so moving on from the last row would jump to the top.
+  it("stays on the last row when Tab marks it", async () => {
+    const terminal = fakeTerminal();
+    const { input, result } = open(terminal);
+
+    await typed(input, "\x1b[B\x1b[B"); // gamma, the last
+    await typed(input, "\t");
+
+    expect(paints(terminal).at(-1)).toContain("about gamma");
+    input.write("\x03");
+    await result;
   });
 
   it("describes the highlighted row", async () => {
