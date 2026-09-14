@@ -13,7 +13,7 @@ function reads(source: string): { names: string[]; dynamic: boolean } {
   const names = new Set<string>();
   let dynamic = false;
   const visit = (node: ts.Node): void => {
-    const result = readEnvVarsFrom(ts, node);
+    const result = readEnvVarsFrom(ts, node, () => false);
     for (const name of result.names) names.add(name);
     dynamic ||= result.dynamic;
     ts.forEachChild(node, visit);
