@@ -548,8 +548,9 @@ Examples:
   $ qawolf runner inspect session
   $ qawolf runner inspect contexts
   $ qawolf runner inspect page-source --context WEBVIEW_1
-  $ qawolf runner inspect elements --by point --x 200 --y 400
-  $ qawolf runner inspect elements --by text --text "Sign in" --partial
+  $ qawolf runner inspect elements --x 200 --y 400
+  $ qawolf runner inspect elements --text "Sign in" --partial
+  $ qawolf runner inspect elements --selector "//android.widget.Button[@text='Sign in']"
 "
 `;
 
