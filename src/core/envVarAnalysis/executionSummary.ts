@@ -1,5 +1,6 @@
 import type ts from "typescript";
 
+import type { EnvAccessors } from "./accessors.js";
 import {
   calledDeclaration,
   resolveCallable,
@@ -7,6 +8,7 @@ import {
 } from "./callableResolution.js";
 import { isReadAccess, readEnvVarsFrom } from "./envReads.js";
 import {
+  accessorKeyParameter,
   constructedClass,
   executedOnCall,
   implicitBaseClass,
@@ -18,6 +20,7 @@ import type { EnvReads } from "./types.js";
 export type WalkArgs = {
   readonly compiler: typeof ts;
   readonly checker: ts.TypeChecker;
+  readonly accessors: EnvAccessors;
   readonly isLocalFile: (fileName: string) => boolean;
 };
 
@@ -30,9 +33,19 @@ export function summarizeExecution(
   args: WalkArgs,
   declaration: ts.Node,
 ): ExecutionSummary {
-  const { compiler, checker, isLocalFile } = args;
+  const { compiler, checker, accessors, isLocalFile } = args;
   const reads: EnvReads = { names: new Set(), dynamic: false };
   const callees = new Set<ts.Node>();
+  const keyParameter = accessorKeyParameter(
+    compiler,
+    checker,
+    accessors,
+    declaration,
+  );
+  const isKeyParameter = (node: ts.Node): boolean =>
+    keyParameter !== undefined &&
+    compiler.isIdentifier(node) &&
+    checker.getSymbolAtLocation(node) === keyParameter;
   const include = (callee: ts.Node | undefined): void => {
     if (callee !== undefined && isLocalFile(callee.getSourceFile().fileName))
       callees.add(callee);
@@ -59,6 +72,19 @@ export function summarizeExecution(
     const callee =
       constructedClass(compiler, checker, call) ??
       calledDeclaration(compiler, checker, call);
+    const slot = callee === undefined ? undefined : accessors.get(callee);
+    if (slot !== undefined) {
+      const argument = call.arguments?.[slot];
+      if (
+        argument !== undefined &&
+        compiler.isStringLiteralLike(argument) &&
+        !argument.text.includes("${")
+      ) {
+        reads.names.add(argument.text);
+      } else if (argument === undefined || !isKeyParameter(argument)) {
+        reads.dynamic = true;
+      }
+    }
     include(callee);
     if (
       callee !== undefined &&
@@ -75,10 +101,11 @@ export function summarizeExecution(
       const callback = resolveCallable(compiler, checker, argument);
       if (callback === undefined) continue;
       include(callback);
+      if (accessors.has(callback)) reads.dynamic = true;
     }
   };
   const visit = (node: ts.Node): void => {
-    const direct = readEnvVarsFrom(compiler, node);
+    const direct = readEnvVarsFrom(compiler, node, isKeyParameter);
     for (const name of direct.names) reads.names.add(name);
     reads.dynamic ||= direct.dynamic;
     include(importedModule(compiler, checker, node));

@@ -2,7 +2,7 @@ import type ts from "typescript";
 
 import type { EnvReads } from "./types.js";
 
-function isProcessEnv(compiler: typeof ts, node: ts.Node): boolean {
+export function isProcessEnv(compiler: typeof ts, node: ts.Node): boolean {
   return (
     compiler.isPropertyAccessExpression(node) &&
     node.name.text === "env" &&
@@ -43,7 +43,11 @@ export function isReadAccess(compiler: typeof ts, node: ts.Node): boolean {
 }
 
 /** Reads on one visited syntax node; execution scope is controlled by the caller. */
-export function readEnvVarsFrom(compiler: typeof ts, node: ts.Node): EnvReads {
+export function readEnvVarsFrom(
+  compiler: typeof ts,
+  node: ts.Node,
+  isKeyParameter: (node: ts.Node) => boolean,
+): EnvReads {
   const names = new Set<string>();
   let dynamic = false;
   if (
@@ -61,7 +65,7 @@ export function readEnvVarsFrom(compiler: typeof ts, node: ts.Node): EnvReads {
     const argument = node.argumentExpression;
     if (compiler.isStringLiteralLike(argument)) {
       names.add(argument.text);
-    } else {
+    } else if (!isKeyParameter(argument)) {
       dynamic = true;
     }
   }

@@ -1,5 +1,6 @@
 import type ts from "typescript";
 
+import type { EnvAccessors } from "./accessors.js";
 import { resolvedSymbol } from "./callableResolution.js";
 import {
   functionExecution,
@@ -76,4 +77,19 @@ export function implicitBaseClass(
       compiler.isConstructorDeclaration(member) && member.body !== undefined,
   );
   return hasConstructor ? undefined : baseClassOf(compiler, checker, node);
+}
+
+export function accessorKeyParameter(
+  compiler: typeof ts,
+  checker: ts.TypeChecker,
+  accessors: EnvAccessors,
+  declaration: ts.Node,
+): ts.Symbol | undefined {
+  const slot = accessors.get(declaration);
+  if (slot === undefined || !isFunctionLike(compiler, declaration))
+    return undefined;
+  const parameter = declaration.parameters[slot];
+  return parameter === undefined
+    ? undefined
+    : checker.getSymbolAtLocation(parameter.name);
 }
