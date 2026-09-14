@@ -133,6 +133,8 @@ export type ListedRunner = {
   isDefault: boolean;
   launchedHere: boolean;
   runnerName: string;
+  /** The QA Wolf page for this runner, showing its screen once it has one. */
+  url: string;
 };
 
 export type KeptAlive = { id: string };

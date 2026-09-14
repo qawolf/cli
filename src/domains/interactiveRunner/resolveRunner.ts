@@ -17,7 +17,7 @@ import { parseRunnerId } from "./runnerIds.js";
  */
 export type ResolvedRunner =
   | { type: "resolved"; runnerId: string }
-  | { type: "launched"; runnerId: string }
+  | { type: "launched"; runnerId: string; url: string }
   | { type: "failed"; error: string; errorBody?: string; exitCode: number };
 
 export const runnerIdEnvironmentVariable = "QAWOLF_RUNNER_ID";
@@ -82,7 +82,11 @@ export async function resolveRunner(
       type: "failed",
     };
   }
-  return { runnerId: launched.value.id, type: "launched" };
+  return {
+    runnerId: launched.value.id,
+    type: "launched",
+    url: launched.value.url,
+  };
 }
 
 /** Says so, on stderr, when the runner being driven was just started. */
@@ -92,7 +96,10 @@ export function announceRunner(
 ): void {
   if (resolved.type === "launched") {
     ctx.ui.info(
-      interactiveRunnerMessages.launchedForCommand(resolved.runnerId),
+      interactiveRunnerMessages.launchedForCommand(
+        resolved.runnerId,
+        resolved.url,
+      ),
     );
   }
 }

@@ -3,11 +3,12 @@ import { describe, expect, it } from "bun:test";
 
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 
-import { resolveRunner } from "./resolveRunner.js";
+import { announceRunner, resolveRunner } from "./resolveRunner.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
 const launched = {
+  url: "https://app.qawolf.com/acme/runners/cli-minted",
   gpuAccelerated: false,
   id: "cli-minted",
   alreadyRunning: false as const,
@@ -66,7 +67,7 @@ describe("resolveRunner", () => {
 
     expect(
       await resolveRunner(ctx, { autoLaunch: true, runner: undefined }, deps),
-    ).toEqual({ runnerId: "cli-minted", type: "launched" });
+    ).toEqual({ runnerId: "cli-minted", type: "launched", url: launched.url });
 
     expect(callPublicApi).toHaveBeenCalledWith(
       publicContractsV1.runner.launch,
@@ -74,6 +75,26 @@ describe("resolveRunner", () => {
       runnerCallOptions,
     );
     expect(await deps.store.readDefaultRunnerId()).toBe("cli-minted");
+  });
+
+  // A command that launched its own runner is the one case where nobody chose
+  // the runner, so the whole line matters: what it started, that it bills until
+  // stopped, how to stop it, and where to find it.
+  it("says what it launched for a command, and what that costs", async () => {
+    const { callPublicApi, ctx, infos } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({ ok: true, value: launched });
+
+    const resolved = await resolveRunner(
+      ctx,
+      { autoLaunch: true, runner: undefined },
+      makeTestDeps(),
+    );
+    if (resolved.type === "failed") throw Error(resolved.error);
+    announceRunner(ctx, resolved);
+
+    expect(infos()[0]).toBe(
+      `No runner was given, so launched ${launched.id} for this command. Its browser is fresh: nothing has been run on it and nothing is signed in. It bills until it is terminated or idles out, so terminate it with qawolf runner terminate --runner ${launched.id} when you are done. Its runner page is at ${launched.url}`,
+    );
   });
 
   it("refuses rather than launching when the caller asked it not to", async () => {
