@@ -34,6 +34,9 @@ export function createAgentRenderers(): RendererSet {
     },
     gap: () => writeStderrLine(""),
     stream: (_data, line) => writeStdoutRaw(`${line}\n`),
+    transcript: ({ body, headline }) =>
+      writeStdoutRaw(`**${headline}**\n\n${body}\n\n`),
+    wait: () => ({ stop: () => {} }),
     write: (text) => writeStderrRaw(text),
     withProgress: async (steps, done) => {
       const results: unknown[] = [];

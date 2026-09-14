@@ -1,6 +1,7 @@
 import { knownJournalStreams } from "@qawolf/api-contracts/v1";
 
-import { parseFollowTimeout } from "~/core/interactiveRunner/followTimeout.js";
+import { parseFollowTimeout } from "~/core/followTimeout.js";
+import { defaultFollowTimeoutSeconds } from "~/core/interactiveRunner/followTimeout.js";
 import { formatJournalLine } from "~/core/interactiveRunner/journal.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
@@ -48,7 +49,10 @@ export async function handleRunnerEvents(
   if (!parsed.ok)
     return { error: parsed.error, exitCode: exitCodes.invalidArgs };
 
-  const timeout = parseFollowTimeout(options.timeout);
+  const timeout = parseFollowTimeout(
+    options.timeout,
+    defaultFollowTimeoutSeconds,
+  );
   if (!timeout.ok) {
     return { error: timeout.error, exitCode: exitCodes.invalidArgs };
   }

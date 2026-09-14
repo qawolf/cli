@@ -1,4 +1,5 @@
-import { parseFollowTimeout } from "~/core/interactiveRunner/followTimeout.js";
+import { parseFollowTimeout } from "~/core/followTimeout.js";
+import { defaultFollowTimeoutSeconds } from "~/core/interactiveRunner/followTimeout.js";
 import { toCollectedPath } from "~/core/interactiveRunner/runFiles.js";
 import {
   environmentsMessages,
@@ -35,7 +36,10 @@ export async function handleRunnerRun(
   },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
-  const timeout = parseFollowTimeout(options.timeout);
+  const timeout = parseFollowTimeout(
+    options.timeout,
+    defaultFollowTimeoutSeconds,
+  );
   if (!timeout.ok) {
     return { error: timeout.error, exitCode: exitCodes.invalidArgs };
   }

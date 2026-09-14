@@ -2,6 +2,9 @@ import type { WithProgressFn } from "./progress.js";
 
 type StepProgress = { current: number; total: number };
 
+/** One message from something that talks, as its parts. */
+export type TranscriptEntry = { body: string; data: unknown; headline: string };
+
 export type RendererSet = {
   intro(title: string): void;
   note(message: string, title?: string): void;
@@ -29,6 +32,23 @@ export type RendererSet = {
    * `qawolf runner run --follow > run.log`.
    */
   stream(data: unknown, line: string): void;
+  // Framing is why this is not `stream`: a terminal wants clack's guide rail
+  // so a message running to several lines holds together, an agent wants
+  // Markdown with no box drawing to strip, and json wants the object. One
+  // pre-rendered string would make two of them wear the third's furniture. Not
+  // `output` either, whose human rendering is the CLI's own `info` mark.
+  /**
+   * One message from something that talks, as primary command data. Of the
+   * three stdout methods: `output` is the one result a command answers with,
+   * `stream` a line relayed verbatim, `transcript` a message with known edges.
+   */
+  transcript(entry: TranscriptEntry): void;
+  /**
+   * A spinner for a stretch with nothing to print, in a terminal only; the
+   * other modes answer with a handle that does nothing. `stop` erases it, so
+   * what stays on screen is exactly what the log methods drew.
+   */
+  wait(message: string): { stop(): void };
   write(text: string): void;
   withProgress: WithProgressFn;
 };

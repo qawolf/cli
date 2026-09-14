@@ -11,12 +11,19 @@ import {
   select,
   spinner,
   taskLog,
+  text,
 } from "@clack/prompts";
 
 import { styledTitle } from "./theme.js";
 
 export type StyledClack = {
   log: {
+    /**
+     * A line clack frames but does not classify. Takes the guide rail and a
+     * symbol of the caller's choosing, and prefixes every line after the first
+     * with the rail, so a message running to several lines reads as one thing.
+     */
+    message(message: string[], opts: { symbol: string }): void;
     info(message: string): void;
     error(message: string): void;
     step(message: string): void;
@@ -32,6 +39,10 @@ export type StyledClack = {
     initialValue?: boolean;
   }): Promise<boolean | symbol>;
   password(opts: { message: string }): Promise<string | symbol>;
+  text(opts: {
+    message: string;
+    placeholder?: string;
+  }): Promise<string | symbol>;
   autocomplete(opts: {
     message: string;
     options: { value: string; label: string; hint?: string }[];
@@ -70,6 +81,7 @@ export function createStyledClack(): StyledClack {
     cancel,
     confirm,
     password,
+    text,
     autocomplete,
     select,
     isCancel,
