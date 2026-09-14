@@ -11,8 +11,9 @@ import { matchesSelectors } from "~/core/flowSelectors.js";
 
 import { fetchKnownTags } from "./fetchKnownTags.js";
 import { renderFlowsList } from "./renderFlowsList.js";
+import { filterFlows } from "./filterFlows.js";
 import { renderListTable, type FlowsListRow } from "./renderListTable.js";
-import { type ListView, printedView } from "./listView.js";
+import { type ListView, printedView, unavailableView } from "./listView.js";
 import { emptySelectionResult } from "./selectorGuards.js";
 
 type RemoteListItem = {
@@ -48,6 +49,9 @@ export async function flowsListRemote(
   options: FlowsListRemoteOptions,
   view: ListView = printedView,
 ): Promise<CommandResult> {
+  const unavailable = unavailableView(ctx, view);
+  if (unavailable !== undefined) return unavailable;
+
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.flow.list,
     {
@@ -83,6 +87,9 @@ export async function flowsListRemote(
   );
   if (empty !== undefined) return empty;
 
+  if (view.interactive) {
+    return filterFlows(ctx.ui, items.map(toListRow), view);
+  }
   if (ctx.ui.mode === "json") {
     ctx.ui.json(items);
     return;

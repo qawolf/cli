@@ -5,6 +5,7 @@ import { createConfirm } from "./renderers/confirm.js";
 import { createJson } from "./renderers/json.js";
 import { pickRenderers } from "./renderers/modes/index.js";
 import { createPassword } from "./renderers/password.js";
+import { createFilterList } from "./renderers/filterList.js";
 import { createSelect } from "./renderers/select.js";
 import { createText } from "./renderers/text.js";
 import type { UI } from "./types.js";
@@ -25,6 +26,7 @@ export function createUI(
     password: createPassword({ mode, clack }),
     select: createSelect({ mode, clack }),
     text: createText({ mode, clack }),
+    filterList: createFilterList({ mode }),
     json: createJson(),
   };
 }

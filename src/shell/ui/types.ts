@@ -1,5 +1,5 @@
 import type { OutputMode } from "./env.js";
-import type { PromptResult } from "./renderers/types.js";
+import type { FilterListFn, PromptResult } from "./renderers/types.js";
 import type { SelectFn } from "./renderers/select.js";
 import type { TextFn } from "./renderers/text.js";
 import type { WithProgressFn } from "./renderers/modes/progress.js";
@@ -27,6 +27,7 @@ export type UI = {
   password(message: string, hint?: string): Promise<PromptResult<string>>;
   select: SelectFn;
   text: TextFn;
+  filterList: FilterListFn;
   withProgress: WithProgressFn;
   step(message: string, progress?: { current: number; total: number }): void;
   success(message: string): void;
