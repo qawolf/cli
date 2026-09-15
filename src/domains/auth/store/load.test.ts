@@ -31,7 +31,10 @@ describe("loadApiKey", () => {
     const EntryClass = makeEntryClass(() => "qaw_keychain_key");
     const memFs = makeMemoryFs();
 
-    const result = await loadApiKey(configDir, { EntryClass, fs: memFs });
+    const result = await loadApiKey(configDir, {
+      loadEntryClass: async () => EntryClass,
+      fs: memFs,
+    });
 
     expect(result).toEqual({
       found: true,
@@ -49,7 +52,10 @@ describe("loadApiKey", () => {
       JSON.stringify({ apiKey: "qaw_file_key" }),
     );
 
-    const result = await loadApiKey(configDir, { EntryClass, fs: memFs });
+    const result = await loadApiKey(configDir, {
+      loadEntryClass: async () => EntryClass,
+      fs: memFs,
+    });
 
     expect(result).toEqual({
       found: true,
@@ -67,7 +73,10 @@ describe("loadApiKey", () => {
       JSON.stringify({ apiKey: "qaw_file_key" }),
     );
 
-    const result = await loadApiKey(configDir, { EntryClass, fs: memFs });
+    const result = await loadApiKey(configDir, {
+      loadEntryClass: async () => EntryClass,
+      fs: memFs,
+    });
 
     expect(result).toEqual({
       found: true,
@@ -80,7 +89,10 @@ describe("loadApiKey", () => {
     const EntryClass = makeThrowingEntryClass("keychain locked");
     const memFs = makeMemoryFs();
 
-    const result = await loadApiKey(configDir, { EntryClass, fs: memFs });
+    const result = await loadApiKey(configDir, {
+      loadEntryClass: async () => EntryClass,
+      fs: memFs,
+    });
 
     expect(result).toEqual({
       found: false,
@@ -100,7 +112,10 @@ describe("loadApiKey", () => {
       JSON.stringify({ wrongField: "bad-data" }),
     );
 
-    const result = await loadApiKey(configDir, { EntryClass, fs: memFs });
+    const result = await loadApiKey(configDir, {
+      loadEntryClass: async () => EntryClass,
+      fs: memFs,
+    });
 
     expect(result).toEqual({
       found: false,

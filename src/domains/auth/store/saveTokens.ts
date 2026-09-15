@@ -3,7 +3,7 @@ import type { Fs } from "~/shell/fs.js";
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 
-import { Entry } from "@napi-rs/keyring";
+import { loadEntryClass } from "~/shell/keyring.js";
 
 import { errorMessage } from "~/core/errors.js";
 import { service, tokensAccount, tokensFile } from "./constants.js";
@@ -45,6 +45,7 @@ export async function saveTokens(
   fs: Fs,
 ): Promise<SaveCredentialResult> {
   try {
+    const Entry = await loadEntryClass();
     new Entry(service, tokensAccount).setPassword(JSON.stringify(tokens));
     return { stored: "keychain" };
   } catch (err: unknown) {
@@ -53,6 +54,7 @@ export async function saveTokens(
     // spent, so the session would end for no reason. Best effort: a keychain
     // that refuses to write may refuse to delete too.
     try {
+      const Entry = await loadEntryClass();
       new Entry(service, tokensAccount).deletePassword();
     } catch {
       // nothing more to clear

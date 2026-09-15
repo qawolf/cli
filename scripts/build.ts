@@ -3,6 +3,13 @@
 import { spawnSync } from "node:child_process";
 
 // Runtime dependencies stay external — npm installs them next to dist/cli.js.
+// The compiled binary runs web flows in a worker subprocess that executes this
+// bundle from a directory with no node_modules (src/shell/embeddedWorkerCli.ts),
+// so every external must be reached through a dynamic import(), never at
+// startup. test/worker/importSmoke.mjs runs the bundle that way; a startup
+// import of any of these fails every flow the binary runs, as @napi-rs/keyring
+// did in 1.29.0. @qawolf/flow-targets is inlined for the same reason: pure and
+// imported at startup by core/flowMeta.
 const externals = [
   // native addon — cannot be inlined into a JS bundle
   "@napi-rs/keyring",
@@ -10,7 +17,6 @@ const externals = [
   // transpile/resolve flows; the Bun binary never loads it
   "@oxc-node/core",
   // version-coupled: playwright must match @qawolf/flows' peer range at runtime
-  "@qawolf/flow-targets",
   "@qawolf/flows",
   "playwright",
   "playwright-core",

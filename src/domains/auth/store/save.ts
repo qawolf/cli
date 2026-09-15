@@ -1,7 +1,6 @@
 import type { Fs } from "~/shell/fs.js";
+import { loadEntryClass } from "~/shell/keyring.js";
 import { join } from "node:path";
-
-import { Entry } from "@napi-rs/keyring";
 
 import { errorMessage } from "~/core/errors.js";
 import { account, credentialsFile, service } from "./constants.js";
@@ -29,6 +28,7 @@ export async function saveApiKey(
   fs: Fs,
 ): Promise<SaveCredentialResult> {
   try {
+    const Entry = await loadEntryClass();
     const entry = new Entry(service, account);
     entry.setPassword(key);
     return { stored: "keychain" };

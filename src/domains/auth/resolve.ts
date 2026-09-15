@@ -1,7 +1,6 @@
-import { Entry } from "@napi-rs/keyring";
-
 import { authErrorMessages } from "~/core/messages/authErrors.js";
 import type { Fs } from "~/shell/fs.js";
+import { loadEntryClass } from "~/shell/keyring.js";
 import { refreshAccessToken } from "~/shell/workos/refreshAccessToken.js";
 import { resolveWorkosConfig } from "~/shell/workos/config.js";
 import { loadApiKey as realLoadApiKey } from "./store/index.js";
@@ -23,7 +22,7 @@ type ResolveApiKeyDeps = {
 export function makeOauthDeps(fs: Fs): ResolveOauthTokenDeps {
   return {
     loadTokens: (configDir) =>
-      realLoadTokens(configDir, { EntryClass: Entry, fs }),
+      realLoadTokens(configDir, { loadEntryClass, fs }),
     // The stored session names its issuing client, so renewing a token asks
     // the deployment nothing.
     refreshTokens: async ({ refreshToken, organizationId, clientId }) => {
@@ -50,7 +49,7 @@ export function makeOauthDeps(fs: Fs): ResolveOauthTokenDeps {
 function makeDefaultDeps(fs: Fs): ResolveApiKeyDeps {
   return {
     loadApiKey: (configDir) =>
-      realLoadApiKey(configDir, { EntryClass: Entry, fs }),
+      realLoadApiKey(configDir, { loadEntryClass, fs }),
     resolveOauth: (configDir) =>
       resolveOauthToken(configDir, makeOauthDeps(fs)),
     env: process.env,

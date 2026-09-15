@@ -16,7 +16,7 @@ describe("loadTokens", () => {
     const EntryClass = makeEntryClass(() => JSON.stringify(tokens));
 
     const result = await loadTokens("/config", {
-      EntryClass,
+      loadEntryClass: async () => EntryClass,
       fs: makeMemoryFs(),
     });
 
@@ -29,7 +29,7 @@ describe("loadTokens", () => {
     await memFs.writeFile("/config/tokens.json", JSON.stringify(tokens));
 
     const result = await loadTokens("/config", {
-      EntryClass: makeThrowingEntryClass("keychain locked"),
+      loadEntryClass: async () => makeThrowingEntryClass("keychain locked"),
       fs: memFs,
     });
 
@@ -40,7 +40,7 @@ describe("loadTokens", () => {
     const EntryClass = makeEntryClass(() => JSON.stringify(tokens));
 
     const result = await loadTokens("/config", {
-      EntryClass,
+      loadEntryClass: async () => EntryClass,
       fs: makeMemoryFs(),
     });
 
@@ -53,7 +53,7 @@ describe("loadTokens", () => {
     const EntryClass = makeEntryClass(() => JSON.stringify(withoutExpiry));
 
     const result = await loadTokens("/config", {
-      EntryClass,
+      loadEntryClass: async () => EntryClass,
       fs: makeMemoryFs(),
     });
 
@@ -66,7 +66,7 @@ describe("loadTokens", () => {
 
   it("reports not found when neither store holds tokens", async () => {
     const result = await loadTokens("/config", {
-      EntryClass: makeEntryClass(() => ""),
+      loadEntryClass: async () => makeEntryClass(() => ""),
       fs: makeMemoryFs(),
     });
 
@@ -79,7 +79,7 @@ describe("loadTokens", () => {
     );
 
     const result = await loadTokens("/config", {
-      EntryClass,
+      loadEntryClass: async () => EntryClass,
       fs: makeMemoryFs(),
     });
 
@@ -95,7 +95,7 @@ describe("loadTokens", () => {
     await memFs.writeFile("/config/tokens.json", '{"accessToken": "trunc');
 
     const result = await loadTokens("/config", {
-      EntryClass: makeEntryClass(() => ""),
+      loadEntryClass: async () => makeEntryClass(() => ""),
       fs: memFs as unknown as Fs,
     });
 
@@ -110,7 +110,7 @@ describe("loadTokens", () => {
     await memFs.writeFile("/config/tokens.json", '{"nonsense": true}');
 
     const result = await loadTokens("/config", {
-      EntryClass: makeEntryClass(() => ""),
+      loadEntryClass: async () => makeEntryClass(() => ""),
       fs: memFs as unknown as Fs,
     });
 

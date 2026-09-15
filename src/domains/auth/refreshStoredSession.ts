@@ -1,6 +1,5 @@
-import { Entry } from "@napi-rs/keyring";
-
 import type { Fs } from "~/shell/fs.js";
+import { loadEntryClass } from "~/shell/keyring.js";
 import { makeOauthDeps } from "./resolve.js";
 import { type OauthToken, resolveOauthToken } from "./resolveOauthToken.js";
 import { loadTokens as realLoadTokens } from "./store/loadTokens.js";
@@ -19,7 +18,7 @@ export type RefreshStoredSessionResult =
 function makeDefaultDeps(fs: Fs): RefreshStoredSessionDeps {
   return {
     loadTokens: (configDir) =>
-      realLoadTokens(configDir, { EntryClass: Entry, fs }),
+      realLoadTokens(configDir, { loadEntryClass, fs }),
     resolveOauth: (configDir) =>
       resolveOauthToken(configDir, makeOauthDeps(fs)),
   };
