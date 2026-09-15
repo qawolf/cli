@@ -44,7 +44,7 @@ export async function flattenSingleWrapper(
 // them in the same order on every pull.
 async function flowPathsIn(root: string, fs: Fs): Promise<string[]> {
   const found = await walkFiles(root, isFlowFile, fs);
-  return found.map((path) => relative(root, path)).sort();
+  return found.map((path) => toPosix(relative(root, path))).sort();
 }
 
 // GitHub's tarball archives wrap content in `<owner>-<repo>-<sha>/`, where
