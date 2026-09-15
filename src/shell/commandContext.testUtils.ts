@@ -22,9 +22,9 @@ export function makeFakeUI(mode: OutputMode = "human"): UI {
     note: mock(() => {}),
     outro: mock(() => {}),
     confirm: mock(() => Promise.resolve({ ok: false } as const)),
+    filterList: mock(() => Promise.resolve({ ok: false } as const)),
     password: mock(() => Promise.resolve({ ok: false } as const)),
     select: mock(() => Promise.resolve({ ok: false } as const)),
-    filterList: mock(() => Promise.resolve({ ok: false } as const)),
     withProgress: mock(
       async (steps: { message: string; task: () => Promise<unknown> }[]) => {
         const results: unknown[] = [];

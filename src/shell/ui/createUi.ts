@@ -22,9 +22,9 @@ export function createUI(
     mode,
     ...pickRenderers(mode, clack, opts.verboseTarget),
     confirm: createConfirm({ mode, clack }),
+    filterList: createFilterList({ mode }),
     password: createPassword({ mode, clack }),
     select: createSelect({ mode, clack }),
-    filterList: createFilterList({ mode }),
     json: createJson(),
   };
 }
