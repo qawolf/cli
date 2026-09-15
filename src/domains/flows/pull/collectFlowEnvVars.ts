@@ -6,7 +6,7 @@ import type { FlowEnvVars } from "~/core/envVarAnalysis/types.js";
 import { isSourceFile } from "~/core/flowMeta.js";
 import { toPosix } from "~/core/repoRelativePath.js";
 import { createFlowProgram } from "~/shell/flowProgram.js";
-import { makeDefaultFs } from "~/shell/fs.js";
+import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import { walkFiles } from "~/shell/walkFiles.js";
 
 type CollectFlowEnvVarsResult = {
@@ -14,15 +14,15 @@ type CollectFlowEnvVarsResult = {
   readonly byFlow: ReadonlyMap<string, FlowEnvVars>;
 };
 
-// Uses real disk because the compiler loads sources and tsconfig itself.
 // Run after applyTeamStorageRewrite so introduced TEAM_STORAGE_DIR reads count.
 export async function collectFlowEnvVars(
   bundleDir: string,
+  fs: Fs = makeDefaultFs(),
 ): Promise<CollectFlowEnvVarsResult> {
-  const sourcePaths = await walkFiles(bundleDir, isSourceFile, makeDefaultFs());
+  const sourcePaths = await walkFiles(bundleDir, isSourceFile, fs);
   if (sourcePaths.length === 0) return { byFlow: new Map() };
 
-  const program = await createFlowProgram({ bundleDir, sourcePaths });
+  const program = await createFlowProgram({ bundleDir, sourcePaths, fs });
   const accessors = findEnvAccessors(
     program.compiler,
     program.checker,
