@@ -38,6 +38,11 @@ jobs:
         run: |
           bun scripts/buildBinary.ts
           ./dist/qawolf --version
+      # The binary runs web flows in a worker that executes dist/cli.js from a
+      # directory with no node_modules, so a package the bundle imports at
+      # startup fails every flow. test/worker/importSmoke.mjs explains the run.
+      - name: Smoke the worker bundle without node_modules
+        run: bun test/worker/importSmoke.mjs ./dist/qawolf
       - name: Verify tarball contents
         run: |
           output=$(bun pm pack --dry-run 2>&1)

@@ -1,15 +1,14 @@
 import type { Fs } from "~/shell/fs.js";
 import { join } from "node:path";
 
-import type { Entry } from "@napi-rs/keyring";
-
 import { errorMessage } from "~/core/errors.js";
 import type { LoadTokensResult, StoredSession } from "~/domains/auth/types.js";
+import type { EntryClass } from "~/shell/keyring.js";
 import { service, tokensAccount, tokensFile } from "./constants.js";
 import { oauthTokensSchema } from "./types.js";
 
 type LoadTokensDeps = {
-  EntryClass: typeof Entry;
+  loadEntryClass: () => Promise<EntryClass>;
   fs: Pick<Fs, "readFile">;
 };
 
@@ -36,7 +35,8 @@ export async function loadTokens(
   const errors: { keychain?: string; file?: string } = {};
 
   try {
-    const raw = new deps.EntryClass(service, tokensAccount).getPassword();
+    const Entry = await deps.loadEntryClass();
+    const raw = new Entry(service, tokensAccount).getPassword();
     if (raw) {
       const tokens = parseTokens(raw);
       if (tokens) return { found: true, tokens, source: "keychain" };

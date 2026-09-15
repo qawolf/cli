@@ -1,9 +1,8 @@
 import { join } from "node:path";
 
-import { Entry } from "@napi-rs/keyring";
-
 import { isNoEntError } from "~/core/errors.js";
 import type { Fs } from "~/shell/fs.js";
+import { loadEntryClass } from "~/shell/keyring.js";
 import {
   account,
   credentialsFile,
@@ -27,8 +26,9 @@ async function fileExists(
   }
 }
 
-function keychainHolds(entryAccount: string): boolean {
+async function keychainHolds(entryAccount: string): Promise<boolean> {
   try {
+    const Entry = await loadEntryClass();
     return Boolean(new Entry(service, entryAccount).getPassword());
   } catch {
     // No usable keychain on this machine, so nothing of ours is in it.
@@ -53,11 +53,7 @@ export async function hasStoredCredentials(
     fileExists(join(configDir, credentialsFile), fs),
     fileExists(join(configDir, tokensFile), fs),
   ]);
+  if (apiKeyFile || tokenFile) return true;
 
-  return (
-    apiKeyFile ||
-    tokenFile ||
-    keychainHolds(account) ||
-    keychainHolds(tokensAccount)
-  );
+  return (await keychainHolds(account)) || (await keychainHolds(tokensAccount));
 }

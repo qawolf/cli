@@ -1,14 +1,16 @@
 import { isNoEntError } from "~/core/errors.js";
 import type { Fs } from "~/shell/fs.js";
+import { loadEntryClass } from "~/shell/keyring.js";
 import { join } from "node:path";
-
-import { Entry } from "@napi-rs/keyring";
 
 import { service, tokensAccount, tokensFile } from "./constants.js";
 import type { DeleteCredentialResult } from "./types.js";
 
-function deleteFromKeychain(): DeleteCredentialResult["keychain"] {
+async function deleteFromKeychain(): Promise<
+  DeleteCredentialResult["keychain"]
+> {
   try {
+    const Entry = await loadEntryClass();
     new Entry(service, tokensAccount).deletePassword();
     return "deleted";
   } catch {
@@ -37,7 +39,7 @@ export async function deleteTokens(
   fs: Fs,
 ): Promise<DeleteCredentialResult> {
   const [keychain, file] = await Promise.all([
-    Promise.resolve(deleteFromKeychain()),
+    deleteFromKeychain(),
     deleteFromFile(configDir, fs),
   ]);
   return { keychain, file };

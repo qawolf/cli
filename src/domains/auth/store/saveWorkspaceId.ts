@@ -1,5 +1,5 @@
 import type { Fs } from "~/shell/fs.js";
-import { Entry } from "@napi-rs/keyring";
+import { loadEntryClass } from "~/shell/keyring.js";
 
 import { authMessages } from "~/core/messages/index.js";
 import type { LoadTokensResult, StoredSession } from "~/domains/auth/types.js";
@@ -17,7 +17,7 @@ export function makeSaveWorkspaceIdDeps(
   fs: Fs,
 ): SaveWorkspaceIdDeps {
   return {
-    loadTokens: () => loadTokens(configDir, { EntryClass: Entry, fs }),
+    loadTokens: () => loadTokens(configDir, { loadEntryClass, fs }),
     saveTokens: (session) => saveTokens(configDir, session, fs),
   };
 }
