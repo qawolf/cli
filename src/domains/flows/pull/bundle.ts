@@ -107,7 +107,7 @@ export async function buildManifest(
 // them in the same order on every pull.
 async function flowPathsIn(root: string, fs: Fs): Promise<string[]> {
   const found = await walkFiles(root, isFlowFile, fs);
-  return found.map((path) => relative(root, path)).sort();
+  return found.map((path) => toPosix(relative(root, path))).sort();
 }
 
 // Samples the mtime of any flow file in the bundle. GitHub-archive bundles

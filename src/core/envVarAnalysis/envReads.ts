@@ -33,6 +33,11 @@ function isReadAccess(compiler: typeof ts, node: ts.Node): boolean {
       compiler.isBinaryExpression(parent) &&
       parent.left === target &&
       parent.operatorToken.kind === compiler.SyntaxKind.EqualsToken
+    ) &&
+    !(
+      (compiler.isForInStatement(parent) ||
+        compiler.isForOfStatement(parent)) &&
+      parent.initializer === target
     )
   );
 }
@@ -54,10 +59,7 @@ export function readEnvVarsFrom(compiler: typeof ts, node: ts.Node): EnvReads {
     isReadAccess(compiler, node)
   ) {
     const argument = node.argumentExpression;
-    if (
-      compiler.isStringLiteralLike(argument) &&
-      !argument.text.includes("${")
-    ) {
+    if (compiler.isStringLiteralLike(argument)) {
       names.add(argument.text);
     } else {
       dynamic = true;
@@ -86,6 +88,17 @@ export function readEnvVarsFrom(compiler: typeof ts, node: ts.Node): EnvReads {
         dynamic = true;
       }
     }
+  }
+  if (isProcessEnv(compiler, node) && isReadAccess(compiler, node)) {
+    const parent = node.parent;
+    const handled =
+      ((compiler.isPropertyAccessExpression(parent) ||
+        compiler.isElementAccessExpression(parent)) &&
+        parent.expression === node) ||
+      (compiler.isVariableDeclaration(parent) &&
+        parent.initializer === node &&
+        compiler.isObjectBindingPattern(parent.name));
+    if (!handled) dynamic = true;
   }
   return { names, dynamic };
 }
