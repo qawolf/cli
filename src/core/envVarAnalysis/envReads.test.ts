@@ -53,6 +53,37 @@ describe("environment read syntax", () => {
     });
   });
 
+  it("excludes loop write targets while retaining iterable reads", () => {
+    expect(
+      reads(`for (process.env.TARGET of [process.env.VALUE]) {}
+        for (process.env["KEY"] in { [process.env.SOURCE]: true }) {}
+        for ({ key: process.env.OBJECT } of rows) {}
+        for ([process.env.ARRAY] of rows) {}`),
+    ).toEqual({ names: ["SOURCE", "VALUE"], dynamic: false });
+  });
+
+  it("accepts static names containing template markers", () => {
+    expect(
+      reads('process.env["TOKEN${SUFFIX}"]; process.env[`LITERAL\\${KEY}`];'),
+    ).toEqual({ names: ["LITERAL${KEY}", "TOKEN${SUFFIX}"], dynamic: false });
+  });
+
+  it.each([
+    "const env = process.env; env.TOKEN;",
+    "use(process.env);",
+    "({ ...process.env });",
+    "Object.keys(process.env);",
+  ])("flags an unhandled environment object read: %s", (source) => {
+    expect(reads(source)).toEqual({ names: [], dynamic: true });
+  });
+
+  it("excludes writes to the environment object", () => {
+    expect(
+      reads(`process.env = {}; delete process.env;
+      for (process.env of objects) {}`),
+    ).toEqual({ names: [], dynamic: false });
+  });
+
   it("reads quoted and computed literal destructuring keys", () => {
     expect(
       reads(`const { "TOKEN": token, ["USER"]: user } = process.env;`),
