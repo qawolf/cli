@@ -2,6 +2,7 @@ import type ts from "typescript";
 
 import { calledDeclaration } from "./callableResolution.js";
 import { isProcessEnv, isReadAccess } from "./envReads.js";
+import { stableParameterSlots } from "./stableParameters.js";
 import {
   functionExecution,
   isFunctionLike,
@@ -9,8 +10,8 @@ import {
   type FunctionLike,
 } from "./executionSyntax.js";
 
-/** Maps a function to the parameter it uses as an environment key. */
-export type EnvAccessors = Map<ts.Node, number>;
+/** Maps a function to every parameter it uses as an environment key. */
+export type EnvAccessors = Map<ts.Node, Set<number>>;
 
 type ForwardingCall = {
   caller: FunctionLike;
@@ -24,18 +25,16 @@ export function findEnvAccessors(
 ): EnvAccessors {
   const accessors: EnvAccessors = new Map();
   const callers = new Map<ts.Node, ForwardingCall[]>();
-  const pending: ts.Node[] = [];
+  const pending: { callee: ts.Node; keySlot: number }[] = [];
   const add = (fn: ts.Node, slot: number): void => {
-    if (accessors.has(fn)) return;
-    accessors.set(fn, slot);
-    pending.push(fn);
+    const slots = accessors.get(fn) ?? new Set<number>();
+    if (slots.has(slot)) return;
+    slots.add(slot);
+    accessors.set(fn, slots);
+    pending.push({ callee: fn, keySlot: slot });
   };
   const index = (fn: FunctionLike): void => {
-    const parameters = new Map<ts.Symbol, number>();
-    fn.parameters.forEach((parameter, slot) => {
-      const symbol = checker.getSymbolAtLocation(parameter.name);
-      if (symbol !== undefined) parameters.set(symbol, slot);
-    });
+    const parameters = stableParameterSlots(compiler, checker, fn);
     const parameterSlot = (node: ts.Node): number | undefined => {
       const symbol = compiler.isIdentifier(node)
         ? checker.getSymbolAtLocation(node)
@@ -52,11 +51,12 @@ export function findEnvAccessors(
           const slot = parameterSlot(node.argumentExpression);
           if (slot !== undefined) add(fn, slot);
         }
-        if (!compiler.isCallExpression(node)) return;
+        if (!compiler.isCallExpression(node) && !compiler.isNewExpression(node))
+          return;
         const callee = calledDeclaration(compiler, checker, node);
         if (callee === undefined) return;
         const argumentSlots = new Map<number, number>();
-        node.arguments.forEach((argument, argumentSlot) => {
+        node.arguments?.forEach((argument, argumentSlot) => {
           const slot = parameterSlot(argument);
           if (slot !== undefined) argumentSlots.set(argumentSlot, slot);
         });
@@ -75,10 +75,9 @@ export function findEnvAccessors(
 
   // Each discovered accessor visits only callers that might forward its key.
   for (let cursor = 0; cursor < pending.length; cursor += 1) {
-    const callee = pending[cursor];
-    if (callee === undefined) continue;
-    const keySlot = accessors.get(callee);
-    if (keySlot === undefined) continue;
+    const entry = pending[cursor];
+    if (entry === undefined) continue;
+    const { callee, keySlot } = entry;
     for (const { caller, argumentSlots } of callers.get(callee) ?? []) {
       const slot = argumentSlots.get(keySlot);
       if (slot !== undefined) add(caller, slot);
