@@ -24,10 +24,10 @@ export type UI = {
       destructive?: boolean;
     },
   ): Promise<PromptResult<boolean>>;
+  filterList: FilterListFn;
   password(message: string, hint?: string): Promise<PromptResult<string>>;
   select: SelectFn;
   text: TextFn;
-  filterList: FilterListFn;
   withProgress: WithProgressFn;
   step(message: string, progress?: { current: number; total: number }): void;
   success(message: string): void;
