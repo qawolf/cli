@@ -15,6 +15,7 @@ export type BrowserLaunchOptions = {
 export type ContextSetupOptions = {
   viewport?: { width: number; height: number };
   screen?: { width: number; height: number };
+  locale?: string;
   recordVideo?: { dir: string; size: { width: number; height: number } };
   recordHar?: {
     path: string;
