@@ -13,6 +13,11 @@ import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.j
 import type { OutputMode } from "~/shell/ui/env.js";
 import type { UI } from "~/shell/ui/index.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
+import type {
+  FilterListArgs,
+  FilterListFn,
+  PromptResult,
+} from "~/shell/ui/renderers/types.js";
 
 const noopSignals = makeNoopSignals();
 
@@ -24,6 +29,7 @@ export function makeFakeUI(mode: OutputMode = "human"): UI {
     note: mock(() => {}),
     outro: mock(() => {}),
     confirm: mock(() => Promise.resolve({ ok: false } as const)),
+    filterList: mock(() => Promise.resolve({ ok: false } as const)),
     password: mock(() => Promise.resolve({ ok: false } as const)),
     select: mock(() => Promise.resolve({ ok: false } as const)),
     text: mock(() => Promise.resolve({ ok: false } as const)),
@@ -137,3 +143,19 @@ export function makeAuthCtx(
 export const callsOf = <T extends (...args: never) => unknown>(
   fn: T,
 ): unknown[][] => (fn as unknown as ReturnType<typeof mock>).mock.calls;
+
+/**
+ * A `filterList` that answers with `answer`, recording what each call offered.
+ * `FilterListFn` is generic over the item type, so the one cast it needs lives
+ * here rather than in every test.
+ */
+export function fakeFilterList<Item>(
+  answer: (args: FilterListArgs<Item>) => PromptResult<readonly Item[]>,
+): { filterList: FilterListFn; calls: FilterListArgs<Item>[] } {
+  const calls: FilterListArgs<Item>[] = [];
+  const filterList = (args: FilterListArgs<Item>) => {
+    calls.push(args);
+    return Promise.resolve(answer(args));
+  };
+  return { filterList: filterList as unknown as FilterListFn, calls };
+}
