@@ -28,6 +28,26 @@ describe("constructor accessor keys", () => {
     }
   });
 
+  it("forwards keys to an overloaded constructor", async () => {
+    const result = await analyse({
+      [flow]: `class Reader {
+        field = process.env.FIELD;
+        constructor(key: string);
+        constructor(key: string) { console.log(process.env[key]); }
+      }
+      function read(key: string) { return new Reader(key); }
+      export default () => read("TOKEN");`,
+    });
+    try {
+      expect(result.byFlow.get(flow)).toEqual({
+        names: ["FIELD", "TOKEN"],
+        mayBeIncomplete: false,
+      });
+    } finally {
+      await result.cleanup();
+    }
+  });
+
   it("resolves every constructor key slot", async () => {
     const result = await analyse({
       [flow]: `class Reader {

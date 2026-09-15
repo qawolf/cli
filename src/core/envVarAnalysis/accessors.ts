@@ -3,6 +3,7 @@ import type ts from "typescript";
 import { calledDeclaration } from "./callableResolution.js";
 import { isProcessEnv, isReadAccess } from "./envReads.js";
 import { stableParameterSlots } from "./stableParameters.js";
+import { accessorDeclaration, constructedClass } from "./executionUnits.js";
 import {
   functionExecution,
   isFunctionLike,
@@ -53,8 +54,11 @@ export function findEnvAccessors(
         }
         if (!compiler.isCallExpression(node) && !compiler.isNewExpression(node))
           return;
-        const callee = calledDeclaration(compiler, checker, node);
-        if (callee === undefined) return;
+        const declaration =
+          constructedClass(compiler, checker, node) ??
+          calledDeclaration(compiler, checker, node);
+        if (declaration === undefined) return;
+        const callee = accessorDeclaration(compiler, checker, declaration);
         const argumentSlots = new Map<number, number>();
         node.arguments?.forEach((argument, argumentSlot) => {
           const slot = parameterSlot(argument);
