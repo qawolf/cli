@@ -46,6 +46,12 @@ export function walkExecuted(
     if (compiler.isTypeNode(current) || isFunctionLike(compiler, current))
       return;
     if (compiler.isClassLike(current)) {
+      for (const decorated of [current, ...current.members]) {
+        const decorators = compiler.canHaveDecorators(decorated)
+          ? compiler.getDecorators(decorated)
+          : undefined;
+        for (const decorator of decorators ?? []) visit(decorator.expression);
+      }
       for (const clause of current.heritageClauses ?? []) {
         if (clause.token === compiler.SyntaxKind.ExtendsKeyword) {
           for (const type of clause.types) visit(type.expression);

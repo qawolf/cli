@@ -21,8 +21,12 @@ it.each([false, true])(
       ...Object.fromEntries(reverse ? flows.toReversed() : flows),
     });
     try {
-      for (const reads of result.byFlow.values()) {
-        expect(reads).toEqual({ names: ["A", "B"], mayBeIncomplete: false });
+      expect(result.byFlow.size).toBe(flows.length);
+      for (const [path] of flows) {
+        expect(result.byFlow.get(path)).toEqual({
+          names: ["A", "B"],
+          mayBeIncomplete: false,
+        });
       }
     } finally {
       await result.cleanup();
