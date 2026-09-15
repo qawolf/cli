@@ -74,8 +74,8 @@ export const flowsMessages = {
     downloadingTeamStorageAssets: "Downloading team-storage assets",
     downloadingTeamStorageAssetsProgress: (current: number, total: number) =>
       `Downloading team-storage assets (${String(current)}/${String(total)})`,
-    teamStorageRequiresTeamKey:
-      "Team storage requires a team API key; organization keys are not supported here.",
+    teamStorageRequiresTeam:
+      "Team storage needs a team. Pull an environment to name its team, choose a workspace with 'qawolf auth switch', or use a team API key.",
     summary: (result: PullSummaryInput, assetsAbs: string) => {
       const flows = pluralize(result.flowCount, "flow");
       const envVars =

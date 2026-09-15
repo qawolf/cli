@@ -76,9 +76,9 @@ function makeCtx(
         ok: true,
         value: { tmpArchive: bundlePath },
       }),
-      getEnvVars: mock().mockResolvedValue({
+      getEnvironmentWithVariables: mock().mockResolvedValue({
         ok: true,
-        value: envVars,
+        value: { environmentVariables: envVars, teamId: "team-owning-env" },
       }),
       syncTeamStorageAssets:
         syncTeamStorageAssets ??
@@ -167,6 +167,25 @@ describe("handleFlowsPull json mode output", () => {
       "Downloading team-storage assets (1/3)",
       "Downloading team-storage assets (2/3)",
     ]);
+  });
+
+  // An organization or user key cannot name a team on its own, so the pull
+  // hands the sync the team that owns the environment it just fetched.
+  it("mirrors the storage of the team that owns the environment", async () => {
+    await buildBundle(bundleArchive, {
+      flows: [{ name: "a.flow.ts", data: "// a\n" }],
+    });
+    const syncMock = mock().mockResolvedValue({
+      ok: true,
+      value: { downloadedCount: 0, reusedCount: 0, skippedCount: 0 },
+    });
+    const ctx = makeCtx(makeJsonUi(), bundleArchive, {}, syncMock);
+
+    await handleFlowsPull(ctx, { env: "env-abc", out: destDir });
+
+    expect(syncMock).toHaveBeenCalledTimes(1);
+    const [, opts] = syncMock.mock.calls[0] as [string, { teamId?: string }];
+    expect(opts.teamId).toBe("team-owning-env");
   });
 
   it("does not call ui.output when mode is not json", async () => {
