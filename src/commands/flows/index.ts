@@ -98,12 +98,17 @@ export function registerFlowsCommand(
               requiredMessage: flowsMessages.list.remoteRequiresEnv,
             },
             (ctx, env) =>
-              flowsListRemote(ctx, pattern, {
-                env,
-                includeDrafts: opts.includeDrafts,
-                aiTaskId: opts.aiTaskId,
-                tags,
-              }),
+              flowsListRemote(
+                ctx,
+                pattern,
+                {
+                  env,
+                  includeDrafts: opts.includeDrafts,
+                  aiTaskId: opts.aiTaskId,
+                  tags,
+                },
+                { columns: process.stdout.columns },
+              ),
           )(opts, command);
         }
         // Only an explicitly passed --ai-task-id is a usage error here:
@@ -124,7 +129,12 @@ export function registerFlowsCommand(
         // Without --remote the tags come from the pull cache, so this works
         // offline; it cannot validate names against the team's tag list.
         return withContext(signals, (ctx) =>
-          handleFlowsList(ctx, pattern, { tags, env: opts.env }),
+          handleFlowsList(
+            ctx,
+            pattern,
+            { tags, env: opts.env },
+            { columns: process.stdout.columns },
+          ),
         )(opts, command);
       },
     );
