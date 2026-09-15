@@ -1,5 +1,33 @@
 # @qawolf/cli
 
+## 1.30.0
+
+### Minor Changes
+
+- 031c0a7: `qawolf agent send` and `qawolf agent get` are now hand-written commands with a `--follow` flag. With `--follow`, the command stays attached to the session. It prints each reply once, as it arrives. It exits when the session settles: 0 for completed, non-zero for failed or cancelled.
+
+  A followed session can ask a question. In a terminal, the CLI shows the question and asks for an answer. It offers a list when the AI gives a fixed set of answers, and free text when it does not. It sends the answer to the same session and continues to follow. In a pipe, a CI job or agent mode, the CLI prints the question and the command that answers it, then exits 0.
+
+  In `--json` and `--agent` mode, a follow ends with one line that holds the whole session object. This is the same object `qawolf agent get` answers with. A script can read the final status, the session id and the url from stdout.
+
+  `qawolf agent send` remembers the session it starts. A later `qawolf agent get --follow` in the same directory needs no id. `--session <id>` and `QAWOLF_SESSION_ID` name a different session. `--timeout` sets how long a follow waits. The default is 30 minutes.
+
+  `qawolf agent send --file-paths <path...>` names files the request is about, uploaded first with `qawolf file requestUpload`. The AI reads them from team storage instead of the message.
+
+  Two flags changed name from the generated commands in 1.23.0. The message is now the first argument of `agent send`, not `--message`. `--session-id` is now `--session` on both commands. `--environment-id` still reads `QAWOLF_ENVIRONMENT`, and `--workspace-id` is still available for a credential that is not bound to one workspace.
+
+  The QA Wolf platform reports only that a session is at work. A follow prints each reply as it arrives and shows a wait line between them. It shows more when the platform reports more.
+
+- 15759eb: `qawolf runner launch` now says where the runner can be seen: a QA Wolf page showing its live screen, which a person can also drive with their own mouse and keyboard. A freshly launched runner has no screen yet — the page waits until the runner's first run starts one. It prints the address whether it started a runner or attached to one already running under that id, and so does a command that launched its own runner. `--json` carries it as `url`, and `qawolf runner list --json` carries it on every runner; the table leaves it out, since an address beside a 63-character id outgrows a terminal.
+
+  The page opens for anyone on the runner's team, however the runner was launched, so the address is worth handing to a colleague who asks what your runner is doing.
+
+### Patch Changes
+
+- 5121dba: `qawolf flows pull`, and the runs that pull on your behalf, now mirror team-storage assets with an organization or user API key. The pull used to stop with "Team storage requires a team API key" because such a key reaches many teams and names none. The environment being pulled names its team, so the pull now reads that team's storage. A team API key and a browser session behave as before.
+- 36ea00d: Flows that import `startWireGuard` from `@qawolf/testkit` no longer fail with `SyntaxError: The requested module '@qawolf/testkit' does not provide an export named 'startWireGuard'`. The CLI now installs `@qawolf/testkit` 1.2.1, the version that exports the helper.
+- a040bd1: The compiled binary runs web flows again. In 1.29.0, every `qawolf flows run` from the binary failed with `Cannot find module '@napi-rs/keyring'`. The worker subprocess that runs a flow loaded the keyring addon at startup, from a directory where it does not exist. The keyring now loads on first use, when a command reads or writes stored credentials, and `@qawolf/flow-targets` ships inside the bundle.
+
 ## 1.29.0
 
 ### Minor Changes
