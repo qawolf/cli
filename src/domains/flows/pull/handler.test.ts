@@ -91,7 +91,7 @@ function makeCtx(
 }
 
 describe("handleFlowsPull json mode output", () => {
-  it("emits env, envDir, assetsDir, fetchedAt, flowCount, envVarCount, flowsWithTeamStorageRefs, manifestPath", async () => {
+  it("emits env, envDir, assetsDir, fetchedAt, flowCount, envVarCount, flowsWithTeamStorageRefs, missingEnvVars, incompleteFlowCount, manifestPath", async () => {
     await buildBundle(bundleArchive, {
       flows: [
         { name: "login.flow.ts", data: "// login\n" },
@@ -118,7 +118,9 @@ describe("handleFlowsPull json mode output", () => {
       "fetchedAt",
       "flowCount",
       "flowsWithTeamStorageRefs",
+      "incompleteFlowCount",
       "manifestPath",
+      "missingEnvVars",
     ]);
     expect(payload).toEqual({
       assetsDir: expect.stringContaining(join(workDir, "assets")),
@@ -133,6 +135,8 @@ describe("handleFlowsPull json mode output", () => {
       flowCount: 2,
       envVarCount: 2,
       flowsWithTeamStorageRefs: [],
+      missingEnvVars: [],
+      incompleteFlowCount: 0,
       manifestPath: join(destDir, manifestFilename),
     });
     expect(JSON.parse(JSON.stringify(payload))).toEqual(payload);
