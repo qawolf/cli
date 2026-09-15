@@ -77,7 +77,7 @@ export async function stageBundle(
       TEAM_STORAGE_DIR: args.assetsAbs,
     };
     await writeEnvFile(tmpDir, effectiveEnvVars, fs);
-    const { byFlow } = await collectFlowEnvVars(tmpDir);
+    const { byFlow } = await collectFlowEnvVars(tmpDir, fs);
     const missingEnvVars = findMissingEnvVars({
       byFlow,
       definedNames: new Set(Object.keys(effectiveEnvVars)),
