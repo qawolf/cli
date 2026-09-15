@@ -79,17 +79,43 @@ export function implicitBaseClass(
   return hasConstructor ? undefined : baseClassOf(compiler, checker, node);
 }
 
-export function accessorKeyParameter(
+export function accessorDeclaration(
+  compiler: typeof ts,
+  checker: ts.TypeChecker,
+  declaration: ts.Node,
+): ts.Node {
+  let current = declaration;
+  const seen = new Set<ts.Node>();
+  while (compiler.isClassLike(current) && !seen.has(current)) {
+    seen.add(current);
+    const constructor = current.members.find(
+      (member) =>
+        compiler.isConstructorDeclaration(member) && member.body !== undefined,
+    );
+    if (constructor !== undefined) return constructor;
+    const base = baseClassOf(compiler, checker, current);
+    if (base === undefined) break;
+    current = base;
+  }
+  return current;
+}
+
+export function accessorKeyParameters(
   compiler: typeof ts,
   checker: ts.TypeChecker,
   accessors: EnvAccessors,
   declaration: ts.Node,
-): ts.Symbol | undefined {
-  const slot = accessors.get(declaration);
-  if (slot === undefined || !isFunctionLike(compiler, declaration))
-    return undefined;
-  const parameter = declaration.parameters[slot];
-  return parameter === undefined
-    ? undefined
-    : checker.getSymbolAtLocation(parameter.name);
+): Set<ts.Symbol> {
+  const fn = accessorDeclaration(compiler, checker, declaration);
+  const parameters = new Set<ts.Symbol>();
+  if (!isFunctionLike(compiler, fn)) return parameters;
+  for (const slot of accessors.get(fn) ?? []) {
+    const parameter = fn.parameters[slot];
+    const symbol =
+      parameter === undefined
+        ? undefined
+        : checker.getSymbolAtLocation(parameter.name);
+    if (symbol !== undefined) parameters.add(symbol);
+  }
+  return parameters;
 }

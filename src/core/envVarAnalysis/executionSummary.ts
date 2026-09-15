@@ -8,7 +8,8 @@ import {
 } from "./callableResolution.js";
 import { isReadAccess, readEnvVarsFrom } from "./envReads.js";
 import {
-  accessorKeyParameter,
+  accessorDeclaration,
+  accessorKeyParameters,
   constructedClass,
   executedOnCall,
   implicitBaseClass,
@@ -36,16 +37,18 @@ export function summarizeExecution(
   const { compiler, checker, accessors, isLocalFile } = args;
   const reads: EnvReads = { names: new Set(), dynamic: false };
   const callees = new Set<ts.Node>();
-  const keyParameter = accessorKeyParameter(
+  const keyParameters = accessorKeyParameters(
     compiler,
     checker,
     accessors,
     declaration,
   );
-  const isKeyParameter = (node: ts.Node): boolean =>
-    keyParameter !== undefined &&
-    compiler.isIdentifier(node) &&
-    checker.getSymbolAtLocation(node) === keyParameter;
+  const isKeyParameter = (node: ts.Node): boolean => {
+    const symbol = compiler.isIdentifier(node)
+      ? checker.getSymbolAtLocation(node)
+      : undefined;
+    return symbol !== undefined && keyParameters.has(symbol);
+  };
   const include = (callee: ts.Node | undefined): void => {
     if (callee !== undefined && isLocalFile(callee.getSourceFile().fileName))
       callees.add(callee);
@@ -72,14 +75,13 @@ export function summarizeExecution(
     const callee =
       constructedClass(compiler, checker, call) ??
       calledDeclaration(compiler, checker, call);
-    const slot = callee === undefined ? undefined : accessors.get(callee);
-    if (slot !== undefined) {
+    const slots =
+      callee === undefined
+        ? undefined
+        : accessors.get(accessorDeclaration(compiler, checker, callee));
+    for (const slot of slots ?? []) {
       const argument = call.arguments?.[slot];
-      if (
-        argument !== undefined &&
-        compiler.isStringLiteralLike(argument) &&
-        !argument.text.includes("${")
-      ) {
+      if (argument !== undefined && compiler.isStringLiteralLike(argument)) {
         reads.names.add(argument.text);
       } else if (argument === undefined || !isKeyParameter(argument)) {
         reads.dynamic = true;
