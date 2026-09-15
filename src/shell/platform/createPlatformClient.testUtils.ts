@@ -28,7 +28,8 @@ export function makeMockPlatformClient(
     getAccessibleOrganizations:
       mock<PlatformClient["getAccessibleOrganizations"]>(),
     getFlowsBundleUrl: mock<PlatformClient["getFlowsBundleUrl"]>(),
-    getEnvVars: mock<PlatformClient["getEnvVars"]>(),
+    getEnvironmentWithVariables:
+      mock<PlatformClient["getEnvironmentWithVariables"]>(),
     listTeamStorageFiles: mock<PlatformClient["listTeamStorageFiles"]>(),
     syncTeamStorageAssets: mock<PlatformClient["syncTeamStorageAssets"]>(),
     downloadBundle: mock<PlatformClient["downloadBundle"]>(),

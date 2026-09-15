@@ -20,11 +20,20 @@ type Deps = {
   workspaceId?: string | undefined;
 };
 
+type TeamOptions = {
+  /** The team whose storage to read, when the caller already knows it. */
+  teamId?: string | undefined;
+};
+
 export type TeamStorageMethods = {
-  listTeamStorageFiles: () => Promise<PlatformResult<TeamStorageFile[]>>;
+  listTeamStorageFiles: (
+    opts?: TeamOptions,
+  ) => Promise<PlatformResult<TeamStorageFile[]>>;
   syncTeamStorageAssets: (
     assetsAbs: string,
-    opts?: { onProgress?: (progress: TeamStorageAssetProgress) => void },
+    opts?: TeamOptions & {
+      onProgress?: (progress: TeamStorageAssetProgress) => void;
+    },
   ) => Promise<PlatformResult<SyncTeamStorageAssetsResult>>;
 };
 
@@ -32,8 +41,9 @@ export type TeamStorageMethods = {
  * Reading the team's shared files, and mirroring them into the local assets
  * directory.
  *
- * Both need a team id, which reaches this in one of two ways: a browser session
- * chose a workspace, or the credential is itself team-scoped.
+ * Both need a team id, which reaches this in one of three ways: the caller
+ * names the team (a pull learns it from the environment it pulls), a browser
+ * session chose a workspace, or the credential is itself team-scoped.
  */
 export function createTeamStorageMethods(
   trpc: TrpcClient,
@@ -41,7 +51,16 @@ export function createTeamStorageMethods(
   fs: Fs,
   getIdentity: () => Promise<PlatformResult<IdentityResponse>>,
 ): TeamStorageMethods {
-  async function list(): Promise<PlatformResult<TeamStorageFile[]>> {
+  async function list(
+    opts?: TeamOptions,
+  ): Promise<PlatformResult<TeamStorageFile[]>> {
+    // The environment's own team is the most exact answer: an organization or
+    // user key reaches many teams, and the environment being pulled names the
+    // one whose storage its flows read.
+    if (opts?.teamId !== undefined) {
+      return listTeamStorageFiles(trpc, { teamId: opts.teamId }, deps);
+    }
+
     // A workspace is a team, so a browser session that chose one already names
     // the team this route wants. Preferred over the identity probe because a
     // browser session's identity carries an organization and no team at all —
@@ -52,12 +71,12 @@ export function createTeamStorageMethods(
 
     const identity = await getIdentity();
     if (!identity.ok) return identity;
-    // No workspace to fall back on: an organization-scoped API key reaches many
-    // teams and names none, so team storage is genuinely out of reach.
+    // No team named and no workspace to fall back on: an organization or user
+    // key reaches many teams and names none, so team storage is out of reach.
     if (!("team" in identity.value)) {
       return {
         ok: false,
-        error: flowsMessages.pull.teamStorageRequiresTeamKey,
+        error: flowsMessages.pull.teamStorageRequiresTeam,
       };
     }
     return listTeamStorageFiles(trpc, { teamId: identity.value.team.id }, deps);
@@ -67,7 +86,7 @@ export function createTeamStorageMethods(
     listTeamStorageFiles: list,
 
     async syncTeamStorageAssets(assetsAbs, opts) {
-      const files = await list();
+      const files = await list({ teamId: opts?.teamId });
       if (!files.ok) return files;
       return downloadTeamStorageAssets(
         { assetsAbs, files: files.value },

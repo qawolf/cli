@@ -9,6 +9,7 @@ export type EnvironmentListItem = z.infer<typeof environmentListItemSchema>;
 
 export const environmentWithVariablesResponseSchema = z.object({
   environmentVariables: z.record(z.string(), z.string()),
+  teamId: z.string(),
 });
 export type EnvironmentWithVariablesResponse = z.infer<
   typeof environmentWithVariablesResponseSchema

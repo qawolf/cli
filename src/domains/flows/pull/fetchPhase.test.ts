@@ -52,7 +52,10 @@ function makeCtx(callPublicApi: ReturnType<typeof makeCallPublicApiMock>) {
         ok: true,
         value: { tmpArchive: "/tmp/bundle.tar.gz" },
       }),
-      getEnvVars: mock().mockResolvedValue({ ok: true, value: {} }),
+      getEnvironmentWithVariables: mock().mockResolvedValue({
+        ok: true,
+        value: { environmentVariables: {}, teamId: "team-owning-env" },
+      }),
       callPublicApi,
     }),
   } as unknown as AuthCommandContext;
@@ -79,6 +82,14 @@ describe("fetchBundleAndEnvVars tags", () => {
       environmentId: "env-1",
       includeDrafts: true,
     });
+  });
+
+  // The pull mirrors team-storage assets next, and an organization or user
+  // key cannot name the team on its own: the environment does.
+  it("returns the team that owns the environment", async () => {
+    const result = await fetchBundleAndEnvVars(makeCtx(flowListOk()), "env-1");
+
+    expect(result.teamId).toBe("team-owning-env");
   });
 
   it("returns the tags keyed by flow path", async () => {

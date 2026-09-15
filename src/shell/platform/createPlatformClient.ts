@@ -15,6 +15,7 @@ import type { SyncTeamStorageAssetsResult } from "./teamStorageAssets.js";
 import { createTeamStorageMethods } from "./teamStorageMethods.js";
 import type { TeamStorageAssetProgress } from "./writeAssetSnapshot.js";
 import {
+  type EnvironmentWithVariablesResponse,
   environmentWithVariablesResponseSchema,
   flowsBundleResponseSchema,
   type TeamStorageFile,
@@ -28,14 +29,19 @@ export type PlatformClient = {
   getFlowsBundleUrl: (
     envId: string,
   ) => Promise<PlatformResult<{ signedUrl: string }>>;
-  getEnvVars: (
+  /** The environment's variables, and the team that owns the environment. */
+  getEnvironmentWithVariables: (
     envId: string,
-  ) => Promise<PlatformResult<Record<string, string>>>;
-  listTeamStorageFiles: () => Promise<PlatformResult<TeamStorageFile[]>>;
+  ) => Promise<PlatformResult<EnvironmentWithVariablesResponse>>;
+  listTeamStorageFiles: (opts?: {
+    teamId?: string | undefined;
+  }) => Promise<PlatformResult<TeamStorageFile[]>>;
   syncTeamStorageAssets: (
     assetsAbs: string,
     opts?: {
       onProgress?: (progress: TeamStorageAssetProgress) => void;
+      /** The team whose storage to mirror, when the caller already knows it. */
+      teamId?: string | undefined;
     },
   ) => Promise<PlatformResult<SyncTeamStorageAssetsResult>>;
   downloadBundle: (
@@ -91,7 +97,7 @@ export function createPlatformClient(
 
     callPublicApi: makeCallPublicApiMethod(trpc, deps, requestBackoffMs),
 
-    async getEnvVars(envId) {
+    async getEnvironmentWithVariables(envId) {
       const result = await requestWithRetry({
         call: () =>
           trpc.query(
@@ -103,8 +109,7 @@ export function createPlatformClient(
         describe: (err) => describeRequestError(err, deps.baseUrl, "env-vars"),
         sleep: deps.sleep,
       });
-      if (!result.ok) return result;
-      return { ok: true, value: result.value.environmentVariables };
+      return result;
     },
 
     async downloadBundle(envId) {

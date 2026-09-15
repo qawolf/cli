@@ -40,6 +40,36 @@ function conditionalFetch(respond: (url: string) => Response): typeof fetch {
 }
 
 describe("listTeamStorageFiles", () => {
+  // An organization or user key reaches many teams. The environment being
+  // pulled names the one whose storage its flows read, so a team the caller
+  // names wins over the session's workspace and over the identity probe.
+  it("uses the team the caller names, without probing identity", async () => {
+    const fetchMock = mock<typeof fetch>().mockResolvedValue(
+      json(emptyFileList),
+    ) as unknown as typeof fetch;
+    const client = createPlatformClient(apiKey, {
+      fetch: fetchMock,
+      baseUrl,
+      sleep: noSleep,
+      workspaceId: "workspace-from-session",
+    });
+
+    const result = await client.listTeamStorageFiles({
+      teamId: "team-from-environment",
+    });
+
+    expect(result.ok).toBe(true);
+    const urls = requestedUrls(fetchMock);
+    expect(urls[0]).toContain("team.listStorageFiles");
+    expect(decodeURIComponent(urls[0] ?? "")).toContain(
+      "team-from-environment",
+    );
+    expect(decodeURIComponent(urls[0] ?? "")).not.toContain(
+      "workspace-from-session",
+    );
+    expect(urls.some((u) => u.includes("/api/v0/identity"))).toBe(false);
+  });
+
   // A browser session's identity names an organization and no team, so reading
   // it first refused every such session. The workspace it chose is the team.
   it("uses the session's workspace as the team, without probing identity", async () => {
@@ -88,9 +118,9 @@ describe("listTeamStorageFiles", () => {
     expect(decodeURIComponent(storageUrl ?? "")).toContain("team-from-key");
   });
 
-  // An organization key reaches many teams and names none, so there is nothing
-  // to fall back on.
-  it("refuses an organization key with no workspace chosen", async () => {
+  // An organization key reaches many teams and names none, so with no team
+  // named and no workspace chosen there is nothing to fall back on.
+  it("refuses an organization key with no team named and no workspace chosen", async () => {
     const fetchMock = mock<typeof fetch>().mockResolvedValue(
       json({ organization: { id: "org-1", name: "Org" } }),
     ) as unknown as typeof fetch;
@@ -104,6 +134,30 @@ describe("listTeamStorageFiles", () => {
 
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected a refusal");
-    expect(result.error).toContain("team API key");
+    expect(result.error).toContain("needs a team");
+  });
+});
+
+describe("syncTeamStorageAssets", () => {
+  it("lists the storage of the team the caller names", async () => {
+    const fetchMock = mock<typeof fetch>().mockResolvedValue(
+      json(emptyFileList),
+    ) as unknown as typeof fetch;
+    const client = createPlatformClient(apiKey, {
+      fetch: fetchMock,
+      baseUrl,
+      sleep: noSleep,
+    });
+
+    const result = await client.syncTeamStorageAssets("/tmp/assets", {
+      teamId: "team-from-environment",
+    });
+
+    expect(result.ok).toBe(true);
+    const urls = requestedUrls(fetchMock);
+    expect(decodeURIComponent(urls[0] ?? "")).toContain(
+      "team-from-environment",
+    );
+    expect(urls.some((u) => u.includes("/api/v0/identity"))).toBe(false);
   });
 });

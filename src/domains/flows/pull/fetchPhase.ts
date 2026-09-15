@@ -10,6 +10,8 @@ type FetchedBundle = {
   bundleFetchedAt: Date;
   envVars: Record<string, string>;
   envVarsFetchedAt: Date;
+  /** The team that owns the environment; its storage holds the flows' assets. */
+  teamId: string;
   // Undefined when the tag fetch did not succeed. Tags enrich a pull; they are
   // never a precondition for one, so a failure here leaves the pull intact.
   tags: FetchedTags | undefined;
@@ -45,6 +47,7 @@ export async function fetchBundleAndEnvVars(
   let bundleFetchedAt: Date | undefined;
   let envVars: Record<string, string> | undefined;
   let envVarsFetchedAt: Date | undefined;
+  let teamId: string | undefined;
   let tags: FetchedTags | undefined;
 
   await ctx.ui.withProgress(
@@ -61,9 +64,11 @@ export async function fetchBundleAndEnvVars(
       {
         message: flowsMessages.pull.fetchingEnvVars,
         task: async () => {
-          const result = await platformClient.getEnvVars(envId);
+          const result =
+            await platformClient.getEnvironmentWithVariables(envId);
           if (!result.ok) throw new Error(result.error);
-          envVars = result.value;
+          envVars = result.value.environmentVariables;
+          teamId = result.value.teamId;
           envVarsFetchedAt = new Date();
         },
       },
@@ -81,12 +86,20 @@ export async function fetchBundleAndEnvVars(
     tmpArchive === undefined ||
     bundleFetchedAt === undefined ||
     envVars === undefined ||
-    envVarsFetchedAt === undefined
+    envVarsFetchedAt === undefined ||
+    teamId === undefined
   ) {
     throw new Error(
       "Unexpected state: the bundle and env vars were not fetched. " +
         "This is a bug - please report it at https://github.com/qawolf/cli/issues",
     );
   }
-  return { tmpArchive, bundleFetchedAt, envVars, envVarsFetchedAt, tags };
+  return {
+    tmpArchive,
+    bundleFetchedAt,
+    envVars,
+    envVarsFetchedAt,
+    teamId,
+    tags,
+  };
 }

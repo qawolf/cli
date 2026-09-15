@@ -103,6 +103,7 @@ export async function handleFlowsPull(
             const result = await ctx.platformClient.syncTeamStorageAssets(
               assetsAbs,
               {
+                teamId: fetched.teamId,
                 onProgress: ({ current, total }) =>
                   update(
                     flowsMessages.pull.downloadingTeamStorageAssetsProgress(
