@@ -30,39 +30,48 @@ export function createFilterList(deps: Deps): FilterListFn {
       deps.output ?? process.stdout,
       resizeSettleMs,
     );
-    const output = terminal.output;
+    try {
+      const output = terminal.output;
 
-    const options = args.items.map((item, index) => ({ value: index, item }));
-    const matches = createSearchIndex(options, (option) =>
-      args.searchText(option.item),
-    );
+      const options = args.items.map((item, index) => ({ value: index, item }));
+      const matches = createSearchIndex(options, (option) =>
+        args.searchText(option.item),
+      );
 
-    const draw = createFrameDrawer(args, output);
+      const draw = createFrameDrawer(args, output);
 
-    const screen = openAltScreen(output);
-    const prompt = new AutocompletePrompt({
-      options,
-      filter: matches,
-      output,
-      input: deps.input ?? process.stdin,
-      // Paint whole frames after resizes; returning an empty frame prevents
-      // clack from diffing against its stale pre-resize screen.
-      render() {
-        if (!isDone(this.state)) screen.paint(draw(this));
-        return "";
-      },
-    });
-    const result = await prompt.prompt().finally(() => {
-      screen.close();
+      const screen = openAltScreen(output);
+      try {
+        const prompt = new AutocompletePrompt({
+          options,
+          filter: matches,
+          output,
+          input: deps.input ?? process.stdin,
+          // Paint whole frames after resizes; returning an empty frame prevents
+          // clack from diffing against its stale pre-resize screen.
+          render() {
+            if (!isDone(this.state)) screen.paint(draw(this));
+            return "";
+          },
+        });
+        const result = await prompt.prompt().finally(() => {
+          screen.close();
+        });
+
+        output.write(
+          `${draw(prompt, isCancel(result) ? "cancel" : "submit")}\n`,
+        );
+
+        if (isCancel(result)) return { ok: false };
+        return {
+          ok: true,
+          value: prompt.filteredOptions.map((option) => option.item),
+        };
+      } finally {
+        screen.close();
+      }
+    } finally {
       terminal.dispose();
-    });
-
-    output.write(`${draw(prompt, isCancel(result) ? "cancel" : "submit")}\n`);
-
-    if (isCancel(result)) return { ok: false };
-    return {
-      ok: true,
-      value: prompt.filteredOptions.map((option) => option.item),
-    };
+    }
   };
 }

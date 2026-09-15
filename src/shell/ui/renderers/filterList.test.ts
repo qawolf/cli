@@ -1,7 +1,9 @@
 import { describe, expect, it } from "bun:test";
+import { PassThrough } from "node:stream";
 
 import { sleep } from "~/core/sleep.js";
 
+import { createFilterList } from "./filterList.js";
 import { fakeTerminal, open, typed, paints } from "./filterList.testUtils.js";
 
 const enterAltScreen = "\x1b[?1049h";
@@ -32,8 +34,44 @@ describe("createFilterList", () => {
     const left = out.lastIndexOf(leaveAltScreen);
     expect(entered).toBeGreaterThanOrEqual(0);
     expect(left).toBeGreaterThan(entered);
-    expect(out.indexOf("alpha")).toBeGreaterThan(entered);
+    const frame = out.indexOf(frameStart, entered);
+    const alpha = out.indexOf("alpha", frame);
+    expect(frame).toBeGreaterThan(entered);
+    expect(frame).toBeLessThan(left);
+    expect(alpha).toBeGreaterThan(frame);
+    expect(alpha).toBeLessThan(left);
     expect(out.lastIndexOf(frameStart)).toBeLessThan(left);
+  });
+
+  it("removes its resize listener when search setup fails", async () => {
+    const terminal = fakeTerminal();
+    const existingListener = () => {};
+    terminal.on("resize", existingListener);
+    const failure = new Error("search setup failed");
+    const filter = createFilterList({
+      mode: "human",
+      input: new PassThrough(),
+      output: terminal,
+    });
+    let caught: unknown;
+    try {
+      await filter({
+        message: "Filter things",
+        items: ["alpha"],
+        searchText: () => {
+          throw failure;
+        },
+        table: () => ({ header: "name", line: (item) => item }),
+        describeCount: () => "1 of 1",
+        detail: (item) => item,
+      });
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBe(failure);
+    expect(terminal.listeners("resize")).toEqual([existingListener]);
+    expect(terminal.writes).toEqual([]);
   });
 
   it("leaves the search and its match count on the normal screen", async () => {
