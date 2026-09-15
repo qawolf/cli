@@ -12,7 +12,7 @@
         "@qawolf/emails": "1.1.1",
         "@qawolf/flow-targets": "1.0.0",
         "@qawolf/flows": "0.1.4",
-        "@qawolf/testkit": "1.1.1",
+        "@qawolf/testkit": "1.2.1",
         "commander": "14.0.3",
         "env-paths": "4.0.0",
         "picomatch": "4.0.4",
@@ -478,7 +478,7 @@
 
     "@qawolf/run-globals-ios": ["@qawolf/run-globals-ios@0.0.18", "", { "dependencies": { "plist": "^3.1.0", "zod": "^4.1.11" }, "peerDependencies": { "webdriver": "^8.0.0 || ^9.0.0", "webdriverio": "^8.0.0 || ^9.0.0" } }, "sha512-3ED9Aeq1AVrs1Pt1+N1L+4B5NTscRhOUGHo2WZ/r0eDlEuAJf6b4sitW9x+w7dP6QtrofilZe0LAQSnzVfybxw=="],
 
-    "@qawolf/testkit": ["@qawolf/testkit@1.1.1", "", { "dependencies": { "jsqr": "^1.4.0", "otpauth": "9.3.6", "pngjs": "^6.0.0", "tslib": "^2.5.3", "zod": "^4.1.11" }, "peerDependencies": { "playwright": "1.58.2" } }, "sha512-tuBwFK6mvYXj7kS988wBBbrkpffADOenj5qHIyQMNOysjbneBeYFRMnYMRaP0KlX5f8HWt14Ce21UCfVRgBVEA=="],
+    "@qawolf/testkit": ["@qawolf/testkit@1.2.1", "", { "dependencies": { "jsqr": "^1.4.0", "otpauth": "9.3.6", "pngjs": "^6.0.0", "tslib": "^2.5.3", "zod": "^4.1.11" }, "peerDependencies": { "playwright": "1.58.2" } }, "sha512-8Wai6ti5qSq8fgBHa5Q2kyTH7MZYObs1oFM0f8R2baYk6TBAhxIGPZRjT5IBjNx5pB1klHd43Lr7Fj3ge6brcw=="],
 
     "@rvf/set-get": ["@rvf/set-get@7.0.3", "", {}, "sha512-Ky2uOJ5WpgqVev4W+dNlOIJ2R9b6heHD4PHx7NGI98XanfeH8Pl/m5wE0aZU3d/nD79iOUlZHBn0uxJU/DJF7g=="],
 
