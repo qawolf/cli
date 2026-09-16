@@ -55,6 +55,7 @@ it("filters remote flows and prints matches at the resized terminal width", asyn
   expect(fake.calls[0]?.items).toEqual([
     expect.objectContaining({ flowId: "flow-a", tags: ["smoke"] }),
   ]);
+  expect(ctx.ui.intro).toHaveBeenCalledWith("Remote Flows");
   const output = stripVTControlCharacters(
     callsOf(ctx.ui.write)
       .map(([value]) => String(value))

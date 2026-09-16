@@ -44,6 +44,7 @@ describe("filterFlows", () => {
     await filterFlows(ui, [row()], { columns: 100 });
 
     expect(offered()?.items).toEqual([row()]);
+    expect(ui.intro).toHaveBeenCalledWith("Flows");
     expect(offered()?.message).toBe(
       flowsMessages.list.filterFlows(".qawolf/env-a/"),
     );

@@ -88,7 +88,9 @@ export async function flowsListRemote(
   if (empty !== undefined) return empty;
 
   if (view.interactive) {
-    return filterFlows(ctx.ui, items.map(toListRow), view);
+    return filterFlows(ctx.ui, items.map(toListRow), view, {
+      title: flowsMessages.remoteTitle,
+    });
   }
   if (ctx.ui.mode === "json") {
     ctx.ui.json(items);

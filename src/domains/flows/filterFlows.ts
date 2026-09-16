@@ -16,6 +16,7 @@ export async function filterFlows(
   ui: UI,
   rows: readonly FlowsListRow[],
   view: Pick<ListView, "columns">,
+  options: { readonly title?: string } = {},
 ): Promise<CommandResult> {
   if (rows.length === 0) {
     ui.info(runnerMessages.noFlowsMatched);
@@ -23,7 +24,7 @@ export async function filterFlows(
   }
 
   ui.gap();
-  ui.intro(flowsMessages.title);
+  ui.intro(options.title ?? flowsMessages.title);
   const result = await ui.filterList({
     message: flowsMessages.list.filterFlows(sharedPulledPrefix(rows)),
     items: rows,
