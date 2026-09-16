@@ -22,11 +22,22 @@ const runner = (actions: FilterAction<string>[] = [copyPath], holdMs = 20) => {
 describe("createActionRunner", () => {
   it("ignores an action that completes after disposal", async () => {
     const pending = Promise.withResolvers<FilterNotice>();
-    const r = runner([{ key: "y", label: "copy", run: () => pending.promise }]);
+    const started = Promise.withResolvers<void>();
+    const r = runner([
+      {
+        key: "y",
+        label: "copy",
+        run: () => {
+          started.resolve();
+          return pending.promise;
+        },
+      },
+    ]);
     r.onKey({ name: "y", ctrl: true }, ["a"]);
+    await started.promise;
     r.dispose();
     pending.resolve({ tone: "success", text: "late" });
-    await sleep(30);
+    await new Promise<void>((resolve) => setImmediate(resolve));
     expect(r.changed).not.toHaveBeenCalled();
     expect(r.notice()).toBeUndefined();
   });
@@ -94,6 +105,78 @@ describe("createActionRunner", () => {
     });
     r.dispose();
   });
+  it("keeps overlapping actions in key-press order", async () => {
+    const first = Promise.withResolvers<FilterNotice>();
+    const second = Promise.withResolvers<FilterNotice>();
+    const started: string[] = [];
+    const writes: string[] = [];
+    const run = async (items: readonly string[]): Promise<FilterNotice> => {
+      const value = items[0] ?? "";
+      started.push(value);
+      const notice = await (value === "first" ? first : second).promise;
+      writes.push(value);
+      return notice;
+    };
+    const r = runner(
+      [
+        { key: "y", label: "copy path", run },
+        { key: "o", label: "copy id", run },
+      ],
+      1000,
+    );
+    try {
+      r.onKey({ name: "y", ctrl: true }, ["first"]);
+      r.onKey({ name: "o", ctrl: true }, ["second"]);
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      expect(started).toEqual(["first"]);
+      second.resolve({ tone: "success", text: "second" });
+      first.resolve({ tone: "success", text: "first" });
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      expect(writes).toEqual(["first", "second"]);
+      expect(r.notice()?.text).toBe("second");
+    } finally {
+      r.dispose();
+      first.resolve({ tone: "success", text: "first" });
+      second.resolve({ tone: "success", text: "second" });
+    }
+  });
+
+  it("does not start queued or new actions after disposal", async () => {
+    const pending = Promise.withResolvers<FilterNotice>();
+    const run = mock(() => pending.promise);
+    const r = runner([{ key: "y", label: "copy", run }]);
+    r.onKey({ name: "y", ctrl: true }, ["first"]);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    r.onKey({ name: "y", ctrl: true }, ["second"]);
+    r.dispose();
+    r.onKey({ name: "y", ctrl: true }, ["third"]);
+    pending.resolve({ tone: "success", text: "first" });
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(run).toHaveBeenCalledWith(["first"]);
+    expect(r.changed).not.toHaveBeenCalled();
+    expect(r.notice()).toBeUndefined();
+  });
+
+  for (const failure of ["throw", "reject"]) {
+    it(`continues queued actions after ${failure}`, async () => {
+      const run = (items: readonly string[]): Promise<FilterNotice> => {
+        if (items[0] !== "first") return done("second");
+        if (failure === "throw") throw new Error("copy failed");
+        return Promise.reject(new Error("copy failed"));
+      };
+      const r = runner([{ key: "y", label: "copy", run }], 1000);
+      try {
+        r.onKey({ name: "y", ctrl: true }, ["first"]);
+        r.onKey({ name: "y", ctrl: true }, ["second"]);
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        expect(r.notice()).toEqual({ tone: "success", text: "second" });
+        expect(r.changed).toHaveBeenCalledTimes(2);
+      } finally {
+        r.dispose();
+      }
+    });
+  }
 });
 
 describe("actionHints", () => {

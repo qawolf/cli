@@ -9,15 +9,12 @@ export function copyFlowActions(
   copy: CopyToClipboard,
   formatPaths = formatClipboardPaths,
 ): FilterAction<FlowsListRow>[] {
-  // Quote individual paths before joining, so shell syntax stays literal.
+  // Quote individual values before joining, so shell syntax stays literal.
   const copied = async (
     values: readonly string[],
     noun: "path" | "id",
   ): Promise<FilterNotice> => {
-    const formatted =
-      noun === "path"
-        ? formatPaths(values)
-        : { text: values.join(" "), syntax: undefined };
+    const formatted = formatPaths(values);
     const message =
       (await copy(formatted.text)) === "copied"
         ? flowsMessages.list.copied(values, noun)

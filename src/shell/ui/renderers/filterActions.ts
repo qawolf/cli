@@ -26,6 +26,7 @@ export function createActionRunner<Item>(args: {
   let notice: FilterNotice | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let disposed = false;
+  let pending = Promise.resolve();
 
   const show = (next: FilterNotice): void => {
     if (disposed) return;
@@ -41,16 +42,19 @@ export function createActionRunner<Item>(args: {
 
   return {
     onKey(key, targets) {
-      if (key.ctrl !== true || targets.length === 0) return;
+      if (disposed || key.ctrl !== true || targets.length === 0) return;
       const action = args.actions.find(
         (candidate) => candidate.key === key.name,
       );
       if (action === undefined) return;
-      void action
-        .run(targets)
-        .then(show, () =>
-          show({ tone: "warning", text: `Could not ${action.label}.` }),
-        );
+      pending = pending.then(async () => {
+        if (disposed) return;
+        try {
+          show(await action.run(targets));
+        } catch {
+          show({ tone: "warning", text: `Could not ${action.label}.` });
+        }
+      });
     },
     notice: () => notice,
     dispose() {

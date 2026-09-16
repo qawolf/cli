@@ -65,61 +65,70 @@ describe("copyFlowActions", () => {
     expect(notice).toEqual({ tone: "success", text: "Copied 2 ids" });
   });
 
-  for (const shell of ["sh", "bash", "zsh"]) {
-    // This corpus includes POSIX filenames with control characters. Windows
-    // copies PowerShell syntax, covered by clipboardPaths.test.ts.
-    it.skipIf(
-      process.platform === "win32" ||
-        spawnSync(shell, ["-c", "exit 0"]).error !== undefined,
-    )(
-      `preserves each copied path as one literal argument in ${shell}`,
-      async () => {
-        const { copy, run } = setup();
-        const files = [
-          "src/flows/checkout cart.flow.ts",
-          "src/flows/customer's cart.flow.ts",
-          "src/flows/payments[1].flow.ts",
-          "src/flows/$USER.flow.ts",
-          "src/flows/$(printf injected).flow.ts",
-          "src/flows/`printf injected`.flow.ts",
-          "src/flows/semicolon; printf injected",
-          "src/flows/first\nsecond.flow.ts",
-          "src/flows/trailing.flow.ts\n",
-          "src/flows/carriage.flow.ts\r",
-          "src/flows/back\\slash.flow.ts",
-          'src/flows/"quoted".flow.ts',
-          "#comment.flow.ts",
-          "~/literal.flow.ts",
-          "src/flows/{a,b}?.flow.ts",
-          "src/flows/!history.flow.ts",
-        ];
+  for (const [kind, key] of [
+    ["path", "y"],
+    ["id", "o"],
+  ] as const) {
+    for (const shell of ["sh", "bash", "zsh"]) {
+      // This corpus includes POSIX filenames with control characters. Windows
+      // copies PowerShell syntax, covered by clipboardPaths.test.ts.
+      it.skipIf(
+        process.platform === "win32" ||
+          spawnSync(shell, ["-c", "exit 0"]).error !== undefined,
+      )(
+        `preserves each copied ${kind} as one literal argument in ${shell}`,
+        async () => {
+          const { copy, run } = setup();
+          const files = [
+            "src/flows/checkout cart.flow.ts",
+            "src/flows/reader's note.flow.ts",
+            "src/flows/payments[1].flow.ts",
+            "src/flows/$USER.flow.ts",
+            "src/flows/$(printf injected).flow.ts",
+            "src/flows/`printf injected`.flow.ts",
+            "src/flows/semicolon; printf injected",
+            "src/flows/first\nsecond.flow.ts",
+            "src/flows/trailing.flow.ts\n",
+            "src/flows/carriage.flow.ts\r",
+            "src/flows/back\\slash.flow.ts",
+            'src/flows/"quoted".flow.ts',
+            "#comment.flow.ts",
+            "~/literal.flow.ts",
+            "src/flows/{a,b}?.flow.ts",
+            "src/flows/!history.flow.ts",
+          ];
 
-        await run(
-          "y",
-          files.map((file) => ({ ...row("a", undefined), file })),
+          await run(
+            key,
+            files.map((file) => ({ ...row("a", file), file })),
+          );
+          const copied = copy.mock.calls[0]?.[0];
+          expect(copied).toBeDefined();
+          const result = spawnSync(shell, ["-c", `printf '%s\\0' ${copied}`], {
+            encoding: "utf8",
+          });
+
+          expect(result.status).toBe(0);
+          expect(result.stderr).toBe("");
+          expect(result.stdout.split("\0").slice(0, -1)).toEqual(files);
+        },
+      );
+    }
+
+    for (const outcome of ["copied", "terminal"] as const) {
+      it(`names the Windows ${kind} quoting format when ${outcome}`, async () => {
+        const { copy, run } = setup(outcome, "win32");
+
+        const notice = await run(key, [row("reader's note", "reader's note")]);
+
+        expect(copy).toHaveBeenCalledWith(
+          key === "y"
+            ? "'src/flows/reader''s note.flow.ts'"
+            : "'reader''s note'",
         );
-        const copied = copy.mock.calls[0]?.[0];
-        expect(copied).toBeDefined();
-        const result = spawnSync(shell, ["-c", `printf '%s\\0' ${copied}`], {
-          encoding: "utf8",
-        });
-
-        expect(result.status).toBe(0);
-        expect(result.stderr).toBe("");
-        expect(result.stdout.split("\0").slice(0, -1)).toEqual(files);
-      },
-    );
-  }
-
-  for (const outcome of ["copied", "terminal"] as const) {
-    it(`names the Windows quoting format when ${outcome}`, async () => {
-      const { copy, run } = setup(outcome, "win32");
-
-      const notice = await run("y", [row("customer's cart", undefined)]);
-
-      expect(copy).toHaveBeenCalledWith("'src/flows/customer''s cart.flow.ts'");
-      expect(notice?.text).toEndWith(" · PowerShell syntax");
-    });
+        expect(notice?.text).toEndWith(" · PowerShell syntax");
+      });
+    }
   }
 
   it("says a flow has no id yet rather than copying nothing", async () => {
