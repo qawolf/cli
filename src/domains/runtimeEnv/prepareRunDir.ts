@@ -6,6 +6,7 @@ import { type Fs, makeDefaultFs } from "~/shell/fs.js";
 import { writeExecSubpathImports } from "./execSubpathImports.js";
 import { populateInnerHop } from "./innerHop.js";
 import { type OuterHopResult, populateOuterHop } from "./outerHop.js";
+import { rewriteStagedAliases } from "./rewriteStagedAliases.js";
 import { stageFlowFiles } from "./stageFlowFiles.js";
 
 export type PrepareRunDirArgs = {
@@ -56,6 +57,7 @@ export async function prepareRunDir(
   // stage bare files that never use the "#playwright" alias.
   if (projectDir !== undefined) {
     await writeExecSubpathImports({ execDir, fs });
+    await rewriteStagedAliases({ execDir, fs });
   }
 
   const outerHop = await populateOuterHop({
