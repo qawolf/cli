@@ -54,6 +54,16 @@ describe("a public API 404", () => {
     expect(result.errorBody).toContain("qawolf runner run");
   });
 
+  it("reads a trigger lookup as a trigger this team does not hold", async () => {
+    const result = await client().callPublicApi(publicContractsV1.trigger.get, {
+      triggerId: "trg-1",
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toBe("QA Wolf has no trigger trg-1 (HTTP 404).");
+  });
+
   // The one case the old wording was true of, and the only one that keeps it.
   it("keeps pointing an environment-scoped route at --env", async () => {
     const result = await client().callPublicApi(publicContractsV1.run.create, {

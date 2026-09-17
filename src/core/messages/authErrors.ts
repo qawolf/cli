@@ -47,8 +47,14 @@ export const authErrorMessages = {
      */
     runIdMayBeRunnerLocal: (runId: string | undefined) =>
       `A run id printed by qawolf runner run belongs to that runner rather than to the platform, so this command cannot resolve it. Read that run with qawolf runner events run-status --run ${runId ?? "<id>"}.`,
+    notFound404Record: (noun: string, id: string) =>
+      `QA Wolf has no ${noun} ${id} (HTTP 404).`,
+    // Says the request matched nothing rather than that the endpoint is
+    // missing, which is how "could not find <contract>" read.
     notFound404: (noun: string | undefined) =>
-      `QA Wolf API could not find ${noun ?? "what the request named"} (HTTP 404).`,
+      noun === undefined
+        ? "QA Wolf found nothing matching the request (HTTP 404)."
+        : `QA Wolf found nothing matching the ${noun} request (HTTP 404).`,
     failedWithStatus: (status: number, noun: string | undefined) =>
       `QA Wolf API${noun ? ` ${noun}` : ""} request failed (HTTP ${status}).`,
     networkUnreachable: (baseUrl: string, noun: string | undefined) =>

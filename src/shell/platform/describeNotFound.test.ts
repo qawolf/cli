@@ -145,18 +145,33 @@ describe("describeNotFound", () => {
     });
   });
 
-  describe("anything else", () => {
-    it("names what was asked for without blaming an environment", () => {
+  describe("a record the platform does not hold", () => {
+    it("names the record and the id, not the endpoint", () => {
       const described = describeNotFound(
-        { kind: "other" },
+        { id: "trg-1", kind: "record", noun: "trigger" },
         "trigger.get",
         bareNotFound,
       );
 
-      expect(described.error).toBe(
-        "QA Wolf API could not find trigger.get (HTTP 404).",
-      );
+      expect(described.error).toBe("QA Wolf has no trigger trg-1 (HTTP 404).");
+      expect(described.exitCode).toBe(exitCodes.notFound);
       expect("errorBody" in described).toBe(false);
+    });
+  });
+
+  describe("a request with nothing to name", () => {
+    // "could not find tag.list" read as though the endpoint were gone.
+    it("says the request matched nothing", () => {
+      const described = describeNotFound(
+        { kind: "other" },
+        "tag.list",
+        bareNotFound,
+      );
+
+      expect(described.error).toBe(
+        "QA Wolf found nothing matching the tag.list request (HTTP 404).",
+      );
+      expect(described.error).not.toContain("environment");
     });
   });
 });
