@@ -18,7 +18,9 @@ const envelope = (message: string) =>
   JSON.stringify({ error: { json: { message } } });
 
 describe("describeRequestError", () => {
-  it.each([401, 402, 403, 404, 500])(
+  // A 404 leads with the reason instead of carrying it underneath, so it is
+  // covered by describeNotFound's own tests.
+  it.each([401, 402, 403, 500])(
     "carries the server's reason on HTTP %i",
     (status) => {
       const described = describeRequestError(
@@ -32,7 +34,7 @@ describe("describeRequestError", () => {
     },
   );
 
-  it.each([401, 402, 403, 404, 500])(
+  it.each([401, 402, 403, 500])(
     "omits the body entirely when HTTP %i carries no reason",
     (status) => {
       const described = describeRequestError(

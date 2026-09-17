@@ -15,8 +15,10 @@ describe("describeNotFound", () => {
       const described = describeNotFound(runner, "runner.runFlow", "");
 
       expect(described.error).toContain("Runner agent-1 is not running");
-      expect(described.error).toContain("qawolf runner launch --id agent-1");
-      expect(described.error).toContain("--runner");
+      expect(described.errorBody).toContain(
+        "qawolf runner launch --id agent-1",
+      );
+      expect(described.errorBody).toContain("--runner");
       expect(described.exitCode).toBe(exitCodes.notFound);
     });
 
@@ -36,10 +38,24 @@ describe("describeNotFound", () => {
         bareNotFound,
       );
 
-      expect(described.errorBody).toBe(
+      expect(described.errorBody).toContain(
         "It was never launched, or it has since been terminated or idled out.",
       );
     });
+
+    // Apex answers "<Noun> not found" on several routes, which repeats the
+    // status rather than explaining it.
+    it.each(["Not found", "Runner not found", "runner not found."])(
+      "treats %p as no reason at all",
+      (bare) => {
+        const described = describeNotFound(runner, "runner.runFlow", bare);
+
+        expect(described.error).toBe(
+          "Runner agent-1 is not running (HTTP 404).",
+        );
+        expect(described.errorBody).toContain("It was never launched");
+      },
+    );
 
     it("prefers the server's reason when it has one", () => {
       const described = describeNotFound(
@@ -48,8 +64,22 @@ describe("describeNotFound", () => {
         "Runner agent-1 was terminated 4 minutes ago.",
       );
 
-      expect(described.errorBody).toBe(
+      expect(described.error).toBe(
+        "Runner agent-1 was terminated 4 minutes ago. (HTTP 404)",
+      );
+      expect(described.errorBody).not.toContain("It was never launched");
+    });
+
+    // Launching is the fix whatever the reason turns out to be.
+    it("still offers the launch command when the server explained", () => {
+      const described = describeNotFound(
+        runner,
+        "runner.runFlow",
         "Runner agent-1 was terminated 4 minutes ago.",
+      );
+
+      expect(described.errorBody).toBe(
+        "Launch it with qawolf runner launch --id agent-1, or send this to a different runner with --runner.",
       );
     });
 
@@ -66,6 +96,21 @@ describe("describeNotFound", () => {
   });
 
   describe("a run the platform does not hold", () => {
+    // A run that is still being created also answers 404, and that one clears
+    // by waiting. Guessing "the id is runner-local" over the top of the
+    // platform saying so would send a caller to the wrong fix.
+    it("says nothing of its own once the platform has explained", () => {
+      const described = describeNotFound(
+        { kind: "run", runId: "abc" },
+        "run.get",
+        "Run is still being created. Try again in a few seconds.",
+      );
+
+      expect(described.error).toBe(
+        "Run is still being created. Try again in a few seconds. (HTTP 404)",
+      );
+      expect("errorBody" in described).toBe(false);
+    });
     it("says the id may be one only the runner knows", () => {
       const described = describeNotFound(
         { kind: "run", runId: "abc" },

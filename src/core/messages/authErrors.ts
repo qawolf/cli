@@ -28,14 +28,23 @@ export const authErrorMessages = {
       `QA Wolf API could not find ${noun ? `${noun} for that environment` : "that environment"} (HTTP 404). Check the --env value.`,
     notFound404Runner: (runnerId: string | undefined) =>
       runnerId === undefined
-        ? "That runner is not running (HTTP 404). Launch one with qawolf runner launch --id <id>, or name a running one with --runner."
-        : `Runner ${runnerId} is not running (HTTP 404). Launch it with qawolf runner launch --id ${runnerId}, or send this to a different runner with --runner.`,
+        ? "That runner is not running (HTTP 404)."
+        : `Runner ${runnerId} is not running (HTTP 404).`,
     /** Why a runner is gone, when the platform did not say. */
     runnerIsGone:
       "It was never launched, or it has since been terminated or idled out.",
+    /** True whatever the platform said, so it is offered either way. */
+    launchTheRunner: (runnerId: string | undefined) =>
+      runnerId === undefined
+        ? "Launch one with qawolf runner launch --id <id>, or name a running one with --runner."
+        : `Launch it with qawolf runner launch --id ${runnerId}, or send this to a different runner with --runner.`,
     notFound404Run: (runId: string | undefined) =>
       `QA Wolf has no run ${runId ?? "by that id"} on this team (HTTP 404).`,
-    /** Why a run id that exists can still be unknown to the platform. */
+    /**
+     * Why a run id that exists can still be unknown to the platform. A guess,
+     * so it is offered only when the platform did not say — a run being created
+     * also answers 404, and that one clears by waiting.
+     */
     runIdMayBeRunnerLocal: (runId: string | undefined) =>
       `A run id printed by qawolf runner run belongs to that runner rather than to the platform, so this command cannot resolve it. Read that run with qawolf runner events run-status --run ${runId ?? "<id>"}.`,
     notFound404: (noun: string | undefined) =>
