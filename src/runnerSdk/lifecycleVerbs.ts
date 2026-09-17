@@ -5,6 +5,7 @@ import { runnerCallOptions } from "~/domains/interactiveRunner/runnerCallOptions
 
 import type { SdkContext } from "./createContext.js";
 import { givenRunner } from "./givenRunner.js";
+import { toSdkFailure } from "./toSdkFailure.js";
 import { toSdkResult } from "./toSdkResult.js";
 import type {
   KeptAlive,
@@ -31,13 +32,9 @@ export function createLifecycleVerbs({ platformClient }: SdkContext) {
       });
 
       if (read.type === "read") return { ok: true, value: { id: runnerId } };
-      return {
-        error:
-          read.type === "unreachable"
-            ? "The runner could not be reached."
-            : read.error,
-        ok: false,
-      };
+      return read.type === "unreachable"
+        ? { error: "The runner could not be reached.", ok: false }
+        : toSdkFailure(read);
     },
 
     async launch({

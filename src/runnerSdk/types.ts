@@ -21,7 +21,16 @@ export type RunnerSdkOptions = {
 };
 
 export type SdkResult<Value> =
-  | { error: string; ok: false }
+  | {
+      error: string;
+      /**
+       * What the platform said beyond the headline, and what to do about it:
+       * the reason a runner is gone, which of `--runner`, `QAWOLF_RUNNER_ID` or
+       * the stored default named it, the command that brings one back.
+       */
+      errorDetail?: string;
+      ok: false;
+    }
   | { ok: true; value: Value };
 
 export type RunSelection =
