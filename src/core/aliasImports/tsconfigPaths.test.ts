@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
 
-import { parseTsconfigPaths, resolvePathAlias } from "./tsconfigPaths.js";
+import {
+  parseTsconfigContent,
+  parseTsconfigPaths,
+  resolvePathAlias,
+} from "./tsconfigPaths.js";
 
 describe("parseTsconfigPaths", () => {
   it("reads compilerOptions.paths", () => {
@@ -20,6 +24,30 @@ describe("parseTsconfigPaths", () => {
     expect(
       parseTsconfigPaths('{"compilerOptions":{"paths":{"~/*":[1]}}}'),
     ).toBeUndefined();
+  });
+});
+
+describe("parseTsconfigContent", () => {
+  it("separates a tsconfig that does not parse from one declaring no paths", () => {
+    expect(
+      parseTsconfigContent('{"compilerOptions":{"paths":{}} // note'),
+    ).toEqual({ type: "unparseable" });
+    expect(parseTsconfigContent('{"compilerOptions":{"strict":true}}')).toEqual(
+      {
+        paths: undefined,
+        type: "parsed",
+      },
+    );
+    expect(parseTsconfigContent("{}")).toEqual({
+      paths: undefined,
+      type: "parsed",
+    });
+  });
+
+  it("reads the paths table when there is one", () => {
+    expect(
+      parseTsconfigContent('{"compilerOptions":{"paths":{"~/*":["src/*"]}}}'),
+    ).toEqual({ paths: { "~/*": ["src/*"] }, type: "parsed" });
   });
 });
 

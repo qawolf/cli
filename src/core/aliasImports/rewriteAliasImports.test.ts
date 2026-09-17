@@ -16,6 +16,8 @@ const projectFilePaths = new Set([
   "src/pages/login/index.ts",
   "src/utilities/gptHelpers.ts",
   "src/utilities/legacy.js",
+  "src/utilities/both.ts",
+  "src/utilities/both.js",
 ]);
 
 function rewrite(
@@ -152,5 +154,10 @@ describe("rewriteAliasImports", () => {
         "smoke.flow.ts",
       ),
     ).toBe('import { ask } from "./src/utilities/gptHelpers.ts";');
+  });
+  it("binds the TypeScript file when the project holds both spellings", () => {
+    expect(rewrite('import { both } from "@utilities/both";')).toBe(
+      'import { both } from "../utilities/both.ts";',
+    );
   });
 });

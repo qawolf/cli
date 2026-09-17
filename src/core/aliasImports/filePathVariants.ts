@@ -1,5 +1,5 @@
 const sourceExtensionPattern = /\.(js|ts)$/;
-const sourceExtensions = [".js", ".ts"];
+const sourceExtensions = [".ts", ".js"];
 
 export function filePathVariants(importPath: string): string[] {
   const hasSourceExtension = sourceExtensionPattern.test(importPath);

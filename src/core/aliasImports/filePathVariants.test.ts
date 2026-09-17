@@ -20,10 +20,27 @@ describe("filePathVariants", () => {
   it("adds index candidates only for an extensionless path", () => {
     expect(filePathVariants("src/pages/login")).toEqual([
       "src/pages/login",
-      "src/pages/login.js",
       "src/pages/login.ts",
-      "src/pages/login/index.js",
+      "src/pages/login.js",
       "src/pages/login/index.ts",
+      "src/pages/login/index.js",
     ]);
+  });
+  it("prefers TypeScript when a project holds both spellings of a file", () => {
+    const projectFiles = new Set(["src/u/foo.ts", "src/u/foo.js"]);
+    expect(
+      filePathVariants("src/u/foo").find((candidate) =>
+        projectFiles.has(candidate),
+      ),
+    ).toBe("src/u/foo.ts");
+  });
+
+  it("still binds the JavaScript file when the import names it", () => {
+    const projectFiles = new Set(["src/u/foo.ts", "src/u/foo.js"]);
+    expect(
+      filePathVariants("src/u/foo.js").find((candidate) =>
+        projectFiles.has(candidate),
+      ),
+    ).toBe("src/u/foo.js");
   });
 });

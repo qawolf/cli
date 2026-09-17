@@ -2,8 +2,8 @@ import { join } from "node:path";
 
 import { rewriteAliasImports } from "~/core/aliasImports/rewriteAliasImports.js";
 import {
-  parseTsconfigPaths,
-  type TsconfigPaths,
+  type ParsedTsconfigContent,
+  parseTsconfigContent,
 } from "~/core/aliasImports/tsconfigPaths.js";
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 import { isNoEntError } from "~/core/errors.js";
@@ -15,13 +15,19 @@ const sourceExtensions = [".ts", ".js"];
 export type RewriteStagedAliasesArgs = {
   execDir: string;
   fs: Fs;
+  onTsconfigUnparsed?: () => void;
 };
 
 export async function rewriteStagedAliases(
   args: RewriteStagedAliasesArgs,
 ): Promise<string[]> {
-  const tsconfigPaths = await readTsconfigPaths(args);
-  if (tsconfigPaths === undefined) return [];
+  const tsconfig = await readStagedTsconfig(args);
+  if (tsconfig.type === "unparseable") {
+    args.onTsconfigUnparsed?.();
+    return [];
+  }
+  if (tsconfig.type === "absent" || tsconfig.paths === undefined) return [];
+  const tsconfigPaths = tsconfig.paths;
 
   const stagedPaths = await listStagedSourceFiles({
     dir: args.execDir,
@@ -67,18 +73,20 @@ export async function rewriteStagedAliases(
   return rewrittenPaths;
 }
 
-async function readTsconfigPaths(options: {
+type StagedTsconfig = ParsedTsconfigContent | { type: "absent" };
+
+async function readStagedTsconfig(options: {
   execDir: string;
   fs: Fs;
-}): Promise<TsconfigPaths | undefined> {
+}): Promise<StagedTsconfig> {
   let content: string;
   try {
     content = await options.fs.readFile(join(options.execDir, "tsconfig.json"));
   } catch (err) {
-    if (isNoEntError(err)) return undefined;
+    if (isNoEntError(err)) return { type: "absent" };
     throw err;
   }
-  return parseTsconfigPaths(content);
+  return parseTsconfigContent(content);
 }
 
 async function listStagedSourceFiles(options: {

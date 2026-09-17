@@ -18,6 +18,7 @@ export type PrepareRunDirArgs = {
   fs?: Fs;
   // Forwarded to populateOuterHop — fires just before a fallback npm install.
   onInstallStart?: (depCount: number) => void;
+  onTsconfigUnparsed?: (projectDir: string) => void;
 };
 
 export type PrepareRunDirResult = {
@@ -57,7 +58,14 @@ export async function prepareRunDir(
   // stage bare files that never use the "#playwright" alias.
   if (projectDir !== undefined) {
     await writeExecSubpathImports({ execDir, fs });
-    await rewriteStagedAliases({ execDir, fs });
+    const onTsconfigUnparsed = args.onTsconfigUnparsed;
+    await rewriteStagedAliases({
+      execDir,
+      fs,
+      ...(onTsconfigUnparsed !== undefined
+        ? { onTsconfigUnparsed: () => onTsconfigUnparsed(projectDir) }
+        : {}),
+    });
   }
 
   const outerHop = await populateOuterHop({

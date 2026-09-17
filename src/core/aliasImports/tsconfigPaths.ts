@@ -15,23 +15,37 @@ function isTsconfigPaths(value: unknown): value is TsconfigPaths {
   );
 }
 
-/** An unreadable tsconfig contributes no aliases rather than failing the run. */
-export function parseTsconfigPaths(
+export type ParsedTsconfigContent =
+  | { type: "parsed"; paths: TsconfigPaths | undefined }
+  | { type: "unparseable" };
+
+export function parseTsconfigContent(
   tsconfigContent: string,
-): TsconfigPaths | undefined {
+): ParsedTsconfigContent {
   let parsed: unknown;
   try {
     parsed = JSON.parse(tsconfigContent);
   } catch {
-    return undefined;
+    return { type: "unparseable" };
   }
-  if (!isRecord(parsed)) return undefined;
+  if (!isRecord(parsed)) return { paths: undefined, type: "parsed" };
 
   const compilerOptions = parsed["compilerOptions"];
-  if (!isRecord(compilerOptions)) return undefined;
+  if (!isRecord(compilerOptions)) return { paths: undefined, type: "parsed" };
 
   const paths = compilerOptions["paths"];
-  return isTsconfigPaths(paths) ? paths : undefined;
+  return {
+    paths: isTsconfigPaths(paths) ? paths : undefined,
+    type: "parsed",
+  };
+}
+
+/** An unreadable tsconfig contributes no aliases rather than failing the run. */
+export function parseTsconfigPaths(
+  tsconfigContent: string,
+): TsconfigPaths | undefined {
+  const parsed = parseTsconfigContent(tsconfigContent);
+  return parsed.type === "parsed" ? parsed.paths : undefined;
 }
 
 type WildcardPattern = { prefix: string; suffix: string };

@@ -64,13 +64,56 @@ describe("rewriteStagedAliases", () => {
     expect(await rewriteStagedAliases({ execDir, fs })).toEqual([]);
   });
 
-  it("leaves the tree alone for a tsconfig that does not parse", async () => {
+  it("reports a tsconfig that does not parse rather than silently resolving nothing", async () => {
     const fs = await stage({
       "src/flows/checkout.flow.ts": 'import { ask } from "@utilities/gpt.ts";',
       "tsconfig.json": '{"compilerOptions":{"paths":{}} // trailing comment',
     });
+    let reported = 0;
 
-    expect(await rewriteStagedAliases({ execDir, fs })).toEqual([]);
+    expect(
+      await rewriteStagedAliases({
+        execDir,
+        fs,
+        onTsconfigUnparsed: () => {
+          reported += 1;
+        },
+      }),
+    ).toEqual([]);
+    expect(reported).toBe(1);
+  });
+
+  it("stays quiet when the project declares no paths", async () => {
+    const fs = await stage({
+      "src/flows/checkout.flow.ts": 'import { ask } from "@utilities/gpt.ts";',
+      "tsconfig.json": '{"compilerOptions":{"strict":true}}',
+    });
+    let reported = 0;
+
+    await rewriteStagedAliases({
+      execDir,
+      fs,
+      onTsconfigUnparsed: () => {
+        reported += 1;
+      },
+    });
+    expect(reported).toBe(0);
+  });
+
+  it("stays quiet when the project staged no tsconfig at all", async () => {
+    const fs = await stage({
+      "src/flows/checkout.flow.ts": 'import { ask } from "@utilities/gpt.ts";',
+    });
+    let reported = 0;
+
+    await rewriteStagedAliases({
+      execDir,
+      fs,
+      onTsconfigUnparsed: () => {
+        reported += 1;
+      },
+    });
+    expect(reported).toBe(0);
   });
 
   it("leaves a file mentioning no alias untouched", async () => {
