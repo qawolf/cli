@@ -1,0 +1,27 @@
+/** What `qawolf runner actions` says about a sequence. */
+export const sequenceMessages = {
+  actionsEmpty:
+    'The sequence holds no actions. Pass a JSON array of at least one, for example \'[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"hello"}]\'.',
+  actionsInvalidAt: (index: number, error: string) =>
+    `Action ${index} in the sequence was refused: ${error}`,
+  actionsNotJsonArray:
+    'The sequence must be a JSON array of actions, for example \'[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"hello"}]\'.',
+  actionsEachNeedsAPath:
+    "--screenshot-mode each writes one frame per action, so it needs --screenshot <path>; each frame goes to that path with the action's index before the extension.",
+  actionsEachToStdout:
+    "--screenshot-mode each writes one frame per action, which stdout cannot carry. Give --screenshot a file path.",
+  actionsPerformed: (count: number) =>
+    `Performed ${count} ${count === 1 ? "action" : "actions"}.`,
+  actionsPerformedScreenshotWritten: (count: number, path: string) =>
+    `Performed ${count} ${count === 1 ? "action" : "actions"} and wrote the runner's screen to ${path}.`,
+  actionsStoppedAt: (index: number, type: string, why: string) =>
+    `Action ${index} (${type}) ${why}`,
+  actionsLeftUnperformed: (count: number) =>
+    `${count} ${count === 1 ? "action" : "actions"} after it ${count === 1 ? "was" : "were"} not attempted.`,
+  actionsMayHaveHappened:
+    "It may have taken effect: take a screenshot before repeating anything from it on.",
+  actionsOutOfTime:
+    "was not reached before the sequence ran out of its time. Send the rest as a new request.",
+  actionsUnconfirmed: (errorMessage: string) =>
+    `has an unknown effect: ${errorMessage}`,
+};
