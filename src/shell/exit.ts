@@ -7,6 +7,7 @@ export const exitCodes = {
   config: 5,
   timeout: 6,
   payment: 7,
+  notFound: 8,
 } as const;
 
 type ExitCode = (typeof exitCodes)[keyof typeof exitCodes];

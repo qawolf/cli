@@ -66,6 +66,7 @@ describe("exit", () => {
       config: 5,
       timeout: 6,
       payment: 7,
+      notFound: 8,
     });
   });
 });

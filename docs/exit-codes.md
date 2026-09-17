@@ -12,6 +12,7 @@ CI consumers depend on consistent exit codes. The CLI commits to the following c
 | `5`  | `config`      | `qawolf.config.ts` invalid, file collision during `init`, or a run file that could not be read.                                                                                                                                                                                                    |
 | `6`  | `timeout`     | A `--follow` reached its `--timeout`: `runner run` before its run settled (the run may still be going), or `runner events`.                                                                                                                                                                        |
 | `7`  | `payment`     | The QA Wolf API refused the request with HTTP 402: billing prevented it — the organization is over its monthly spend limit or has no valid payment method.                                                                                                                                         |
+| `8`  | `notFound`    | The QA Wolf API answered HTTP 404: the runner, run, or other thing the command named does not exist. Unlike `4`, waiting and retrying never clears it — launch a runner, or name one that is running.                                                                                              |
 
 ## Using the helper
 
