@@ -133,7 +133,7 @@ export async function handleRunnerRun(
       recorderSinceSequence,
       runEvents: options.runEvents,
       runId,
-      runnerId: resolved.runnerId,
+      runner: resolved,
       timeoutSeconds: timeout.seconds,
     },
     deps,

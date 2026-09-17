@@ -3,9 +3,10 @@ import { type JournalEntry, publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type { RunnerApiContext } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
-import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
+import type { TargetedRunner } from "./resolveRunner.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
+import { runnerRequestFailure } from "./runnerRequestFailure.js";
 
 type JournalWindow = {
   entries: JournalEntry<unknown>[];
@@ -53,13 +54,13 @@ export const unreachableFailure = {
 /** One window of one stream. */
 export async function readJournal(
   ctx: RunnerApiContext,
-  runnerId: string,
+  runner: TargetedRunner,
   request: JournalRequest,
 ): Promise<JournalReadResult> {
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.runner.readJournal,
     {
-      id: runnerId,
+      id: runner.runnerId,
       stream: request.stream,
       ...(request.runId === undefined ? {} : { runId: request.runId }),
       ...(request.sinceSequence === undefined
@@ -70,11 +71,7 @@ export async function readJournal(
     runnerCallOptions,
   );
   if (!result.ok) {
-    return {
-      ...failureFields(result),
-      exitCode: exitCodes.network,
-      type: "failed",
-    };
+    return { ...runnerRequestFailure(result, runner), type: "failed" };
   }
   if (result.value.outcome === "failure") {
     result.value.failureReason satisfies "runner-unreachable";

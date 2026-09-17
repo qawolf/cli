@@ -7,10 +7,10 @@ import {
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type { RunnerApiContext } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
-import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { ResolvedRunner } from "./resolveRunner.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
+import { runnerRequestFailure } from "./runnerRequestFailure.js";
 import {
   type RunSubmitRefusal,
   describeRunSubmitFailure,
@@ -60,10 +60,7 @@ export async function sendRunFlowRequest(
   );
   if (!result.ok) {
     return {
-      failure: {
-        ...failureFields(result),
-        exitCode: result.exitCode ?? exitCodes.network,
-      },
+      failure: runnerRequestFailure(result, options.resolved),
       type: "failed",
     };
   }

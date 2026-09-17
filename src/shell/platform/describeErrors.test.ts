@@ -18,7 +18,9 @@ const envelope = (message: string) =>
   JSON.stringify({ error: { json: { message } } });
 
 describe("describeRequestError", () => {
-  it.each([401, 402, 403, 404, 500])(
+  // A 404 leads with the reason instead of carrying it underneath, so it is
+  // covered by describeNotFound's own tests.
+  it.each([401, 402, 403, 500])(
     "carries the server's reason on HTTP %i",
     (status) => {
       const described = describeRequestError(
@@ -32,7 +34,7 @@ describe("describeRequestError", () => {
     },
   );
 
-  it.each([401, 402, 403, 404, 500])(
+  it.each([401, 402, 403, 500])(
     "omits the body entirely when HTTP %i carries no reason",
     (status) => {
       const described = describeRequestError(
@@ -65,18 +67,21 @@ describe("describeRequestError", () => {
     expect(described.exitCode).toBe(exitCodes.payment);
   });
 
-  it.each([403, 404, 500])(
-    "leaves the exit code unset on HTTP %i",
-    (status) => {
-      const described = describeRequestError(
-        httpError(status),
-        baseUrl,
-        "run.create",
-      );
+  it.each([403, 500])("leaves the exit code unset on HTTP %i", (status) => {
+    const described = describeRequestError(
+      httpError(status),
+      baseUrl,
+      "run.create",
+    );
 
-      expect("exitCode" in described).toBe(false);
-    },
-  );
+    expect("exitCode" in described).toBe(false);
+  });
+
+  it("maps HTTP 404 to the not-found exit code", () => {
+    const described = describeRequestError(httpError(404), baseUrl, "run.get");
+
+    expect(described.exitCode).toBe(exitCodes.notFound);
+  });
 
   it("omits the body for a network failure", () => {
     const described = describeRequestError(

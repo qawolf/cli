@@ -1,5 +1,6 @@
+import type { RunnerIdSource } from "~/core/interactiveRunner/runnerIdSource.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
-import { resolveIdFrom } from "~/core/resolveId.js";
+import { resolveIdFrom, type ResolvedId } from "~/core/resolveId.js";
 import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
@@ -17,16 +18,22 @@ import { parseRunnerId } from "./runnerIds.js";
  * same would leave an agent acting on a page it believes it already set up.
  */
 export type ResolvedRunner =
-  | { type: "resolved"; runnerId: string }
-  | { type: "launched"; runnerId: string; url: string }
+  | ({ type: "resolved" } & TargetedRunner)
+  | ({ type: "launched"; url: string } & TargetedRunner)
   | { type: "failed"; error: string; errorBody?: string; exitCode: number };
+
+/** A runner a command can act on, and where its id was named. */
+export type TargetedRunner = {
+  runnerId: string;
+  source: RunnerIdSource;
+};
 
 export const runnerIdEnvironmentVariable = "QAWOLF_RUNNER_ID";
 
 const chooseRunnerId = (
   runner: string | undefined,
   deps: InteractiveRunnerDeps,
-): Promise<string | undefined> =>
+): Promise<ResolvedId | undefined> =>
   resolveIdFrom({
     env: deps.env,
     environmentVariable: runnerIdEnvironmentVariable,
@@ -50,9 +57,9 @@ export async function resolveRunner(
 ): Promise<ResolvedRunner> {
   const chosen = await chooseRunnerId(options.runner, deps);
   if (chosen !== undefined) {
-    const parsed = parseRunnerId(chosen);
+    const parsed = parseRunnerId(chosen.id);
     return parsed.ok
-      ? { runnerId: parsed.id, type: "resolved" }
+      ? { runnerId: parsed.id, source: chosen.source, type: "resolved" }
       : {
           error: parsed.error,
           exitCode: exitCodes.invalidArgs,
@@ -82,6 +89,7 @@ export async function resolveRunner(
   }
   return {
     runnerId: launched.value.id,
+    source: "launched",
     type: "launched",
     url: launched.value.url,
   };

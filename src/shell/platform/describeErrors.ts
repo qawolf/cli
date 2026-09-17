@@ -1,7 +1,9 @@
 import { formatSeconds } from "~/core/formatSeconds.js";
 import { authMessages } from "~/core/messages/index.js";
+import type { NotFoundSubject } from "~/core/publicApi/notFoundSubject.js";
 import { exitCodes } from "~/shell/exit.js";
 import type { WireError } from "./createTrpcClient.js";
+import { describeNotFound } from "./describeNotFound.js";
 import { parseErrorBody } from "./parseErrorBody.js";
 import type { PlatformFailure } from "./requestWithRetry.js";
 
@@ -43,6 +45,7 @@ export function describeRequestError(
   err: WireError,
   baseUrl: string,
   noun?: string,
+  notFound?: NotFoundSubject,
 ): PlatformFailure {
   if (err.kind === "http") {
     const reason = parseErrorBody(err.body);
@@ -63,8 +66,7 @@ export function describeRequestError(
       };
     if (err.status === 403)
       return { error: m.request.rejected403(noun), ...body };
-    if (err.status === 404)
-      return { error: m.request.notFound404(noun), ...body };
+    if (err.status === 404) return describeNotFound(notFound, noun, reason);
     return { error: m.request.failedWithStatus(err.status, noun), ...body };
   }
   if (err.kind === "network") {

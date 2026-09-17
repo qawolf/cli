@@ -10,6 +10,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { resolveRunner } from "./resolveRunner.js";
+import { runnerRequestFailure } from "./runnerRequestFailure.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
 /**
@@ -49,7 +50,7 @@ export async function handleRunnerHighlightSelector(
     runnerCallOptions,
   );
   if (!result.ok) {
-    return { ...failureFields(result), exitCode: exitCodes.network };
+    return runnerRequestFailure(result, resolved);
   }
 
   const { outcome } = result.value;

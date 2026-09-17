@@ -5,11 +5,11 @@ import type {
   AuthCommandContext,
   CommandResult,
 } from "~/shell/commandContext.js";
-import { exitCodes } from "~/shell/exit.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { resolveRunner } from "./resolveRunner.js";
+import { runnerRequestFailure } from "./runnerRequestFailure.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
 export async function handleRunnerTerminate(
@@ -36,7 +36,7 @@ export async function handleRunnerTerminate(
     runnerCallOptions,
   );
   if (!result.ok) {
-    return { ...failureFields(result), exitCode: exitCodes.network };
+    return runnerRequestFailure(result, resolved);
   }
 
   // Whether it was running or already gone, this runner is not somewhere later

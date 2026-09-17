@@ -11,6 +11,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { describeEvaluateSnippetFailure } from "./evaluateSnippetFailure.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
+import { runnerRequestFailure } from "./runnerRequestFailure.js";
 import { resolveSnippetScope } from "./snippetScope.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
@@ -82,10 +83,7 @@ export async function handleRunnerExec(
     runnerCallOptions,
   );
   if (!result.ok) {
-    return {
-      ...failureFields(result),
-      exitCode: result.exitCode ?? exitCodes.network,
-    };
+    return runnerRequestFailure(result, resolved);
   }
 
   if (result.value.outcome === "failure") {
