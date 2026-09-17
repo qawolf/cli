@@ -1,5 +1,24 @@
 # @qawolf/cli
 
+## 1.31.0
+
+### Minor Changes
+
+- 318aa36: A 404 from the QA Wolf API now names what the command could not find, instead of telling everyone to check `--env`. A runner-targeting command says the runner is not running, names it, says whether `--runner`, `QAWOLF_RUNNER_ID` or this directory's stored default chose that id, and gives the launch command. `qawolf run get` says there is no such run on this team, and that ids printed by `qawolf runner run` are the runner's own — read those with `qawolf runner events run-status --run <id>`. Only a request that really is scoped to an environment still points at `--env`.
+
+  A failed `@qawolf/cli/runner-sdk` call now carries that second line as `errorDetail`, which the SDK used to build and throw away.
+
+  These failures now exit `8` rather than `4`. Exit `4` means retry; a runner that was terminated or idled out never comes back, so a caller that kept retrying burned its budget on an id that could not work. Bound your retries on `4` as before, and stop on `8`.
+
+### Patch Changes
+
+- 42212e1: A 404 on a trigger, issue, flow, agent session or file now names that record and the id it was asked for — `QA Wolf has no trigger trg-1 (HTTP 404).` It used to name the endpoint instead, which read as though the endpoint itself were gone. A request with no such id to name says it matched nothing, rather than that it could not be found.
+- 7168a30: `qawolf flows run` now resolves the tsconfig path aliases a flow imports through. A flow that imported `@utilities/gpt-helpers.ts` used to fail with `Cannot find package '@utilities/gpt-helpers.ts'`, because the local run handed the alias straight to Node, which went looking for an npm package by that name. The staged copy of your project is now rewritten so every alias becomes the equivalent relative import, which is what the platform runner does before it runs a flow. The aliases come from `compilerOptions.paths` in your project's `tsconfig.json`, the same table and the same rules the platform reads.
+
+  Overlapping alias patterns now pick the target TypeScript picks. An exact pattern beats a wildcard, the longest matching prefix wins among wildcards, and the text after the `*` has to match too, so `@utilities/email/*` no longer loses to `@utilities/*` depending on the order the two are written in.
+
+  An alias that still does not resolve now says so. The failure used to tell you to declare `@utilities/gpt-helpers.ts` in `package.json` "dependencies" and run npm install, which could never work. It now points at `compilerOptions.paths` in your tsconfig.
+
 ## 1.30.0
 
 ### Minor Changes
