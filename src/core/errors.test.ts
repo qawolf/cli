@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 
 import {
   errorCode,
-  extractMissingPackage,
+  extractMissingSpecifier,
   isNoEntError,
   isTimeoutError,
 } from "./errors.js";
@@ -62,26 +62,55 @@ describe("isNoEntError", () => {
   });
 });
 
-describe("extractMissingPackage", () => {
+describe("extractMissingSpecifier", () => {
   it("extracts the package name from an ESM resolution error", () => {
     const text =
       "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'date-fns' imported from /x/y.js";
-    expect(extractMissingPackage(text)).toBe("date-fns");
+    expect(extractMissingSpecifier(text)).toEqual({
+      kind: "package",
+      specifier: "date-fns",
+    });
   });
 
   it("extracts a scoped package name from a CJS resolution error", () => {
-    expect(extractMissingPackage("Cannot find module '@faker-js/faker'")).toBe(
-      "@faker-js/faker",
-    );
+    expect(
+      extractMissingSpecifier("Cannot find module '@faker-js/faker'"),
+    ).toEqual({ kind: "package", specifier: "@faker-js/faker" });
+  });
+
+  it("reads a bare specifier naming a source file as a path alias", () => {
+    const text =
+      "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@utilities/gpt-helpers.ts' imported from /run/exec/src/pages/admin.ts";
+    expect(extractMissingSpecifier(text)).toEqual({
+      kind: "path-alias",
+      specifier: "@utilities/gpt-helpers.ts",
+    });
+  });
+
+  it("reads every source extension a flow project can import as a path alias", () => {
+    for (const extension of [
+      ".ts",
+      ".tsx",
+      ".mts",
+      ".cts",
+      ".js",
+      ".jsx",
+      ".mjs",
+      ".cjs",
+    ]) {
+      expect(
+        extractMissingSpecifier(`Cannot find package '~/helper${extension}'`),
+      ).toEqual({ kind: "path-alias", specifier: `~/helper${extension}` });
+    }
   });
 
   it("returns undefined for non-resolution errors", () => {
-    expect(extractMissingPackage("locator timeout")).toBeUndefined();
+    expect(extractMissingSpecifier("locator timeout")).toBeUndefined();
   });
 
   it("returns undefined for a relative file path specifier", () => {
     expect(
-      extractMissingPackage(
+      extractMissingSpecifier(
         "Cannot find module './helper.js' imported from /x/y.js",
       ),
     ).toBeUndefined();
@@ -89,7 +118,7 @@ describe("extractMissingPackage", () => {
 
   it("returns undefined for an absolute file path specifier", () => {
     expect(
-      extractMissingPackage(
+      extractMissingSpecifier(
         "Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/run/exec/helper.js' imported from /x/y.js",
       ),
     ).toBeUndefined();
@@ -97,7 +126,7 @@ describe("extractMissingPackage", () => {
 
   it("returns undefined for a Windows drive-letter path specifier", () => {
     expect(
-      extractMissingPackage("Cannot find module 'C:\\flows\\helper.js'"),
+      extractMissingSpecifier("Cannot find module 'C:\\flows\\helper.js'"),
     ).toBeUndefined();
   });
 });

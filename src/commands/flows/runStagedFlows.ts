@@ -86,6 +86,8 @@ export async function runStagedFlows(
     runRoot: runStagingRoot(),
     onInstallStart: (depCount) =>
       ctx.ui.info(runnerMessages.installingProjectDeps(depCount)),
+    onTsconfigUnparsed: (dir) =>
+      ctx.ui.warn(runnerMessages.tsconfigUnparsedNotice(dir)),
   });
 
   if (staged.outerHop.mode === "install") {

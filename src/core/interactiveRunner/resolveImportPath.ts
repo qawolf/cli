@@ -2,7 +2,10 @@
 // slashes, so resolving with backslashes on Windows would match nothing.
 import { dirname, join, normalize } from "node:path/posix";
 
-import { resolvePathAlias, type TsconfigPaths } from "./tsconfigPaths.js";
+import {
+  resolvePathAlias,
+  type TsconfigPaths,
+} from "~/core/aliasImports/tsconfigPaths.js";
 
 /** So `.tsx`, `.json`, `.mjs` and `.cjs` imports are unreachable. */
 const supportedExtensions = [".ts", ".js"];

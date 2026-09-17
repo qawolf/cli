@@ -1,6 +1,6 @@
 import type ts from "typescript";
 
-import type { TsconfigPaths } from "./tsconfigPaths.js";
+import type { TsconfigPaths } from "~/core/aliasImports/tsconfigPaths.js";
 
 export function getImports(options: {
   content: string;

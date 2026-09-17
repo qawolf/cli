@@ -76,4 +76,10 @@ export const runnerMessages = {
     projectDir === undefined
       ? `Hint: '${pkg}' could not be resolved. Run from within your flows project so its dependencies can be found.`
       : `Hint: '${pkg}' could not be resolved. Ensure it is declared in ${projectDir}/package.json "dependencies" and run npm install in that project.`,
+  tsconfigUnparsedNotice: (projectDir: string) =>
+    `Not resolving path aliases: ${projectDir}/tsconfig.json is not valid JSON. Comments and trailing commas are not supported, here or on the platform. Remove them so "compilerOptions.paths" can be read.`,
+  pathAliasNotFoundHint: (specifier: string, projectDir: string | undefined) =>
+    projectDir === undefined
+      ? `Hint: '${specifier}' looks like a tsconfig path alias. Run from within your flows project so its tsconfig.json can be found.`
+      : `Hint: '${specifier}' looks like a tsconfig path alias. Ensure "compilerOptions.paths" in ${projectDir}/tsconfig.json maps it to a file that exists.`,
 } as const;

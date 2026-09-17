@@ -24,17 +24,20 @@ export function isTimeoutError(err: unknown): boolean {
 
 const missingPackagePattern = /Cannot find (?:package|module) '([^']+)'/;
 const pathLikeSpecifierPattern = /^(?:\.|\/|[A-Za-z]:[\\/])/;
+const sourceFileSpecifierPattern = /\.(?:[cm]?[jt]sx?)$/;
 
-/**
- * The package name from a Node "Cannot find package 'x'" / "Cannot find
- * module 'x'" resolution error text, or undefined when the text is not a
- * module-resolution failure or when the specifier is a file path (relative,
- * absolute, or Windows drive-letter prefix) rather than a bare package name.
- */
-export function extractMissingPackage(text: string): string | undefined {
+export type MissingSpecifier =
+  | { kind: "package"; specifier: string }
+  | { kind: "path-alias"; specifier: string };
+
+export function extractMissingSpecifier(
+  text: string,
+): MissingSpecifier | undefined {
   const specifier = missingPackagePattern.exec(text)?.[1];
   if (specifier === undefined || pathLikeSpecifierPattern.test(specifier)) {
     return undefined;
   }
-  return specifier;
+  return sourceFileSpecifierPattern.test(specifier)
+    ? { kind: "path-alias", specifier }
+    : { kind: "package", specifier };
 }

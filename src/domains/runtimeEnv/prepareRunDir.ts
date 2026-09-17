@@ -6,6 +6,7 @@ import { type Fs, makeDefaultFs } from "~/shell/fs.js";
 import { writeExecSubpathImports } from "./execSubpathImports.js";
 import { populateInnerHop } from "./innerHop.js";
 import { type OuterHopResult, populateOuterHop } from "./outerHop.js";
+import { rewriteStagedAliases } from "./rewriteStagedAliases.js";
 import { stageFlowFiles } from "./stageFlowFiles.js";
 
 export type PrepareRunDirArgs = {
@@ -17,6 +18,7 @@ export type PrepareRunDirArgs = {
   fs?: Fs;
   // Forwarded to populateOuterHop — fires just before a fallback npm install.
   onInstallStart?: (depCount: number) => void;
+  onTsconfigUnparsed?: (projectDir: string) => void;
 };
 
 export type PrepareRunDirResult = {
@@ -56,6 +58,14 @@ export async function prepareRunDir(
   // stage bare files that never use the "#playwright" alias.
   if (projectDir !== undefined) {
     await writeExecSubpathImports({ execDir, fs });
+    const onTsconfigUnparsed = args.onTsconfigUnparsed;
+    await rewriteStagedAliases({
+      execDir,
+      fs,
+      ...(onTsconfigUnparsed !== undefined
+        ? { onTsconfigUnparsed: () => onTsconfigUnparsed(projectDir) }
+        : {}),
+    });
   }
 
   const outerHop = await populateOuterHop({
