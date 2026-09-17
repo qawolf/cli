@@ -2,6 +2,7 @@ import type { Command } from "commander";
 
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
+import { registerRunnerActionsCommand } from "./actions.register.js";
 import { registerRunnerExecCommand } from "./exec.register.js";
 import { registerRunnerHighlightSelectorCommand } from "./highlightSelector.register.js";
 import { registerRunnerImportPackageCommand } from "./importPackage.register.js";
@@ -24,6 +25,7 @@ export function registerRunnerCommand(
   registerRunCommand(runner, signals);
   registerRunnerEventsCommand(runner, signals);
   registerRunnerInteractCommands(runner, signals);
+  registerRunnerActionsCommand(runner, signals);
   registerRunnerExecCommand(runner, signals);
   registerRunnerInspectCommands(runner, signals);
   registerRunnerImportPackageCommand(runner, signals);
