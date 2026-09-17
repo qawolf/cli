@@ -29,7 +29,7 @@ const follow = (
       recorderSinceSequence: options.recorderSinceSequence,
       runEvents: options.runEvents ?? false,
       runId: "run-a",
-      runnerId: "ci",
+      runner: { runnerId: "ci", source: "flag" },
       timeoutSeconds: options.timeoutSeconds ?? 3600,
     },
     makeTestDeps(),

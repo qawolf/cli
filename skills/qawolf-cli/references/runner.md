@@ -30,8 +30,8 @@ then launched without `--id` ends up with a pod it is not addressing. Pass
 And a runner id that is set is treated as found, whether or not anything is
 running under it. So exporting `QAWOLF_RUNNER_ID=agent-1` turns off the
 auto-launch described next: instead of starting `agent-1`, commands try to reach
-it and fail with exit code `4`, which reads as "retry" and never succeeds.
-Launch that id once yourself and the rest follows.
+it and fail with exit code `8`, naming the id and saying the variable is what
+chose it. Launch that id once yourself and the rest follows.
 
 And launching an id that differs from `QAWOLF_RUNNER_ID` prints a warning on
 stderr naming both ids: the variable still outranks the directory default, so
@@ -119,11 +119,14 @@ and says so on stderr. Everything else on this page waits for a run.
 
 Retry on the exit code, not on the message text:
 
-- `4` is usually transient. The screen is up but cannot serve this instant:
-  restarting after a display-size change, or busy with another request. Retry in
-  a second or two — but bound the retries, because `4` also covers a runner that
-  was reaped after inactivity, which no amount of retrying brings back. If `4`
-  persists past a few tries, relaunch the id.
+- `4` is transient. The screen is up but cannot serve this instant: restarting
+  after a display-size change, or busy with another request. Retry in a second
+  or two, and bound the retries.
+- `8` means there is no such runner. It was never launched, or it was
+  terminated, or it idled out. Retrying never brings one back, so stop and
+  launch the id or name one that is running. The message says which runner was
+  meant and whether `--runner`, `QAWOLF_RUNNER_ID` or this directory's stored
+  default chose it — read that line before you pick an id to launch.
 - `2` will not clear on its own. Either nothing has run on this runner yet, so
   run a flow, or the runner has no browser at all, so launch with
   `--name playwright` instead. The message says which.
@@ -224,7 +227,8 @@ what the page shows.
 One failure covers three causes, because a runner cannot tell them apart: no
 live page, no element matching the selector, no variable under that name. All
 three exit `2` and none clears by waiting, so read the message, which carries
-whatever the runner said. An unreachable runner exits `4` and is worth retrying.
+whatever the runner said. An unreachable runner exits `4` and is worth retrying;
+a runner that is not running at all exits `8` and is not.
 
 Use `inspect` before reaching for `exec`. Reading a value through a snippet
 means printing it and then fishing it back out of the `console` stream, which is

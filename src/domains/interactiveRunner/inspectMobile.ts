@@ -15,6 +15,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { describeSession, streamLine } from "./inspectMobileAnswer.js";
 import { resolveRunner } from "./resolveRunner.js";
+import { runnerRequestFailure } from "./runnerRequestFailure.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
 /**
@@ -52,7 +53,7 @@ export async function handleRunnerInspectMobile(
     runnerCallOptions,
   );
   if (!result.ok) {
-    return { ...failureFields(result), exitCode: exitCodes.network };
+    return runnerRequestFailure(result, resolved);
   }
 
   if (result.value.outcome === "success") {

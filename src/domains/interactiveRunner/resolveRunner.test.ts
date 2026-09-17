@@ -24,7 +24,7 @@ describe("resolveRunner", () => {
 
     expect(
       await resolveRunner(ctx, { autoLaunch: true, runner: "from-flag" }, deps),
-    ).toEqual({ runnerId: "from-flag", type: "resolved" });
+    ).toEqual({ runnerId: "from-flag", source: "flag", type: "resolved" });
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 
@@ -35,7 +35,11 @@ describe("resolveRunner", () => {
 
     expect(
       await resolveRunner(ctx, { autoLaunch: true, runner: undefined }, deps),
-    ).toEqual({ runnerId: "from-env", type: "resolved" });
+    ).toEqual({
+      runnerId: "from-env",
+      source: "environment",
+      type: "resolved",
+    });
   });
 
   it("falls back to the stored default", async () => {
@@ -45,7 +49,7 @@ describe("resolveRunner", () => {
 
     expect(
       await resolveRunner(ctx, { autoLaunch: true, runner: undefined }, deps),
-    ).toEqual({ runnerId: "from-store", type: "resolved" });
+    ).toEqual({ runnerId: "from-store", source: "stored", type: "resolved" });
   });
 
   it("ignores a blank environment variable", async () => {
@@ -55,7 +59,7 @@ describe("resolveRunner", () => {
 
     expect(
       await resolveRunner(ctx, { autoLaunch: true, runner: undefined }, deps),
-    ).toEqual({ runnerId: "from-store", type: "resolved" });
+    ).toEqual({ runnerId: "from-store", source: "stored", type: "resolved" });
   });
 
   // The caller has to be able to tell a fresh browser from one it already set
@@ -67,7 +71,12 @@ describe("resolveRunner", () => {
 
     expect(
       await resolveRunner(ctx, { autoLaunch: true, runner: undefined }, deps),
-    ).toEqual({ runnerId: "cli-minted", type: "launched", url: launched.url });
+    ).toEqual({
+      runnerId: "cli-minted",
+      source: "launched",
+      type: "launched",
+      url: launched.url,
+    });
 
     expect(callPublicApi).toHaveBeenCalledWith(
       publicContractsV1.runner.launch,

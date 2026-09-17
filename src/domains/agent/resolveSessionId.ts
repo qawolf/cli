@@ -23,13 +23,15 @@ export function chooseGivenSessionId(given: {
 }
 
 /** The session a command means: given, else the environment, else the last one this workspace started. */
-export const resolveSessionId = (
+export const resolveSessionId = async (
   session: string | undefined,
   deps: AgentDeps,
 ): Promise<string | undefined> =>
-  resolveIdFrom({
-    env: deps.env,
-    environmentVariable: sessionIdEnvironmentVariable,
-    given: session,
-    readStored: deps.store.readLastSessionId,
-  });
+  (
+    await resolveIdFrom({
+      env: deps.env,
+      environmentVariable: sessionIdEnvironmentVariable,
+      given: session,
+      readStored: deps.store.readLastSessionId,
+    })
+  )?.id;

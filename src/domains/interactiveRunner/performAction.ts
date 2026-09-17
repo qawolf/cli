@@ -20,6 +20,7 @@ import {
 import { readAction } from "./readAction.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
+import { runnerRequestFailure } from "./runnerRequestFailure.js";
 
 /**
  * Performs one raw browser action.
@@ -84,19 +85,16 @@ export async function handleRunnerAct(
     // A lost answer at the transport is the same hazard as the unreachable
     // outcome below: the action may have taken effect before the answer was
     // lost, so this failure must not invite a bare repeat either.
-    const fields = failureFields(result);
-    return {
-      ...fields,
-      ...(result.mayHaveArrived
-        ? {
-            error: appendSentence(
-              fields.error,
-              interactiveRunnerMessages.actionMayHaveHappened,
-            ),
-          }
-        : {}),
-      exitCode: exitCodes.network,
-    };
+    const fields = runnerRequestFailure(result, resolved);
+    return result.mayHaveArrived
+      ? {
+          ...fields,
+          error: appendSentence(
+            fields.error,
+            interactiveRunnerMessages.actionMayHaveHappened,
+          ),
+        }
+      : fields;
   }
 
   const answer = result.value;

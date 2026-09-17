@@ -3,6 +3,7 @@ import { readJournal } from "~/domains/interactiveRunner/readJournal.js";
 import { submitRun } from "~/domains/interactiveRunner/submitRun.js";
 
 import type { SdkContext } from "./createContext.js";
+import { givenRunner } from "./givenRunner.js";
 import type {
   EventsRequest,
   Journal,
@@ -34,7 +35,7 @@ export function createRunVerbs({ deps, platformClient }: SdkContext) {
       stream,
       window,
     }: EventsRequest): Promise<SdkResult<Journal>> {
-      const read = await readJournal(ctx, runnerId, {
+      const read = await readJournal(ctx, givenRunner(runnerId), {
         stream,
         ...(runFilter === "all-runs" ? {} : { runId: runFilter.runId }),
         ...(window === "newest"
@@ -79,7 +80,7 @@ export function createRunVerbs({ deps, platformClient }: SdkContext) {
           environment: prepared.environment,
           environmentId: prepared.environmentId,
           files: prepared.files,
-          resolved: { runnerId, type: "resolved" },
+          resolved: { ...givenRunner(runnerId), type: "resolved" },
           selection: prepared.selection,
         },
         deps,

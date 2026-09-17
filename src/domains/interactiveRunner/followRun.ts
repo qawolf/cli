@@ -69,7 +69,7 @@ export async function followRun(
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
   const printers = createFollowPrinters(ctx, options);
-  const readStatus = createJournalCursor(ctx, options.runnerId, {
+  const readStatus = createJournalCursor(ctx, options.runner, {
     runId: options.runId,
     stream: "run-status",
   });
@@ -138,7 +138,7 @@ export async function followRun(
       return {
         error: interactiveRunnerMessages.followTimedOut(
           options.runId,
-          options.runnerId,
+          options.runner.runnerId,
           options.timeoutSeconds,
         ),
         exitCode: exitCodes.timeout,

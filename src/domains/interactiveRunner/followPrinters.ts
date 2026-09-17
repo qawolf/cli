@@ -11,6 +11,7 @@ import {
   readJournal,
   unreachableFailure,
 } from "./readJournal.js";
+import type { TargetedRunner } from "./resolveRunner.js";
 
 const anchorPollIntervalMs = 1_000;
 
@@ -30,11 +31,11 @@ type RecorderAnchor =
  */
 export async function resolveRecorderAnchor(
   ctx: AuthCommandContext,
-  resolved: { runnerId: string; type: "launched" | "resolved" },
+  resolved: TargetedRunner & { type: "launched" | "resolved" },
   deps: { sleep: (ms: number) => Promise<void> },
 ): Promise<RecorderAnchor> {
   if (resolved.type === "launched") return { ok: true, sinceSequence: 0 };
-  return anchorRecorderCursor(ctx, resolved.runnerId, deps);
+  return anchorRecorderCursor(ctx, resolved, deps);
 }
 
 /**
@@ -46,12 +47,12 @@ export async function resolveRecorderAnchor(
  */
 async function anchorRecorderCursor(
   ctx: AuthCommandContext,
-  runnerId: string,
+  runner: TargetedRunner,
   deps: { sleep: (ms: number) => Promise<void> },
 ): Promise<RecorderAnchor> {
   const unreachable = createUnreachableBudget(anchorPollIntervalMs);
   for (;;) {
-    const anchor = await readJournal(ctx, runnerId, {
+    const anchor = await readJournal(ctx, runner, {
       stream: "recorder",
       tail: 1,
     });
@@ -79,7 +80,7 @@ export type FollowStreamOptions = {
   recorderSinceSequence: number | undefined;
   runEvents: boolean;
   runId: string;
-  runnerId: string;
+  runner: TargetedRunner;
 };
 
 /**
@@ -98,7 +99,7 @@ export function createFollowPrinters(
     printers.push(
       createPrintingCursor(
         ctx,
-        options.runnerId,
+        options.runner,
         { runId: options.runId, stream: "run-logs" },
         formatRunLogLine,
       ),
@@ -108,7 +109,7 @@ export function createFollowPrinters(
     printers.push(
       createPrintingCursor(
         ctx,
-        options.runnerId,
+        options.runner,
         { runId: options.runId, stream: "run-events" },
         jsonLine,
       ),
@@ -118,7 +119,7 @@ export function createFollowPrinters(
     printers.push(
       createPrintingCursor(
         ctx,
-        options.runnerId,
+        options.runner,
         { sinceSequence: options.recorderSinceSequence, stream: "recorder" },
         jsonLine,
       ),

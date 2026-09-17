@@ -15,7 +15,7 @@ const follow = (ctx: ReturnType<typeof makeAuthCtx>["ctx"]) =>
       recorderSinceSequence: undefined,
       runEvents: false,
       runId: "run-a",
-      runnerId: "ci",
+      runner: { runnerId: "ci", source: "flag" },
       timeoutSeconds: 3600,
     },
     makeTestDeps(),

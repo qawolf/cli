@@ -41,7 +41,7 @@ export async function handleRunnerKeepalive(
     return { ...failureFields(resolved), exitCode: resolved.exitCode };
   }
 
-  const window = await readJournal(ctx, resolved.runnerId, {
+  const window = await readJournal(ctx, resolved, {
     stream: "run-status",
     tail: 1,
   });

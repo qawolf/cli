@@ -7,6 +7,8 @@ import {
 } from "./journalCursor.js";
 import { makeJournal } from "./journal.testUtils.js";
 
+const runner = { runnerId: "ci", source: "flag" } as const;
+
 describe("createJournalCursor", () => {
   // The first read carries no cursor, so it starts at the oldest entry the runner
   // still holds and by definition missed nothing. Measuring it against sequence
@@ -22,7 +24,7 @@ describe("createJournalCursor", () => {
       }),
     );
 
-    await createJournalCursor(ctx, "ci", { stream: "recorder" })();
+    await createJournalCursor(ctx, runner, { stream: "recorder" })();
 
     expect(warnings()).toEqual([]);
   });
@@ -40,7 +42,7 @@ describe("createJournalCursor", () => {
         ],
       }),
     );
-    const read = createJournalCursor(ctx, "ci", { stream: "recorder" });
+    const read = createJournalCursor(ctx, runner, { stream: "recorder" });
 
     await read();
     await read();
@@ -53,7 +55,7 @@ describe("createJournalCursor", () => {
     callPublicApi.mockImplementation(
       makeJournal({ recorder: [[{ code: "a" }], [{ code: "b" }]] }),
     );
-    const read = createJournalCursor(ctx, "ci", {
+    const read = createJournalCursor(ctx, runner, {
       stream: "recorder",
       tail: 1,
     });
@@ -93,7 +95,7 @@ describe("createJournalCursor", () => {
           outcome: "read",
         },
       });
-    const read = createJournalCursor(ctx, "ci", { stream: "recorder" });
+    const read = createJournalCursor(ctx, runner, { stream: "recorder" });
 
     await read();
     await read();
@@ -113,7 +115,7 @@ describe("createJournalCursor", () => {
         { hasUnsearchedHistory: { recorder: true } },
       ),
     );
-    const read = createJournalCursor(ctx, "ci", { stream: "recorder" });
+    const read = createJournalCursor(ctx, runner, { stream: "recorder" });
 
     await read();
     await read();
@@ -128,7 +130,7 @@ describe("createJournalCursor", () => {
       makeJournal({ recorder: ["unreachable"] }),
     );
 
-    const read = await createJournalCursor(ctx, "ci", {
+    const read = await createJournalCursor(ctx, runner, {
       stream: "recorder",
     })();
 

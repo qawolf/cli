@@ -1,3 +1,5 @@
+import type { RunnerIdSource } from "~/core/interactiveRunner/runnerIdSource.js";
+
 // Ends the line with no period: a terminal that linkifies takes the period as
 // part of the address.
 //
@@ -42,4 +44,16 @@ export const lifecycleMessages = {
     `Runner ${id} had nothing to stop. The run had already finished, or none had been submitted.`,
   runnerUnreachable:
     "The runner could not be reached. It may still be starting, or it may have terminated after inactivity. Retry, or launch it again.",
+  // Named on every failure to reach a runner, because a transcript that only
+  // says which runner was missed leaves a reader unable to tell whether the
+  // wrong id was typed, exported, or left behind in .qawolf by an earlier
+  // launch — three different things to go and change.
+  runnerIdCameFrom: (id: string, source: RunnerIdSource) =>
+    ({
+      environment: `The id ${id} came from QAWOLF_RUNNER_ID.`,
+      flag: `The id ${id} came from --runner.`,
+      given: `The id ${id} is the one this call named.`,
+      launched: `Runner ${id} was launched for this command.`,
+      stored: `The id ${id} came from the runner this directory last launched, recorded in .qawolf.`,
+    })[source],
 } as const;

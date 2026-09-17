@@ -79,7 +79,7 @@ export async function handleRunnerEvents(
     );
   }
 
-  const read = createJournalCursor(ctx, resolved.runnerId, parsed.value);
+  const read = createJournalCursor(ctx, resolved, parsed.value);
   const unreachable = createUnreachableBudget(pollIntervalMs);
 
   // Polls rather than a clock, like followRun: the loop sleeps a known interval

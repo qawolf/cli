@@ -5,6 +5,7 @@ import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type { AuthCommandContext } from "~/shell/commandContext.js";
 
 import { type JournalRequest, readJournal } from "./readJournal.js";
+import type { TargetedRunner } from "./resolveRunner.js";
 
 export type CursorRead =
   | { type: "entries"; entries: JournalEntry<unknown>[] }
@@ -27,7 +28,7 @@ export type CursorRead =
  */
 export function createJournalCursor(
   ctx: AuthCommandContext,
-  runnerId: string,
+  runner: TargetedRunner,
   request: JournalRequest,
 ): () => Promise<CursorRead> {
   let sinceSequence = request.sinceSequence;
@@ -35,7 +36,7 @@ export function createJournalCursor(
   let warnedUnsearchedHistory = false;
 
   return async function read(): Promise<CursorRead> {
-    const window = await readJournal(ctx, runnerId, {
+    const window = await readJournal(ctx, runner, {
       ...request,
       sinceSequence,
       tail,
@@ -74,11 +75,11 @@ export function createJournalCursor(
  */
 export function createPrintingCursor(
   ctx: AuthCommandContext,
-  runnerId: string,
+  runner: TargetedRunner,
   request: JournalRequest,
   format: (payload: unknown) => string,
 ): () => Promise<CursorRead> {
-  const read = createJournalCursor(ctx, runnerId, request);
+  const read = createJournalCursor(ctx, runner, request);
   return async () => {
     const window = await read();
     if (window.type !== "entries") return window;
