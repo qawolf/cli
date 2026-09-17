@@ -62,6 +62,8 @@ export function describeNotFound(
         guess: m.runIdMayBeRunnerLocal(subject.runId),
         statement: m.notFound404Run(subject.runId),
       });
+    case "record":
+      return say({ statement: m.notFound404Record(subject.noun, subject.id) });
     case "other":
       return say({ statement: m.notFound404(noun) });
     // A caller that named no subject is one of the environment-scoped reads:
