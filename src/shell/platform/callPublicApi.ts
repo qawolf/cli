@@ -1,6 +1,8 @@
 import { type PublicApiContractKind } from "@qawolf/api-contracts/v1";
 import type { z } from "zod";
 
+import { notFoundSubject } from "~/core/publicApi/notFoundSubject.js";
+
 import { applyWorkspaceId } from "./applyWorkspaceId.js";
 import { describeRequestError } from "./describeErrors.js";
 import type {
@@ -59,17 +61,17 @@ export function makeCallPublicApiMethod(
   deps: MethodDeps,
   readBackoffMs: readonly number[],
 ): CallPublicApiMethod {
-  return async (contract, input, options) =>
-    requestWithRetry({
-      call: () =>
-        callPublicApi(
-          trpc,
-          contract,
-          applyWorkspaceId(contract.input, input, deps.workspaceId),
-          options,
-        ),
+  return async (contract, input, options) => {
+    const sent = applyWorkspaceId(contract.input, input, deps.workspaceId);
+    // Read from the request rather than from the reply, so a 404 names what was
+    // asked for even when the platform answers a bare "Not found".
+    const subject = notFoundSubject(contract.name, sent);
+    return requestWithRetry({
+      call: () => callPublicApi(trpc, contract, sent, options),
       backoffMs: contract.kind === "read" ? readBackoffMs : [],
-      describe: (err) => describeRequestError(err, deps.baseUrl, contract.name),
+      describe: (err) =>
+        describeRequestError(err, deps.baseUrl, contract.name, subject),
       sleep: deps.sleep,
     });
+  };
 }

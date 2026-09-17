@@ -65,18 +65,21 @@ describe("describeRequestError", () => {
     expect(described.exitCode).toBe(exitCodes.payment);
   });
 
-  it.each([403, 404, 500])(
-    "leaves the exit code unset on HTTP %i",
-    (status) => {
-      const described = describeRequestError(
-        httpError(status),
-        baseUrl,
-        "run.create",
-      );
+  it.each([403, 500])("leaves the exit code unset on HTTP %i", (status) => {
+    const described = describeRequestError(
+      httpError(status),
+      baseUrl,
+      "run.create",
+    );
 
-      expect("exitCode" in described).toBe(false);
-    },
-  );
+    expect("exitCode" in described).toBe(false);
+  });
+
+  it("maps HTTP 404 to the not-found exit code", () => {
+    const described = describeRequestError(httpError(404), baseUrl, "run.get");
+
+    expect(described.exitCode).toBe(exitCodes.notFound);
+  });
 
   it("omits the body for a network failure", () => {
     const described = describeRequestError(

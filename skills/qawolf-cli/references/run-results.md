@@ -25,6 +25,10 @@ run
 `runId` in the response is canonical and can differ from the id you asked for.
 Use the returned value for follow-up calls.
 
+`run get` resolves platform runs only. A run id printed by `qawolf runner run`
+belongs to that runner, so `run get` answers exit `8` and no such run on this
+team. Read one of those with `qawolf runner events run-status --run <id>`.
+
 Poll `status` until it reaches `passed`, `failed` or `canceled`. The other
 values mean the run is still going.
 
