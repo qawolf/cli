@@ -1,6 +1,6 @@
 ---
 name: qawolf-cli
-description: Manage QA Wolf through the qawolf CLI. Use when asked to create, update, or list coverage requests, bug reports, or maintenance reports; start a run of flows or tags on the QA Wolf platform or read a run's results; list, set, or delete environment variables; manage environments, flows, or tags; request automation of draft flows; run or list flows locally; authenticate; install the local runtime; or drive a live cloud browser (launch a runner, screenshot it, click and type on it, read its recorder) from a shell.
+description: Manage QA Wolf through the qawolf CLI. Use when asked to create, update, or list coverage requests, bug reports, or maintenance reports; start a run of flows or tags on the QA Wolf platform or read a run's results; list, set, or delete environment variables; manage environments, flows, or tags; run or list flows locally; authenticate; install the local runtime; or drive a live cloud browser (launch a runner, screenshot it, click and type on it, read its recorder) from a shell.
 license: Apache-2.0
 compatibility: Requires the qawolf CLI on PATH. Install it from @qawolf/cli or use a standalone binary from GitHub Releases.
 ---
@@ -131,7 +131,6 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf auth logout` | local | Remove stored credentials |
 | `qawolf auth switch` | local | Choose which workspace to work in |
 | `qawolf auth whoami` | read | Show authentication status |
-| `qawolf automate` | write | Request automation for draft flows. First create a named local .flow.ts draft for every requested journey that does not already have a matching draft; never reuse a generic starter or placeholder. Each new draft must start with a JSDoc Goal: description, import flow from @qawolf/flows/web, and use export default flow(...); a comment-only file or direct test(...) call is not a valid draft. Commit and push all changes with Git to publish them, then list remote drafts to resolve every selected ID. Do not use patch to create or rename a selected flow. Finally make one automation request containing all requested flow IDs. |
 | `qawolf doctor` | local | Diagnose problems running flows locally |
 | `qawolf email find` | read | List the workspace's inbox, or its sent mail, newest first. Read a message body with email.get. |
 | `qawolf email get` | read | Read one email of the workspace, with its plain text and HTML bodies. Use it to pull a sign-in code or a verification link out of a message. |

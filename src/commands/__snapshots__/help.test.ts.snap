@@ -24,20 +24,6 @@ Commands:
                                flows need
   runner                       Drive an interactive runner on the QA Wolf
                                platform
-  automate [options]           Request automation for draft flows. First create
-                               a named local .flow.ts draft for every requested
-                               journey that does not already have a matching
-                               draft; never reuse a generic starter or
-                               placeholder. Each new draft must start with a
-                               JSDoc Goal: description, import flow from
-                               @qawolf/flows/web, and use export default
-                               flow(...); a comment-only file or direct
-                               test(...) call is not a valid draft. Commit and
-                               push all changes with Git to publish them, then
-                               list remote drafts to resolve every selected ID.
-                               Do not use patch to create or rename a selected
-                               flow. Finally make one automation request
-                               containing all requested flow IDs.
   email                        QA Wolf public API email commands
   environment                  QA Wolf public API environment commands
   file                         QA Wolf public API file commands
