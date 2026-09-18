@@ -33,6 +33,7 @@ describe("stageBundle", () => {
     });
 
     const result = await stageBundle({
+      flowIds: undefined,
       tmpArchive: bundleArchive,
       destAbs: destDir,
       assetsAbs: join(workDir, "assets"),
@@ -74,6 +75,7 @@ describe("stageBundle", () => {
     });
 
     const result = await stageBundle({
+      flowIds: undefined,
       tmpArchive: bundleArchive,
       destAbs: destDir,
       assetsAbs: join(workDir, "assets"),
@@ -102,6 +104,7 @@ describe("stageBundle", () => {
     });
 
     await stageBundle({
+      flowIds: undefined,
       tmpArchive: bundleArchive,
       destAbs: destDir,
       assetsAbs: join(workDir, "assets"),
@@ -133,6 +136,7 @@ describe("stageBundle", () => {
     const assetsAbs = join(workDir, "assets");
 
     const result = await stageBundle({
+      flowIds: undefined,
       tmpArchive: bundleArchive,
       destAbs: destDir,
       assetsAbs,
@@ -187,6 +191,7 @@ describe("stageBundle", () => {
     const assetsDir = join(workDir, "assets");
 
     const stageResult = await stageBundle({
+      flowIds: undefined,
       tmpArchive: bundleArchive,
       destAbs: destDir,
       assetsAbs: assetsDir,
