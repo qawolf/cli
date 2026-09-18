@@ -23,8 +23,7 @@
 // prefix. The group is claimed as a whole here, so the contracts whose commands
 // land in a later change are absent rather than generated in a shape the rest of
 // the group does not match.
-/** Every contract the generator passes over. */
-export const skippedContractNames: ReadonlySet<string> = new Set([
+const handWrittenContractNames: readonly string[] = [
   "agent.get",
   "agent.send",
   "flow.list",
@@ -43,4 +42,12 @@ export const skippedContractNames: ReadonlySet<string> = new Set([
   "runner.stopRun",
   "runner.takeScreenshot",
   "runner.terminate",
+];
+
+const deprecatedContractNames: readonly string[] = ["automate"];
+
+/** Every contract the generator passes over. */
+export const skippedContractNames: ReadonlySet<string> = new Set([
+  ...handWrittenContractNames,
+  ...deprecatedContractNames,
 ]);

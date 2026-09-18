@@ -139,4 +139,13 @@ describe("public API commands", () => {
     const create = run?.commands.find((command) => command.name() === "create");
     expect(create).toBeDefined();
   });
+
+  it("does not register the deprecated automate command", () => {
+    const program = createProgram({ signals: noopSignals });
+
+    const automate = program.commands.find(
+      (command) => command.name() === "automate",
+    );
+    expect(automate).toBeUndefined();
+  });
 });
