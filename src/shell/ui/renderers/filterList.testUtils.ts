@@ -2,6 +2,7 @@ import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import { sleep } from "~/core/sleep.js";
 import { createFilterList } from "./filterList.js";
+import type { FilterAction } from "./types.js";
 const frameStart = "\x1b[?2026h";
 export function fakeTerminal() {
   const writes: string[] = [];
@@ -24,7 +25,10 @@ export function fakeTerminal() {
 }
 
 /** Opens the real prompt against fake streams; type into `input` to drive it. */
-export function open(terminal: ReturnType<typeof fakeTerminal>) {
+export function open(
+  terminal: ReturnType<typeof fakeTerminal>,
+  actions: FilterAction<string>[] = [],
+) {
   const input = new PassThrough();
   const previousTerm = process.env["TERM"];
   process.env["TERM"] = "xterm-256color";
@@ -34,6 +38,7 @@ export function open(terminal: ReturnType<typeof fakeTerminal>) {
     searchText: (item) => [item],
     table: () => ({ header: "name", line: (item) => item }),
     describeCount: (matched, total) => `${String(matched)} of ${String(total)}`,
+    actions,
     detail: (item) => `about ${item}`,
   });
   if (previousTerm === undefined) delete process.env["TERM"];
