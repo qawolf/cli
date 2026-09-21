@@ -120,7 +120,7 @@ and says so on stderr. Everything else on this page waits for a run.
 Retry on the exit code, not on the message text:
 
 - `4` is transient, with one exception. The screen is up but cannot serve this instant: restarting after a display-size change, or busy with another request. Retry in a second or two, and bound the retries. The exception is a command that changes something, where a `4` can instead mean the answer was lost with the work in flight. For `act` and `actions`, take a screenshot first and repeat only what the screen says did not happen. For `run`, poll `run-status` instead of submitting again, since a second submission risks a second billed run (see Running a flow). For `exec`, check the effect the snippet was meant to have before running it again.
-- `6` means the work ran out of the time it is given. A `runner actions` sequence answers this way when it did not reach every action; the ones it did not reach go in a new request.
+- `6` means the work ran out of the time it is given. A `runner actions` sequence leaves by the worst thing that happened to any one of its actions — an effect nobody can confirm (`4`) first, then running out of time (`6`), then a refusal (`2`), then an action that plainly did not happen (`1`) — so a sequence that did not reach every action exits `6` only when nothing worse also went wrong. Whatever the code, the message names the last action that took effect, and only what follows it goes in a new request.
 - `8` means there is no such runner. It was never launched, or it was
   terminated, or it idled out. Retrying never brings one back, so stop and
   launch the id or name one that is running. The message says which runner was

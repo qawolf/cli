@@ -3,19 +3,14 @@ import type { BrowserAction } from "@qawolf/api-contracts/v1";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import { appendSentence } from "~/core/sentences.js";
 import type { CommandResult } from "~/shell/commandContext.js";
-import { exitCodes } from "~/shell/exit.js";
 
-import type { SequenceAnswer } from "./performActions.js";
-
-type SequenceFailure = Extract<SequenceAnswer, { outcome: "failure" }>;
-type FailedStep = Extract<
-  SequenceFailure["results"][number],
-  { outcome: "failure" }
->;
-type Reason = {
-  errorMessage: string | undefined;
-  failureReason: SequenceFailure["failureReason"];
-};
+import {
+  describeReason,
+  type FailedStep,
+  type Reason,
+  type SequenceFailure,
+  worstExitCode,
+} from "./performActionsReasons.js";
 
 /** Every action that did not succeed, why, and what the caller should do about it. */
 export function describeSequenceFailure(options: {
@@ -32,20 +27,24 @@ export function describeSequenceFailure(options: {
     failed.length > 0
       ? failed
       : [{ ...reasonOf(answer), index: answer.failedIndex }];
+  const described = reported.map(({ index, ...reason }) => ({
+    index,
+    ...describeReason(reason),
+  }));
   const sentences = [
-    ...(reported.length > 1
+    ...(described.length > 1
       ? [
           interactiveRunnerMessages.actionsNotAllSucceeded(
-            reported.length,
+            described.length,
             actions.length,
           ),
         ]
       : []),
-    ...reported.map(({ index, ...reason }) =>
+    ...described.map(({ index, why }) =>
       interactiveRunnerMessages.actionsFailedAt(
         index,
         actions[index]?.type,
-        describeReason(reason).why,
+        why,
       ),
     ),
     ...(answer.stoppedEarly
@@ -65,7 +64,7 @@ export function describeSequenceFailure(options: {
   ];
   return {
     error: sentences.reduce((text, sentence) => appendSentence(text, sentence)),
-    exitCode: describeReason(reasonOf(answer)).exitCode,
+    exitCode: worstExitCode(described.map(({ exitCode }) => exitCode)),
   };
 }
 
@@ -78,68 +77,4 @@ function reasonOf(failure: FailedStep | SequenceFailure): Reason {
 
 function reasonAt(step: FailedStep): Reason & { index: number } {
   return { ...reasonOf(step), index: step.index };
-}
-
-function describeReason(reason: Reason): {
-  exitCode: number;
-  why: string;
-} {
-  const { failureReason } = reason;
-  switch (failureReason) {
-    case "action-failed":
-      return {
-        exitCode: exitCodes.testFailure,
-        why: `reached the runner and did not take effect: ${reason.errorMessage ?? "no reason was given"}.`,
-      };
-    case "action-unconfirmed":
-      return {
-        exitCode: exitCodes.network,
-        why: appendSentence(
-          interactiveRunnerMessages.actionsUnconfirmed(
-            reason.errorMessage ?? "the runner's screen went quiet",
-          ),
-          interactiveRunnerMessages.actionsMayHaveHappened,
-        ),
-      };
-    case "runner-unreachable":
-      return {
-        exitCode: exitCodes.network,
-        why: appendSentence(
-          "could not be confirmed: the runner stopped answering.",
-          interactiveRunnerMessages.actionsMayHaveHappened,
-        ),
-      };
-    case "out-of-time":
-      return {
-        exitCode: exitCodes.timeout,
-        why: interactiveRunnerMessages.actionsOutOfTime,
-      };
-    case "action-not-supported-on-mobile":
-      return {
-        exitCode: exitCodes.invalidArgs,
-        why: "has no touchscreen equivalent on a mobile runner.",
-      };
-    case "screen-needs-a-run":
-      return {
-        exitCode: exitCodes.invalidArgs,
-        why: `was refused: ${interactiveRunnerMessages.screenNeedsARun}`,
-      };
-    case "runner-has-no-screen":
-      return {
-        exitCode: exitCodes.invalidArgs,
-        why: `was refused: ${interactiveRunnerMessages.runnerHasNoScreen}`,
-      };
-    case "screen-not-ready":
-      return {
-        exitCode: exitCodes.network,
-        why: `was refused: ${interactiveRunnerMessages.screenNotReady}`,
-      };
-    default: {
-      failureReason satisfies never;
-      return {
-        exitCode: exitCodes.network,
-        why: interactiveRunnerMessages.actionAnsweredUnknown(failureReason),
-      };
-    }
-  }
 }
