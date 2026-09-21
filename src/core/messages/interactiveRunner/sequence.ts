@@ -42,8 +42,9 @@ export const sequenceMessages = {
     `${count} ${count === 1 ? "action" : "actions"} after it ${count === 1 ? "was" : "were"} not attempted.`,
   actionsMayHaveHappened:
     "It may have taken effect: take a screenshot before repeating anything from it on.",
-  actionsOutOfTime:
-    "was not reached before the sequence ran out of its time. Send the rest as a new request.",
+  actionsOutOfTime: "was not reached before the sequence ran out of its time.",
+  actionsPartlyApplied: (lastCompletedIndex: number) =>
+    `The sequence was partly applied: action ${String(lastCompletedIndex)} is the last one that took effect. Do not send it again as a whole; send only what still has to happen as a new request.`,
   actionsUnconfirmed: (errorMessage: string) =>
     `has an unknown effect: ${errorMessage}`,
 };

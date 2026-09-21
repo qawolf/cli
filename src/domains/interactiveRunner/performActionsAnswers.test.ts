@@ -78,7 +78,7 @@ describe("handleRunnerActions failures", () => {
 
     expect(result?.exitCode).toBe(1);
     expect(result?.error).toBe(
-      "Action 2 (keypress) reached the runner and did not take effect: Target closed.",
+      "Action 2 (keypress) reached the runner and did not take effect: Target closed. The sequence was partly applied: action 1 is the last one that took effect. Do not send it again as a whole; send only what still has to happen as a new request.",
     );
   });
 

@@ -55,6 +55,13 @@ export function describeSequenceFailure(options: {
           ),
         ]
       : []),
+    ...(answer.lastCompletedIndex === undefined
+      ? []
+      : [
+          interactiveRunnerMessages.actionsPartlyApplied(
+            answer.lastCompletedIndex,
+          ),
+        ]),
   ];
   return {
     error: sentences.reduce((text, sentence) => appendSentence(text, sentence)),
