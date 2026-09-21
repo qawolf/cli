@@ -22,6 +22,10 @@ export const sequenceMessages = {
     unwritten: readonly { detail: string; path: string }[],
   ) =>
     `The runner answered, but ${pluralize(unwritten.length, "frame")} could not be written: ${unwritten.map(({ detail, path }) => `"${path}" (${detail})`).join(", ")}. Whatever the actions did has already happened, so do not send them again: take the screen with qawolf runner screenshot, giving --out a path this process can write to.`,
+  actionsFramesMissing: (indexes: readonly number[]) =>
+    `The runner answered without the ${indexes.length === 1 ? "screen" : "screens"} after ${indexes.length === 1 ? "action" : "actions"} ${indexes.join(", ")}, so nothing was written for ${indexes.length === 1 ? "it" : "them"}. The actions took effect, so do not send them again: take the screen with qawolf runner screenshot instead.`,
+  actionsPerformedWithoutScreenshot: (count: number) =>
+    `Performed ${pluralize(count, "action")}, but the runner answered without the screen it was asked for. The actions took effect, so do not send them again: take the screen with qawolf runner screenshot instead. If this keeps happening, the platform or this CLI is behind the other: upgrade with npm install -g @qawolf/cli.`,
   actionsPerformedFramesWritten: (count: number, paths: string[]) =>
     `Performed ${pluralize(count, "action")} and wrote ${pluralize(paths.length, "screen")} to ${paths.join(", ")}.`,
   actionsPerformedScreenshotToStdout: (count: number) =>
