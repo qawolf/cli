@@ -1,3 +1,4 @@
+import { maxActionsPerRequest } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
 import { makeTestDeps } from "./deps.testUtils.js";
@@ -26,5 +27,17 @@ describe("readActions", () => {
 
     expect(read.ok).toBe(false);
     expect(read.ok ? "" : read.error).toContain("holds no actions");
+  });
+
+  it("says how many actions were sent and how many a request carries", async () => {
+    const tooMany = JSON.stringify(Array.from({ length: 25 }, () => aClick));
+
+    const read = await readActions(tooMany, makeTestDeps());
+
+    expect(read.ok).toBe(false);
+    const error = read.ok ? "" : read.error;
+    expect(error).toContain("25 actions");
+    expect(error).toContain(String(maxActionsPerRequest));
+    expect(error).not.toContain("Action 10 in the sequence was refused");
   });
 });

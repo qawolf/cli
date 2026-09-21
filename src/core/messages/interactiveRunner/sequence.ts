@@ -28,6 +28,8 @@ export const sequenceMessages = {
     `Performed ${pluralize(count, "action")} and wrote the runner's screen to stdout as a JPEG. Stdout holds the image bytes alone; this line, and the JSON with --json, is on stderr.`,
   actionsPerformedScreenshotWritten: (count: number, path: string) =>
     `Performed ${count} ${count === 1 ? "action" : "actions"} and wrote the runner's screen to ${path}.`,
+  actionsOverLimit: (sent: number, limit: number) =>
+    `The sequence holds ${pluralize(sent, "action")}, and one request carries at most ${String(limit)}. Send them in batches, ending each at the action that changes the page.`,
   actionsNotAllSucceeded: (failed: number, total: number) =>
     `${String(failed)} of ${pluralize(total, "action")} did not succeed.`,
   actionsFailedAt: (index: number, type: string | undefined, why: string) =>

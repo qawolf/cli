@@ -34,9 +34,9 @@ export async function readActions(
     return { error: interactiveRunnerMessages.actionsEmpty, ok: false };
   if (parsed.items.length > maxActionsPerRequest) {
     return {
-      error: interactiveRunnerMessages.actionsInvalidAt(
+      error: interactiveRunnerMessages.actionsOverLimit(
+        parsed.items.length,
         maxActionsPerRequest,
-        `a sequence carries at most ${maxActionsPerRequest} actions.`,
       ),
       ok: false,
     };
