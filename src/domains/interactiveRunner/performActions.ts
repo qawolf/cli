@@ -16,14 +16,13 @@ import type { InteractiveRunnerDeps } from "./deps.js";
 import { describeSequenceFailure } from "./performActionsFailure.js";
 import {
   describeFailureFrames,
-  refuseUnwritableFrames,
   reportSequence,
 } from "./performActionsOutput.js";
 import { writeSequenceFrames } from "./performActionsScreenshots.js";
-import { readActions } from "./readActions.js";
+import { readActions, refuseUnwritableFrames } from "./readActions.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
+import { sequenceCallOptions } from "./runnerCallOptions.js";
 import { runnerRequestFailure } from "./runnerRequestFailure.js";
-import { sequenceCallOptions } from "./sequenceCallOptions.js";
 
 export type SequenceAnswer = z.output<
   typeof publicContractsV1.runner.performActions.output

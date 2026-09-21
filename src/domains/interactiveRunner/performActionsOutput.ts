@@ -1,53 +1,9 @@
-import type { ScreenshotMode } from "@qawolf/api-contracts/v1";
-
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
-import type {
-  AuthCommandContext,
-  CommandResult,
-} from "~/shell/commandContext.js";
-import { exitCodes } from "~/shell/exit.js";
+import type { AuthCommandContext } from "~/shell/commandContext.js";
 import { stdoutPath } from "~/shell/interactiveRunner/writeScreenshot.js";
 
 import type { SequenceAnswer } from "./performActions.js";
 import type { SequenceFrames } from "./performActionsScreenshots.js";
-
-/** Refused before a runner is resolved, so nothing is billed for an answer that could not be written. */
-export function refuseUnwritableFrames(
-  ctx: AuthCommandContext,
-  screenshotMode: ScreenshotMode,
-  options: { screenshot: string | undefined },
-): CommandResult {
-  // Refused rather than ignored, for the same reason an action flag beside a
-  // piped action is: a flag that changes nothing has to be answered.
-  if (screenshotMode === "none" && options.screenshot !== undefined) {
-    return {
-      error: interactiveRunnerMessages.actionsScreenshotWithModeNone,
-      exitCode: exitCodes.invalidArgs,
-    };
-  }
-  if (screenshotMode !== "none" && options.screenshot === undefined) {
-    return {
-      error:
-        screenshotMode === "each"
-          ? interactiveRunnerMessages.actionsEachNeedsAPath
-          : interactiveRunnerMessages.actionsFinalNeedsAPath,
-      exitCode: exitCodes.invalidArgs,
-    };
-  }
-  if (screenshotMode === "each" && options.screenshot === stdoutPath) {
-    return {
-      error: interactiveRunnerMessages.actionsEachToStdout,
-      exitCode: exitCodes.invalidArgs,
-    };
-  }
-  if (options.screenshot === stdoutPath && ctx.outputMode === "human") {
-    return {
-      error: interactiveRunnerMessages.stdoutIsATerminal("--screenshot"),
-      exitCode: exitCodes.invalidArgs,
-    };
-  }
-  return undefined;
-}
 
 /** The answer as data, with every frame replaced by where it was written. */
 function withoutFrames(
