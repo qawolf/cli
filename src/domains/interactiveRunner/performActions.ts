@@ -20,6 +20,7 @@ import {
 import { writeSequenceFrames } from "./performActionsScreenshots.js";
 import { readActions } from "./readActions.js";
 import { announceRunner, resolveRunner } from "./resolveRunner.js";
+import { runnerRequestFailure } from "./runnerRequestFailure.js";
 import { sequenceCallOptions } from "./sequenceCallOptions.js";
 
 export type SequenceAnswer = z.output<
@@ -79,19 +80,16 @@ export async function handleRunnerActions(
   if (!result.ok) {
     // A lost answer is the same hazard as an unreachable runner below: any of
     // the actions may have taken effect, so this must not invite a repeat.
-    const fields = failureFields(result);
-    return {
-      ...fields,
-      ...(result.mayHaveArrived
-        ? {
-            error: appendSentence(
-              fields.error,
-              interactiveRunnerMessages.actionsMayHaveHappened,
-            ),
-          }
-        : {}),
-      exitCode: exitCodes.network,
-    };
+    const fields = runnerRequestFailure(result, resolved);
+    return result.mayHaveArrived
+      ? {
+          ...fields,
+          error: appendSentence(
+            fields.error,
+            interactiveRunnerMessages.actionsMayHaveHappened,
+          ),
+        }
+      : fields;
   }
 
   const answer = result.value;

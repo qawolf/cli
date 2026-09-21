@@ -1,6 +1,8 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
+import { exitCodes } from "~/shell/exit.js";
+
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { handleRunnerActions } from "./performActions.js";
 import {
@@ -149,5 +151,65 @@ describe("handleRunnerActions frames and failures", () => {
     expect(result?.error).toBe(
       "Action 2 (keypress) reached the runner and did not take effect: Target closed.",
     );
+  });
+
+  it.each([
+    [
+      "a runner that is gone",
+      exitCodes.notFound,
+      "Runner ci is not running (HTTP 404).",
+    ],
+    ["a rejected key", exitCodes.auth, "Unauthorized (HTTP 401)."],
+  ] as const)(
+    "keeps the exit code the platform gave %s",
+    async (_name, exitCode, error) => {
+      const { callPublicApi, ctx } = makeAuthCtx();
+      callPublicApi.mockResolvedValue({ error, exitCode, ok: false });
+
+      const result = await handleRunnerActions(
+        ctx,
+        actionsOptions(),
+        makeTestDeps(),
+      );
+
+      expect(result?.exitCode).toBe(exitCode);
+      expect(result?.error).toBe(error);
+    },
+  );
+
+  it("says which runner a lost answer was addressed to, and how it was chosen", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "Runner ci is not running (HTTP 404).",
+      exitCode: exitCodes.notFound,
+      ok: false,
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions(),
+      makeTestDeps(),
+    );
+
+    expect(result?.errorBody).toContain("The id ci came from --runner.");
+  });
+
+  it("warns that a lost answer may still have taken effect", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "The request timed out.",
+      exitCode: exitCodes.network,
+      mayHaveArrived: true,
+      ok: false,
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions(),
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.network);
+    expect(result?.error).toContain("take a screenshot before repeating");
   });
 });
