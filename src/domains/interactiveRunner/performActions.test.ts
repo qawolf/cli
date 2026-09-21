@@ -138,6 +138,20 @@ describe("handleRunnerActions frame refusals", () => {
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 
+  it("refuses a path to write to when the mode asks the runner for no frame", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions({ screenshot: "after.jpg", screenshotMode: "none" }),
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(2);
+    expect(result?.error).toContain("--screenshot-mode none");
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
   it("refuses a frame on stdout when stdout is a terminal", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
 

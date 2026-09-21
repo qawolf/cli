@@ -17,6 +17,14 @@ export function refuseUnwritableFrames(
   screenshotMode: ScreenshotMode,
   options: { screenshot: string | undefined },
 ): CommandResult {
+  // Refused rather than ignored, for the same reason an action flag beside a
+  // piped action is: a flag that changes nothing has to be answered.
+  if (screenshotMode === "none" && options.screenshot !== undefined) {
+    return {
+      error: interactiveRunnerMessages.actionsScreenshotWithModeNone,
+      exitCode: exitCodes.invalidArgs,
+    };
+  }
   if (screenshotMode !== "none" && options.screenshot === undefined) {
     return {
       error:

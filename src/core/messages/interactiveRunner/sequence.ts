@@ -14,6 +14,8 @@ export const sequenceMessages = {
     "--screenshot-mode each writes one frame per action, so it needs --screenshot <path>; each frame goes to that path with the action's index before the extension.",
   actionsFinalNeedsAPath:
     "--screenshot-mode final asks the runner for one frame after the last action, so it needs --screenshot <path> to write it to. Leave the mode off to perform the actions without a frame.",
+  actionsScreenshotWithModeNone:
+    "--screenshot-mode none asks the runner for no frame, so --screenshot would have nothing to write. Drop one of the two.",
   actionsEachToStdout:
     "--screenshot-mode each writes one frame per action, which stdout cannot carry. Give --screenshot a file path.",
   actionsFailedFramesWritten: (paths: readonly string[]) =>
