@@ -81,6 +81,31 @@ function describePerformed(count: number, frames: SequenceFrames): string {
 }
 
 /**
+ * Where the frames of a failed sequence went, as a sentence for the end of the
+ * refusal being reported.
+ *
+ * The refusal is the news and keeps its own exit code: an action was attempted
+ * and declined, which the picture neither improves nor worsens. But the picture
+ * is what the caller asked for in order to see why, so a refusal that carries
+ * one must not read as though nothing was written.
+ */
+export function describeFailureFrames(
+  frames: SequenceFrames,
+): string | undefined {
+  if (frames.problem !== undefined) return frames.problem.error;
+  if (frames.final === stdoutPath) {
+    return interactiveRunnerMessages.actionsFailedScreenshotToStdout;
+  }
+  const paths = [
+    ...(frames.final === undefined ? [] : [frames.final]),
+    ...frames.byAction.values(),
+  ];
+  return paths.length === 0
+    ? undefined
+    : interactiveRunnerMessages.actionsFailedFramesWritten(paths);
+}
+
+/**
  * Says what the sequence did, and hands its results over as data.
  *
  * A sequence that failed says only how much of it went through, because the

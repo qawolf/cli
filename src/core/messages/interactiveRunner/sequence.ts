@@ -16,6 +16,10 @@ export const sequenceMessages = {
     "--screenshot-mode final asks the runner for one frame after the last action, so it needs --screenshot <path> to write it to. Leave the mode off to perform the actions without a frame.",
   actionsEachToStdout:
     "--screenshot-mode each writes one frame per action, which stdout cannot carry. Give --screenshot a file path.",
+  actionsFailedFramesWritten: (paths: readonly string[]) =>
+    `${paths.length === 1 ? "Its screen was" : "Its screens were"} written to ${paths.join(", ")}, so look at ${paths.length === 1 ? "that" : "those"} rather than sending anything again.`,
+  actionsFailedScreenshotToStdout:
+    "Its screen was written to stdout as a JPEG, so look at that rather than sending anything again.",
   actionsPerformed: (count: number) =>
     `Performed ${count} ${count === 1 ? "action" : "actions"}.`,
   actionsPerformedOfTotal: (performed: number, total: number) =>
@@ -25,9 +29,9 @@ export const sequenceMessages = {
   ) =>
     `The runner answered, but ${pluralize(unwritten.length, "frame")} could not be written: ${unwritten.map(({ detail, path }) => `"${path}" (${detail})`).join(", ")}. Whatever the actions did has already happened, so do not send them again: take the screen with qawolf runner screenshot, giving --out a path this process can write to.`,
   actionsFramesMissing: (indexes: readonly number[]) =>
-    `The runner answered without the ${indexes.length === 1 ? "screen" : "screens"} after ${indexes.length === 1 ? "action" : "actions"} ${indexes.join(", ")}, so nothing was written for ${indexes.length === 1 ? "it" : "them"}. The actions took effect, so do not send them again: take the screen with qawolf runner screenshot instead.`,
+    `The runner answered without the ${indexes.length === 1 ? "screen" : "screens"} after ${indexes.length === 1 ? "action" : "actions"} ${indexes.join(", ")}, so nothing was written for ${indexes.length === 1 ? "it" : "them"}. Whatever the actions did has already happened, so do not send them again: take the screen with qawolf runner screenshot instead.`,
   actionsPerformedWithoutScreenshot: (count: number) =>
-    `Performed ${pluralize(count, "action")}, but the runner answered without the screen it was asked for. The actions took effect, so do not send them again: take the screen with qawolf runner screenshot instead. If this keeps happening, the platform or this CLI is behind the other: upgrade with npm install -g @qawolf/cli.`,
+    `Performed ${pluralize(count, "action")}, but the runner answered without the screen it was asked for. Whatever the actions did has already happened, so do not send them again: take the screen with qawolf runner screenshot instead. If this keeps happening, the platform or this CLI is behind the other: upgrade with npm install -g @qawolf/cli.`,
   actionsPerformedFramesWritten: (count: number, paths: string[]) =>
     `Performed ${pluralize(count, "action")} and wrote ${pluralize(paths.length, "screen")} to ${paths.join(", ")}.`,
   actionsPerformedScreenshotToStdout: (count: number) =>

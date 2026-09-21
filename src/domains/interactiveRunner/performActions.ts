@@ -15,6 +15,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { describeSequenceFailure } from "./performActionsFailure.js";
 import {
+  describeFailureFrames,
   refuseUnwritableFrames,
   reportSequence,
 } from "./performActionsOutput.js";
@@ -109,5 +110,9 @@ export async function handleRunnerActions(
     frames,
     toStdout: screenshotMode !== "none" && options.screenshot === stdoutPath,
   });
-  return frames.problem ?? failure;
+  if (failure === undefined) return frames.problem;
+  const framesNote = describeFailureFrames(frames);
+  return framesNote === undefined
+    ? failure
+    : { ...failure, error: appendSentence(failure.error, framesNote) };
 }
