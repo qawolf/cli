@@ -92,3 +92,60 @@ describe("handleRunnerActions", () => {
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 });
+
+describe("handleRunnerActions frame refusals", () => {
+  it("refuses each with nowhere to write its frames", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions({ screenshotMode: "each" }),
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(2);
+    expect(result?.error).toContain("needs --screenshot <path>");
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
+  it("refuses final with nowhere to write its frame, rather than capturing one and dropping it", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions({ screenshotMode: "final" }),
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(2);
+    expect(result?.error).toContain("needs --screenshot <path>");
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
+  it("refuses each to stdout, which cannot carry one frame per action", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx("json");
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions({ screenshot: "-", screenshotMode: "each" }),
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(2);
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
+  it("refuses a frame on stdout when stdout is a terminal", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions({ screenshot: "-" }),
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(2);
+    expect(result?.error).toContain("Stdout is a terminal");
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+});

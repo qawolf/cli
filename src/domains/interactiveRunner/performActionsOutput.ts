@@ -16,9 +16,12 @@ export function refuseUnwritableFrames(
   screenshotMode: ScreenshotMode,
   options: { screenshot: string | undefined },
 ): CommandResult {
-  if (screenshotMode === "each" && options.screenshot === undefined) {
+  if (screenshotMode !== "none" && options.screenshot === undefined) {
     return {
-      error: interactiveRunnerMessages.actionsEachNeedsAPath,
+      error:
+        screenshotMode === "each"
+          ? interactiveRunnerMessages.actionsEachNeedsAPath
+          : interactiveRunnerMessages.actionsFinalNeedsAPath,
       exitCode: exitCodes.invalidArgs,
     };
   }
