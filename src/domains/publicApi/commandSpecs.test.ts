@@ -29,6 +29,7 @@ describe("buildCommandSpecs", () => {
       "ignoreRules",
       "pullRequestNumber",
       "repository",
+      "workspaceId",
       "flowIds",
       "tagNames",
     ]);

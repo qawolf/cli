@@ -44,6 +44,7 @@ describe("registerPublicApiCommands", () => {
       "--ignore-rules",
       "--pull-request-number <value>",
       "--repository <value>",
+      "--workspace-id <value>",
       "--flow-ids <values...>",
       "--tag-names <values...>",
     ]);
@@ -51,6 +52,7 @@ describe("registerPublicApiCommands", () => {
       false,
       false,
       true,
+      false,
       false,
       false,
       false,
