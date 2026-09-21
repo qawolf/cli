@@ -212,5 +212,8 @@ describe("handleRunnerActions frames", () => {
     expect(deps.stdoutWrites).toHaveLength(1);
     expect(outputs()).toEqual([]);
     expect(successes().at(-1)).toContain("stdout");
+    // Nothing carries the per-action results to a reader here, so the line
+    // must not send one looking for them.
+    expect(successes().at(-1)).not.toContain("--json");
   });
 });

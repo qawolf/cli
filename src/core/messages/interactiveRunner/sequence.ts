@@ -37,7 +37,7 @@ export const sequenceMessages = {
   actionsPerformedFramesWritten: (count: number, paths: string[]) =>
     `Performed ${pluralize(count, "action")} and wrote ${pluralize(paths.length, "screen")} to ${paths.join(", ")}.`,
   actionsPerformedScreenshotToStdout: (count: number) =>
-    `Performed ${pluralize(count, "action")} and wrote the runner's screen to stdout as a JPEG. Stdout holds the image bytes alone; this line, and the JSON with --json, is on stderr.`,
+    `Performed ${pluralize(count, "action")} and wrote the runner's screen to stdout as a JPEG. Stdout holds the image bytes alone, so this line is on stderr and the per-action results are not printed at all: give --screenshot a file path when you need to read them.`,
   actionsPerformedScreenshotWritten: (count: number, path: string) =>
     `Performed ${count} ${count === 1 ? "action" : "actions"} and wrote the runner's screen to ${path}.`,
   actionsOverLimit: (sent: number, limit: number) =>

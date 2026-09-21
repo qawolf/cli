@@ -187,7 +187,7 @@ qawolf runner actions '[{"type":"click","button":"left","x":480,"y":260},{"type"
 
 Batch only steps whose targets are all on the screen you last saw and are not moved by the steps before them, and make the step that changes the page — a submit, a navigation, opening a menu — the last one. Then read the frame and decide the next batch from it.
 
-`--screenshot after.jpg` writes the screen after the last action, as `act --screenshot` does, and `-` puts those bytes on stdout with the confirmation on stderr. `--screenshot-mode each --screenshot step.jpg` writes one frame per action instead, `step-0.jpg`, `step-1.jpg` and so on; each is a full image, so keep those sequences short.
+`--screenshot after.jpg` writes the screen after the last action, as `act --screenshot` does, and `-` puts those bytes on stdout with the confirmation on stderr. Stdout then carries the image and nothing else, so `-` trades the per-action results below for the frame: give `--screenshot` a file path whenever you need to read `effect` per action. `--screenshot-mode each --screenshot step.jpg` writes one frame per action instead, `step-0.jpg`, `step-1.jpg` and so on; each is a full image, so keep those sequences short.
 
 The answer holds one entry per action reached, and the field to read on each is `effect`:
 
