@@ -4,14 +4,18 @@ import { exitCodes } from "~/shell/exit.js";
 
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { handleRunnerActions } from "./performActions.js";
-import { actionsOptions, performed } from "./performActions.fixtures.js";
+import {
+  actionsOptions,
+  performed,
+  sequenceAnswer,
+} from "./performActions.fixtures.js";
 
 describe("handleRunnerActions failures", () => {
   it("names the action that stopped the sequence, how many were left, and keeps the unknown effect from inviting a repeat", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         failedIndex: 1,
         failureReason: "runner-unreachable",
         lastCompletedIndex: 0,
@@ -26,7 +30,7 @@ describe("handleRunnerActions failures", () => {
           },
         ],
         stoppedEarly: true,
-      },
+      }),
     });
 
     const result = await handleRunnerActions(
@@ -45,7 +49,7 @@ describe("handleRunnerActions failures", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         errorMessage: "Target closed",
         failedIndex: 2,
         failureReason: "action-failed",
@@ -63,7 +67,7 @@ describe("handleRunnerActions failures", () => {
           },
         ],
         stoppedEarly: false,
-      },
+      }),
     });
 
     const result = await handleRunnerActions(
@@ -142,7 +146,7 @@ describe("handleRunnerActions failures", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         failedIndex: 4,
         failureReason: "screen-not-ready",
         outcome: "failure",
@@ -155,7 +159,7 @@ describe("handleRunnerActions failures", () => {
           },
         ],
         stoppedEarly: true,
-      },
+      }),
     });
 
     const result = await handleRunnerActions(
@@ -171,7 +175,7 @@ describe("handleRunnerActions failures", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         failedIndex: 2,
         failureReason: "out-of-time",
         lastCompletedIndex: 1,
@@ -187,7 +191,7 @@ describe("handleRunnerActions failures", () => {
           },
         ],
         stoppedEarly: false,
-      },
+      }),
     });
 
     const result = await handleRunnerActions(
@@ -203,7 +207,7 @@ describe("handleRunnerActions failures", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         errorMessage: "nothing at 480,260",
         failedIndex: 0,
         failureReason: "action-failed",
@@ -226,7 +230,7 @@ describe("handleRunnerActions failures", () => {
           },
         ],
         stoppedEarly: false,
-      },
+      }),
     });
 
     const result = await handleRunnerActions(

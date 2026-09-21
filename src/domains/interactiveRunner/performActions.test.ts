@@ -8,20 +8,23 @@ import {
   actionsOptions,
   anEnter,
   performed,
+  sequenceAnswer,
   someTyping,
 } from "./performActions.fixtures.js";
-import { sequenceCallOptions } from "./sequenceCallOptions.js";
+
+/** A sequence starts a browser, then runs every action, then takes a frame. */
+const sequenceTimeoutMs = 180_000;
 
 describe("handleRunnerActions", () => {
   it("sends the sequence in one request, asking for no frame when none is wanted", async () => {
     const { callPublicApi, ctx, outputs } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         lastCompletedIndex: 2,
         outcome: "success",
         results: [performed(0), performed(1), performed(2)],
-      },
+      }),
     });
 
     const result = await handleRunnerActions(
@@ -39,7 +42,7 @@ describe("handleRunnerActions", () => {
         screenshotMode: "none",
         stopOnFailure: true,
       },
-      sequenceCallOptions,
+      { timeoutMs: sequenceTimeoutMs },
     );
     expect(outputs().at(-1)?.humanMessage).toBe("Performed 3 actions.");
   });
@@ -48,11 +51,11 @@ describe("handleRunnerActions", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         lastCompletedIndex: 0,
         outcome: "success",
         results: [performed(0)],
-      },
+      }),
     });
 
     await handleRunnerActions(
@@ -69,7 +72,7 @@ describe("handleRunnerActions", () => {
         screenshotMode: "none",
         stopOnFailure: false,
       },
-      sequenceCallOptions,
+      { timeoutMs: sequenceTimeoutMs },
     );
   });
 

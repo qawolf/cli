@@ -8,9 +8,9 @@ import {
   actionsOptions,
   jpeg,
   performed,
+  sequenceAnswer,
   someTyping,
 } from "./performActions.fixtures.js";
-import { sequenceCallOptions } from "./sequenceCallOptions.js";
 
 const unwritable = async () =>
   ({
@@ -24,12 +24,12 @@ describe("handleRunnerActions frames", () => {
     const { callPublicApi, ctx, outputs } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         imageJpegBase64: jpeg,
         lastCompletedIndex: 0,
         outcome: "success",
         results: [performed(0)],
-      },
+      }),
     });
     const deps = makeTestDeps();
 
@@ -46,7 +46,7 @@ describe("handleRunnerActions frames", () => {
     expect(callPublicApi).toHaveBeenCalledWith(
       publicContractsV1.runner.performActions,
       expect.objectContaining({ screenshotMode: "final" }),
-      sequenceCallOptions,
+      expect.anything(),
     );
     expect(deps.written.map((write) => write.path)).toEqual(["after.jpg"]);
     expect(outputs().at(-1)?.data).toMatchObject({
@@ -60,14 +60,14 @@ describe("handleRunnerActions frames", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         lastCompletedIndex: 1,
         outcome: "success",
         results: [
           { ...performed(0), imageJpegBase64: jpeg },
           { ...performed(1), imageJpegBase64: jpeg },
         ],
-      },
+      }),
     });
     const deps = makeTestDeps();
 
@@ -91,7 +91,7 @@ describe("handleRunnerActions frames", () => {
     const { callPublicApi, ctx, outputs } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         failedIndex: 1,
         failureReason: "action-not-supported-on-mobile",
         lastCompletedIndex: 2,
@@ -107,7 +107,7 @@ describe("handleRunnerActions frames", () => {
           { ...performed(2), imageJpegBase64: jpeg },
         ],
         stoppedEarly: false,
-      },
+      }),
     });
     const deps = makeTestDeps();
 
@@ -138,12 +138,12 @@ describe("handleRunnerActions frames", () => {
     const { callPublicApi, ctx, outputs } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         imageJpegBase64: jpeg,
         lastCompletedIndex: 0,
         outcome: "success",
         results: [performed(0)],
-      },
+      }),
     });
 
     const result = await handleRunnerActions(
@@ -165,14 +165,14 @@ describe("handleRunnerActions frames", () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         lastCompletedIndex: 1,
         outcome: "success",
         results: [
           { ...performed(0), imageJpegBase64: jpeg },
           { ...performed(1), imageJpegBase64: jpeg },
         ],
-      },
+      }),
     });
 
     const result = await handleRunnerActions(
@@ -193,12 +193,12 @@ describe("handleRunnerActions frames", () => {
     const { callPublicApi, ctx, outputs, successes } = makeAuthCtx("json");
     callPublicApi.mockResolvedValue({
       ok: true,
-      value: {
+      value: sequenceAnswer({
         imageJpegBase64: jpeg,
         lastCompletedIndex: 0,
         outcome: "success",
         results: [performed(0)],
-      },
+      }),
     });
     const deps = makeTestDeps();
 

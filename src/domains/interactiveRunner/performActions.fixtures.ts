@@ -1,4 +1,6 @@
-import type { handleRunnerActions } from "./performActions.js";
+import { publicContractsV1 } from "@qawolf/api-contracts/v1";
+
+import type { handleRunnerActions, SequenceAnswer } from "./performActions.js";
 
 type ActionsOptions = Parameters<typeof handleRunnerActions>[1];
 
@@ -30,4 +32,12 @@ export function actionsOptions(
     screenshotMode: undefined,
     ...overrides,
   };
+}
+
+/**
+ * A mock answer admitted by the published schema, so a contract the platform
+ * has changed fails here rather than passing as a shape nothing sends.
+ */
+export function sequenceAnswer(value: unknown): SequenceAnswer {
+  return publicContractsV1.runner.performActions.output.parse(value);
 }
