@@ -15,7 +15,7 @@ export function describeSequenceFailure(options: {
   answer: SequenceFailure;
 }): Exclude<CommandResult, void> {
   const { actions, answer } = options;
-  const type = actions[answer.failedIndex]?.type ?? "action";
+  const type = actions[answer.failedIndex]?.type;
   const described = describeReason(answer);
   const unperformed = answer.stoppedEarly
     ? interactiveRunnerMessages.actionsLeftUnperformed(

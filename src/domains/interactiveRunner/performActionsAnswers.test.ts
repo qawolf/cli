@@ -137,4 +137,33 @@ describe("handleRunnerActions failures", () => {
     expect(result?.exitCode).toBe(exitCodes.network);
     expect(result?.error).toContain("take a screenshot before repeating");
   });
+
+  it("does not invent a name for an action the sequence never held", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: {
+        failedIndex: 4,
+        failureReason: "screen-not-ready",
+        outcome: "failure",
+        results: [
+          {
+            effect: "not-performed",
+            failureReason: "screen-not-ready",
+            index: 4,
+            outcome: "failure",
+          },
+        ],
+        stoppedEarly: true,
+      },
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions(),
+      makeTestDeps(),
+    );
+
+    expect(result?.error).toStartWith("Action 4 was refused");
+  });
 });

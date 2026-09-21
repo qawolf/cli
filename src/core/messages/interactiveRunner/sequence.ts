@@ -26,8 +26,8 @@ export const sequenceMessages = {
     `Performed ${pluralize(count, "action")} and wrote the runner's screen to stdout as a JPEG. Stdout holds the image bytes alone; this line, and the JSON with --json, is on stderr.`,
   actionsPerformedScreenshotWritten: (count: number, path: string) =>
     `Performed ${count} ${count === 1 ? "action" : "actions"} and wrote the runner's screen to ${path}.`,
-  actionsStoppedAt: (index: number, type: string, why: string) =>
-    `Action ${index} (${type}) ${why}`,
+  actionsStoppedAt: (index: number, type: string | undefined, why: string) =>
+    `Action ${index}${type === undefined ? "" : ` (${type})`} ${why}`,
   actionsLeftUnperformed: (count: number) =>
     `${count} ${count === 1 ? "action" : "actions"} after it ${count === 1 ? "was" : "were"} not attempted.`,
   actionsMayHaveHappened:
