@@ -3,20 +3,14 @@ import { describe, expect, it } from "bun:test";
 
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { handleRunnerActions } from "./performActions.js";
+import {
+  aClick,
+  actionsOptions,
+  jpeg,
+  performed,
+  someTyping,
+} from "./performActions.fixtures.js";
 import { sequenceCallOptions } from "./sequenceCallOptions.js";
-
-const aClick = { button: "left", type: "click", x: 480, y: 260 };
-const someTyping = { text: "hello@example.com", type: "type" };
-const anEnter = { keys: ["Enter"], type: "keypress" };
-const sequence = JSON.stringify([aClick, someTyping, anEnter]);
-
-const performed = (index: number) => ({
-  effect: "performed",
-  index,
-  outcome: "success",
-});
-
-const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]).toString("base64");
 
 describe("handleRunnerActions frames and failures", () => {
   it("asks for the final frame when a screenshot path is given, and writes it", async () => {
@@ -34,13 +28,10 @@ describe("handleRunnerActions frames and failures", () => {
 
     const result = await handleRunnerActions(
       ctx,
-      {
+      actionsOptions({
         actions: JSON.stringify([aClick]),
-        continueOnFailure: false,
-        runner: "ci",
         screenshot: "after.jpg",
-        screenshotMode: undefined,
-      },
+      }),
       deps,
     );
 
@@ -75,13 +66,11 @@ describe("handleRunnerActions frames and failures", () => {
 
     await handleRunnerActions(
       ctx,
-      {
+      actionsOptions({
         actions: JSON.stringify([aClick, someTyping]),
-        continueOnFailure: false,
-        runner: "ci",
         screenshot: "steps/step.jpg",
         screenshotMode: "each",
-      },
+      }),
       deps,
     );
 
@@ -115,13 +104,7 @@ describe("handleRunnerActions frames and failures", () => {
 
     const result = await handleRunnerActions(
       ctx,
-      {
-        actions: sequence,
-        continueOnFailure: false,
-        runner: "ci",
-        screenshot: undefined,
-        screenshotMode: undefined,
-      },
+      actionsOptions(),
       makeTestDeps(),
     );
 
@@ -158,13 +141,7 @@ describe("handleRunnerActions frames and failures", () => {
 
     const result = await handleRunnerActions(
       ctx,
-      {
-        actions: sequence,
-        continueOnFailure: false,
-        runner: "ci",
-        screenshot: undefined,
-        screenshotMode: undefined,
-      },
+      actionsOptions(),
       makeTestDeps(),
     );
 

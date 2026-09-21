@@ -3,18 +3,14 @@ import { describe, expect, it } from "bun:test";
 
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { handleRunnerActions } from "./performActions.js";
+import {
+  aClick,
+  actionsOptions,
+  anEnter,
+  performed,
+  someTyping,
+} from "./performActions.fixtures.js";
 import { sequenceCallOptions } from "./sequenceCallOptions.js";
-
-const aClick = { button: "left", type: "click", x: 480, y: 260 };
-const someTyping = { text: "hello@example.com", type: "type" };
-const anEnter = { keys: ["Enter"], type: "keypress" };
-const sequence = JSON.stringify([aClick, someTyping, anEnter]);
-
-const performed = (index: number) => ({
-  effect: "performed",
-  index,
-  outcome: "success",
-});
 
 describe("handleRunnerActions", () => {
   it("sends the sequence in one request, asking for no frame when none is wanted", async () => {
@@ -30,13 +26,7 @@ describe("handleRunnerActions", () => {
 
     const result = await handleRunnerActions(
       ctx,
-      {
-        actions: sequence,
-        continueOnFailure: false,
-        runner: "ci",
-        screenshot: undefined,
-        screenshotMode: undefined,
-      },
+      actionsOptions(),
       makeTestDeps(),
     );
 
@@ -67,13 +57,7 @@ describe("handleRunnerActions", () => {
 
     await handleRunnerActions(
       ctx,
-      {
-        actions: "-",
-        continueOnFailure: true,
-        runner: "ci",
-        screenshot: undefined,
-        screenshotMode: undefined,
-      },
+      actionsOptions({ actions: "-", continueOnFailure: true }),
       makeTestDeps({ readStdin: async () => `${JSON.stringify([aClick])}\n` }),
     );
 
@@ -94,16 +78,12 @@ describe("handleRunnerActions", () => {
 
     const result = await handleRunnerActions(
       ctx,
-      {
+      actionsOptions({
         actions: JSON.stringify([
           aClick,
           { text: "a".repeat(201), type: "type" },
         ]),
-        continueOnFailure: false,
-        runner: "ci",
-        screenshot: undefined,
-        screenshotMode: undefined,
-      },
+      }),
       makeTestDeps(),
     );
 
