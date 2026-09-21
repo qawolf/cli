@@ -12,8 +12,8 @@ const actionsExamples = `
 Examples:
   $ qawolf runner actions '[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"hello@example.com"},{"type":"keypress","keys":["Enter"]}]' --screenshot after-login.jpg
   $ echo '[{"type":"click","button":"left","x":1,"y":2},{"type":"type","text":"hi"}]' | qawolf runner actions -
-  $ qawolf runner actions '[...]' --screenshot-mode each --screenshot step.jpg
-  $ qawolf runner actions '[...]' --continue-on-failure`;
+  $ qawolf runner actions '[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"hello"}]' --screenshot-mode each --screenshot step.jpg
+  $ qawolf runner actions '[{"type":"scroll","x":480,"y":260,"scroll_x":0,"scroll_y":600},{"type":"click","button":"left","x":120,"y":700}]' --continue-on-failure`;
 
 type ActionsFlags = {
   continueOnFailure?: boolean;
