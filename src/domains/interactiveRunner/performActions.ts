@@ -14,6 +14,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { describeSequenceFailure } from "./performActionsFailure.js";
 import {
+  describePerformed,
   refuseUnwritableFrames,
   withoutFrames,
 } from "./performActionsOutput.js";
@@ -98,14 +99,9 @@ export async function handleRunnerActions(
     deps,
   );
   ctx.ui.output(
-    withoutFrames(answer, frames.written),
+    withoutFrames(answer, frames),
     answer.outcome === "success"
-      ? frames.written.length === 0
-        ? interactiveRunnerMessages.actionsPerformed(answer.results.length)
-        : interactiveRunnerMessages.actionsPerformedScreenshotWritten(
-            answer.results.length,
-            frames.written.at(-1) ?? options.screenshot ?? "",
-          )
+      ? describePerformed(answer.results.length, frames)
       : describeSequenceFailure({ actions: read.actions, answer }).error,
   );
   if (frames.problem !== undefined) return frames.problem;

@@ -1,3 +1,5 @@
+import { pluralize } from "~/core/pluralize.js";
+
 /** What `qawolf runner actions` says about a sequence. */
 export const sequenceMessages = {
   actionsEmpty:
@@ -14,6 +16,8 @@ export const sequenceMessages = {
     "--screenshot-mode each writes one frame per action, which stdout cannot carry. Give --screenshot a file path.",
   actionsPerformed: (count: number) =>
     `Performed ${count} ${count === 1 ? "action" : "actions"}.`,
+  actionsPerformedFramesWritten: (count: number, paths: string[]) =>
+    `Performed ${pluralize(count, "action")} and wrote ${pluralize(paths.length, "screen")} to ${paths.join(", ")}.`,
   actionsPerformedScreenshotWritten: (count: number, path: string) =>
     `Performed ${count} ${count === 1 ? "action" : "actions"} and wrote the runner's screen to ${path}.`,
   actionsStoppedAt: (index: number, type: string, why: string) =>

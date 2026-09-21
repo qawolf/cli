@@ -8,11 +8,56 @@ import { exitCodes } from "~/shell/exit.js";
 import type { InteractiveRunnerDeps } from "./deps.js";
 import type { SequenceAnswer } from "./performActions.js";
 
+/** Where the frames a sequence answered with were written. */
+export type SequenceFrames = {
+  /** Where the frame after an action went, by that action's index. */
+  byAction: Map<number, string>;
+  /** Where the frame for the sequence as a whole went. */
+  final: string | undefined;
+  problem: CommandResult;
+};
+
+/** A frame with no index is the sequence's own, taken after its last action. */
+type Frame = {
+  imageJpegBase64: string;
+  index: number | undefined;
+  path: string;
+};
+
 /** `step-3.jpg` for a frame after action 3 written to `step.jpg`. */
 function indexedFramePath(out: string, index: number): string {
   const extension = extname(out);
   const stem = extension === "" ? out : out.slice(0, -extension.length);
   return `${stem}-${index}${extension}`;
+}
+
+function framesToWrite(
+  answer: SequenceAnswer,
+  out: string,
+  screenshotMode: ScreenshotMode,
+): Frame[] {
+  if (screenshotMode === "final") {
+    return answer.imageJpegBase64 === undefined
+      ? []
+      : [
+          {
+            imageJpegBase64: answer.imageJpegBase64,
+            index: undefined,
+            path: out,
+          },
+        ];
+  }
+  return answer.results.flatMap((step) =>
+    !("imageJpegBase64" in step) || step.imageJpegBase64 === undefined
+      ? []
+      : [
+          {
+            imageJpegBase64: step.imageJpegBase64,
+            index: step.index,
+            path: indexedFramePath(out, step.index),
+          },
+        ],
+  );
 }
 
 /**
@@ -28,35 +73,28 @@ export async function writeSequenceFrames(
     screenshotMode: ScreenshotMode;
   },
   deps: InteractiveRunnerDeps,
-): Promise<{ problem: CommandResult; written: string[] }> {
+): Promise<SequenceFrames> {
   const { answer, out, screenshotMode } = options;
   if (out === undefined || screenshotMode === "none")
-    return { problem: undefined, written: [] };
-
-  const frames =
-    screenshotMode === "final"
-      ? answer.imageJpegBase64 === undefined
-        ? []
-        : [{ imageJpegBase64: answer.imageJpegBase64, path: out }]
-      : answer.results.flatMap((step) =>
-          !("imageJpegBase64" in step) || step.imageJpegBase64 === undefined
-            ? []
-            : [
-                {
-                  imageJpegBase64: step.imageJpegBase64,
-                  path: indexedFramePath(out, step.index),
-                },
-              ],
-        );
+    return { byAction: new Map(), final: undefined, problem: undefined };
 
   const writes = await Promise.all(
-    frames.map(async (frame) => ({
-      path: frame.path,
-      written: await deps.writeScreenshot(frame),
+    framesToWrite(answer, out, screenshotMode).map(async (frame) => ({
+      frame,
+      written: await deps.writeScreenshot({
+        imageJpegBase64: frame.imageJpegBase64,
+        path: frame.path,
+      }),
     })),
   );
   const failed = writes.find((write) => !write.written.ok);
   return {
+    byAction: new Map(
+      writes.flatMap(({ frame }) =>
+        frame.index === undefined ? [] : [[frame.index, frame.path] as const],
+      ),
+    ),
+    final: writes.find(({ frame }) => frame.index === undefined)?.frame.path,
     problem:
       failed === undefined
         ? undefined
@@ -64,7 +102,7 @@ export async function writeSequenceFrames(
             error:
               interactiveRunnerMessages.actionPerformedScreenshotUnwritable(
                 "sequence",
-                failed.path,
+                failed.frame.path,
                 failed.written.ok
                   ? ""
                   : failed.written.reason === "not-a-jpeg"
@@ -73,6 +111,5 @@ export async function writeSequenceFrames(
               ),
             exitCode: exitCodes.network,
           },
-    written: writes.map((write) => write.path),
   };
 }

@@ -9,6 +9,7 @@ import { exitCodes } from "~/shell/exit.js";
 import { stdoutPath } from "~/shell/interactiveRunner/writeScreenshot.js";
 
 import type { SequenceAnswer } from "./performActions.js";
+import type { SequenceFrames } from "./performActionsScreenshots.js";
 
 /** Refused before a runner is resolved, so nothing is billed for an answer that could not be written. */
 export function refuseUnwritableFrames(
@@ -43,20 +44,38 @@ export function refuseUnwritableFrames(
 /** The answer as data, with every frame replaced by where it was written. */
 export function withoutFrames(
   answer: SequenceAnswer,
-  written: string[],
+  frames: SequenceFrames,
 ): unknown {
-  const { imageJpegBase64, results, ...rest } = answer;
+  const { imageJpegBase64: _final, results, ...rest } = answer;
   return {
     ...rest,
     results: results.map((step) => {
       if (!("imageJpegBase64" in step)) return step;
-      const { imageJpegBase64: frame, ...stepRest } = step;
-      return frame === undefined
+      const { imageJpegBase64: _frame, ...stepRest } = step;
+      const path = frames.byAction.get(step.index);
+      return path === undefined
         ? stepRest
-        : { ...stepRest, screenshotPath: written[step.index] };
+        : { ...stepRest, screenshotPath: path };
     }),
-    ...(imageJpegBase64 === undefined
-      ? {}
-      : { screenshotPath: written.at(-1) }),
+    ...(frames.final === undefined ? {} : { screenshotPath: frames.final }),
   };
+}
+
+/** What a sequence that performed every action says it did, and where its frames went. */
+export function describePerformed(
+  count: number,
+  frames: SequenceFrames,
+): string {
+  if (frames.final !== undefined) {
+    return interactiveRunnerMessages.actionsPerformedScreenshotWritten(
+      count,
+      frames.final,
+    );
+  }
+  if (frames.byAction.size > 0) {
+    return interactiveRunnerMessages.actionsPerformedFramesWritten(count, [
+      ...frames.byAction.values(),
+    ]);
+  }
+  return interactiveRunnerMessages.actionsPerformed(count);
 }

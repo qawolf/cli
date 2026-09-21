@@ -79,4 +79,51 @@ describe("handleRunnerActions frames", () => {
       "steps/step-1.jpg",
     ]);
   });
+
+  it("points each action at its own frame when one in the middle has none", async () => {
+    const { callPublicApi, ctx, outputs } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: {
+        failedIndex: 1,
+        failureReason: "action-not-supported-on-mobile",
+        lastCompletedIndex: 2,
+        outcome: "failure",
+        results: [
+          { ...performed(0), imageJpegBase64: jpeg },
+          {
+            effect: "not-performed",
+            failureReason: "action-not-supported-on-mobile",
+            index: 1,
+            outcome: "failure",
+          },
+          { ...performed(2), imageJpegBase64: jpeg },
+        ],
+        stoppedEarly: false,
+      },
+    });
+    const deps = makeTestDeps();
+
+    await handleRunnerActions(
+      ctx,
+      actionsOptions({
+        continueOnFailure: true,
+        screenshot: "steps/step.jpg",
+        screenshotMode: "each",
+      }),
+      deps,
+    );
+
+    expect(deps.written.map((write) => write.path)).toEqual([
+      "steps/step-0.jpg",
+      "steps/step-2.jpg",
+    ]);
+    expect(outputs().at(-1)?.data).toMatchObject({
+      results: [
+        { index: 0, screenshotPath: "steps/step-0.jpg" },
+        { index: 1 },
+        { index: 2, screenshotPath: "steps/step-2.jpg" },
+      ],
+    });
+  });
 });
