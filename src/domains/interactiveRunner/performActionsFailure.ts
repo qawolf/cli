@@ -8,49 +8,88 @@ import { exitCodes } from "~/shell/exit.js";
 import type { SequenceAnswer } from "./performActions.js";
 
 type SequenceFailure = Extract<SequenceAnswer, { outcome: "failure" }>;
+type FailedStep = Extract<
+  SequenceFailure["results"][number],
+  { outcome: "failure" }
+>;
+type Reason = {
+  errorMessage: string | undefined;
+  failureReason: SequenceFailure["failureReason"];
+};
 
-/** Why the sequence stopped, at which action, and what the caller should do about it. */
+/** Every action that did not succeed, why, and what the caller should do about it. */
 export function describeSequenceFailure(options: {
   actions: BrowserAction[];
   answer: SequenceFailure;
 }): Exclude<CommandResult, void> {
   const { actions, answer } = options;
-  const type = actions[answer.failedIndex]?.type;
-  const described = describeReason(answer);
-  const unperformed = answer.stoppedEarly
-    ? interactiveRunnerMessages.actionsLeftUnperformed(
-        actions.length - answer.results.length,
-      )
-    : undefined;
-  const error = interactiveRunnerMessages.actionsStoppedAt(
-    answer.failedIndex,
-    type,
-    described.why,
+  const failed = answer.results.flatMap((step) =>
+    step.outcome === "failure" ? [reasonAt(step)] : [],
   );
+  // The contract always puts the failed action in `results`. This stands in
+  // for an answer that does not, so the report is never empty.
+  const reported =
+    failed.length > 0
+      ? failed
+      : [{ ...reasonOf(answer), index: answer.failedIndex }];
+  const sentences = [
+    ...(reported.length > 1
+      ? [
+          interactiveRunnerMessages.actionsNotAllSucceeded(
+            reported.length,
+            actions.length,
+          ),
+        ]
+      : []),
+    ...reported.map(({ index, ...reason }) =>
+      interactiveRunnerMessages.actionsFailedAt(
+        index,
+        actions[index]?.type,
+        describeReason(reason).why,
+      ),
+    ),
+    ...(answer.stoppedEarly
+      ? [
+          interactiveRunnerMessages.actionsLeftUnperformed(
+            actions.length - answer.results.length,
+          ),
+        ]
+      : []),
+  ];
   return {
-    error:
-      unperformed === undefined ? error : appendSentence(error, unperformed),
-    exitCode: described.exitCode,
+    error: sentences.reduce((text, sentence) => appendSentence(text, sentence)),
+    exitCode: describeReason(reasonOf(answer)).exitCode,
   };
 }
 
-function describeReason(answer: SequenceFailure): {
+function reasonOf(failure: FailedStep | SequenceFailure): Reason {
+  return {
+    errorMessage: "errorMessage" in failure ? failure.errorMessage : undefined,
+    failureReason: failure.failureReason,
+  };
+}
+
+function reasonAt(step: FailedStep): Reason & { index: number } {
+  return { ...reasonOf(step), index: step.index };
+}
+
+function describeReason(reason: Reason): {
   exitCode: number;
   why: string;
 } {
-  const { failureReason } = answer;
+  const { failureReason } = reason;
   switch (failureReason) {
     case "action-failed":
       return {
         exitCode: exitCodes.testFailure,
-        why: `reached the runner and did not take effect: ${answer.errorMessage ?? "no reason was given"}.`,
+        why: `reached the runner and did not take effect: ${reason.errorMessage ?? "no reason was given"}.`,
       };
     case "action-unconfirmed":
       return {
         exitCode: exitCodes.network,
         why: appendSentence(
           interactiveRunnerMessages.actionsUnconfirmed(
-            answer.errorMessage ?? "the runner's screen went quiet",
+            reason.errorMessage ?? "the runner's screen went quiet",
           ),
           interactiveRunnerMessages.actionsMayHaveHappened,
         ),

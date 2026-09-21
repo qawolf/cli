@@ -198,4 +198,47 @@ describe("handleRunnerActions failures", () => {
 
     expect(result?.exitCode).toBe(exitCodes.timeout);
   });
+
+  it("reports every action that did not succeed, not just the first", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: {
+        errorMessage: "nothing at 480,260",
+        failedIndex: 0,
+        failureReason: "action-failed",
+        lastCompletedIndex: 1,
+        outcome: "failure",
+        results: [
+          {
+            effect: "not-performed",
+            errorMessage: "nothing at 480,260",
+            failureReason: "action-failed",
+            index: 0,
+            outcome: "failure",
+          },
+          performed(1),
+          {
+            effect: "not-performed",
+            failureReason: "action-not-supported-on-mobile",
+            index: 2,
+            outcome: "failure",
+          },
+        ],
+        stoppedEarly: false,
+      },
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions({ continueOnFailure: true }),
+      makeTestDeps(),
+    );
+
+    expect(result?.error).toContain("2 of 3 actions did not succeed");
+    expect(result?.error).toContain("Action 0 (click)");
+    expect(result?.error).toContain("nothing at 480,260");
+    expect(result?.error).toContain("Action 2 (keypress)");
+    expect(result?.error).toContain("no touchscreen equivalent");
+  });
 });
