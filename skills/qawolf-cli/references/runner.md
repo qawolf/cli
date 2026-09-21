@@ -119,9 +119,8 @@ and says so on stderr. Everything else on this page waits for a run.
 
 Retry on the exit code, not on the message text:
 
-- `4` is transient. The screen is up but cannot serve this instant: restarting
-  after a display-size change, or busy with another request. Retry in a second
-  or two, and bound the retries.
+- `4` is transient, with one exception. The screen is up but cannot serve this instant: restarting after a display-size change, or busy with another request. Retry in a second or two, and bound the retries. The exception is a command that changes something — `act`, `actions`, `run`, `exec` — where a `4` can instead mean the answer was lost with the work in flight: take a screenshot first and retry only what the screen says did not happen.
+- `6` means the work ran out of the time it is given. A `runner actions` sequence answers this way when it did not reach every action; the ones it did not reach go in a new request.
 - `8` means there is no such runner. It was never launched, or it was
   terminated, or it idled out. Retrying never brings one back, so stop and
   launch the id or name one that is running. The message says which runner was
@@ -166,17 +165,9 @@ you a picture of why the click missed. A `4` whose message starts with
 `screenshot`, never send the action again to get it. As with
 `screenshot --out -`, a terminal on stdout is refused.
 
-Coordinates are pixels on the same screenshot you just read. The runner serves
-one see-or-act request at a time, so decide what to do next from each answer
-rather than firing several. Bounds are checked before anything is sent, so an
-over-long `--text` or an out-of-range coordinate comes back immediately naming
-the limit instead of occupying the runner and then failing.
+Coordinates are pixels on the same screenshot you just read. The runner serves one see-or-act request at a time, so never have two in flight; when the next few steps are already known, send them as one `runner actions` sequence instead of one request after another. Bounds are checked before anything is sent, so an over-long `--text` or an out-of-range coordinate comes back immediately naming the limit instead of occupying the runner and then failing.
 
-`act`, `run` and `exec` are the three commands whose lost answer may still have
-taken effect. On a `4` from `act`, take a screenshot before repeating a click.
-`exec`'s message says the snippet could not be evaluated, but a lost answer
-looks the same from outside, so treat a `4` from a snippet that changes something
-as "may have run" rather than "did not run".
+`act`, `actions`, `run` and `exec` are the commands whose lost answer may still have taken effect. On a `4` from `act` or `actions`, take a screenshot before repeating a click. `exec`'s message says the snippet could not be evaluated, but a lost answer looks the same from outside, so treat a `4` from a snippet that changes something as "may have run" rather than "did not run".
 
 A mobile runner has a touchscreen, not a mouse, so only three of the eight
 actions have a touchscreen equivalent and go through: `click` with
@@ -185,6 +176,26 @@ tap focused. The rest — `double_click`, `scroll`, `move`, `keypress`,
 `navigate` — answer `action-not-supported-on-mobile` rather than doing
 something approximate. `navigate` is the one to watch for, since it works on a
 browser runner without a run first but has no meaning on mobile at all.
+
+### Several steps in one request: `runner actions`
+
+`qawolf runner actions '<json array>'` performs up to ten of those same actions back to back in one request, for the steps you already know: click the field, type into it, press Enter. One round trip instead of three, with no delay to guess at between them, and `-` reads the array from stdin the way `act -` reads one action.
+
+```sh
+qawolf runner actions '[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"me@example.com"},{"type":"keypress","keys":["Enter"]}]' --screenshot after-login.jpg
+```
+
+Batch only steps whose targets are all on the screen you last saw and are not moved by the steps before them, and make the step that changes the page — a submit, a navigation, opening a menu — the last one. Then read the frame and decide the next batch from it.
+
+`--screenshot after.jpg` writes the screen after the last action, as `act --screenshot` does, and `-` puts those bytes on stdout with the confirmation on stderr. `--screenshot-mode each --screenshot step.jpg` writes one frame per action instead, `step-0.jpg`, `step-1.jpg` and so on; each is a full image, so keep those sequences short.
+
+The answer holds one entry per action reached, and the field to read on each is `effect`:
+
+- `performed` means the runner did it.
+- `not-performed` means the runner answered that it did not take effect.
+- `unknown` means the runner stopped answering with the action in flight, or its screen went quiet mid-action, so it may have taken effect. Take a screenshot before repeating anything from that step on, and never send it again blind.
+
+The sequence stops at the first action that fails. `--continue-on-failure` carries on past one that reached the runner and did not take effect, which is only safe for actions that do not depend on each other: a `type` after a failed `click` goes to whatever has focus. A runner that cannot be reached, a screen that cannot serve, or running out of time ends the sequence either way, and the message names every action that did not succeed.
 
 ## The recorder: what you cannot get from pixels
 
