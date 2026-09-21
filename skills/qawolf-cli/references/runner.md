@@ -126,9 +126,7 @@ Retry on the exit code, not on the message text:
   launch the id or name one that is running. The message says which runner was
   meant and whether `--runner`, `QAWOLF_RUNNER_ID` or this directory's stored
   default chose it — read that line before you pick an id to launch.
-- `2` will not clear on its own. Either nothing has run on this runner yet, so
-  run a flow, or the runner has no browser at all, so launch with
-  `--name playwright` instead. The message says which.
+- `2` will not clear on its own. Nothing has run on this runner yet, so run a flow; or the runner has no browser at all, so launch with `--name playwright` instead; or the action has no touchscreen equivalent on a mobile runner, so reach for one that has. A `runner actions` sequence also exits `2` before it sends anything, for an argument that is not a JSON array, an array of more than ten actions, and `--screenshot` flags that contradict each other. The message says which.
 
 ## Seeing and acting: the loop is yours
 
