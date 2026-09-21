@@ -5,9 +5,8 @@ import { appendSentence } from "~/core/sentences.js";
 import type { CommandResult } from "~/shell/commandContext.js";
 
 import {
+  describeAnswerWithoutAResult,
   describeReason,
-  type FailedStep,
-  type Reason,
   type SequenceFailure,
   worstExitCode,
 } from "./performActionsReasons.js";
@@ -19,18 +18,17 @@ export function describeSequenceFailure(options: {
 }): Exclude<CommandResult, void> {
   const { actions, answer } = options;
   const failed = answer.results.flatMap((step) =>
-    step.outcome === "failure" ? [reasonAt(step)] : [],
+    step.outcome === "failure" ? [step] : [],
   );
-  // The contract always puts the failed action in `results`. This stands in
-  // for an answer that does not, so the report is never empty.
-  const reported =
+  const described =
     failed.length > 0
-      ? failed
-      : [{ ...reasonOf(answer), index: answer.failedIndex }];
-  const described = reported.map(({ index, ...reason }) => ({
-    index,
-    ...describeReason(reason),
-  }));
+      ? failed.map((step) => ({ index: step.index, ...describeReason(step) }))
+      : [
+          {
+            index: answer.failedIndex,
+            ...describeAnswerWithoutAResult(answer.failureReason),
+          },
+        ];
   const sentences = [
     ...(described.length > 1
       ? [
@@ -66,15 +64,4 @@ export function describeSequenceFailure(options: {
     error: sentences.reduce((text, sentence) => appendSentence(text, sentence)),
     exitCode: worstExitCode(described.map(({ exitCode }) => exitCode)),
   };
-}
-
-function reasonOf(failure: FailedStep | SequenceFailure): Reason {
-  return {
-    errorMessage: "errorMessage" in failure ? failure.errorMessage : undefined,
-    failureReason: failure.failureReason,
-  };
-}
-
-function reasonAt(step: FailedStep): Reason & { index: number } {
-  return { ...reasonOf(step), index: step.index };
 }

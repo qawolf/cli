@@ -9,11 +9,6 @@ export type FailedStep = Extract<
   SequenceFailure["results"][number],
   { outcome: "failure" }
 >;
-export type Reason = {
-  errorMessage: string | undefined;
-  failureReason: SequenceFailure["failureReason"];
-};
-
 /**
  * Worst first: an effect nobody can confirm outranks running out of time, a
  * refusal to act, and an action that plainly did not happen. A sequence that
@@ -35,24 +30,35 @@ export function worstExitCode(codes: readonly number[]): number {
   );
 }
 
-export function describeReason(reason: Reason): {
-  exitCode: number;
-  why: string;
-} {
-  const { failureReason } = reason;
+export type Described = { exitCode: number; why: string };
+
+/**
+ * The contract always puts the failed action in `results`. This stands in for
+ * an answer that does not, so the report is never empty and never dresses a
+ * reason up as an account of what happened to the action.
+ */
+export function describeAnswerWithoutAResult(
+  failureReason: SequenceFailure["failureReason"],
+): Described {
+  return {
+    exitCode: exitCodes.network,
+    why: interactiveRunnerMessages.actionsFailedWithoutAResult(failureReason),
+  };
+}
+
+export function describeReason(step: FailedStep): Described {
+  const { failureReason } = step;
   switch (failureReason) {
     case "action-failed":
       return {
         exitCode: exitCodes.testFailure,
-        why: `reached the runner and did not take effect: ${reason.errorMessage ?? "no reason was given"}.`,
+        why: `reached the runner and did not take effect: ${step.errorMessage}.`,
       };
     case "action-unconfirmed":
       return {
         exitCode: exitCodes.network,
         why: appendSentence(
-          interactiveRunnerMessages.actionsUnconfirmed(
-            reason.errorMessage ?? "the runner's screen went quiet",
-          ),
+          interactiveRunnerMessages.actionsUnconfirmed(step.errorMessage),
           interactiveRunnerMessages.actionsMayHaveHappened,
         ),
       };

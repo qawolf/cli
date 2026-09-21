@@ -44,6 +44,8 @@ export const sequenceMessages = {
     `The sequence holds ${pluralize(sent, "action")}, and one request carries at most ${String(limit)}. Send them in batches, ending each at the action that changes the page.`,
   actionsNotAllSucceeded: (failed: number, total: number) =>
     `${String(failed)} of ${pluralize(total, "action")} did not succeed.`,
+  actionsFailedWithoutAResult: (failureReason: string) =>
+    `did not succeed ("${failureReason}"), and the answer carried no result for it. Take a screenshot before repeating anything from it on.`,
   actionsFailedAt: (index: number, type: string | undefined, why: string) =>
     `Action ${index}${type === undefined ? "" : ` (${type})`} ${why}`,
   actionsLeftUnperformed: (count: number) =>
