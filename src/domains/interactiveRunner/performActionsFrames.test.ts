@@ -188,4 +188,29 @@ describe("handleRunnerActions frames", () => {
     expect(result?.error).toContain("steps/step-0.jpg");
     expect(result?.error).toContain("steps/step-1.jpg");
   });
+
+  it("keeps the confirmation off stdout when the frame goes there", async () => {
+    const { callPublicApi, ctx, outputs, successes } = makeAuthCtx("json");
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: {
+        imageJpegBase64: jpeg,
+        lastCompletedIndex: 0,
+        outcome: "success",
+        results: [performed(0)],
+      },
+    });
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions({ actions: JSON.stringify([aClick]), screenshot: "-" }),
+      deps,
+    );
+
+    expect(result).toBeUndefined();
+    expect(deps.stdoutWrites).toHaveLength(1);
+    expect(outputs()).toEqual([]);
+    expect(successes().at(-1)).toContain("stdout");
+  });
 });

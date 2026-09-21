@@ -9,14 +9,14 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
+import { stdoutPath } from "~/shell/interactiveRunner/writeScreenshot.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import { describeSequenceFailure } from "./performActionsFailure.js";
 import {
-  describePerformed,
   refuseUnwritableFrames,
-  withoutFrames,
+  reportSequence,
 } from "./performActionsOutput.js";
 import { writeSequenceFrames } from "./performActionsScreenshots.js";
 import { readActions } from "./readActions.js";
@@ -98,13 +98,15 @@ export async function handleRunnerActions(
     { answer, out: options.screenshot, screenshotMode },
     deps,
   );
-  ctx.ui.output(
-    withoutFrames(answer, frames),
+  const failure =
     answer.outcome === "success"
-      ? describePerformed(answer.results.length, frames)
-      : describeSequenceFailure({ actions: read.actions, answer }).error,
-  );
-  if (frames.problem !== undefined) return frames.problem;
-  if (answer.outcome === "success") return undefined;
-  return describeSequenceFailure({ actions: read.actions, answer });
+      ? undefined
+      : describeSequenceFailure({ actions: read.actions, answer });
+  reportSequence(ctx, {
+    answer,
+    failure,
+    frames,
+    toStdout: screenshotMode !== "none" && options.screenshot === stdoutPath,
+  });
+  return frames.problem ?? failure;
 }

@@ -42,7 +42,7 @@ export function refuseUnwritableFrames(
 }
 
 /** The answer as data, with every frame replaced by where it was written. */
-export function withoutFrames(
+function withoutFrames(
   answer: SequenceAnswer,
   frames: SequenceFrames,
 ): unknown {
@@ -62,10 +62,10 @@ export function withoutFrames(
 }
 
 /** What a sequence that performed every action says it did, and where its frames went. */
-export function describePerformed(
-  count: number,
-  frames: SequenceFrames,
-): string {
+function describePerformed(count: number, frames: SequenceFrames): string {
+  if (frames.final === stdoutPath) {
+    return interactiveRunnerMessages.actionsPerformedScreenshotToStdout(count);
+  }
   if (frames.final !== undefined) {
     return interactiveRunnerMessages.actionsPerformedScreenshotWritten(
       count,
@@ -78,4 +78,31 @@ export function describePerformed(
     ]);
   }
   return interactiveRunnerMessages.actionsPerformed(count);
+}
+
+/**
+ * Says what the sequence did, and hands its results over as data.
+ *
+ * With the frame on stdout the image is the output, so nothing else may go
+ * there: the confirmation moves to stderr the way `runner screenshot --out -`
+ * moves it, and a sequence that was refused needs no line of its own, since
+ * its result is reported on stderr already.
+ */
+export function reportSequence(
+  ctx: AuthCommandContext,
+  options: {
+    answer: SequenceAnswer;
+    failure: Exclude<CommandResult, void> | undefined;
+    frames: SequenceFrames;
+    toStdout: boolean;
+  },
+): void {
+  const { answer, failure, frames } = options;
+  const message =
+    failure?.error ?? describePerformed(answer.results.length, frames);
+  if (!options.toStdout) {
+    ctx.ui.output(withoutFrames(answer, frames), message);
+    return;
+  }
+  if (failure === undefined) ctx.ui.success(message);
 }
