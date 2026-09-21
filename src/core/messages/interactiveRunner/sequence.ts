@@ -6,6 +6,8 @@ export const sequenceMessages = {
     'The sequence holds no actions. Pass a JSON array of at least one, for example \'[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"hello"}]\'.',
   actionsInvalidAt: (index: number, error: string) =>
     `Action ${index} in the sequence was refused: ${error}`,
+  stdinEmptySequence:
+    'Nothing arrived on stdin. Pipe the sequence in, or pass the JSON array as the argument instead of "-".',
   actionsNotJsonArray:
     'The sequence must be a JSON array of actions, for example \'[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"hello"}]\'.',
   actionsEachNeedsAPath:

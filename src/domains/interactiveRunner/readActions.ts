@@ -25,6 +25,9 @@ export async function readActions(
 ): Promise<ReadActions> {
   const raw =
     argument === stdinArgument ? (await deps.readStdin()).trim() : argument;
+  if (argument === stdinArgument && raw === "") {
+    return { error: interactiveRunnerMessages.stdinEmptySequence, ok: false };
+  }
   const parsed = parseJsonArray(raw);
   if (!parsed.ok) return parsed;
   if (parsed.items.length === 0)
