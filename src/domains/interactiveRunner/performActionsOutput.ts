@@ -83,26 +83,33 @@ function describePerformed(count: number, frames: SequenceFrames): string {
 /**
  * Says what the sequence did, and hands its results over as data.
  *
- * With the frame on stdout the image is the output, so nothing else may go
- * there: the confirmation moves to stderr the way `runner screenshot --out -`
- * moves it, and a sequence that was refused needs no line of its own, since
- * its result is reported on stderr already.
+ * A sequence that failed says only how much of it went through, because the
+ * refusal itself is reported on stderr and printing it here as well would say
+ * the whole thing twice. With the frame on stdout the image is the output, so
+ * nothing else may go there: the confirmation moves to stderr the way
+ * `runner screenshot --out -` moves it, and a refused sequence needs no line of
+ * its own at all.
  */
 export function reportSequence(
   ctx: AuthCommandContext,
   options: {
+    actionCount: number;
     answer: SequenceAnswer;
-    failure: Exclude<CommandResult, void> | undefined;
+    failed: boolean;
     frames: SequenceFrames;
     toStdout: boolean;
   },
 ): void {
-  const { answer, failure, frames } = options;
-  const message =
-    failure?.error ?? describePerformed(answer.results.length, frames);
+  const { answer, frames } = options;
+  const message = options.failed
+    ? interactiveRunnerMessages.actionsPerformedOfTotal(
+        answer.results.filter((step) => step.effect === "performed").length,
+        options.actionCount,
+      )
+    : describePerformed(answer.results.length, frames);
   if (!options.toStdout) {
     ctx.ui.output(withoutFrames(answer, frames), message);
     return;
   }
-  if (failure === undefined) ctx.ui.success(message);
+  if (!options.failed) ctx.ui.success(message);
 }

@@ -18,6 +18,8 @@ export const sequenceMessages = {
     "--screenshot-mode each writes one frame per action, which stdout cannot carry. Give --screenshot a file path.",
   actionsPerformed: (count: number) =>
     `Performed ${count} ${count === 1 ? "action" : "actions"}.`,
+  actionsPerformedOfTotal: (performed: number, total: number) =>
+    `Performed ${String(performed)} of ${pluralize(total, "action")}.`,
   actionsFramesUnwritable: (
     unwritten: readonly { detail: string; path: string }[],
   ) =>

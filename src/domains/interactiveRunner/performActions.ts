@@ -103,8 +103,9 @@ export async function handleRunnerActions(
       ? undefined
       : describeSequenceFailure({ actions: read.actions, answer });
   reportSequence(ctx, {
+    actionCount: read.actions.length,
     answer,
-    failure,
+    failed: failure !== undefined,
     frames,
     toStdout: screenshotMode !== "none" && options.screenshot === stdoutPath,
   });

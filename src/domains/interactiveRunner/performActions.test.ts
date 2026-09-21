@@ -152,3 +152,40 @@ describe("handleRunnerActions frame refusals", () => {
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 });
+
+describe("handleRunnerActions reporting", () => {
+  it("does not say the same thing twice, once as the data line and again as the error", async () => {
+    const { callPublicApi, ctx, outputs } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: sequenceAnswer({
+        errorMessage: "nothing at 480,260",
+        failedIndex: 0,
+        failureReason: "action-failed",
+        lastCompletedIndex: 2,
+        outcome: "failure",
+        results: [
+          {
+            effect: "not-performed",
+            errorMessage: "nothing at 480,260",
+            failureReason: "action-failed",
+            index: 0,
+            outcome: "failure",
+          },
+          performed(1),
+          performed(2),
+        ],
+        stoppedEarly: false,
+      }),
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions({ continueOnFailure: true }),
+      makeTestDeps(),
+    );
+
+    expect(outputs().at(-1)?.humanMessage).toBe("Performed 2 of 3 actions.");
+    expect(outputs().at(-1)?.humanMessage).not.toBe(result?.error);
+  });
+});
