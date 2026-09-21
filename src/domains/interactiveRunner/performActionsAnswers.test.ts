@@ -166,4 +166,36 @@ describe("handleRunnerActions failures", () => {
 
     expect(result?.error).toStartWith("Action 4 was refused");
   });
+
+  it("exits as a timeout when the sequence ran out of its time", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: {
+        failedIndex: 2,
+        failureReason: "out-of-time",
+        lastCompletedIndex: 1,
+        outcome: "failure",
+        results: [
+          performed(0),
+          performed(1),
+          {
+            effect: "not-performed",
+            failureReason: "out-of-time",
+            index: 2,
+            outcome: "failure",
+          },
+        ],
+        stoppedEarly: false,
+      },
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions(),
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.timeout);
+  });
 });

@@ -65,7 +65,7 @@ function describeReason(answer: SequenceFailure): {
       };
     case "out-of-time":
       return {
-        exitCode: exitCodes.network,
+        exitCode: exitCodes.timeout,
         why: interactiveRunnerMessages.actionsOutOfTime,
       };
     case "action-not-supported-on-mobile":
