@@ -12,6 +12,13 @@ import {
 } from "./performActions.fixtures.js";
 import { sequenceCallOptions } from "./sequenceCallOptions.js";
 
+const unwritable = async () =>
+  ({
+    detail: "EACCES: permission denied",
+    ok: false,
+    reason: "unwritable",
+  }) as const;
+
 describe("handleRunnerActions frames", () => {
   it("asks for the final frame when a screenshot path is given, and writes it", async () => {
     const { callPublicApi, ctx, outputs } = makeAuthCtx();
@@ -125,5 +132,60 @@ describe("handleRunnerActions frames", () => {
         { index: 2, screenshotPath: "steps/step-2.jpg" },
       ],
     });
+  });
+
+  it("does not report a frame as written when the write failed", async () => {
+    const { callPublicApi, ctx, outputs } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: {
+        imageJpegBase64: jpeg,
+        lastCompletedIndex: 0,
+        outcome: "success",
+        results: [performed(0)],
+      },
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions({
+        actions: JSON.stringify([aClick]),
+        screenshot: "after.jpg",
+      }),
+      makeTestDeps({ writeScreenshot: unwritable }),
+    );
+
+    expect(result?.exitCode).toBe(4);
+    expect(result?.error).toContain("after.jpg");
+    expect(outputs().at(-1)?.humanMessage).toBe("Performed 1 action.");
+    expect(outputs().at(-1)?.data).not.toHaveProperty("screenshotPath");
+  });
+
+  it("names every frame it could not write", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: {
+        lastCompletedIndex: 1,
+        outcome: "success",
+        results: [
+          { ...performed(0), imageJpegBase64: jpeg },
+          { ...performed(1), imageJpegBase64: jpeg },
+        ],
+      },
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions({
+        actions: JSON.stringify([aClick, someTyping]),
+        screenshot: "steps/step.jpg",
+        screenshotMode: "each",
+      }),
+      makeTestDeps({ writeScreenshot: unwritable }),
+    );
+
+    expect(result?.error).toContain("steps/step-0.jpg");
+    expect(result?.error).toContain("steps/step-1.jpg");
   });
 });

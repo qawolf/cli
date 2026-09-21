@@ -87,28 +87,34 @@ export async function writeSequenceFrames(
       }),
     })),
   );
-  const failed = writes.find((write) => !write.written.ok);
+  const unwritten = writes.flatMap(({ frame, written }) =>
+    written.ok
+      ? []
+      : [
+          {
+            detail:
+              written.reason === "not-a-jpeg"
+                ? "it did not arrive as a JPEG"
+                : written.detail,
+            path: frame.path,
+          },
+        ],
+  );
+  const onDisk = writes
+    .filter(({ written }) => written.ok)
+    .map(({ frame }) => frame);
   return {
     byAction: new Map(
-      writes.flatMap(({ frame }) =>
+      onDisk.flatMap((frame) =>
         frame.index === undefined ? [] : [[frame.index, frame.path] as const],
       ),
     ),
-    final: writes.find(({ frame }) => frame.index === undefined)?.frame.path,
+    final: onDisk.find((frame) => frame.index === undefined)?.path,
     problem:
-      failed === undefined
+      unwritten.length === 0
         ? undefined
         : {
-            error:
-              interactiveRunnerMessages.actionPerformedScreenshotUnwritable(
-                "sequence",
-                failed.frame.path,
-                failed.written.ok
-                  ? ""
-                  : failed.written.reason === "not-a-jpeg"
-                    ? "it did not arrive as a JPEG"
-                    : failed.written.detail,
-              ),
+            error: interactiveRunnerMessages.actionsFramesUnwritable(unwritten),
             exitCode: exitCodes.network,
           },
   };

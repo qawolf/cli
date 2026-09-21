@@ -16,6 +16,10 @@ export const sequenceMessages = {
     "--screenshot-mode each writes one frame per action, which stdout cannot carry. Give --screenshot a file path.",
   actionsPerformed: (count: number) =>
     `Performed ${count} ${count === 1 ? "action" : "actions"}.`,
+  actionsFramesUnwritable: (
+    unwritten: readonly { detail: string; path: string }[],
+  ) =>
+    `The runner answered, but ${pluralize(unwritten.length, "frame")} could not be written: ${unwritten.map(({ detail, path }) => `"${path}" (${detail})`).join(", ")}. Whatever the actions did has already happened, so do not send them again: take the screen with qawolf runner screenshot, giving --out a path this process can write to.`,
   actionsPerformedFramesWritten: (count: number, paths: string[]) =>
     `Performed ${pluralize(count, "action")} and wrote ${pluralize(paths.length, "screen")} to ${paths.join(", ")}.`,
   actionsPerformedScreenshotWritten: (count: number, path: string) =>
