@@ -20,6 +20,17 @@ function indexedFramePath(out: string, index: number): string {
   return `${stem}-${index}${extension}`;
 }
 
+// The frame after the last action is owed once something took effect and the
+// runner answered; a sequence the runner went quiet on has no screen to show.
+function isOwedAFinalFrame(answer: SequenceAnswer): boolean {
+  const somethingTookEffect = answer.results.some(
+    (step) => step.effect === "performed",
+  );
+  const runnerWentQuiet =
+    "failureReason" in answer && answer.failureReason === "runner-unreachable";
+  return somethingTookEffect && !runnerWentQuiet;
+}
+
 /** Every frame the mode asked the runner for, whether or not one came back. */
 export function framesAskedFor(
   answer: SequenceAnswer,
@@ -27,9 +38,14 @@ export function framesAskedFor(
   screenshotMode: ScreenshotMode,
 ): Frame[] {
   if (screenshotMode === "final") {
-    return [
-      { imageJpegBase64: answer.imageJpegBase64, index: undefined, path: out },
-    ];
+    const frame = {
+      imageJpegBase64: answer.imageJpegBase64,
+      index: undefined,
+      path: out,
+    };
+    return frame.imageJpegBase64 === undefined && !isOwedAFinalFrame(answer)
+      ? []
+      : [frame];
   }
   return answer.results.flatMap((step) => {
     const imageJpegBase64 =

@@ -84,7 +84,7 @@ describe("handleRunnerActions frames alongside an action that failed", () => {
     expect(result?.error).toContain("written to steps/step-1.jpg");
   });
 
-  it("keeps the unknown effect's exit code when the runner answered without a final frame", async () => {
+  it("keeps the unknown effect's exit code and does not blame the missing final frame on a runner that went quiet", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
@@ -117,6 +117,6 @@ describe("handleRunnerActions frames alongside an action that failed", () => {
 
     expect(result?.exitCode).toBe(exitCodes.network);
     expect(result?.error).toContain("the runner stopped answering");
-    expect(result?.error).toContain("without the screen it was asked for");
+    expect(result?.error).not.toContain("without the screen it was asked for");
   });
 });

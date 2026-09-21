@@ -91,3 +91,40 @@ describe("handleRunnerActions frames that never arrived", () => {
     ]);
   });
 });
+
+describe("handleRunnerActions frames a quiet runner could not give", () => {
+  it("does not blame a missing final frame on a sequence the runner went quiet on", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    const unconfirmed = (index: number) => ({
+      effect: "unknown",
+      failureReason: "runner-unreachable",
+      index,
+      outcome: "failure",
+    });
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: sequenceAnswer({
+        failedIndex: 0,
+        failureReason: "runner-unreachable",
+        outcome: "failure",
+        results: [unconfirmed(0), unconfirmed(1)],
+        stoppedEarly: false,
+      }),
+    });
+    const deps = makeTestDeps();
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions({
+        actions: JSON.stringify([aClick, someTyping]),
+        screenshot: "after.jpg",
+      }),
+      deps,
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.network);
+    expect(result?.error).toContain("could not be confirmed");
+    expect(result?.error).not.toContain("without the screen it was asked for");
+    expect(deps.written).toEqual([]);
+  });
+});
