@@ -1,4 +1,5 @@
-import type { Command } from "commander";
+import { type Command, Option } from "commander";
+import { type ScreenshotMode, screenshotModes } from "@qawolf/api-contracts/v1";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext } from "~/commands/context.js";
@@ -18,16 +19,8 @@ type ActionsFlags = {
   continueOnFailure?: boolean;
   runner?: string;
   screenshot?: string;
-  screenshotMode?: string;
+  screenshotMode?: ScreenshotMode;
 };
-
-function toScreenshotMode(
-  flag: string | undefined,
-): "each" | "final" | "none" | undefined {
-  return flag === "each" || flag === "final" || flag === "none"
-    ? flag
-    : undefined;
-}
 
 export function registerRunnerActionsCommand(
   runner: Command,
@@ -49,9 +42,11 @@ export function registerRunnerActionsCommand(
       "--screenshot <path>",
       "Save a JPEG of the screen after the last action to this file. With --screenshot-mode each, one file per action, with the action's index before the extension. - writes the final frame to stdout and moves the confirmation to stderr",
     )
-    .option(
-      "--screenshot-mode <mode>",
-      "none, final or each. Defaults to final when --screenshot is given, none otherwise",
+    .addOption(
+      new Option(
+        "--screenshot-mode <mode>",
+        "Defaults to final when --screenshot is given, none otherwise",
+      ).choices([...screenshotModes]),
     )
     .addHelpText("after", actionsExamples)
     .action((sequence: string, opts: ActionsFlags, command: Command) =>
@@ -63,7 +58,7 @@ export function registerRunnerActionsCommand(
             continueOnFailure: opts.continueOnFailure === true,
             runner: opts.runner,
             screenshot: opts.screenshot,
-            screenshotMode: toScreenshotMode(opts.screenshotMode),
+            screenshotMode: opts.screenshotMode,
           },
           runnerDeps(ctx),
         ),
