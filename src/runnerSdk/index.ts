@@ -5,6 +5,7 @@ import { createLifecycleVerbs } from "./lifecycleVerbs.js";
 import { createPageVerbs } from "./pageVerbs.js";
 import { createProjectVerbs } from "./projectVerbs.js";
 import { createRunVerbs } from "./runVerbs.js";
+import { createRecordingVerbs } from "./recordingVerbs.js";
 import type { ListedRunner, RunnerSdkOptions, SdkResult } from "./types.js";
 
 export type {
@@ -31,6 +32,10 @@ export type {
   PerformedAction,
   PromoteSnapshotRequest,
   PromotedSnapshot,
+  RecordRequest,
+  Recorded,
+  RecordingsRequest,
+  Recordings,
   RunEnvironment,
   RunFilter,
   RunRequest,
@@ -59,6 +64,7 @@ export function createRunnerSdk(options: RunnerSdkOptions) {
   return {
     ...createLifecycleVerbs(context),
     ...createRunVerbs(context),
+    ...createRecordingVerbs(context),
     ...createPageVerbs(context),
     ...createProjectVerbs(context),
 

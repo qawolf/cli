@@ -299,6 +299,8 @@ Commands:
   import-package [options] <name>          Install a package into a runner's live run, so a snippet or a selection can import it
   highlight-selector [options] [selector]  Highlight what a selector matches on a runner's live page, so the next screenshot shows it. Omit the selector to clear the highlight
   promote-snapshot [options]               Accept a run's screenshot as the new baseline for an image diff, on the runner that produced it
+  record                                   Control video recording on a Playwright runner
+  recordings [options]                     Read a page of published video recordings, including after the runner terminates. Platform URLs persist; video URLs expire
   help [command]                           display help for command
 "
 `;
@@ -412,6 +414,100 @@ Examples:
   $ qawolf runner events recorder --tail 5
   $ qawolf runner events run-logs --run <runId> --follow
   $ qawolf runner events console --since 120 --json
+"
+`;
+
+exports[`--help output qawolf runner record 1`] = `
+"Usage: qawolf runner record [options] [command]
+
+Control video recording on a Playwright runner
+
+Options:
+  -h, --help                     display help for command
+
+Commands:
+  start [options]                Start manual video capture across runs.
+                                 Requires a ready screen and suppresses
+                                 automatic capture until stopped
+  stop [options] <recording-id>  Stop the recording with this UUID and publish
+                                 it. Retrying cannot stop a later recording
+  status [options]               Show the active recording and automatic
+                                 recording setting
+  auto [options] <setting>       Enable or disable automatic recording for
+                                 subsequent full runs
+  help [command]                 display help for command
+"
+`;
+
+exports[`--help output qawolf runner record start 1`] = `
+"Usage: qawolf runner record start [options]
+
+Start manual video capture across runs. Requires a ready screen and suppresses
+automatic capture until stopped
+
+Options:
+  --recording-id <uuid>  Recording UUID. Generated when omitted; reuse it when
+                         retrying this start
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then
+                         this directory's stored runner
+  -h, --help             display help for command
+"
+`;
+
+exports[`--help output qawolf runner record stop 1`] = `
+"Usage: qawolf runner record stop [options] <recording-id>
+
+Stop the recording with this UUID and publish it. Retrying cannot stop a later
+recording
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
+                 directory's stored runner
+  -h, --help     display help for command
+"
+`;
+
+exports[`--help output qawolf runner record status 1`] = `
+"Usage: qawolf runner record status [options]
+
+Show the active recording and automatic recording setting
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
+                 directory's stored runner
+  -h, --help     display help for command
+"
+`;
+
+exports[`--help output qawolf runner record auto 1`] = `
+"Usage: qawolf runner record auto [options] <setting>
+
+Enable or disable automatic recording for subsequent full runs
+
+Arguments:
+  setting        Automatic recording setting (choices: "on", "off")
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
+                 directory's stored runner
+  -h, --help     display help for command
+"
+`;
+
+exports[`--help output qawolf runner recordings 1`] = `
+"Usage: qawolf runner recordings [options]
+
+Read a page of published video recordings, including after the runner
+terminates. Platform URLs persist; video URLs expire
+
+Options:
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then
+                         this directory's stored runner
+  --recording-id <uuid>  Look up one recording; an empty result means it is not
+                         published or does not exist
+  --page-token <token>   Continue from nextPageToken returned by the previous
+                         page
+  -h, --help             display help for command
 "
 `;
 

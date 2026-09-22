@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { sleep as defaultSleep } from "~/core/sleep.js";
 import type { Fs } from "~/shell/fs.js";
 import {
@@ -29,6 +30,7 @@ export type InteractiveRunnerDeps = {
   cwd: string;
   env: Record<string, string | undefined>;
   makeRunnerId: () => string;
+  makeRecordingId: () => string;
   readFile: (path: string) => Promise<string>;
   readStdin: () => Promise<string>;
   runFilesManifest: RunFilesManifestStore;
@@ -51,6 +53,7 @@ export function makeInteractiveRunnerDeps(options: {
     cwd: options.cwd,
     env: options.env,
     makeRunnerId,
+    makeRecordingId: randomUUID,
     readFile: (path) => options.fs.readFile(path),
     readStdin,
     runFilesManifest: makeRunFilesManifestStore({

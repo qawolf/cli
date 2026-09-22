@@ -11,7 +11,7 @@ describe("notFoundSubject", () => {
 
   // Launching creates a runner and listing names none, so neither can 404 over
   // a runner that has gone.
-  it.each(["runner.launch", "runner.list"])(
+  it.each(["runner.launch", "runner.list", "runner.recordings"])(
     "does not read %s as a missing runner",
     (contractName) => {
       expect(notFoundSubject(contractName, { id: "agent-1" }).kind).not.toBe(

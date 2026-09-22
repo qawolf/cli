@@ -9,11 +9,12 @@ export type NotFoundSubject =
   | { kind: "record"; noun: string; id: string }
   | { kind: "other" };
 
-// `launch` starts a runner and `list` names none, so neither can 404 over a
-// runner that has gone. Every other runner route is relayed to one live pod.
-const runnerRoutesThatNameNoRunner: ReadonlySet<string> = new Set([
+// Recording history lives in workspace storage after a runner terminates.
+// These routes do not need a live pod, so a 404 must not suggest launching one.
+const runnerRoutesWithoutLivePod: ReadonlySet<string> = new Set([
   "runner.launch",
   "runner.list",
+  "runner.recordings",
 ]);
 
 // The run routes that resolve one run by id. `run.create` and `run.find` take
@@ -58,7 +59,7 @@ export function notFoundSubject(
 ): NotFoundSubject {
   if (
     contractName.startsWith("runner.") &&
-    !runnerRoutesThatNameNoRunner.has(contractName)
+    !runnerRoutesWithoutLivePod.has(contractName)
   ) {
     return { kind: "runner", runnerId: field(input, "id") };
   }

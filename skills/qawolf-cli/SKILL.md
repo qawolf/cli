@@ -197,6 +197,11 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf runner launch` | write | Launch an interactive runner and make it this directory's default |
 | `qawolf runner list` | read | List the runners running on your team |
 | `qawolf runner promote-snapshot` | write | Accept a run's screenshot as the new baseline for an image diff, on the runner that produced it |
+| `qawolf runner record auto` | write | Enable or disable automatic recording for subsequent full runs |
+| `qawolf runner record start` | write | Start manual video capture across runs. Requires a ready screen and suppresses automatic capture until stopped |
+| `qawolf runner record status` | read | Show the active recording and automatic recording setting |
+| `qawolf runner record stop` | write | Stop the recording with this UUID and publish it. Retrying cannot stop a later recording |
+| `qawolf runner recordings` | read | Read a page of published video recordings, including after the runner terminates. Platform URLs persist; video URLs expire |
 | `qawolf runner run` | write | Run a flow on an interactive runner, shipping the flow and what it imports |
 | `qawolf runner screenshot` | read | Save a JPEG of an interactive runner's screen to a file, or write it to stdout with --out - |
 | `qawolf runner stop-run` | write | Stop what a runner is currently executing, leaving the runner up |
@@ -278,7 +283,8 @@ by default.
 
 The `runner` commands drive a live cloud browser: `launch` one, `screenshot` to
 see it, `act` to click and type, `run` a flow on it, `exec` a snippet against its
-page, `events` to read its journal (including the `recorder` stream, which turns
+page, `record` to control video capture, `recordings` to read published video
+history even after termination, `events` to read its journal (including the `recorder` stream, which turns
 your actions into Playwright locators), `keepalive` to hold it open, and
 `terminate`
 when done. Everything is a plain request to one host, so a shell with an API key
