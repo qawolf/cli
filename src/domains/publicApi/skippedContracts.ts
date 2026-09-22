@@ -39,6 +39,8 @@ const handWrittenContractNames: readonly string[] = [
   "runner.performActions",
   "runner.promoteSnapshot",
   "runner.readJournal",
+  "runner.record",
+  "runner.recordings",
   "runner.runFlow",
   "runner.stopRun",
   "runner.takeScreenshot",

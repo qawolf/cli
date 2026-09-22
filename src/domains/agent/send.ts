@@ -14,6 +14,8 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import type { AgentDeps } from "./deps.js";
 import { followSession } from "./followSession.js";
 
+const chatSessionIdEnvironmentVariable = "QAWOLF_CHAT_SESSION_ID";
+
 export type AgentSendOptions = {
   environmentId: string | undefined;
   /** Team-storage paths from `file requestUpload`, read by the AI instead of the message. */
@@ -34,7 +36,9 @@ export type AgentSendOptions = {
 // session, and silently attaching it to the last one would put unrelated work
 // in one conversation on the strength of a variable left set from an earlier
 // task.
-function parseInput(options: AgentSendOptions) {
+function parseInput(
+  options: AgentSendOptions & { parentSessionId: string | undefined },
+) {
   return publicContractsV1.agent.send.input.safeParse({
     message: options.message,
     ...(options.environmentId === undefined
@@ -43,11 +47,22 @@ function parseInput(options: AgentSendOptions) {
     ...(options.filePaths === undefined
       ? {}
       : { filePaths: options.filePaths }),
+    ...(options.parentSessionId === undefined
+      ? {}
+      : { parentSessionId: options.parentSessionId }),
     ...(options.session === undefined ? {} : { sessionId: options.session }),
     ...(options.workspaceId === undefined
       ? {}
       : { workspaceId: options.workspaceId }),
   });
+}
+
+function resolveParentSessionId(options: {
+  env: Record<string, string | undefined>;
+  session: string | undefined;
+}): string | undefined {
+  if (options.session !== undefined) return undefined;
+  return options.env[chatSessionIdEnvironmentVariable]?.trim() || undefined;
 }
 
 /**
@@ -69,7 +84,13 @@ export async function handleAgentSend(
   if (!timeout.ok) {
     return { error: timeout.error, exitCode: exitCodes.invalidArgs };
   }
-  const input = parseInput(options);
+  const input = parseInput({
+    ...options,
+    parentSessionId: resolveParentSessionId({
+      env: deps.env,
+      session: options.session,
+    }),
+  });
   if (!input.success) {
     return {
       error: z.prettifyError(input.error),
