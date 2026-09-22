@@ -214,6 +214,9 @@ response is lost, the error includes that UUID: check `record status` and reuse
 the UUID when retrying. Stop always names a specific recording, so retrying it
 cannot stop a later capture. Manual recordings span runs and suppress automatic
 capture until stopped. The auto setting affects subsequent full runs.
+An active automatic recording ends with its run; `record stop` cannot interrupt
+it. If a stop publishes a recording with `status: "failed"`, the CLI returns
+exit code 1 and still prints the manifest so callers can inspect it.
 
 Published recordings remain accessible after the runner terminates:
 

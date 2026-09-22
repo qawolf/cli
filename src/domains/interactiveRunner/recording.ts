@@ -6,6 +6,7 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
+import { exitCodes } from "~/shell/exit.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
 import {
@@ -70,6 +71,16 @@ export async function handleRunnerRecord(
     };
   }
   ctx.ui.output(answer, formatRecordingState(answer));
+  if (answer.result.recording?.status === "failed") {
+    return {
+      error: recordingMessages.failedCapture,
+      exitCode: exitCodes.testFailure,
+      errorBody: [
+        recordingMessages.recordingId(answer.result.recording.id),
+        answer.url,
+      ].join("\n"),
+    };
+  }
   return undefined;
 }
 
