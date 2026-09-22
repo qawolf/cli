@@ -476,6 +476,20 @@ The lines-file has to be one of the files that travel, so it lives under the
 directory you run from. A range whose file is not collected is refused before a
 runner is addressed, naming the path.
 
+### Naming the flow the run is for
+
+`--flow-id` names the QA Wolf flow the run is for, and the run sees it as
+`QAWOLF_WORKFLOW_ID`, the same value a platform run of that flow sees. A flow
+that names fixtures by `process.env.QAWOLF_WORKFLOW_ID` and cleans them up by it
+then behaves the same on a runner as on the platform. A run with no flag falls
+back to `QAWOLF_WORKFLOW_ID` from the shell, which the pod an AI Job runs on
+already exports; a run with neither is given no `QAWOLF_WORKFLOW_ID`, and the
+flow reads it as `undefined`. That is not a sign the id is unavailable.
+
+```sh
+qawolf runner run flows/checkout.flow.ts --flow-id <id>
+```
+
 ### Giving the run environment variables
 
 There are two ways, and a run takes one of them. `--env-id` names a QA Wolf

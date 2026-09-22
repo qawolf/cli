@@ -10,6 +10,8 @@ export const runMessages = {
     "--env-id was given nothing. Pass the id or alias of a QA Wolf environment, or drop the flag to send no environment.",
   envIdWithEnvFile:
     "--env-id and --env-file both give the run its environment, so only one may be passed. Use --env-id for a QA Wolf environment, which QA Wolf reads itself, or --env-file for a dotenv file on this machine.",
+  flowIdBlank:
+    "--flow-id was given nothing. Pass the id of the QA Wolf flow this run is for, or drop the flag to key the run to no flow.",
   fileNotCollected: (path: string) =>
     `"${path}" is not one of the files that travel to a runner. It must be inside the current directory and end in .ts, .tsx, .js, .mjs, .cjs or .json.`,
   fileUnreadable: (path: string, reason: string) =>

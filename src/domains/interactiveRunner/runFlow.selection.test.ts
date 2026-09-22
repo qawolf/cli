@@ -42,6 +42,7 @@ async function runWith(options: {
       follow: false,
       envFile: undefined,
       envId: undefined,
+      flowId: undefined,
       lines: options.lines,
       linesFile: options.linesFile,
       logs: false,

@@ -6,6 +6,7 @@ import {
   type BuiltRunEnvironment,
   buildRunEnvironment,
 } from "~/core/interactiveRunner/runEnvironment.js";
+import { resolveRunFlowId } from "~/core/interactiveRunner/runFlowId.js";
 import {
   checkRunFiles,
   describeRunFilesCheck,
@@ -23,6 +24,7 @@ export type PreparedRun =
       environment: Record<string, string> | undefined;
       environmentId: string | undefined;
       files: RunFiles;
+      flowId: string | undefined;
       selection: RunSelection | undefined;
     }
   | { ok: false; error: string; exitCode: number };
@@ -44,6 +46,7 @@ export async function prepareRun(
     entryPointPath: string;
     envFile: string | undefined;
     envId: string | undefined;
+    flowId: string | undefined;
     lines: string | undefined;
     linesFile: string | undefined;
   },
@@ -64,6 +67,9 @@ export async function prepareRun(
   const environmentId =
     explicitEnvId ??
     (options.envFile === undefined && fromEnvVar ? fromEnvVar : undefined);
+
+  const flow = resolveRunFlowId({ env: deps.env, flag: options.flowId });
+  if (!flow.ok) return refused(flow.error, exitCodes.invalidArgs);
 
   const linesFilePath =
     options.linesFile === undefined
@@ -95,6 +101,7 @@ export async function prepareRun(
           environment: given,
           environmentId,
           files,
+          flowId: flow.flowId,
           ok: true,
           selection: undefined,
         }
@@ -118,6 +125,7 @@ export async function prepareRun(
         environment: given,
         environmentId,
         files,
+        flowId: flow.flowId,
         ok: true,
         selection: built.selection,
       }
