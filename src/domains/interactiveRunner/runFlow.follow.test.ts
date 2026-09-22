@@ -24,6 +24,7 @@ const runFollowing = (
       follow: options.follow ?? true,
       envFile: undefined,
       envId: undefined,
+      flowId: undefined,
       lines: undefined,
       linesFile: undefined,
       logs: options.logs ?? false,

@@ -25,6 +25,7 @@ export async function handleRunnerRun(
     entryPoint: string;
     envFile: string | undefined;
     envId: string | undefined;
+    flowId: string | undefined;
     follow: boolean;
     lines: string | undefined;
     linesFile: string | undefined;
@@ -53,6 +54,7 @@ export async function handleRunnerRun(
       entryPointPath,
       envFile: options.envFile,
       envId: options.envId,
+      flowId: options.flowId,
       lines: options.lines,
       linesFile: options.linesFile,
     },
@@ -90,6 +92,7 @@ export async function handleRunnerRun(
       environment: prepared.environment,
       environmentId: prepared.environmentId,
       files: prepared.files,
+      flowId: prepared.flowId,
       resolved,
       selection: prepared.selection,
     },

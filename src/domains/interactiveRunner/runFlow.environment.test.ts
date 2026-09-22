@@ -42,6 +42,7 @@ describe("handleRunnerRun with --env-file and --env-id", () => {
         entryPoint: "flow.ts",
         envFile,
         envId,
+        flowId: undefined,
         follow: false,
         lines: undefined,
         linesFile: undefined,

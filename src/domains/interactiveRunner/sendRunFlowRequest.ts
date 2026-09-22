@@ -29,6 +29,7 @@ export async function sendRunFlowRequest(
     entryPointPath: string;
     environment: Record<string, string> | undefined;
     environmentId: string | undefined;
+    flowId: string | undefined;
     resolved: Runner;
     selection: RunSelection | undefined;
   },
@@ -49,6 +50,7 @@ export async function sendRunFlowRequest(
       ...(options.environmentId === undefined
         ? {}
         : { environmentId: options.environmentId }),
+      ...(options.flowId === undefined ? {} : { flowId: options.flowId }),
       ...(options.selection === undefined
         ? {}
         : { selection: options.selection }),
