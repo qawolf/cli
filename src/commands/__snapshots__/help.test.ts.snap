@@ -24,12 +24,16 @@ Commands:
                                flows need
   runner                       Drive an interactive runner on the QA Wolf
                                platform
+  codeHostIntegration          QA Wolf public API codeHostIntegration commands
+  deployment                   QA Wolf public API deployment commands
   email                        QA Wolf public API email commands
   environment                  QA Wolf public API environment commands
   file                         QA Wolf public API file commands
   flow                         QA Wolf public API flow commands
   issue                        QA Wolf public API issue commands
+  legacyTrigger                QA Wolf public API legacyTrigger commands
   run                          Trigger and manage QA Wolf runs on the platform
+  skill                        QA Wolf public API skill commands
   tag                          QA Wolf public API tag commands
   trigger                      QA Wolf public API trigger commands
   help [command]               display help for command
@@ -289,6 +293,7 @@ Commands:
   events [options] <stream>                Print a runner's journal, one entry per line. QA Wolf writes console, recorder, run-events, run-logs, run-status
   screenshot [options]                     Save a JPEG of an interactive runner's screen to a file, or write it to stdout with --out -
   act [options] <action>                   Perform one raw action on a runner's screen: click, double_click, scroll, move, drag, keypress, navigate or type. Use - to read a whole action as JSON from stdin. On a mobile runner only click (button left), drag and type have a touchscreen equivalent; the rest answer action-not-supported-on-mobile
+  actions [options] <sequence>             Perform a sequence of up to ten raw actions on a runner's screen in one request, as a JSON array of the same actions \`runner act\` takes. Use - to read the array from stdin. Actions run back to back, so batch only steps whose targets are on the screen you last saw, and end the sequence at the step that changes the page. Each result carries an effect: performed, not-performed, or unknown when the runner stopped answering and the action may have landed
   exec [options] <file>                    Evaluate a snippet against a runner's live page. Use - to read the snippet from stdin
   inspect                                  Read one thing off a runner's live page (browser) or Appium session (mobile)
   import-package [options] <name>          Install a package into a runner's live run, so a snippet or a selection can import it

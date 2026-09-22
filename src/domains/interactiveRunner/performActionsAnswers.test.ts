@@ -1,0 +1,248 @@
+import { describe, expect, it } from "bun:test";
+
+import { exitCodes } from "~/shell/exit.js";
+
+import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
+import { handleRunnerActions } from "./performActions.js";
+import {
+  actionsOptions,
+  performed,
+  sequenceAnswer,
+} from "./performActions.fixtures.js";
+
+describe("handleRunnerActions failures", () => {
+  it("names the action that stopped the sequence, how many were left, and keeps the unknown effect from inviting a repeat", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: sequenceAnswer({
+        failedIndex: 1,
+        failureReason: "runner-unreachable",
+        lastCompletedIndex: 0,
+        outcome: "failure",
+        results: [
+          performed(0),
+          {
+            effect: "unknown",
+            failureReason: "runner-unreachable",
+            index: 1,
+            outcome: "failure",
+          },
+        ],
+        stoppedEarly: true,
+      }),
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions(),
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(4);
+    expect(result?.error).toContain("Action 1 (type)");
+    expect(result?.error).toContain("take a screenshot before repeating");
+    expect(result?.error).toContain("1 action after it was not attempted");
+  });
+
+  it("exits as a test failure when an action reached the runner and did not take effect", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: sequenceAnswer({
+        errorMessage: "Target closed",
+        failedIndex: 2,
+        failureReason: "action-failed",
+        lastCompletedIndex: 1,
+        outcome: "failure",
+        results: [
+          performed(0),
+          performed(1),
+          {
+            effect: "not-performed",
+            errorMessage: "Target closed",
+            failureReason: "action-failed",
+            index: 2,
+            outcome: "failure",
+          },
+        ],
+        stoppedEarly: false,
+      }),
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions(),
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(1);
+    expect(result?.error).toBe(
+      "Action 2 (keypress) reached the runner and did not take effect: Target closed. The sequence was partly applied: action 1 is the last one that took effect. Do not send it again as a whole; send only what still has to happen as a new request.",
+    );
+  });
+
+  it.each([
+    [
+      "a runner that is gone",
+      exitCodes.notFound,
+      "Runner ci is not running (HTTP 404).",
+    ],
+    ["a rejected key", exitCodes.auth, "Unauthorized (HTTP 401)."],
+  ] as const)(
+    "keeps the exit code the platform gave %s",
+    async (_name, exitCode, error) => {
+      const { callPublicApi, ctx } = makeAuthCtx();
+      callPublicApi.mockResolvedValue({ error, exitCode, ok: false });
+
+      const result = await handleRunnerActions(
+        ctx,
+        actionsOptions(),
+        makeTestDeps(),
+      );
+
+      expect(result?.exitCode).toBe(exitCode);
+      expect(result?.error).toBe(error);
+    },
+  );
+
+  it("says which runner a lost answer was addressed to, and how it was chosen", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "Runner ci is not running (HTTP 404).",
+      exitCode: exitCodes.notFound,
+      ok: false,
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions(),
+      makeTestDeps(),
+    );
+
+    expect(result?.errorBody).toContain("The id ci came from --runner.");
+  });
+
+  it("warns that a lost answer may still have taken effect", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      error: "The request timed out.",
+      exitCode: exitCodes.network,
+      mayHaveArrived: true,
+      ok: false,
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions(),
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.network);
+    expect(result?.error).toContain("take a screenshot before repeating");
+  });
+
+  it("does not invent a name for an action the sequence never held", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: sequenceAnswer({
+        failedIndex: 4,
+        failureReason: "screen-not-ready",
+        outcome: "failure",
+        results: [
+          {
+            effect: "not-performed",
+            failureReason: "screen-not-ready",
+            index: 4,
+            outcome: "failure",
+          },
+        ],
+        stoppedEarly: true,
+      }),
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions(),
+      makeTestDeps(),
+    );
+
+    expect(result?.error).toStartWith("Action 4 was refused");
+  });
+
+  it("exits as a timeout when the sequence ran out of its time", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: sequenceAnswer({
+        failedIndex: 2,
+        failureReason: "out-of-time",
+        lastCompletedIndex: 1,
+        outcome: "failure",
+        results: [
+          performed(0),
+          performed(1),
+          {
+            effect: "not-performed",
+            failureReason: "out-of-time",
+            index: 2,
+            outcome: "failure",
+          },
+        ],
+        stoppedEarly: false,
+      }),
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions(),
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.timeout);
+  });
+
+  it("reports every action that did not succeed, not just the first", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: sequenceAnswer({
+        errorMessage: "nothing at 480,260",
+        failedIndex: 0,
+        failureReason: "action-failed",
+        lastCompletedIndex: 1,
+        outcome: "failure",
+        results: [
+          {
+            effect: "not-performed",
+            errorMessage: "nothing at 480,260",
+            failureReason: "action-failed",
+            index: 0,
+            outcome: "failure",
+          },
+          performed(1),
+          {
+            effect: "not-performed",
+            failureReason: "action-not-supported-on-mobile",
+            index: 2,
+            outcome: "failure",
+          },
+        ],
+        stoppedEarly: false,
+      }),
+    });
+
+    const result = await handleRunnerActions(
+      ctx,
+      actionsOptions({ continueOnFailure: true }),
+      makeTestDeps(),
+    );
+
+    expect(result?.error).toContain("2 of 3 actions did not succeed");
+    expect(result?.error).toContain("Action 0 (click)");
+    expect(result?.error).toContain("nothing at 480,260");
+    expect(result?.error).toContain("Action 2 (keypress)");
+    expect(result?.error).toContain("no touchscreen equivalent");
+  });
+});
