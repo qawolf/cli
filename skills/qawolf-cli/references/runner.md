@@ -478,17 +478,23 @@ runner is addressed, naming the path.
 
 ### Naming the flow the run is for
 
-`--flow-id` names the QA Wolf flow the run is for, and the run sees it as
-`QAWOLF_WORKFLOW_ID`, the same value a platform run of that flow sees. A flow
-that names fixtures by `process.env.QAWOLF_WORKFLOW_ID` and cleans them up by it
-then behaves the same on a runner as on the platform. A run with no flag falls
-back to `QAWOLF_WORKFLOW_ID` from the shell, which the pod an AI Job runs on
-already exports; a run with neither is given no `QAWOLF_WORKFLOW_ID`, and the
-flow reads it as `undefined`. That is not a sign the id is unavailable.
+`--flow-id` names the QA Wolf flow the run is for. QA Wolf stamps that id onto
+the run as `QAWOLF_WORKFLOW_ID`, the same value a platform run of that flow sees.
+A flow that builds fixture names from it, such as
+`entity-${process.env.QAWOLF_WORKFLOW_ID}`, deletes its leftovers by searching
+for that same id. Naming the flow makes those names identical on a runner and on
+the platform, so a fixture one run strands is found by the next run of that flow
+on either side.
 
 ```sh
 qawolf runner run flows/checkout.flow.ts --flow-id <id>
 ```
+
+Without the flag, the CLI sends `QAWOLF_WORKFLOW_ID` from its own shell, which
+the pod an AI Job runs on already exports. With neither, the run is given no
+`QAWOLF_WORKFLOW_ID`: the name above becomes `entity-undefined`, and the run
+shares no fixtures with the platform runs of its own flow. That is not a sign the
+id is unavailable.
 
 ### Giving the run environment variables
 
