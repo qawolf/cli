@@ -368,8 +368,7 @@ Options:
                        server and no size limit applies to them
   --env-file <path>    Dotenv file on this machine whose variables the run is
                        given. Pass this or --env-id, not both
-  --flow-id <id>       QA Wolf flow this run is for. Defaults to
-                       QAWOLF_WORKFLOW_ID. The run sees it as
+  --flow-id <id>       QA Wolf flow this run is for. The run sees it as
                        QAWOLF_WORKFLOW_ID, the same value a platform run of that
                        flow sees, so fixtures named and cleaned up by it match
   --lines <start-end>  Run only these 1-indexed lines against the browser as it

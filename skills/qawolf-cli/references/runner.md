@@ -490,11 +490,12 @@ on either side.
 qawolf runner run flows/checkout.flow.ts --flow-id <id>
 ```
 
-Without the flag, the CLI sends `QAWOLF_WORKFLOW_ID` from its own shell, which
-the pod an AI Job runs on already exports. With neither, the run is given no
-`QAWOLF_WORKFLOW_ID`: the name above becomes `entity-undefined`, and the run
-shares no fixtures with the platform runs of its own flow. That is not a sign the
-id is unavailable.
+A run with no flag is given no `QAWOLF_WORKFLOW_ID`, so the name above becomes
+`entity-undefined` and the run shares no fixtures with the platform runs of its
+own flow. That is not a sign the id is unavailable. The flag is the only thing
+that names the flow: a `QAWOLF_WORKFLOW_ID` exported in your own shell is not
+read, because the one environment that holds it is an AI Job's pod, where it is
+the id of that pod's own flow rather than of whatever flow the run is for.
 
 ### Giving the run environment variables
 

@@ -61,29 +61,21 @@ describe("handleRunnerRun with --flow-id", () => {
     expect(sentRequest(callPublicApi)).toMatchObject({ flowId: "flow-7c2e" });
   });
 
-  it("names no flow when the flag is absent and nothing is exported", async () => {
+  it("names no flow when the flag is absent", async () => {
     const { callPublicApi } = await run({});
 
     expect(Object.hasOwn(sentRequest(callPublicApi), "flowId")).toBe(false);
   });
 
-  // A pod that runs an AI Job carries the job's flow this way, so a run started
-  // from its shell is keyed to the flow the way a platform run of it is.
-  it("falls back to QAWOLF_WORKFLOW_ID when the flag is absent", async () => {
+  // An AI Job's pod exports the id of its own flow, which is not the flow of
+  // every run started from that pod. Reading it here would key a run of one
+  // flow to another, so the flag is the only source.
+  it("ignores a QAWOLF_WORKFLOW_ID in its own environment", async () => {
     const { callPublicApi } = await run({
-      env: { QAWOLF_WORKFLOW_ID: "flow-7c2e" },
+      env: { QAWOLF_WORKFLOW_ID: "flow-of-this-pod" },
     });
 
-    expect(sentRequest(callPublicApi)).toMatchObject({ flowId: "flow-7c2e" });
-  });
-
-  it("lets the flag win over QAWOLF_WORKFLOW_ID", async () => {
-    const { callPublicApi } = await run({
-      env: { QAWOLF_WORKFLOW_ID: "flow-other" },
-      flowId: "flow-7c2e",
-    });
-
-    expect(sentRequest(callPublicApi)).toMatchObject({ flowId: "flow-7c2e" });
+    expect(Object.hasOwn(sentRequest(callPublicApi), "flowId")).toBe(false);
   });
 
   it("refuses a blank flag before addressing a runner", async () => {
