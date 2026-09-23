@@ -5,12 +5,14 @@ import ts from "typescript";
 
 import { isFlowFile } from "~/core/flowMeta.js";
 
+import { findEnvAccessors } from "./accessors.js";
 import { collectEnvVarsByFlow } from "./callGraph.js";
 import type { FlowEnvVars } from "./types.js";
 
 export type AnalysisResult = {
   /** Keyed by the bundle-relative posix path each file was written under. */
   byFlow: Map<string, FlowEnvVars>;
+  accessorCount: number;
   cleanup: () => Promise<void>;
 };
 
@@ -45,9 +47,11 @@ export async function analyse(
   const sourceFiles = program
     .getSourceFiles()
     .filter((file) => local.has(normalize(file.fileName)));
+  const accessors = findEnvAccessors(ts, checker, sourceFiles);
   const absolute = collectEnvVarsByFlow({
     compiler: ts,
     checker,
+    accessors,
     isLocalFile: (fileName) => local.has(normalize(fileName)),
     flowFiles: sourceFiles.filter((file) => isFlowFile(file.fileName)),
   });
@@ -62,6 +66,7 @@ export async function analyse(
 
   return {
     byFlow,
+    accessorCount: accessors.size,
     cleanup: () => rm(bundleDir, { recursive: true, force: true }),
   };
 }
