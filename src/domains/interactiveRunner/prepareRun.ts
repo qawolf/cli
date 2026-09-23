@@ -68,7 +68,7 @@ export async function prepareRun(
     explicitEnvId ??
     (options.envFile === undefined && fromEnvVar ? fromEnvVar : undefined);
 
-  const flow = resolveRunFlowId({ env: deps.env, flag: options.flowId });
+  const flow = resolveRunFlowId(options.flowId);
   if (!flow.ok) return refused(flow.error, exitCodes.invalidArgs);
 
   const linesFilePath =
