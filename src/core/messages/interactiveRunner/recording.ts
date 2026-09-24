@@ -1,4 +1,6 @@
 export const recordingMessages = {
+  noRunnerIdForHistory:
+    "Name the runner whose recordings to read with --runner <id> or QAWOLF_RUNNER_ID. History stays readable after the runner terminates.",
   unsupported: "Video recording requires a Playwright runner.",
   inProgress:
     "A recording is already in progress. Use runner record status to check its mode and id. Stop a manual recording by id, or wait for the run to finish an automatic recording.",

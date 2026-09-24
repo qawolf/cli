@@ -91,7 +91,11 @@ export async function handleRunnerRecordings(
 ): Promise<CommandResult> {
   const resolved = await resolveRunner(
     ctx,
-    { autoLaunch: false, runner: options.runner },
+    {
+      autoLaunch: false,
+      noRunnerIdMessage: recordingMessages.noRunnerIdForHistory,
+      runner: options.runner,
+    },
     deps,
   );
   if (resolved.type === "failed")

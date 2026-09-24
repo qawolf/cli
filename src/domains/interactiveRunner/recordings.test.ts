@@ -20,6 +20,26 @@ const recording = {
 };
 
 describe("recording history", () => {
+  it("asks for the original runner id after termination clears the default", async () => {
+    const { ctx, callPublicApi } = makeAuthCtx();
+    const deps = makeTestDeps();
+    await deps.store.writeDefaultRunnerId("terminated");
+    await deps.store.forgetRunner("terminated");
+
+    const result = await handleRunnerRecordings(
+      ctx,
+      { runner: undefined },
+      deps,
+    );
+
+    expect(result?.exitCode).toBe(2);
+    expect(result?.error).toContain("--runner <id>");
+    expect(result?.error).toContain("QAWOLF_RUNNER_ID");
+    expect(result?.error).toContain("after the runner terminates");
+    expect(result?.error).not.toContain("launch");
+    expect(callPublicApi).not.toHaveBeenCalled();
+  });
+
   it("reads storage directly for a terminated runner, preserving both links and the next page", async () => {
     const { ctx, callPublicApi, outputs } = makeAuthCtx();
     const answer = { recordings: [recording], nextPageToken: "next-page" };
