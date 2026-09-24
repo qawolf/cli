@@ -1,6 +1,8 @@
 import { join, relative } from "node:path";
 
+import { isFlowFile } from "~/core/flowMeta.js";
 import { toPosix } from "~/core/repoRelativePath.js";
+import { walkFiles } from "~/shell/walkFiles.js";
 
 import { hashFile } from "~/shell/manifest/io.js";
 import type { Manifest } from "~/shell/manifest/types.js";
@@ -38,6 +40,13 @@ export async function flattenSingleWrapper(
   return innerName;
 }
 
+// Flow files under `root`, relative to it and sorted, so the manifest lists
+// them in the same order on every pull.
+async function flowPathsIn(root: string, fs: Fs): Promise<string[]> {
+  const found = await walkFiles(root, isFlowFile, fs);
+  return found.map((path) => toPosix(relative(root, path))).sort();
+}
+
 // GitHub's tarball archives wrap content in `<owner>-<repo>-<sha>/`, where
 // the trailing 40 hex chars are the commit SHA. Defensive: returns undefined
 // when the wrapper name doesn't match — keeps manifest writes infallible.
@@ -47,8 +56,6 @@ function extractQawolfCommitSha(
   if (!wrapperName) return undefined;
   return /-([0-9a-f]{40})$/i.exec(wrapperName)?.[1];
 }
-
-const flowExtensions = [".flow.ts", ".flow.js"];
 
 /**
  * Tags fetched for an env at pull time, keyed by repo-relative flow path.
@@ -71,10 +78,11 @@ export async function buildManifest(
     wrapperName: string | undefined;
     qawolfCommittedAt: string | undefined;
     tags: FetchedTags | undefined;
+    flowIds: ReadonlyMap<string, string> | undefined;
   },
   fs: Fs = makeDefaultFs(),
 ): Promise<Manifest> {
-  const flowPaths = await walkForFlows(args.bundleDir, fs);
+  const flowPaths = await flowPathsIn(args.bundleDir, fs);
   const flows = await Promise.all(
     flowPaths.map(async (rel) => ({
       // Stored posix so a manifest written on one platform resolves on
@@ -85,6 +93,7 @@ export async function buildManifest(
       // Left unset when the fetch did not cover this file — unknown, not
       // untagged.
       tags: args.tags?.byPath.get(toPosix(rel)),
+      flowId: args.flowIds?.get(toPosix(rel)),
     })),
   );
 
@@ -102,32 +111,6 @@ export async function buildManifest(
   };
 }
 
-async function walkForFlows(root: string, fs: Fs): Promise<string[]> {
-  const out: string[] = [];
-  await walk(root, root, out, fs);
-  return out.sort();
-}
-
-async function walk(
-  current: string,
-  root: string,
-  out: string[],
-  fs: Fs,
-): Promise<void> {
-  const entries = await fs.readdirWithTypes(current);
-  for (const e of entries) {
-    const abs = join(current, e.name);
-    if (e.isDirectory()) {
-      await walk(abs, root, out, fs);
-    } else if (
-      e.isFile() &&
-      flowExtensions.some((ext) => e.name.endsWith(ext))
-    ) {
-      out.push(relative(root, abs));
-    }
-  }
-}
-
 // Samples the mtime of any flow file in the bundle. GitHub-archive bundles
 // share one mtime across all entries (preserved by extract.ts). Returns
 // undefined when the bundle has no flow files. Sample BEFORE any local
@@ -136,7 +119,7 @@ export async function sampleQawolfCommittedAt(
   bundleDir: string,
   fs: Fs = makeDefaultFs(),
 ): Promise<string | undefined> {
-  const flowPaths = await walkForFlows(bundleDir, fs);
+  const flowPaths = await flowPathsIn(bundleDir, fs);
   const sample = flowPaths[0];
   if (!sample) return undefined;
   return (await fs.stat(join(bundleDir, sample))).mtime.toISOString();
