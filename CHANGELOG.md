@@ -1,5 +1,11 @@
 # @qawolf/cli
 
+## 1.34.0
+
+### Minor Changes
+
+- 231e3e3: Add runner video recording controls: start, stop by recording id, status, and automatic recording settings. Read paginated recording history and video links after a runner terminates. Expose record and listRecordings through the runner SDK.
+
 ## 1.33.0
 
 ### Minor Changes
