@@ -1,7 +1,5 @@
 export const recordingMessages = {
   unsupported: "Video recording requires a Playwright runner.",
-  screenNotReady:
-    "The runner's screen is not ready. Run a flow before starting a recording.",
   inProgress:
     "A recording is already in progress. Use runner record status to check its mode and id. Stop a manual recording by id, or wait for the run to finish an automatic recording.",
   notFound:

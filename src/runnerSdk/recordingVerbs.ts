@@ -8,7 +8,7 @@ import { givenRunner } from "./givenRunner.js";
 import { toSdkResult } from "./toSdkResult.js";
 import type {
   RecordRequest,
-  Recorded,
+  RecordResponse,
   RecordingsRequest,
   Recordings,
   SdkResult,
@@ -19,13 +19,13 @@ export function createRecordingVerbs(context: SdkContext) {
     async record({
       runnerId,
       command,
-    }: RecordRequest): Promise<SdkResult<Recorded>> {
+    }: RecordRequest): Promise<SdkResult<RecordResponse>> {
       return toSdkResult(
         await recordOnRunner(context, givenRunner(runnerId), command),
       );
     },
 
-    async recordings({
+    async listRecordings({
       runnerId,
       recordingId,
       pageToken,

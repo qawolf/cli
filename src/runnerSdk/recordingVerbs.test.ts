@@ -2,7 +2,7 @@ import { describe, expect, it, mock } from "bun:test";
 import superjson from "superjson";
 
 import { createRunnerSdk } from "./index.js";
-import type { Recorded, Recordings } from "./types.js";
+import type { RecordResponse, Recordings } from "./types.js";
 
 const recordingId = "c41f0990-89d7-44db-a940-2e5425954b29";
 const url = "https://app.qawolf.com/runners/ci";
@@ -43,7 +43,7 @@ function sdkAnswering(answer: unknown, status = 200) {
 
 describe("recording SDK over the public API", () => {
   it("preserves nested runner refusals and the history URL", async () => {
-    const answer: Recorded = {
+    const answer: RecordResponse = {
       result: { outcome: "failure", failureReason: "recording-in-progress" },
       url,
     };
@@ -70,7 +70,7 @@ describe("recording SDK over the public API", () => {
   ] as const)(
     "sends recording controls without launching anything",
     async (command) => {
-      const answer: Recorded = {
+      const answer: RecordResponse = {
         result: { outcome: "success", state: { auto: "off" } },
         url,
       };
@@ -108,7 +108,7 @@ describe("recording SDK over the public API", () => {
     };
     const { sdk, fetch } = sdkAnswering(answer);
     expect(
-      await sdk.recordings({
+      await sdk.listRecordings({
         runnerId: "ci",
         recordingId,
         pageToken: "page/+=1",
@@ -137,14 +137,14 @@ describe("recording SDK over the public API", () => {
       ).ok,
     ).toBe(false);
     expect(
-      (await sdk.recordings({ runnerId: "ci", recordingId: "bad" })).ok,
+      (await sdk.listRecordings({ runnerId: "ci", recordingId: "bad" })).ok,
     ).toBe(false);
     expect(fetch).not.toHaveBeenCalled();
   });
 
   it("does not advise launching a runner when history is unavailable", async () => {
     const { sdk } = sdkAnswering({}, 404);
-    const result = await sdk.recordings({ runnerId: "ci" });
+    const result = await sdk.listRecordings({ runnerId: "ci" });
     expect(result.ok).toBe(false);
     expect(JSON.stringify(result)).not.toContain("not running");
     expect(JSON.stringify(result)).not.toContain("runner launch");

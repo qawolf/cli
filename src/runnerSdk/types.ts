@@ -68,7 +68,7 @@ export type RecordRequest = RunnerRequest &
 export type RecordingsRequest = RunnerRequest &
   Pick<PublicApiInput<Runner["recordings"]>, "recordingId" | "pageToken">;
 /** Runner refusal is carried on result.outcome, inside the platform answer. */
-export type Recorded = PublicApiOutput<Runner["record"]>;
+export type RecordResponse = PublicApiOutput<Runner["record"]>;
 export type Recordings = PublicApiOutput<Runner["recordings"]>;
 
 export type RunRequest = RunnerRequest & {

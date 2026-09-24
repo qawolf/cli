@@ -132,12 +132,12 @@ if (recording.ok && recording.value.result.outcome === "success") {
 }
 
 // History remains readable after the runner terminates.
-const history = await runner.recordings({ runnerId: "agent-1" });
+const history = await runner.listRecordings({ runnerId: "agent-1" });
 if (history.ok)
   console.log(history.value.recordings, history.value.nextPageToken);
 ```
 
-`record` also accepts `{ action: "status" }` and `{ action: "auto", enabled: true }` (or `false`). Keep the UUID when retrying start or stop. `recordings` accepts optional `recordingId` and `pageToken` filters and returns one page, with stable platform URLs and expiring video URLs. The equivalent CLI commands are `qawolf runner record start|stop|status|auto` and `qawolf runner recordings`; see the [runner reference](skills/qawolf-cli/references/runner.md#video-recording).
+`record` also accepts `{ action: "status" }` and `{ action: "auto", enabled: true }` (or `false`). Keep the UUID when retrying start or stop. `listRecordings` accepts optional `recordingId` and `pageToken` filters and returns one page, with stable platform URLs and expiring video URLs. The equivalent CLI commands are `qawolf runner record start|stop|status|auto` and `qawolf runner recordings`; see the [runner reference](skills/qawolf-cli/references/runner.md#video-recording).
 
 ## Reference
 

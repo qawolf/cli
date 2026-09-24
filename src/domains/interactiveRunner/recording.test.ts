@@ -1,6 +1,8 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
+import { interactiveRunnerMessages } from "~/core/messages/index.js";
+
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { handleRunnerRecord } from "./recording.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
@@ -147,7 +149,7 @@ describe("runner recording", () => {
 
   it.each([
     ["unsupported", 2],
-    ["screen-not-ready", 2],
+    ["screen-not-ready", 4],
     ["recording-in-progress", 2],
     ["recording-not-found", 8],
     ["recording-id-used", 2],
@@ -167,6 +169,9 @@ describe("runner recording", () => {
         makeTestDeps(),
       );
       expect(result?.exitCode).toBe(exitCode);
+      if (failureReason === "screen-not-ready") {
+        expect(result?.error).toBe(interactiveRunnerMessages.screenNotReady);
+      }
       expect(result?.errorBody).toContain(recordingId);
       expect(outputs()).toEqual([]);
     },

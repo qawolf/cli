@@ -33,7 +33,7 @@ export type {
   PromoteSnapshotRequest,
   PromotedSnapshot,
   RecordRequest,
-  Recorded,
+  RecordResponse,
   RecordingsRequest,
   Recordings,
   RunEnvironment,
