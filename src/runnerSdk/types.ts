@@ -74,7 +74,7 @@ export type Recordings = PublicApiOutput<Runner["recordings"]>;
 export type RunRequest = RunnerRequest & {
   entryPointPath: string;
   environment: RunEnvironment;
-  flowId?: string; // the flow the run is for; seen by the run as QAWOLF_WORKFLOW_ID
+  flowId?: string; // the run receives it as QAWOLF_WORKFLOW_ID
   selection: RunSelection;
 };
 

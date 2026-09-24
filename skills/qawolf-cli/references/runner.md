@@ -478,24 +478,19 @@ runner is addressed, naming the path.
 
 ### Naming the flow the run is for
 
-`--flow-id` names the QA Wolf flow the run is for. QA Wolf stamps that id onto
-the run as `QAWOLF_WORKFLOW_ID`, the same value a platform run of that flow sees.
-A flow that builds fixture names from it, such as
-`entity-${process.env.QAWOLF_WORKFLOW_ID}`, deletes its leftovers by searching
-for that same id. Naming the flow makes those names identical on a runner and on
-the platform, so a fixture one run strands is found by the next run of that flow
-on either side.
+`--flow-id` names the QA Wolf flow the run is for. The run receives it as
+`QAWOLF_WORKFLOW_ID`, like a platform run of that flow does, so fixtures keyed by
+that id, such as `entity-${process.env.QAWOLF_WORKFLOW_ID}`, and cleaned up by
+it match across the runner and the platform.
 
 ```sh
 qawolf runner run flows/checkout.flow.ts --flow-id <id>
 ```
 
-A run with no flag is given no `QAWOLF_WORKFLOW_ID`, so the name above becomes
-`entity-undefined` and the run shares no fixtures with the platform runs of its
-own flow. That is not a sign the id is unavailable. The flag is the only thing
-that names the flow: a `QAWOLF_WORKFLOW_ID` exported in your own shell is not
-read, because the one environment that holds it is an AI Job's pod, where it is
-the id of that pod's own flow rather than of whatever flow the run is for.
+Without the flag the run has no `QAWOLF_WORKFLOW_ID`, and the name above becomes
+`entity-undefined`. That is expected, not a missing id. Your shell's own
+`QAWOLF_WORKFLOW_ID` is never read: only an AI Job's pod sets one, and it names
+the pod's flow, not every flow run from there.
 
 ### Giving the run environment variables
 
