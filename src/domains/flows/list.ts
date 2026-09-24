@@ -2,8 +2,6 @@ import path from "node:path";
 
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { flowsMessages, runnerMessages } from "~/core/messages/index.js";
-import type { CachedFlow } from "./readCachedFlows.js";
-import type { BrowserName } from "~/core/types.js";
 
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
 import { matchesSelectors, type FlowSelectors } from "~/core/flowSelectors.js";
@@ -15,6 +13,10 @@ import {
 import { envLabelFor, readEnvLabels } from "./envLabels.js";
 import { selectPulledEnv } from "./selectPulledEnv.js";
 import { emptySelectionResult, tagsNotCachedResult } from "./selectorGuards.js";
+import { renderFlowsList } from "./renderFlowsList.js";
+import { type FlowsListItem, toListRow } from "./listItem.js";
+import { type ListView, printedView } from "./listView.js";
+import type { CachedFlow } from "./readCachedFlows.js";
 import { renderListTable } from "./renderListTable.js";
 
 export type FlowsListDeps = {
@@ -24,7 +26,7 @@ export type FlowsListDeps = {
     cwd: string,
   ) => Promise<string[]>;
   readonly peekFlowMeta: PeekFlowMetaFn;
-  /** What each flow’s pull recorded, keyed by absolute flow path. */
+  /** What each flow's pull recorded, keyed by absolute flow path. */
   readonly readCachedFlows: (
     files: readonly string[],
   ) => Promise<ReadonlyMap<string, CachedFlow>>;
@@ -38,25 +40,12 @@ export type FlowsListDeps = {
   readonly listPulledEnvDirs: () => Promise<string[]>;
 };
 
-type FlowsListItem = {
-  file: string;
-  name: string;
-  flowId: string | undefined;
-  // The pulled environment the flow came from. Undefined for project flows,
-  // which belong to no environment.
-  env: string | undefined;
-  // Absent when the flow was never pulled, so its tags are unknown rather
-  // than known to be empty.
-  tags: readonly string[] | undefined;
-  target: string | undefined;
-  browser: BrowserName | undefined;
-};
-
 export async function flowsList(
   ctx: CommandContext,
   pattern: string | undefined,
   deps: FlowsListDeps,
   selectors: FlowSelectors & { env?: string | undefined } = { tags: [] },
+  view: ListView = printedView,
 ): Promise<CommandResult> {
   const patterns = pattern ? [pattern] : [];
   let files = await deps.expandPatterns(patterns, deps.cwd);
@@ -95,7 +84,7 @@ export async function flowsList(
       name: meta.name ?? flowBasename(file),
       flowId: cached.get(file)?.flowId,
       env: envLabelFor(file, envLabels),
-      tags: cachedTags.get(file),
+      tags: cached.get(file)?.tags,
       target: meta.target,
       browser: meta.target ? targetToBrowser(meta.target) : undefined,
     });
@@ -114,19 +103,13 @@ export async function flowsList(
     ctx.ui.info(runnerMessages.noFlowsMatched);
     return;
   }
-  const rows = items.map((it) => ({
-    name: it.name,
-    target: it.target ?? "",
-    env: it.env,
-    tags: it.tags,
-    file: it.file,
-  }));
+  const rows = items.map(toListRow);
   if (ctx.ui.mode === "agent") {
     ctx.ui.write(renderListTable(rows, false));
     return;
   }
   ctx.ui.gap();
   ctx.ui.intro(flowsMessages.title);
-  ctx.ui.write(renderListTable(rows, true));
+  ctx.ui.write(renderFlowsList(rows, { styled: true, columns: view.columns }));
   ctx.ui.outro(flowsMessages.flowCount(items.length));
 }
