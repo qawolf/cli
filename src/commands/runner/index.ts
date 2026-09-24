@@ -12,6 +12,7 @@ import { registerRunnerLifecycleCommands } from "./lifecycle.register.js";
 import { registerRunnerPromoteSnapshotCommand } from "./promoteSnapshot.register.js";
 import { registerRunnerEventsCommand } from "./events.register.js";
 import { registerRunCommand } from "./run.register.js";
+import { registerRunnerRecordingCommands } from "./recording.register.js";
 
 export function registerRunnerCommand(
   program: Command,
@@ -31,4 +32,5 @@ export function registerRunnerCommand(
   registerRunnerImportPackageCommand(runner, signals);
   registerRunnerHighlightSelectorCommand(runner, signals);
   registerRunnerPromoteSnapshotCommand(runner, signals);
+  registerRunnerRecordingCommands(runner, signals);
 }

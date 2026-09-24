@@ -56,6 +56,7 @@ export function makeTestDeps(
     cwd: testCwd,
     env: {},
     makeRunnerId: () => "cli-minted",
+    makeRecordingId: () => "c41f0990-89d7-44db-a940-2e5425954b29",
     readFile: async (path) => {
       // Handlers that build an absolute path from `cwd` and ones that pass a
       // collected path through both land here, on either platform's separator.

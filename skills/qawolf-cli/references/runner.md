@@ -195,6 +195,44 @@ The answer holds one entry per action reached, and the field to read on each is 
 
 The sequence stops at the first action that fails. `--continue-on-failure` carries on past one that reached the runner and did not take effect, which is only safe for actions that do not depend on each other: a `type` after a failed `click` goes to whatever has focus. A runner that cannot be reached, a screen that cannot serve, or running out of time ends the sequence either way, and the message names every action that did not succeed.
 
+## Video recording
+
+Use `record` to control video capture on a Playwright runner. Start a flow first
+so the runner has a screen, then start a manual capture:
+
+```sh
+qawolf runner record start --runner ci --json
+# Keep result.state.active.id from the response and use it to stop this capture:
+qawolf runner record stop <recording-id> --runner ci
+qawolf runner record status --runner ci
+qawolf runner record auto on --runner ci
+qawolf runner record auto off --runner ci
+```
+
+Start generates a UUID unless you pass `--recording-id <uuid>`. If a start
+response is lost, the error includes that UUID: check `record status` and reuse
+the UUID when retrying. Stop always names a specific recording, so retrying it
+cannot stop a later capture. Manual recordings span runs and suppress automatic
+capture until stopped. The auto setting affects subsequent full runs.
+An active automatic recording ends with its run; `record stop` cannot interrupt
+it. If a stop publishes a recording with `status: "failed"`, the CLI returns
+exit code 1 and still prints the manifest so callers can inspect it.
+
+Published recordings remain accessible after the runner terminates:
+
+```sh
+qawolf runner list-recordings --runner ci --json
+qawolf runner list-recordings --runner ci --recording-id <uuid> --json
+qawolf runner list-recordings --runner ci --page-token '<nextPageToken>' --json
+```
+
+Each response is one page with `recordings` and an optional `nextPageToken`.
+Follow that token for more; the order is storage-key order, not newest-first.
+Entries include status, run ids, a stable platform `url`, and an expiring
+`videoUrl` when video is available. An empty lookup means the recording has not
+been published or does not exist. Abrupt runner loss may leave video unavailable.
+Keep the runner id for history lookups after termination clears the local default.
+
 ## The recorder: what you cannot get from pixels
 
 `qawolf runner events recorder` is the capability that has no equivalent in a

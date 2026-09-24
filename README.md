@@ -113,7 +113,31 @@ const submitted = await runner.run({
 if (submitted.ok) console.log(submitted.value.runId, submitted.value.fileSync);
 ```
 
-`ok: false` is a transport or auth failure. A runner that refused the request comes back as `ok: true` with `value.outcome === "failure"` and a `failureReason` from the published contract, so a caller can switch on it exhaustively.
+`ok: false` reports a request failure, including transport, auth, or local validation. A runner that refused the request comes back as `ok: true` with an outcome and `failureReason` from the published contract, so a caller can switch on it exhaustively. Most verbs expose `value.outcome`; recording controls expose `value.result.outcome` and a history `value.url`.
+
+Control video recording on a Playwright runner after a flow has started its screen:
+
+```ts
+const recordingId = crypto.randomUUID();
+const recording = await runner.record({
+  runnerId: "agent-1",
+  command: { action: "start", recordingId },
+});
+if (recording.ok && recording.value.result.outcome === "success") {
+  // Drive the browser, then stop this specific capture.
+  await runner.record({
+    runnerId: "agent-1",
+    command: { action: "stop", recordingId },
+  });
+}
+
+// History remains readable after the runner terminates.
+const history = await runner.listRecordings({ runnerId: "agent-1" });
+if (history.ok)
+  console.log(history.value.recordings, history.value.nextPageToken);
+```
+
+`record` also accepts `{ action: "status" }` and `{ action: "auto", enabled: true }` (or `false`). Keep the UUID when retrying start or stop. `listRecordings` accepts optional `recordingId` and `pageToken` filters and returns one page, with stable platform URLs and expiring video URLs. The equivalent CLI commands are `qawolf runner record start|stop|status|auto` and `qawolf runner list-recordings`; see the [runner reference](skills/qawolf-cli/references/runner.md#video-recording).
 
 ## Reference
 

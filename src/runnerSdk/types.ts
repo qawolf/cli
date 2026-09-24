@@ -1,7 +1,9 @@
+// oxlint-disable eslint/max-lines -- The SDK publishes this self-contained type module; splitting it would require publishing additional declaration files.
 import type {
   BrowserAction,
   InspectOnRunnerRequest,
   JournalStream,
+  PublicApiInput,
   PublicApiOutput,
   ReadJournalResponse,
   RunnerNameForPublicApi,
@@ -59,6 +61,15 @@ export type RunFilter = "all-runs" | { runId: string };
 export type LaunchRequest = { id: string; runnerFamily: RunnerFamily };
 
 export type RunnerRequest = { runnerId: string };
+
+/** Start and stop name the same UUID, so a retry cannot target a later capture. */
+export type RecordRequest = RunnerRequest &
+  Pick<PublicApiInput<Runner["record"]>, "command">;
+export type RecordingsRequest = RunnerRequest &
+  Pick<PublicApiInput<Runner["recordings"]>, "recordingId" | "pageToken">;
+/** Runner refusal is carried on result.outcome, inside the platform answer. */
+export type RecordResponse = PublicApiOutput<Runner["record"]>;
+export type Recordings = PublicApiOutput<Runner["recordings"]>;
 
 export type RunRequest = RunnerRequest & {
   entryPointPath: string;

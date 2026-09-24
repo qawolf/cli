@@ -187,7 +187,8 @@ by default.
 
 The `runner` commands drive a live cloud browser: `launch` one, `screenshot` to
 see it, `act` to click and type, `run` a flow on it, `exec` a snippet against its
-page, `events` to read its journal (including the `recorder` stream, which turns
+page, `record` to control video capture, `list-recordings` to read published video
+history even after termination, `events` to read its journal (including the `recorder` stream, which turns
 your actions into Playwright locators), `keepalive` to hold it open, and
 `terminate`
 when done. Everything is a plain request to one host, so a shell with an API key

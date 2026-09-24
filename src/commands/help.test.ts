@@ -102,6 +102,19 @@ describe("--help output", () => {
     expect(helpFor("runner", "events")).toMatchSnapshot();
   });
 
+  for (const path of [
+    ["record"],
+    ["record", "start"],
+    ["record", "stop"],
+    ["record", "status"],
+    ["record", "auto"],
+    ["list-recordings"],
+  ]) {
+    it(`qawolf runner ${path.join(" ")}`, () => {
+      expect(helpFor("runner", ...path)).toMatchSnapshot();
+    });
+  }
+
   it("qawolf runner keepalive", () => {
     expect(helpFor("runner", "keepalive")).toMatchSnapshot();
   });
