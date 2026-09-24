@@ -35,7 +35,7 @@ const fileColumn: TableColumn<FlowsListRow> = {
   value: (row) => row.file,
 };
 
-function listTableColumns(
+export function listTableColumns(
   rows: readonly FlowsListRow[],
   detail: "compact" | "full" = "compact",
 ): TableColumn<FlowsListRow>[] {

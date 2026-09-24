@@ -7,7 +7,14 @@ import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
-import { callsOf, makeFakeUI } from "~/shell/commandContext.testUtils.js";
+import {
+  callsOf,
+  fakeFilterList,
+  makeFakeUI,
+} from "~/shell/commandContext.testUtils.js";
+import { flowsMessages } from "~/core/messages/index.js";
+import { exitCodes } from "~/shell/exit.js";
+import type { FlowsListRow } from "./renderListTable.js";
 
 const noopSignals = makeNoopSignals();
 
@@ -82,7 +89,7 @@ describe("flowsList human mode on a narrow terminal", () => {
       undefined,
       deps,
       { tags: [] },
-      { columns: 20 },
+      { columns: 20, interactive: false },
     );
 
     const output = callsOf(ui.write)
@@ -95,5 +102,81 @@ describe("flowsList human mode on a narrow terminal", () => {
     expect(plainOutput).toMatch(/^ {2}file\s+src/m);
     expect(ui.intro).toHaveBeenCalledWith("Flows");
     expect(ui.outro).toHaveBeenCalledWith("1 flow");
+  });
+});
+
+describe("flowsList --interactive", () => {
+  it("refuses unusable stdin before reading flows", async () => {
+    const deps = makeDeps({ files: ["/proj/src/flows/login.flow.ts"] });
+
+    const result = await flowsList(
+      makeCtx(),
+      undefined,
+      deps,
+      { tags: [] },
+      { columns: 80, interactive: true },
+    );
+
+    expect(result).toEqual({
+      error: flowsMessages.list.interactiveRequiresTerminal,
+      exitCode: exitCodes.invalidArgs,
+    });
+    expect(deps.expandPatterns).not.toHaveBeenCalled();
+  });
+
+  it("lets the table be filtered, then prints what is left", async () => {
+    // Keeps everything it is offered, as Enter with nothing typed would.
+    const fake = fakeFilterList<FlowsListRow>((args) => ({
+      ok: true,
+      value: args.items,
+    }));
+    const ui = { ...makeFakeUI(), filterList: fake.filterList };
+    const deps = makeDeps({
+      files: ["/proj/src/flows/login.flow.ts"],
+      metaByFile: {
+        "/proj/src/flows/login.flow.ts": {
+          name: "Login",
+          target: "Web - Chrome",
+        },
+      },
+    });
+
+    await flowsList(
+      { ...makeCtx(ui, "human"), isInteractive: true },
+      undefined,
+      deps,
+      { tags: [] },
+      { columns: undefined, interactive: true },
+    );
+
+    expect(fake.calls).toHaveLength(1);
+    const output = callsOf(ui.write)
+      .map((c) => String(c[0]))
+      .join("");
+    expect(output).toContain("Login");
+    expect(ui.outro).toHaveBeenCalledWith("1 flow");
+  });
+
+  // Checked first, so a list that cannot be shown does no work at all.
+  it("refuses outside a terminal before reading any flow", async () => {
+    const ui = makeFakeUI("agent");
+    const deps = makeDeps({
+      files: ["/proj/src/flows/login.flow.ts"],
+      metaByFile: {},
+    });
+
+    const result = await flowsList(
+      makeCtx(ui, "agent"),
+      undefined,
+      deps,
+      { tags: [] },
+      { columns: undefined, interactive: true },
+    );
+
+    expect(result).toEqual({
+      error: flowsMessages.list.interactiveRequiresTerminal,
+      exitCode: exitCodes.invalidArgs,
+    });
+    expect(deps.expandPatterns).not.toHaveBeenCalled();
   });
 });
