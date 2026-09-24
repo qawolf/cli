@@ -221,9 +221,9 @@ exit code 1 and still prints the manifest so callers can inspect it.
 Published recordings remain accessible after the runner terminates:
 
 ```sh
-qawolf runner recordings --runner ci --json
-qawolf runner recordings --runner ci --recording-id <uuid> --json
-qawolf runner recordings --runner ci --page-token '<nextPageToken>' --json
+qawolf runner list-recordings --runner ci --json
+qawolf runner list-recordings --runner ci --recording-id <uuid> --json
+qawolf runner list-recordings --runner ci --page-token '<nextPageToken>' --json
 ```
 
 Each response is one page with `recordings` and an optional `nextPageToken`.

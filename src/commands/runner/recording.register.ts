@@ -101,7 +101,7 @@ export function registerRunnerRecordingCommands(
       )(opts, command),
     );
 
-  declareCommandKind(runner.command("recordings"), "read")
+  declareCommandKind(runner.command("list-recordings"), "read")
     .description(
       "Read a page of published video recordings, including after the runner terminates. Platform URLs persist; video URLs expire",
     )

@@ -300,7 +300,7 @@ Commands:
   highlight-selector [options] [selector]  Highlight what a selector matches on a runner's live page, so the next screenshot shows it. Omit the selector to clear the highlight
   promote-snapshot [options]               Accept a run's screenshot as the new baseline for an image diff, on the runner that produced it
   record                                   Control video recording on a Playwright runner
-  recordings [options]                     Read a page of published video recordings, including after the runner terminates. Platform URLs persist; video URLs expire
+  list-recordings [options]                Read a page of published video recordings, including after the runner terminates. Platform URLs persist; video URLs expire
   help [command]                           display help for command
 "
 `;
@@ -494,8 +494,8 @@ Options:
 "
 `;
 
-exports[`--help output qawolf runner recordings 1`] = `
-"Usage: qawolf runner recordings [options]
+exports[`--help output qawolf runner list-recordings 1`] = `
+"Usage: qawolf runner list-recordings [options]
 
 Read a page of published video recordings, including after the runner
 terminates. Platform URLs persist; video URLs expire

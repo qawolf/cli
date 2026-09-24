@@ -53,7 +53,7 @@ describe("recording command arguments", () => {
     );
     const record = find(runner, "record");
     expect(getCommandKind(find(record, "status"))?.kind).toBe("read");
-    expect(getCommandKind(find(runner, "recordings"))?.kind).toBe("read");
+    expect(getCommandKind(find(runner, "list-recordings"))?.kind).toBe("read");
     for (const verb of ["start", "stop", "auto"]) {
       expect(getCommandKind(find(record, verb))?.kind).toBe("write");
     }

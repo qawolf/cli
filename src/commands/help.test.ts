@@ -108,7 +108,7 @@ describe("--help output", () => {
     ["record", "stop"],
     ["record", "status"],
     ["record", "auto"],
-    ["recordings"],
+    ["list-recordings"],
   ]) {
     it(`qawolf runner ${path.join(" ")}`, () => {
       expect(helpFor("runner", ...path)).toMatchSnapshot();
