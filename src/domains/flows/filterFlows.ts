@@ -1,7 +1,9 @@
 import { flowsMessages, runnerMessages } from "~/core/messages/index.js";
+import { type CopyToClipboard, copyToClipboard } from "~/shell/clipboard.js";
 import type { CommandResult } from "~/shell/commandContext.js";
 import type { UI } from "~/shell/ui/index.js";
 
+import { copyFlowActions } from "./copyFlowActions.js";
 import { fitListTable } from "./fitListTable.js";
 import type { ListView } from "./listView.js";
 import { renderFlowsList } from "./renderFlowsList.js";
@@ -16,7 +18,7 @@ export async function filterFlows(
   ui: UI,
   rows: readonly FlowsListRow[],
   view: Pick<ListView, "columns">,
-  options: { readonly title?: string } = {},
+  options: { readonly title?: string; readonly copy?: CopyToClipboard } = {},
 ): Promise<CommandResult> {
   if (rows.length === 0) {
     ui.info(runnerMessages.noFlowsMatched);
@@ -38,6 +40,7 @@ export async function filterFlows(
     ],
     table: fitListTable,
     describeCount: flowsMessages.list.filterCount,
+    actions: copyFlowActions(options.copy ?? copyToClipboard),
     // The highlighted flow in full: the table may have cut its path.
     detail: (row) =>
       `${row.flowId ?? flowsMessages.list.noFlowIdShort}  ·  ${row.file}`,

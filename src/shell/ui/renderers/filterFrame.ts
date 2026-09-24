@@ -1,9 +1,11 @@
-import { S_BAR, S_BAR_END, symbol } from "@clack/prompts";
+import { S_BAR, S_BAR_END, S_CHECKBOX_SELECTED, symbol } from "@clack/prompts";
 
-import { cyan, dim, inverse, strike } from "~/core/ansi.js";
+import { cyan, dim, green, inverse, strike } from "~/core/ansi.js";
 import { clipColumns, displayWidth, padColumns } from "~/core/displayWidth.js";
 
+import { noticeMark, noticePaint } from "./noticeStyle.js";
 import { singleLine } from "./singleLine.js";
+import type { FilterNotice } from "./types.js";
 
 export const frameGutter = `${S_BAR}  `;
 
@@ -16,27 +18,37 @@ export type FilterFrame = {
   readonly rowCount: number;
   readonly line: (index: number) => string;
   readonly focus: number;
+  readonly marked: ReadonlySet<number>;
+  readonly markedCount: number;
   readonly detail: string | undefined;
+  readonly notice: FilterNotice | undefined;
+  readonly hints: string;
   readonly columns: number;
   readonly terminalRows: number;
   readonly count: string;
 };
 
+const markedSummary = (count: number): string => `${String(count)} marked`;
+
 function collapsed(frame: FilterFrame, title: string): string[] {
-  const kept = `${frame.search === "" ? "" : `${frame.search}  `}${frame.count}`;
+  const kept =
+    frame.markedCount > 0
+      ? markedSummary(frame.markedCount)
+      : `${frame.search === "" ? "" : `${frame.search}  `}${frame.count}`;
   const typed = frame.state === "submit" ? dim(kept) : strike(frame.search);
   return [S_BAR, title, `${frameGutter}${typed}`];
 }
 
-function rowGutter(focused: boolean): string {
-  const sign = focused ? cyan("›") : " ";
+function rowGutter(focused: boolean, marked: boolean): string {
+  const sign = marked ? green(S_CHECKBOX_SELECTED) : focused ? cyan("›") : " ";
   return `${S_BAR}${sign} `;
 }
 
-function keyHints(room: number): string {
-  const enter = "Enter prints matches";
+function keyHints(frame: FilterFrame, room: number): string {
+  const enter =
+    frame.markedCount > 0 ? "Enter prints marked" : "Enter prints matches";
   const essential = `${enter} · Esc cancels`;
-  const full = `↑/↓ move · ${essential}`;
+  const full = `Tab mark · ↑/↓ move · ${essential}`;
   if (displayWidth(full) <= room) return full;
   return displayWidth(essential) <= room
     ? essential
@@ -90,7 +102,7 @@ export function renderFilterFrame(frame: FilterFrame): string {
     const at = start + index;
     const line = clipColumns(singleLine(frame.line(at)), room);
     const focused = at === frame.focus;
-    return `${rowGutter(focused)}${focused ? inverse(padColumns(line, room)) : line}`;
+    return `${rowGutter(focused, frame.marked.has(at))}${focused ? inverse(padColumns(line, room)) : line}`;
   });
   if (frame.rowCount === 0 && visible > 0)
     shown.push(`${frameGutter}${dim("Nothing matches.")}`);
@@ -99,12 +111,20 @@ export function renderFilterFrame(frame: FilterFrame): string {
     frame.rowCount > visible && count > 0
       ? ` · rows ${String(start + 1)}–${String(start + count)}`
       : "";
-  const statusLine = `${frameGutter}${dim(`${frame.count}${position}`)}`;
+  const marks =
+    frame.markedCount > 0 ? ` · ${markedSummary(frame.markedCount)}` : "";
+  const status =
+    frame.notice === undefined
+      ? `${frame.count}${marks}${position}`
+      : `${noticeMark[frame.notice.tone]} ${frame.notice.text}`;
+  const paint =
+    frame.notice === undefined ? dim : noticePaint[frame.notice.tone];
+  const statusLine = `${frameGutter}${paint(status)}${frame.hints === "" ? "" : dim(` · ${frame.hints}`)}`;
   return fit([
     ...before,
     ...shown,
     ...detail,
     ...(headings ? [statusLine] : []),
-    `${S_BAR_END}  ${dim(keyHints(room))}`,
+    `${S_BAR_END}  ${dim(keyHints(frame, room))}`,
   ]);
 }
