@@ -20,10 +20,15 @@ qawolf run get --run-id "$RUN_ID" --flow-statuses failed --json
 ```
 
 `--flow-statuses` takes one or more of `queued`, `running`, `passed`, `failed`
-and `canceled`, and keeps only the flows whose status matches. The run-level
-fields (`status`, `blockingBugCount`, `git`, `url`) still describe the whole
-run, so a filtered read tells you both how the run went and which flows to look
-at. Widen the filter, or drop it, only when you need the other flows too.
+and `canceled`, separated by spaces (`--flow-statuses failed canceled`), and
+keeps only the flows whose status matches. The run-level fields (`status`,
+`blockingBugCount`, `git`, `url`) still describe the whole run, so a filtered
+read tells you both how the run went and which flows to look at. Widen the
+filter, or drop it, only when you need the other flows too.
+
+A flow that failed and then passed on a retry has status `passed`, so a
+`failed`-only read leaves it out. When the flow you were asked about is missing
+from the answer, add `passed` to the filter and read its earlier attempts.
 
 Do not save the full response to a file and script over it to find the failed
 flows. The filter answers that in one call.
