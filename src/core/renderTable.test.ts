@@ -10,6 +10,28 @@ const columns: readonly TableColumn<Runner>[] = [
 ];
 
 describe("renderTable", () => {
+  it("aligns columns containing wide and combining characters", () => {
+    const table = renderTable({
+      boldHeader: false,
+      columns,
+      rows: [
+        { family: "wide", id: "登录" },
+        { family: "accent", id: "e\u0301" },
+        { family: "emoji", id: "👩‍💻" },
+      ],
+    });
+
+    expect(table).toBe(
+      [
+        "id    family",
+        "登录  wide",
+        "e\u0301     accent",
+        "👩‍💻    emoji",
+        "",
+      ].join("\n"),
+    );
+  });
+
   it("pads every column to its widest cell and trims the last one", () => {
     const table = renderTable({
       boldHeader: false,
