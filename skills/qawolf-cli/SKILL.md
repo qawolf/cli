@@ -40,7 +40,9 @@ exported variables, so pass the selected environment explicitly instead of
 rediscovering it. Check the command's help for its environment flag: variable
 commands use `--environment-id`; `qawolf flows run` uses `--env`; and
 `qawolf runner run` uses `--env-id`, which falls back to `QAWOLF_ENVIRONMENT`
-when neither it nor `--env-file` is passed.
+when neither it nor `--env-file` is passed. It also takes `--flow-id`, the flow
+the run is for; the run receives it as `process.env.QAWOLF_WORKFLOW_ID`. Without
+the flag that variable is `undefined`, which is expected, not a missing id.
 
 If multiple environments are returned and the task context does not identify
 the target, ask instead of guessing. Do not default to the newest environment.
@@ -176,7 +178,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf run create` | write | Create a run for the selected flows and/or tags in an environment. |
 | `qawolf run diagnose` | write | Diagnose failed flows in a run as reproductions of a bug or maintenance report owned by the caller's team. The issue's type selects the diagnosis. Each flow must have failed in the run. A flow that is already diagnosed moves to this issue. The diagnosis appears on the run, and the reproduction appears under the issue's reproductions. Coverage requests cannot be diagnosed; use issue.addFlows to cover flows instead. |
 | `qawolf run find` | read | List an environment's recent runs, newest first. |
-| `qawolf run get` | read | Get a run's status, per-flow results, and links. |
+| `qawolf run get` | read | Get a run's status, per-flow results, links, and how many of its bugs are blocking. |
 | `qawolf run reattempt` | write | Request new attempts for a run's flows, in the same run. A flow is eligible once its result is failed or canceled and QA Wolf's automatic retries have finished. A fully investigated run no longer accepts reattempts. Attempts run with the latest flow code. Poll run.get for results. |
 | `qawolf run stop` | write | Stop a run, including its queued flows and automatic retries. Stopping is asynchronous and can update run-status messages and commit statuses in connected integrations. Repeated requests are safe, and finished runs keep their results. A run that is still being created returns not found; retry once run.get returns the run. If run.get returns a different runId, use that ID. Poll run.get for results. |
 | `qawolf run triage` | read | Prototype. Ask Jev, a TypeSafe System One model, whether a flow failure in a run is a bug in the product or a test that needs maintenance. Compares the failing attempt with the flow's last passing run in the same environment. Records nothing. |

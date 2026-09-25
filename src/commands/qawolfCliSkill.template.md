@@ -40,7 +40,9 @@ exported variables, so pass the selected environment explicitly instead of
 rediscovering it. Check the command's help for its environment flag: variable
 commands use `--environment-id`; `qawolf flows run` uses `--env`; and
 `qawolf runner run` uses `--env-id`, which falls back to `QAWOLF_ENVIRONMENT`
-when neither it nor `--env-file` is passed.
+when neither it nor `--env-file` is passed. It also takes `--flow-id`, the flow
+the run is for; the run receives it as `process.env.QAWOLF_WORKFLOW_ID`. Without
+the flag that variable is `undefined`, which is expected, not a missing id.
 
 If multiple environments are returned and the task context does not identify
 the target, ask instead of guessing. Do not default to the newest environment.

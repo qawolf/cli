@@ -55,6 +55,7 @@ export function createRunVerbs({ deps, platformClient }: SdkContext) {
     async run({
       entryPointPath,
       environment,
+      flowId,
       runnerId,
       selection,
     }: RunRequest): Promise<SdkResult<SubmittedRun>> {
@@ -63,6 +64,7 @@ export function createRunVerbs({ deps, platformClient }: SdkContext) {
           entryPointPath,
           envFile: undefined,
           envId: environment === "ambient" ? undefined : environment.id,
+          flowId,
           lines: toLineRange(selection),
           linesFile: toLinesFile(selection),
         },
@@ -77,6 +79,7 @@ export function createRunVerbs({ deps, platformClient }: SdkContext) {
           environment: prepared.environment,
           environmentId: prepared.environmentId,
           files: prepared.files,
+          flowId: prepared.flowId,
           resolved: { ...givenRunner(runnerId), type: "resolved" },
           selection: prepared.selection,
         },

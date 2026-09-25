@@ -15,11 +15,13 @@ Examples:
   $ qawolf runner run flows/checkout.flow.ts --follow --logs
   $ qawolf runner run flows/checkout.flow.ts --lines 12-40
   $ qawolf runner run flows/checkout.flow.ts --lines 4-9 --lines-file pages/login.ts
-  $ qawolf runner run flows/checkout.flow.ts --env-id staging`;
+  $ qawolf runner run flows/checkout.flow.ts --env-id staging
+  $ qawolf runner run flows/checkout.flow.ts --flow-id <id>`;
 
 type RunFlags = {
   envFile?: string;
   envId?: string;
+  flowId?: string;
   follow: boolean;
   lines?: string;
   linesFile?: string;
@@ -69,6 +71,10 @@ export function registerRunCommand(
       "Dotenv file on this machine whose variables the run is given. Pass this or --env-id, not both",
     )
     .option(
+      "--flow-id <id>",
+      "The QA Wolf flow this run is for. The run receives it as QAWOLF_WORKFLOW_ID, like a platform run of the flow does",
+    )
+    .option(
       "--lines <start-end>",
       "Run only these 1-indexed lines against the browser as it stands, instead of the whole flow from a fresh one",
     )
@@ -91,6 +97,7 @@ export function registerRunCommand(
             entryPoint: flowFile,
             envFile: opts.envFile,
             envId: opts.envId,
+            flowId: opts.flowId,
             follow: opts.follow,
             lines: opts.lines,
             linesFile: opts.linesFile,
