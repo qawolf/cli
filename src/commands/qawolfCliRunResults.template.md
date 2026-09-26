@@ -8,6 +8,31 @@ this file for the parts a single response cannot show you: fields that appear
 only when something fails, rules about the artifact URLs, and how to read a
 trace without opening the trace viewer.
 
+## Start with the failed flows
+
+A run of a whole suite can hold hundreds of flows, and the full response then
+runs to hundreds of kilobytes: more than a shell shows you, and more than any
+investigation needs. The interesting part is a handful of failed flows, so ask
+for those first:
+
+```bash
+qawolf run get --run-id "$RUN_ID" --flow-statuses failed --json
+```
+
+`--flow-statuses` takes one or more of `queued`, `running`, `passed`, `failed`
+and `canceled`, separated by spaces (`--flow-statuses failed canceled`), and
+keeps only the flows whose status matches. The run-level fields (`status`,
+`blockingBugCount`, `git`, `url`) still describe the whole run, so a filtered
+read tells you both how the run went and which flows to look at. Widen the
+filter, or drop it, only when you need the other flows too.
+
+A flow that failed and then passed on a retry has status `passed`, so a
+`failed`-only read leaves it out. When the flow you were asked about is missing
+from the answer, add `passed` to the filter and read its earlier attempts.
+
+Do not save the full response to a file and script over it to find the failed
+flows. The filter answers that in one call.
+
 ## The shape
 
 A run holds flows, a flow holds attempts, and artifacts hang off an attempt:
@@ -63,7 +88,7 @@ recording) and `traceUrl` (a Playwright `trace.zip`).
    authentication header is needed and no QA Wolf credentials are involved.
 
 ```bash
-qawolf run get --run-id "$RUN_ID" --json \
+qawolf run get --run-id "$RUN_ID" --flow-statuses failed --json \
   | jq -r '.flows[].attempts[-1].traceUrl // empty' \
   | head -1 \
   | xargs -r curl -sS -o trace.zip

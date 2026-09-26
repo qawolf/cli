@@ -8,6 +8,31 @@ this file for the parts a single response cannot show you: fields that appear
 only when something fails, rules about the artifact URLs, and how to read a
 trace without opening the trace viewer.
 
+## Start with the failed flows
+
+A run of a whole suite can hold hundreds of flows, and the full response then
+runs to hundreds of kilobytes: more than a shell shows you, and more than any
+investigation needs. The interesting part is a handful of failed flows, so ask
+for those first:
+
+```bash
+qawolf run get --run-id "$RUN_ID" --flow-statuses failed --json
+```
+
+`--flow-statuses` takes one or more of `queued`, `running`, `passed`, `failed`
+and `canceled`, separated by spaces (`--flow-statuses failed canceled`), and
+keeps only the flows whose status matches. The run-level fields (`status`,
+`blockingBugCount`, `git`, `url`) still describe the whole run, so a filtered
+read tells you both how the run went and which flows to look at. Widen the
+filter, or drop it, only when you need the other flows too.
+
+A flow that failed and then passed on a retry has status `passed`, so a
+`failed`-only read leaves it out. When the flow you were asked about is missing
+from the answer, add `passed` to the filter and read its earlier attempts.
+
+Do not save the full response to a file and script over it to find the failed
+flows. The filter answers that in one call.
+
 ## The shape
 
 A run holds flows, a flow holds attempts, and artifacts hang off an attempt:
@@ -63,7 +88,7 @@ recording) and `traceUrl` (a Playwright `trace.zip`).
    authentication header is needed and no QA Wolf credentials are involved.
 
 ```bash
-qawolf run get --run-id "$RUN_ID" --json \
+qawolf run get --run-id "$RUN_ID" --flow-statuses failed --json \
   | jq -r '.flows[].attempts[-1].traceUrl // empty' \
   | head -1 \
   | xargs -r curl -sS -o trace.zip
@@ -159,7 +184,8 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `git.commitUrl` — Link to the commit on the code host.
 - `runId` — The run this response describes. Treat it as canonical: it can differ from the id you asked for. A deploy notification returns a run id before the run exists, and if a second notification for the same commit is folded into an earlier run, that id resolves to the earlier run instead.
 - `status` — One of: queued, running, passed, failed, canceled
-- `flows` — The run's flows, ordered alphabetically by name.
+- `blockingBugCount` — How many bugs this run found are blocking: still open, and priority urgent, high, or unprioritized — unprioritized counts because nobody has ruled it out yet. This is what `failed` is derived from, so it explains a failure rather than adding a second verdict: gate on `status`, then read this to say how many bugs are holding the build. It counts a bug filed against a later run by an investigation that carried over from this one, and it drops a bug once that bug is resolved.
+- `flows` — The run's flows, ordered alphabetically by name. Only the flows matching flowStatuses when the request set it.
 - `flows[].attempts` — The flow's finished execution attempts, oldest first, including manual Wolf Browser attempts. Present once at least one attempt has finished, so a flow that passed after retries also lists its failed attempts. Artifact URLs appear only on automated attempts that reached a verdict, stay valid for at least a day (call run.get again for fresh ones), and can return 404 when the attempt did not produce that artifact.
 - `flows[].attempts[].logsUrl` — Signed URL for the attempt's execution logs.
 - `flows[].attempts[].traceUrl` — Signed URL for the attempt's Playwright trace (a trace.zip; open it with `npx playwright show-trace`).
