@@ -1,5 +1,12 @@
 # @qawolf/cli
 
+## 1.35.0
+
+### Minor Changes
+
+- fcb70a7: `qawolf investigation get --run-id <id>` reads what the QA Wolf AI concluded about a run's failures, one finding per cause with any question waiting for a person. Pins `@qawolf/api-contracts` 0.70.0.
+- 5c6f329: `qawolf run get` takes `--flow-statuses` to return only the flows with those statuses, so a run of hundreds of flows can be read with just its failed ones. The run-results guidance starts an investigation with that filtered read. Pins `@qawolf/api-contracts` 0.68.0.
+
 ## 1.34.0
 
 ### Minor Changes
