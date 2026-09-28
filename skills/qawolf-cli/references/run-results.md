@@ -27,8 +27,9 @@ read tells you both how the run went and which flows to look at. Widen the
 filter, or drop it, only when you need the other flows too.
 
 A flow that failed and then passed on a retry has status `passed`, so a
-`failed`-only read leaves it out. When the flow you were asked about is missing
-from the answer, add `passed` to the filter and read its earlier attempts.
+`failed`-only read leaves it out. If the flow you were asked about passed on a
+retry, add `passed` to the filter and read its earlier attempts. For a flow
+that is still queued, running or was canceled, widen the filter or drop it.
 
 Do not save the full response to a file and script over it to find the failed
 flows. The filter answers that in one call.
