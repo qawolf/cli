@@ -11,6 +11,7 @@ const optionEnvironmentVariables = new Map([
   ["environmentId", environmentIdEnvironmentVariable],
   ["public.run.create.aiTaskId", "QAWOLF_AI_TASK_ID"],
   ["public.run.create.chatSessionId", "QAWOLF_CHAT_SESSION_ID"],
+  ["public.investigation.recordFinding.sessionId", "QAWOLF_CHAT_SESSION_ID"],
 ]);
 
 export function optionEnvironmentVariable(
