@@ -76,7 +76,9 @@ sequence, omit it when you want the payloads themselves.
 
 A `--json` response shows you most of its own shape, so read it first.
 
-`qawolf run get` is the exception worth reading about before you use it. Its
+`qawolf run get` is the exception worth reading about before you use it. A
+suite run can hold hundreds of flows, so start with
+`--flow-statuses failed` and widen only if you need the rest. Its
 artifact URLs expire, its failure fields are absent from a passing run, and its
 `traceUrl` downloads a Playwright trace that you can read as JSON without
 opening the trace viewer. **Read
