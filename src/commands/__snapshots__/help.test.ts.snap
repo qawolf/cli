@@ -30,6 +30,7 @@ Commands:
   environment                  QA Wolf public API environment commands
   file                         QA Wolf public API file commands
   flow                         QA Wolf public API flow commands
+  investigation                QA Wolf public API investigation commands
   issue                        QA Wolf public API issue commands
   legacyTrigger                QA Wolf public API legacyTrigger commands
   run                          Trigger and manage QA Wolf runs on the platform
