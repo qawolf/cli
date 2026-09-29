@@ -10,6 +10,13 @@ describe("makeMemoryFs", () => {
     expect(result).toBe("hello");
   });
 
+  it("writes exclusively without replacing an existing file", async () => {
+    const fs = makeMemoryFs();
+    expect(await fs.writeFileExclusive("/file.txt", "first")).toBe(true);
+    expect(await fs.writeFileExclusive("/file.txt", "second")).toBe(false);
+    expect(await fs.readFile("/file.txt")).toBe("first");
+  });
+
   it("should throw ENOENT when reading a missing file", async () => {
     const fs = makeMemoryFs();
     let caughtError: unknown;

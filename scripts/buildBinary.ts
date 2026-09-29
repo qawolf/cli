@@ -25,8 +25,11 @@ writeFileSync(
   entryPath,
   [
     'import cliAsset from "./cli.js" with { type: "file" };',
+    'import investigationParserAsset from "./investigation-parser.js" with { type: "file" };',
     "",
     "process.env.QAWOLF_EMBEDDED_CLI_PATH = cliAsset;",
+    "process.env.QAWOLF_EMBEDDED_INVESTIGATION_PARSER_PATH = investigationParserAsset;",
+    "process.env.QAWOLF_INVESTIGATION_PARSER_PATH = investigationParserAsset;",
     "",
     'await import("../src/main.ts");',
     "",

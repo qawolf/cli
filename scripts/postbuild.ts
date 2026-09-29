@@ -6,7 +6,7 @@
 import { chmodSync, readFileSync, statSync, writeFileSync } from "node:fs";
 
 const outfile = "dist/cli.js";
-const bundles = [outfile, "dist/runner-sdk.js"];
+const bundles = [outfile, "dist/runner-sdk.js", "dist/investigation-parser.js"];
 
 // Externals that must only ever be reached through a dynamic import(). A static
 // import anywhere in src/ becomes a top-level import here, and Node would load
