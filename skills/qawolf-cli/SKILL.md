@@ -129,6 +129,9 @@ that `url`; never guess a route and never send a repository link in its place.
 | --- | --- | --- |
 | `qawolf agent get` | read | Read what the QA Wolf AI has said and whether it is still working |
 | `qawolf agent send` | write | Ask the QA Wolf AI to do a piece of work, such as covering a journey or fixing a broken flow |
+| `qawolf attempt inspect` | read | Inspect one kind of evidence for a finished attempt |
+| `qawolf attempt investigate` | read | Summarize the evidence for one finished attempt |
+| `qawolf attempt list` | read | List finished attempt IDs for a run |
 | `qawolf auth login` | local | Authenticate with QA Wolf in a browser or with an API key |
 | `qawolf auth logout` | local | Remove stored credentials |
 | `qawolf auth switch` | local | Choose which workspace to work in |
@@ -167,9 +170,6 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf install browsers` | local | Install Playwright browsers used by the project's web flows |
 | `qawolf install clear` | local | Remove the managed runtime cache (all installed runtime versions) |
 | `qawolf investigation get` | read | Read what the QA Wolf AI investigating a run has concluded: one finding per cause of its failures, with the question waiting for a person and any answer or dispute the investigation hasn't acted on yet. |
-| `qawolf investigation inspect` | read | Inspect one kind of evidence for a finished attempt |
-| `qawolf investigation list` | read | List finished attempt IDs for a run |
-| `qawolf investigation summary` | read | Summarize the evidence for one finished attempt |
 | `qawolf issue addFlows` | write | Add flows to a coverage request owned by the caller's team. Flows already covered stay covered. Bug and maintenance reports link to flows through the runs that reproduce them; use run.diagnose to record one. |
 | `qawolf issue create` | write | Create a bug or coverage request issue for the caller's team. Maintenance issues cannot be created through the public API. |
 | `qawolf issue find` | read | List the team's bug reports, maintenance reports, or coverage requests, newest first. |

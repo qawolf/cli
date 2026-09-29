@@ -56,15 +56,15 @@ qawolf flows run examples/example.flow.ts
 
 ## Commands
 
-| Command                | What it does                                                                                                                                                   |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `qawolf auth`          | [Authenticate with QA Wolf](https://docs.qawolf.com/qawolf/local-execution/authenticate)                                                                       |
-| `qawolf flows`         | [Run flows locally](https://docs.qawolf.com/qawolf/local-execution/run-flows-locally), [pull flows](https://docs.qawolf.com/qawolf/local-execution/pull-flows) |
-| `qawolf run`           | Trigger and manage QA Wolf runs on the platform (public API)                                                                                                   |
-| `qawolf investigation` | Discover attempt IDs and inspect bounded run evidence                                                                                                          |
-| `qawolf install`       | [Install runtime dependencies](https://docs.qawolf.com/qawolf/local-execution/install-dependencies)                                                            |
-| `qawolf init`          | [Set up a local-only project](https://docs.qawolf.com/qawolf/local-execution/set-up-a-project)                                                                 |
-| `qawolf doctor`        | [Diagnose problems](https://docs.qawolf.com/qawolf/local-execution/diagnose-problems)                                                                          |
+| Command          | What it does                                                                                                                                                   |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `qawolf auth`    | [Authenticate with QA Wolf](https://docs.qawolf.com/qawolf/local-execution/authenticate)                                                                       |
+| `qawolf flows`   | [Run flows locally](https://docs.qawolf.com/qawolf/local-execution/run-flows-locally), [pull flows](https://docs.qawolf.com/qawolf/local-execution/pull-flows) |
+| `qawolf run`     | Trigger and manage QA Wolf runs on the platform (public API)                                                                                                   |
+| `qawolf attempt` | Discover attempt IDs and inspect bounded run evidence                                                                                                          |
+| `qawolf install` | [Install runtime dependencies](https://docs.qawolf.com/qawolf/local-execution/install-dependencies)                                                            |
+| `qawolf init`    | [Set up a local-only project](https://docs.qawolf.com/qawolf/local-execution/set-up-a-project)                                                                 |
+| `qawolf doctor`  | [Diagnose problems](https://docs.qawolf.com/qawolf/local-execution/diagnose-problems)                                                                          |
 
 Run any command with `--help` for its flags and options.
 
@@ -73,17 +73,20 @@ Run any command with `--help` for its flags and options.
 Start with a run ID, choose an attempt, then narrow the evidence only when the summary points to it:
 
 ```bash
-qawolf investigation list --run-id <run-id>
-qawolf investigation summary --attempt-id <attempt-id>
-qawolf investigation inspect --attempt-id <attempt-id> --type timeline --limit 20
-qawolf investigation inspect --attempt-id <attempt-id> --type request --request-id <request-id>
+qawolf attempt list --run-id <run-id>
+qawolf attempt investigate <attempt-id>
+qawolf attempt inspect <attempt-id> --timeline --limit 20
+qawolf attempt inspect <attempt-id> --request <request-id>
 ```
 
-Snapshot HTML and screenshots are written only to a new file; the CLI refuses to overwrite an existing path:
+`attempt inspect` requires exactly one of `--action`, `--timeline`, `--network`, `--request`, `--snapshot`, `--screenshot`, `--console`, or `--log`. Use `--evidence-id` to start console or execution-log output at a specific evidence record; the other filters are listed in `qawolf attempt inspect --help`.
+
+Snapshot HTML can be returned directly or written to a new file. Screenshots require a file. The CLI refuses to overwrite an existing path:
 
 ```bash
-qawolf investigation inspect --attempt-id <attempt-id> --type snapshot --snapshot-id <snapshot-id> --format html --output-file snapshot.html
-qawolf investigation inspect --attempt-id <attempt-id> --type screenshot --screenshot-id <screenshot-id> --output-file screenshot.jpeg
+qawolf attempt inspect <attempt-id> --snapshot <snapshot-id> --format html
+qawolf attempt inspect <attempt-id> --snapshot <snapshot-id> --format html --output-file snapshot.html
+qawolf attempt inspect <attempt-id> --screenshot <screenshot-id> --output-file screenshot.jpeg
 ```
 
 These commands require the platform's `public.run.getAttemptArtifacts` endpoint to be deployed. The endpoint authorizes every request and returns fresh signed artifact URLs. Parsing happens locally in a separate lazy bundle, so normal CLI startup does not load the trace parser or JSZip. Downloads, decompression, output text, HTML, request bodies, and log retention are bounded; `incomplete`, `truncated`, `malformed`, and artifact status fields describe evidence that could not be read in full.

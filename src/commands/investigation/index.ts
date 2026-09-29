@@ -6,26 +6,12 @@ import {
   handleInvestigationInspect,
   handleInvestigationList,
   handleInvestigationSummary,
-  type InspectOptions,
 } from "~/domains/investigation/handle.js";
-import type { InspectType } from "~/domains/investigation/types.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
-
-const inspectTypes: InspectType[] = [
-  "action",
-  "timeline",
-  "network",
-  "request",
-  "snapshot",
-  "screenshot",
-  "console",
-  "log",
-];
-
-function parseInspectType(value: string): InspectType {
-  if (inspectTypes.includes(value as InspectType)) return value as InspectType;
-  throw new Error(`Expected one of: ${inspectTypes.join(", ")}.`);
-}
+import {
+  type InspectCommandOptions,
+  resolveInspectSelection,
+} from "./inspectSelection.js";
 
 function parseFormat(value: string): "html" | "text" {
   if (value === "html" || value === "text") return value;
@@ -38,15 +24,15 @@ function parseSource(value: string): "qawolfTraceCollection" | "serverConsole" {
   throw new Error("Expected qawolfTraceCollection or serverConsole.");
 }
 
-export function registerInvestigationCommand(
+export function registerAttemptCommand(
   program: Command,
   signals: SignalRegistry,
 ): void {
-  const investigation = program
-    .command("investigation")
+  const attempt = program
+    .command("attempt")
     .description("Investigate a finished run attempt from recorded evidence");
 
-  declareCommandKind(investigation.command("list"), "read")
+  declareCommandKind(attempt.command("list"), "read")
     .description("List finished attempt IDs for a run")
     .requiredOption("--run-id <id>", "Run to discover attempts for")
     .action((options: { runId: string }, command: Command) =>
@@ -55,28 +41,25 @@ export function registerInvestigationCommand(
       )(options, command),
     );
 
-  declareCommandKind(investigation.command("summary"), "read")
+  declareCommandKind(attempt.command("investigate <attemptId>"), "read")
     .description("Summarize the evidence for one finished attempt")
-    .requiredOption("--attempt-id <id>", "Run attempt to investigate")
-    .action((options: { attemptId: string }, command: Command) =>
+    .action((attemptId: string, _options: unknown, command: Command) =>
       withAuthContext(signals, (ctx) =>
-        handleInvestigationSummary(ctx, options.attemptId),
-      )(options, command),
+        handleInvestigationSummary(ctx, attemptId),
+      )({}, command),
     );
 
-  declareCommandKind(investigation.command("inspect"), "read")
+  declareCommandKind(attempt.command("inspect <attemptId>"), "read")
     .description("Inspect one kind of evidence for a finished attempt")
-    .requiredOption("--attempt-id <id>", "Run attempt to investigate")
-    .requiredOption(
-      "--type <type>",
-      `Evidence type (${inspectTypes.join("|")})`,
-      parseInspectType,
-    )
-    .option("--action-id <id>", "Action evidence ID")
+    .option("--action <id>", "Inspect one action evidence ID")
+    .option("--timeline", "Inspect the action timeline")
+    .option("--network", "Inspect network requests")
+    .option("--request <id>", "Inspect one network request evidence ID")
+    .option("--snapshot <id>", "Inspect one page snapshot evidence ID")
+    .option("--screenshot <id>", "Export one screenshot evidence ID")
+    .option("--console", "Inspect browser console evidence")
+    .option("--log", "Inspect execution log evidence")
     .option("--evidence-id <id>", "Console or log evidence ID")
-    .option("--request-id <id>", "Network request evidence ID")
-    .option("--snapshot-id <id>", "Page snapshot evidence ID")
-    .option("--screenshot-id <id>", "Screenshot evidence ID")
     .option("--limit <number>", "Maximum entries to return", "20")
     .option(
       "--start-time-ms <number>",
@@ -99,9 +82,25 @@ export function registerInvestigationCommand(
       "--output-file <path>",
       "Write HTML or screenshot bytes without overwriting",
     )
-    .action((options: InspectOptions, command: Command) =>
-      withAuthContext(signals, (ctx) =>
-        handleInvestigationInspect(ctx, options),
-      )(options, command),
+    .action(
+      (attemptId: string, options: InspectCommandOptions, command: Command) => {
+        const selection = resolveInspectSelection(options);
+        if ("error" in selection) return command.error(selection.error);
+        const {
+          action: _action,
+          console: _console,
+          log: _log,
+          network: _network,
+          request: _request,
+          screenshot: _screenshot,
+          snapshot: _snapshot,
+          timeline: _timeline,
+          ...common
+        } = options;
+        const normalized = { ...common, ...selection, attemptId };
+        return withAuthContext(signals, (ctx) =>
+          handleInvestigationInspect(ctx, normalized),
+        )(options, command);
+      },
     );
 }
