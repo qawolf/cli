@@ -153,4 +153,57 @@ describe("investigation parser security", () => {
     expect(pageState.text).toContain("label-suffix");
     expect(pageState.truncated).toBe(false);
   });
+
+  it("does not project an unstructured prefix from a truncated snapshot", async () => {
+    const secret = "REVIEW_SYNTHETIC_SECRET";
+    const trace = await snapshotTrace([
+      "HTML",
+      {},
+      [
+        "BODY",
+        {},
+        ["TEXTAREA", { name: "password" }, secret],
+        ["DIV", {}, "x".repeat(300_000)],
+      ],
+    ]);
+    const common = {
+      artifacts: {
+        logs: { status: "not-captured" },
+        trace: { bytes: trace, offset: 0, status: "available" },
+      },
+      attempt: { attemptId: "attempt-1", status: "failed" },
+      flowId: "flow-1",
+      runId: "run-1",
+    } as const;
+
+    for (const format of ["text", "html"] as const) {
+      const inspected = await investigate({
+        ...common,
+        inspect: {
+          format,
+          limit: 20,
+          snapshotId: "trace.trace#0:snapshot:1",
+          type: "snapshot",
+        },
+        mode: "inspect",
+      });
+
+      expect(JSON.stringify(inspected)).not.toContain(secret);
+      expect(inspected["text"]).toBe("");
+      expect(inspected["textTruncated"]).toBe(true);
+      if (format === "html") {
+        expect(inspected["htmlTruncated"]).toBe(true);
+        expect(inspected.binary).toBeUndefined();
+      }
+    }
+
+    const summarized = await investigate({ ...common, mode: "summary" });
+    const pageState = summarized["pageState"] as {
+      text: string;
+      truncated: boolean;
+    };
+    expect(JSON.stringify(summarized)).not.toContain(secret);
+    expect(pageState.text).toBe("");
+    expect(pageState.truncated).toBe(true);
+  });
 });

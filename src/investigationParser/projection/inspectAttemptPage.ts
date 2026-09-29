@@ -40,13 +40,16 @@ export function inspectSnapshot(
       type: target.type,
     };
   }
-  const root = resolveSnapshot([page.html], 0);
-  const projected = boundAttemptPageText(
-    redactAttemptEvidence(projectToText(root, Number.MAX_SAFE_INTEGER)),
-  );
-  const regions = target.regionText
-    ? findSmallestTextRegions(root, target.regionText)
-    : [];
+  const root = page.truncated ? undefined : resolveSnapshot([page.html], 0);
+  const projected = root
+    ? boundAttemptPageText(
+        redactAttemptEvidence(projectToText(root, Number.MAX_SAFE_INTEGER)),
+      )
+    : { text: "", truncated: true };
+  const regions =
+    target.regionText && root
+      ? findSmallestTextRegions(root, target.regionText)
+      : [];
   const region = regions.length === 1 ? regions[0] : undefined;
   const focusedRegion = region
     ? boundAttemptPageText(
@@ -55,7 +58,7 @@ export function inspectSnapshot(
     : undefined;
   const nearest = nearestScreenshotForSnapshot(trace, target.snapshotId);
   const serializedHtml =
-    target.format === "html" && !page.truncated
+    target.format === "html" && root
       ? serializeSnapshotToHtml(root)
       : undefined;
   return {

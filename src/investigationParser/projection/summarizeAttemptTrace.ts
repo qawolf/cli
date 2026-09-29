@@ -131,16 +131,18 @@ export async function summarizeAttemptTrace(
   const screenshot = pageSnapshot
     ? nearestScreenshotForSnapshot(trace, pageSnapshot.id)
     : undefined;
-  const projectedPage = page
-    ? boundAttemptPageText(
-        redactAttemptEvidence(
-          projectToText(
-            resolveSnapshot([page.html], 0),
-            Number.MAX_SAFE_INTEGER,
+  const projectedPage = page?.truncated
+    ? { text: "", truncated: true }
+    : page
+      ? boundAttemptPageText(
+          redactAttemptEvidence(
+            projectToText(
+              resolveSnapshot([page.html], 0),
+              Number.MAX_SAFE_INTEGER,
+            ),
           ),
-        ),
-      )
-    : undefined;
+        )
+      : undefined;
 
   return {
     actions: {
