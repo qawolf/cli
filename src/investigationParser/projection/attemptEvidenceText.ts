@@ -50,7 +50,7 @@ const signedUrlFieldPattern = [
 function redactQuotedAssignments(
   text: string,
   assignmentPattern: RegExp,
-  escaped: boolean,
+  options: { escaped: boolean; quote: '"' | "'" },
 ) {
   let result = "";
   let cursor = 0;
@@ -67,16 +67,16 @@ function redactQuotedAssignments(
         precedingBackslashes += 1;
         continue;
       }
-      if (text[index] !== '"') {
+      if (text[index] !== options.quote) {
         precedingBackslashes = 0;
         continue;
       }
-      const isClosingQuote = escaped
+      const isClosingQuote = options.escaped
         ? precedingBackslashes === 1
         : precedingBackslashes % 2 === 0;
       const suffix = text.slice(index + 1);
       if (isClosingQuote && /^\s*(?:[,}\]]|$)/.test(suffix)) {
-        closingQuote = escaped ? index - 1 : index;
+        closingQuote = options.escaped ? index - 1 : index;
         break;
       }
       precedingBackslashes = 0;
@@ -84,11 +84,56 @@ function redactQuotedAssignments(
 
     if (closingQuote === -1)
       return result + (text.endsWith("[TRUNCATED]") ? "[TRUNCATED]" : "");
-    const quoteLength = escaped ? 2 : 1;
+    const quoteLength = options.escaped ? 2 : 1;
     result += text.slice(closingQuote, closingQuote + quoteLength);
     cursor = closingQuote + quoteLength;
     assignmentPattern.lastIndex = cursor;
     match = assignmentPattern.exec(text);
+  }
+
+  return result + text.slice(cursor);
+}
+
+function redactCallArguments(text: string): string {
+  const callPattern = /\b(?:fill|type)\(/gi;
+  let result = "";
+  let cursor = 0;
+
+  for (let match = callPattern.exec(text); match; ) {
+    const valueStart = match.index + match[0].length;
+    result += text.slice(cursor, valueStart) + redacted;
+    let depth = 1;
+    let quote: '"' | "'" | "`" | undefined;
+    let escaped = false;
+    let valueEnd = valueStart;
+
+    for (; valueEnd < text.length; valueEnd += 1) {
+      const character = text[valueEnd];
+      if (quote) {
+        if (escaped) {
+          escaped = false;
+        } else if (character === "\\") {
+          escaped = true;
+        } else if (character === quote) {
+          quote = undefined;
+        }
+        continue;
+      }
+      if (character === '"' || character === "'" || character === "`") {
+        quote = character;
+      } else if (character === "(") {
+        depth += 1;
+      } else if (character === ")") {
+        depth -= 1;
+        if (depth === 0) break;
+      }
+    }
+
+    if (depth !== 0) return result + text.slice(valueEnd);
+    result += ")";
+    cursor = valueEnd + 1;
+    callPattern.lastIndex = cursor;
+    match = callPattern.exec(text);
   }
 
   return result + text.slice(cursor);
@@ -106,23 +151,52 @@ export function redactAttemptEvidence(text: string): string {
   const jsonRedacted = redactQuotedAssignments(
     queryRedacted,
     new RegExp(`"(?:${sensitiveFieldPattern})"\\s*:\\s*"`, "gi"),
-    false,
+    { escaped: false, quote: '"' },
   );
   const escapedJsonRedacted = redactQuotedAssignments(
     jsonRedacted,
     new RegExp(`\\\\"(?:${sensitiveFieldPattern})\\\\"\\s*:\\s*\\\\"`, "gi"),
-    true,
+    { escaped: true, quote: '"' },
+  );
+  const singleQuotedJsonRedacted = redactQuotedAssignments(
+    escapedJsonRedacted,
+    new RegExp(`'(?:${sensitiveFieldPattern})'\\s*:\\s*'`, "gi"),
+    { escaped: false, quote: "'" },
+  );
+  const doubleKeySingleValueRedacted = redactQuotedAssignments(
+    singleQuotedJsonRedacted,
+    new RegExp(`"(?:${sensitiveFieldPattern})"\\s*:\\s*'`, "gi"),
+    { escaped: false, quote: "'" },
+  );
+  const mixedQuotedJsonRedacted = redactQuotedAssignments(
+    doubleKeySingleValueRedacted,
+    new RegExp(`'(?:${sensitiveFieldPattern})'\\s*:\\s*"`, "gi"),
+    { escaped: false, quote: '"' },
+  );
+  const scalarJsonRedacted = mixedQuotedJsonRedacted.replace(
+    new RegExp(
+      `(["'](?:${sensitiveFieldPattern})["']\\s*:\\s*)(?!["'])[^,}\\]\\r\\n]*`,
+      "gi",
+    ),
+    `$1${redacted}`,
+  );
+  const escapedScalarJsonRedacted = scalarJsonRedacted.replace(
+    new RegExp(
+      `(\\\\"(?:${sensitiveFieldPattern})\\\\"\\s*:\\s*)(?!\\\\")[^,}\\]\\r\\n]*`,
+      "gi",
+    ),
+    `$1${redacted}`,
   );
 
-  return escapedJsonRedacted
-    .replace(
+  return redactCallArguments(
+    escapedScalarJsonRedacted.replace(
       new RegExp(
         `(?<![?&])\\b(${sensitiveFieldPattern})(\\s*[:=]\\s*)[^\\r\\n]*`,
         "gi",
       ),
       `$1$2${redacted}`,
-    )
-    .replace(/\b(fill|type)\([^)]*(?:\)|$)/gi, `$1(${redacted})`);
+    ),
+  );
 }
 
 export function redactAndBoundAttemptEvidenceResult(

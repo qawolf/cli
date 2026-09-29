@@ -26,6 +26,57 @@ describe("investigation parser", () => {
     expect(unterminated).toContain("[REDACTED]");
   });
 
+  it.each([
+    {
+      evidence: "Request failed: {'password': 'hunter2', 'safe': 'visible'}",
+      safe: "visible",
+      secret: "hunter2",
+    },
+    {
+      evidence: '{"password":123456,"safe":"visible"}',
+      safe: "visible",
+      secret: "123456",
+    },
+    {
+      evidence: 'fill("abc)secret-password") at visible locator',
+      safe: "visible locator",
+      secret: "secret-password",
+    },
+    {
+      evidence: `{"password":'mixed-secret',"safe":"visible"}`,
+      safe: "visible",
+      secret: "mixed-secret",
+    },
+    {
+      evidence: `{'password':"mixed-secret",'safe':'visible'}`,
+      safe: "visible",
+      secret: "mixed-secret",
+    },
+    {
+      evidence: JSON.stringify(
+        JSON.stringify({ password: 123_456, safe: "visible" }),
+      ),
+      safe: "visible",
+      secret: "123456",
+    },
+    {
+      evidence: 'fill(\n  "multiline-secret"\n) visible',
+      safe: "visible",
+      secret: "multiline-secret",
+    },
+    {
+      evidence: 'fill(unclosed\nvisible type("later-secret")',
+      safe: "fill([REDACTED]",
+      secret: "later-secret",
+    },
+  ])("redacts structured credential evidence", ({ evidence, safe, secret }) => {
+    const redacted = redactEvidence(evidence);
+
+    expect(redacted).toContain("[REDACTED]");
+    expect(redacted).not.toContain(secret);
+    expect(redacted).toContain(safe);
+  });
+
   it("preserves malformed trace status", async () => {
     const result = await investigate({
       artifacts: {
