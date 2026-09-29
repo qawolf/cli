@@ -2,4 +2,4 @@
 "@qawolf/cli": minor
 ---
 
-Add local run-attempt investigation commands with lazily loaded trace and log parsing.
+Add `qawolf attempt` commands with lazily loaded, bounded trace and log parsing.

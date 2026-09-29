@@ -18,6 +18,7 @@ import type {
   ArtifactInput,
   InspectType,
   InvestigationRequest,
+  InvestigationResult,
 } from "./types.js";
 
 export type InspectOptions = {
@@ -108,21 +109,18 @@ function numberFlag(
 
 function validateInspect(options: InspectOptions): CommandResult {
   if (options.type === "action" && !options.actionId)
-    return { error: "--action-id is required for --type action." };
+    return { error: "--action requires an evidence ID." };
   if (options.type === "request" && !options.requestId)
-    return { error: "--request-id is required for --type request." };
+    return { error: "--request requires an evidence ID." };
   if (options.type === "snapshot" && !options.snapshotId)
-    return { error: "--snapshot-id is required for --type snapshot." };
+    return { error: "--snapshot requires an evidence ID." };
   if (options.type === "screenshot" && !options.screenshotId)
-    return { error: "--screenshot-id is required for --type screenshot." };
+    return { error: "--screenshot requires an evidence ID." };
   if (options.format === "html" && options.type !== "snapshot")
-    return { error: "--format html is supported only for snapshots." };
-  if (
-    (options.format === "html" || options.type === "screenshot") &&
-    !options.outputFile
-  )
+    return { error: "--format html is supported only with --snapshot." };
+  if (options.type === "screenshot" && !options.outputFile)
     return {
-      error: "--output-file is required for HTML and screenshot evidence.",
+      error: "--output-file is required for screenshot evidence.",
     };
   if (
     options.outputFile &&
@@ -131,7 +129,7 @@ function validateInspect(options: InspectOptions): CommandResult {
   )
     return {
       error:
-        "--output-file is supported only for HTML and screenshot evidence.",
+        "--output-file is supported only with --snapshot and --format html, or with --screenshot.",
     };
   return undefined;
 }
@@ -226,6 +224,14 @@ export async function handleInvestigationInspect(
   };
   const parser = await loadInvestigationParser();
   const parsed = await parser.investigate(request);
+  return outputInvestigationInspection(ctx, options, parsed);
+}
+
+export async function outputInvestigationInspection(
+  ctx: Pick<AuthCommandContext, "fs" | "ui">,
+  options: InspectOptions,
+  parsed: InvestigationResult,
+): Promise<CommandResult> {
   const { binary, ...result } = parsed;
   if (options.outputFile) {
     if (!binary)
@@ -246,6 +252,11 @@ export async function handleInvestigationInspect(
       output,
       `${renderText(result)}\nSaved ${binary.extension}: ${basename(options.outputFile)}`,
     );
+    return undefined;
+  }
+  if (binary?.extension === "html") {
+    const html = Buffer.from(binary.bytesBase64, "base64").toString("utf8");
+    ctx.ui.output({ ...result, html }, html);
     return undefined;
   }
   ctx.ui.output(result, renderText(result));
