@@ -22,6 +22,8 @@ Commands:
                                directory
   install [options] [pattern]  Install every runtime dependency the project's
                                flows need
+  investigation                Investigate a finished run attempt from recorded
+                               evidence
   runner                       Drive an interactive runner on the QA Wolf
                                platform
   codeHostIntegration          QA Wolf public API codeHostIntegration commands
@@ -30,7 +32,6 @@ Commands:
   environment                  QA Wolf public API environment commands
   file                         QA Wolf public API file commands
   flow                         QA Wolf public API flow commands
-  investigation                QA Wolf public API investigation commands
   issue                        QA Wolf public API issue commands
   legacyTrigger                QA Wolf public API legacyTrigger commands
   run                          Trigger and manage QA Wolf runs on the platform

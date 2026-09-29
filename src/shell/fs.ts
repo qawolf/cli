@@ -1,7 +1,7 @@
 import type { Readable } from "node:stream";
 import * as fs from "node:fs";
 
-import { isNoEntError } from "~/core/errors.js";
+import { errorCode, isNoEntError } from "~/core/errors.js";
 import { openFsWriteHandle, type FsWriteHandle } from "./fsWriteHandle.js";
 
 export type { FsWriteHandle } from "./fsWriteHandle.js";
@@ -45,6 +45,11 @@ export type Fs = {
     data: string | Uint8Array,
     options?: { mode?: number },
   ): Promise<void>;
+  writeFileExclusive(
+    path: string,
+    data: string | Uint8Array,
+    options?: { mode?: number },
+  ): Promise<boolean>;
   openWriteHandle(path: string): Promise<FsWriteHandle>;
   readdir(path: string): Promise<string[]>;
   readdirWithTypes(path: string): Promise<FsDirent[]>;
@@ -84,6 +89,19 @@ export function makeDefaultFs(): Fs {
         });
       } else {
         await fs.promises.writeFile(path, data, options ?? undefined);
+      }
+    },
+    async writeFileExclusive(path, data, options) {
+      try {
+        await fs.promises.writeFile(path, data, {
+          encoding: typeof data === "string" ? "utf8" : undefined,
+          flag: "wx",
+          mode: options?.mode,
+        });
+        return true;
+      } catch (error) {
+        if (errorCode(error) === "EEXIST") return false;
+        throw error;
       }
     },
     openWriteHandle: openFsWriteHandle,
