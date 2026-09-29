@@ -11,6 +11,11 @@ const config: KnipConfig = {
     "src/**/*.testUtils.ts",
   ],
   project: ["src/**/*.ts"],
+  ignoreBinaries: [
+    // the built bundle, invoked as `node dist/cli.js` in the runtime-smoke CI
+    // job; not present when knip runs (it runs before the build step)
+    "dist/cli.js",
+  ],
   ignoreDependencies: [
     // devDependencies kept only so genDependencyVersions.ts can read their
     // installed versions. The CLI never imports either: ensureRuntimeEnv
