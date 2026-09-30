@@ -68,7 +68,7 @@ export function registerRunnerInteractCommands(
   // emits, so a caller forwards its model's tool call rather than translating it.
   declareCommandKind(runner.command("act <action>"), "write")
     .description(
-      "Perform one raw action on a runner's screen. A browser runner takes click, double_click, scroll, move, drag, keypress, navigate and type; a mobile runner takes tap, swipe, fill and type. Each family answers the other's actions with action-not-supported-on-mobile or action-not-supported-on-browser. Use - to read a whole action as JSON from stdin",
+      "Perform one raw action on a runner's screen. A browser runner takes click, double_click, scroll, move, drag, keypress, navigate and type; a mobile runner takes tap, swipe, fill and type. A browser runner answers mobile actions with action-not-supported-on-browser; a mobile runner answers the other browser actions with action-not-supported-on-mobile. Use - to read a whole action as JSON from stdin",
     )
     .option("--button <button>", "click: left, right, wheel, back or forward")
     .option(

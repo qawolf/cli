@@ -293,7 +293,7 @@ Commands:
   run [options] <flowFile>                 Run a flow on an interactive runner, shipping the flow and what it imports
   events [options] <stream>                Print a runner's journal, one entry per line. QA Wolf writes console, recorder, run-events, run-logs, run-status
   screenshot [options]                     Save a JPEG of an interactive runner's screen to a file, or write it to stdout with --out -
-  act [options] <action>                   Perform one raw action on a runner's screen. A browser runner takes click, double_click, scroll, move, drag, keypress, navigate and type; a mobile runner takes tap, swipe, fill and type. Each family answers the other's actions with action-not-supported-on-mobile or action-not-supported-on-browser. Use - to read a whole action as JSON from stdin
+  act [options] <action>                   Perform one raw action on a runner's screen. A browser runner takes click, double_click, scroll, move, drag, keypress, navigate and type; a mobile runner takes tap, swipe, fill and type. A browser runner answers mobile actions with action-not-supported-on-browser; a mobile runner answers the other browser actions with action-not-supported-on-mobile. Use - to read a whole action as JSON from stdin
   actions [options] <sequence>             Perform a sequence of up to ten raw actions on a runner's screen in one request, as a JSON array of the same actions \`runner act\` takes. Use - to read the array from stdin. Actions run back to back, so batch only steps whose targets are on the screen you last saw, and end the sequence at the step that changes the page. Each result carries an effect: performed, not-performed, or unknown when the runner stopped answering and the action may have landed
   exec [options] <file>                    Evaluate a snippet against a runner's live page. Use - to read the snippet from stdin
   inspect                                  Read one thing off a runner's live page (browser) or Appium session (mobile)
@@ -555,9 +555,10 @@ exports[`--help output qawolf runner act 1`] = `
 
 Perform one raw action on a runner's screen. A browser runner takes click,
 double_click, scroll, move, drag, keypress, navigate and type; a mobile runner
-takes tap, swipe, fill and type. Each family answers the other's actions with
-action-not-supported-on-mobile or action-not-supported-on-browser. Use - to read
-a whole action as JSON from stdin
+takes tap, swipe, fill and type. A browser runner answers mobile actions with
+action-not-supported-on-browser; a mobile runner answers the other browser
+actions with action-not-supported-on-mobile. Use - to read a whole action as
+JSON from stdin
 
 Options:
   --button <button>      click: left, right, wheel, back or forward
