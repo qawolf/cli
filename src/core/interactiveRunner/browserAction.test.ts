@@ -190,18 +190,17 @@ describe("buildRunnerAction, mobile", () => {
     },
   );
 
-  it("fills the field a selector names", () => {
-    expect(
-      build("fill", { selector: "//android.widget.EditText", text: "94107" }),
-    ).toEqual({
-      action: {
-        selector: "//android.widget.EditText",
-        text: "94107",
-        type: "fill",
-      },
-      ok: true,
-    });
-  });
+  it.each(["94107", ""])(
+    "fills the field a selector names with %p, where empty clears it",
+    (text) => {
+      expect(
+        build("fill", { selector: "//android.widget.EditText", text }),
+      ).toEqual({
+        action: { selector: "//android.widget.EditText", text, type: "fill" },
+        ok: true,
+      });
+    },
+  );
 
   it("refuses a selector on a browser action", () => {
     const built = build("type", { selector: "//input", text: "hi" });

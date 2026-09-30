@@ -171,7 +171,7 @@ A mobile runner has a touchscreen, not a mouse, so it has actions of its own:
 
 - `tap` touches a point (`--x`, `--y`) or the element `--selector` names. Check the selector first with `inspect elements --selector`, and pass `--strategy ios-predicate` or `shadow` when it is not XPath.
 - `swipe --from x,y --to x,y` moves in a straight line between two points. `--duration-ms` sets how long it takes, up to 10000: a slow swipe scrolls, a fast one flings.
-- `fill --selector ... --text ...` replaces the value of that field. To add to what a field already holds, `tap` it and then `type`.
+- `fill --selector ... --text ...` replaces the value of that field, and `--text ""` clears it. To add to what a field already holds, `tap` it and then `type`.
 - `type` types into whatever the last tap focused, the same as on a browser.
 
 The browser actions `double_click`, `scroll`, `move`, `keypress` and `navigate` answer `action-not-supported-on-mobile` rather than doing something approximate. `navigate` is the one to watch for, since it works on a browser runner without a run first but has no meaning on mobile at all. `click` with `button: "left"` and `drag` still tap and swipe on mobile, but they are deprecated there, so send `tap` and `swipe`. A browser runner answers `tap`, `swipe` and `fill` with `action-not-supported-on-browser`.
