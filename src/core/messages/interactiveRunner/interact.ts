@@ -9,8 +9,10 @@ export const interactMessages = {
     "The runner could not be reached, which does not mean the action was not performed: it may have stopped answering mid-action. Take a screenshot before repeating it.",
   actionNotJson:
     'Stdin did not hold a JSON action. Pipe one object, for example \'{"type":"click","button":"left","x":480,"y":260}\'.',
+  actionNotSupportedOnBrowser: (type: string) =>
+    `Only a mobile runner performs ${type}. On a browser runner, click at --x and --y, drag along a --path, and type into whatever has focus.`,
   actionNotSupportedOnMobile: (type: string) =>
-    `A mobile runner has a touchscreen, so it cannot perform ${type} as asked. It taps with a left-button click, swipes with drag, and types into whatever the last tap focused.`,
+    `A mobile runner has a touchscreen, so it cannot perform ${type} as asked. Use tap, swipe, fill, or type into whatever the last tap focused.`,
   actionFailedScreenshotToStdout:
     "Its screen was written to stdout as a JPEG, so look at that rather than sending the action again.",
   actionFailedScreenshotUnwritten: (detail: string) =>

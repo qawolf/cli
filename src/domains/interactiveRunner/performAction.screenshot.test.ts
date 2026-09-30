@@ -11,11 +11,16 @@ const imageJpegBase64 = Buffer.from(jpegBytes).toString("base64");
 const click = {
   flags: {
     button: "left",
+    durationMs: undefined,
+    from: undefined,
     keys: undefined,
     path: undefined,
     scrollX: undefined,
     scrollY: undefined,
+    selector: undefined,
+    strategy: undefined,
     text: undefined,
+    to: undefined,
     url: undefined,
     x: "1",
     y: "2",

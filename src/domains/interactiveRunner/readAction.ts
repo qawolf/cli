@@ -1,7 +1,7 @@
 import {
-  type BrowserActionFlags,
-  buildBrowserAction,
-  parseBrowserAction,
+  type ActionFlags,
+  buildRunnerAction,
+  parseRunnerAction,
 } from "~/core/interactiveRunner/browserAction.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 
@@ -13,10 +13,10 @@ const stdinArgument = "-";
 /** Reads one action off the command line, or off stdin when `type` is `-`. */
 export async function readAction(
   type: string,
-  flags: BrowserActionFlags,
+  flags: ActionFlags,
   deps: InteractiveRunnerDeps,
-): Promise<ReturnType<typeof buildBrowserAction>> {
-  if (type !== stdinArgument) return buildBrowserAction(type, flags);
+): Promise<ReturnType<typeof buildRunnerAction>> {
+  if (type !== stdinArgument) return buildRunnerAction(type, flags);
 
   // Refused rather than ignored, for the same reason `act click --text hi` is:
   // a flag that does not reach the runner has to be answered, because dropping
@@ -30,7 +30,7 @@ export async function readAction(
     return { error: interactiveRunnerMessages.stdinEmptyAction, ok: false };
   }
   try {
-    return parseBrowserAction(JSON.parse(piped));
+    return parseRunnerAction(JSON.parse(piped));
   } catch {
     return { error: interactiveRunnerMessages.actionNotJson, ok: false };
   }

@@ -293,7 +293,7 @@ Commands:
   run [options] <flowFile>                 Run a flow on an interactive runner, shipping the flow and what it imports
   events [options] <stream>                Print a runner's journal, one entry per line. QA Wolf writes console, recorder, run-events, run-logs, run-status
   screenshot [options]                     Save a JPEG of an interactive runner's screen to a file, or write it to stdout with --out -
-  act [options] <action>                   Perform one raw action on a runner's screen: click, double_click, scroll, move, drag, keypress, navigate or type. Use - to read a whole action as JSON from stdin. On a mobile runner only click (button left), drag and type have a touchscreen equivalent; the rest answer action-not-supported-on-mobile
+  act [options] <action>                   Perform one raw action on a runner's screen. A browser runner takes click, double_click, scroll, move, drag, keypress, navigate and type; a mobile runner takes tap, swipe, fill and type. Each family answers the other's actions with action-not-supported-on-mobile or action-not-supported-on-browser. Use - to read a whole action as JSON from stdin
   actions [options] <sequence>             Perform a sequence of up to ten raw actions on a runner's screen in one request, as a JSON array of the same actions \`runner act\` takes. Use - to read the array from stdin. Actions run back to back, so batch only steps whose targets are on the screen you last saw, and end the sequence at the step that changes the page. Each result carries an effect: performed, not-performed, or unknown when the runner stopped answering and the action may have landed
   exec [options] <file>                    Evaluate a snippet against a runner's live page. Use - to read the snippet from stdin
   inspect                                  Read one thing off a runner's live page (browser) or Appium session (mobile)
@@ -553,31 +553,39 @@ Examples:
 exports[`--help output qawolf runner act 1`] = `
 "Usage: qawolf runner act [options] <action>
 
-Perform one raw action on a runner's screen: click, double_click, scroll, move,
-drag, keypress, navigate or type. Use - to read a whole action as JSON from
-stdin. On a mobile runner only click (button left), drag and type have a
-touchscreen equivalent; the rest answer action-not-supported-on-mobile
+Perform one raw action on a runner's screen. A browser runner takes click,
+double_click, scroll, move, drag, keypress, navigate and type; a mobile runner
+takes tap, swipe, fill and type. Each family answers the other's actions with
+action-not-supported-on-mobile or action-not-supported-on-browser. Use - to read
+a whole action as JSON from stdin
 
 Options:
-  --button <button>    click: left, right, wheel, back or forward (mobile: left
-                       only)
-  --keys <keys...>     keypress: modifiers and the key, e.g. Control a
-  --path <json>        drag: JSON array of points to drag through (mobile: only
-                       the first and last are used)
-  --runner <id>        Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
-                       directory's stored runner
-  --screenshot <path>  Also save a JPEG of the screen, taken after the action,
-                       to this file, in place of a separate screenshot. An
-                       action that did not take effect answers with one too. -
-                       writes it to stdout and moves the confirmation, JSON
-                       included, to stderr
-  --scroll-x <delta>   scroll: horizontal wheel delta
-  --scroll-y <delta>   scroll: vertical wheel delta
-  --text <text>        type: the text to type
-  --url <url>          navigate: the http or https URL to go to
-  --x <pixels>         pointer x, in screenshot pixels
-  --y <pixels>         pointer y, in screenshot pixels
-  -h, --help           display help for command
+  --button <button>      click: left, right, wheel, back or forward
+  --duration-ms <ms>     swipe: how long it takes, up to 10000. Slow scrolls,
+                         fast flings
+  --from <x,y>           swipe: the point it starts at
+  --keys <keys...>       keypress: modifiers and the key, e.g. Control a
+  --path <json>          drag: JSON array of points to drag through
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then
+                         this directory's stored runner
+  --screenshot <path>    Also save a JPEG of the screen, taken after the action,
+                         to this file, in place of a separate screenshot. An
+                         action that did not take effect answers with one too. -
+                         writes it to stdout and moves the confirmation, JSON
+                         included, to stderr
+  --scroll-x <delta>     scroll: horizontal wheel delta
+  --scroll-y <delta>     scroll: vertical wheel delta
+  --selector <selector>  tap or fill: the element to act on, as a screen object
+                         would find it. tap takes it in place of --x and --y
+  --strategy <strategy>  how --selector is resolved: xpath (default),
+                         ios-predicate or shadow
+  --text <text>          type: the text to type into what has focus. fill: the
+                         field's new value
+  --to <x,y>             swipe: the point it ends at
+  --url <url>            navigate: the http or https URL to go to
+  --x <pixels>           click, tap and the like: x, in screenshot pixels
+  --y <pixels>           click, tap and the like: y, in screenshot pixels
+  -h, --help             display help for command
 
 Examples:
   $ qawolf runner act click --button left --x 480 --y 260
@@ -588,6 +596,12 @@ Examples:
   $ qawolf runner act click --button left --x 480 --y 260 --screenshot step-4.jpg
   $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act -
   $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act - --screenshot - > step-5.jpg
+
+Mobile:
+  $ qawolf runner act tap --x 540 --y 1200
+  $ qawolf runner act tap --selector '//*[@content-desc="Continue"]'
+  $ qawolf runner act fill --selector 'name == "Postal code"' --strategy ios-predicate --text 94107
+  $ qawolf runner act swipe --from 540,1600 --to 540,600 --duration-ms 1500
 "
 `;
 

@@ -2,19 +2,24 @@ import type { BrowserAction } from "@qawolf/api-contracts/v1";
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 import { describe, expect, it } from "bun:test";
 
-import type { BrowserActionFlags } from "~/core/interactiveRunner/browserAction.js";
+import type { ActionFlags } from "~/core/interactiveRunner/browserAction.js";
 
 import { handleRunnerAct } from "./performAction.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 import { runnerCallOptions } from "./runnerCallOptions.js";
 
-const noFlags: BrowserActionFlags = {
+const noFlags: ActionFlags = {
   button: undefined,
+  durationMs: undefined,
+  from: undefined,
   keys: undefined,
   path: undefined,
   scrollX: undefined,
   scrollY: undefined,
+  selector: undefined,
+  strategy: undefined,
   text: undefined,
+  to: undefined,
   url: undefined,
   x: undefined,
   y: undefined,
@@ -24,7 +29,7 @@ const noFlags: BrowserActionFlags = {
 // flags a caller types and the action those must reach the platform call as.
 const shapes: {
   action: BrowserAction;
-  flags: Partial<BrowserActionFlags>;
+  flags: Partial<ActionFlags>;
   type: string;
 }[] = [
   {
