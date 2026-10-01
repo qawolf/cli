@@ -93,6 +93,7 @@ export async function handleFlowsPull(
                 envVars: fetched.envVars,
                 envVarsFetchedAt: fetched.envVarsFetchedAt,
                 tags: fetched.tags,
+                flowIds: fetched.flowIds,
               },
               resolvedDeps.fs,
             ),

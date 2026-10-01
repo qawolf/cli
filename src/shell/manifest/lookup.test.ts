@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { manifestFilename, writeManifest } from "./io.js";
 import { findFlowStamp } from "./lookup.js";
 import type { Manifest } from "./types.js";
+import { makeManifestFlow } from "./manifest.testUtils.js";
 
 let workDir = "";
 
@@ -44,12 +45,14 @@ const sampleManifest: Manifest = {
   tagsFetchedAt: undefined,
   envVarsFetchedAt: undefined,
   flows: [
-    {
+    makeManifestFlow({
       path: join("src", "login.flow.ts"),
       contentHash: "hash-login",
-      tags: undefined,
-    },
-    { path: "checkout.flow.ts", contentHash: "hash-checkout", tags: undefined },
+    }),
+    makeManifestFlow({
+      path: "checkout.flow.ts",
+      contentHash: "hash-checkout",
+    }),
   ],
 };
 

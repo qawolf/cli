@@ -9,6 +9,7 @@ import type { Manifest } from "~/shell/manifest/types.js";
 
 import { defaultFlags, makeDeps, passResult } from "./run.fixtures.js";
 import { dispatchFlow } from "./dispatchFlow.js";
+import { makeManifestFlow } from "~/shell/manifest/manifest.testUtils.js";
 
 let workDir = "";
 let envDir = "";
@@ -35,7 +36,7 @@ const sampleManifest = (): Manifest => ({
   tagsFetchedAt: undefined,
   envVarsFetchedAt: undefined,
   flows: [
-    { path: "login.flow.ts", contentHash: "hash-login", tags: undefined },
+    makeManifestFlow({ path: "login.flow.ts", contentHash: "hash-login" }),
   ],
 });
 

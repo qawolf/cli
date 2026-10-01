@@ -9,6 +9,7 @@ import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
+import { cachedFlowsWithTags } from "./list.testUtils.js";
 import { callsOf, makeFakeUI } from "~/shell/commandContext.testUtils.js";
 
 afterEach(() => {
@@ -44,8 +45,8 @@ function makeDeps(
     peekFlowMeta: mock<FlowsListDeps["peekFlowMeta"]>(() =>
       Promise.resolve({ name: undefined, target: undefined }),
     ),
-    readCachedTags: mock<FlowsListDeps["readCachedTags"]>(() =>
-      Promise.resolve(new Map(Object.entries(tagsByFile))),
+    readCachedFlows: mock<FlowsListDeps["readCachedFlows"]>(() =>
+      Promise.resolve(cachedFlowsWithTags(tagsByFile)),
     ),
     readEnvLabel: mock<FlowsListDeps["readEnvLabel"]>((dir: string) =>
       Promise.resolve(dir),
@@ -189,10 +190,8 @@ describe("flowsList --env against a pulled environment", () => {
     const ctx = makeCtx();
     const deps = {
       ...envDeps([stagingFlow, prodFlow]),
-      readCachedTags: mock<FlowsListDeps["readCachedTags"]>(() =>
-        Promise.resolve(
-          new Map<string, readonly string[]>([[stagingFlow, ["auth"]]]),
-        ),
+      readCachedFlows: mock<FlowsListDeps["readCachedFlows"]>(() =>
+        Promise.resolve(cachedFlowsWithTags({ [stagingFlow]: ["auth"] })),
       ),
     };
 

@@ -27,6 +27,7 @@ async function stage(names: string[]): Promise<void> {
 }
 
 const baseArgs = () => ({
+  flowIds: undefined,
   envId: "env-x",
   envSlug: undefined,
   envName: undefined,
@@ -104,6 +105,7 @@ describe("stageBundle tag preservation", () => {
     await buildBundle(first, { flows });
 
     await stageBundle({
+      flowIds: undefined,
       tmpArchive: first,
       destAbs: dest,
       assetsAbs: join(workDir, "assets"),
@@ -124,6 +126,7 @@ describe("stageBundle tag preservation", () => {
     const second = join(workDir, "second.tar.gz");
     await buildBundle(second, { flows });
     await stageBundle({
+      flowIds: undefined,
       tmpArchive: second,
       destAbs: dest,
       assetsAbs: join(workDir, "assets"),
@@ -153,6 +156,7 @@ describe("stageBundle tag preservation", () => {
     await buildBundle(first, { flows });
 
     await stageBundle({
+      flowIds: undefined,
       tmpArchive: first,
       destAbs: dest,
       assetsAbs: join(workDir, "assets"),
@@ -183,6 +187,7 @@ describe("stageBundle tag preservation", () => {
     const second = join(workDir, "second.tar.gz");
     await buildBundle(second, { flows });
     await stageBundle({
+      flowIds: undefined,
       tmpArchive: second,
       destAbs: dest,
       assetsAbs: join(workDir, "assets"),
