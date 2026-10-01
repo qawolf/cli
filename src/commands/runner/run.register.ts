@@ -72,7 +72,7 @@ export function registerRunCommand(
     )
     .option(
       "--flow-id <id>",
-      "The QA Wolf flow this run is for. The run receives it as QAWOLF_WORKFLOW_ID, like a platform run of the flow does",
+      "The QA Wolf flow this run is for, when the platform cannot tell from the entry point. The run receives it as QAWOLF_WORKFLOW_ID",
     )
     .option(
       "--lines <start-end>",
