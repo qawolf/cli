@@ -1,6 +1,6 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
-import type { BrowserActionFlags } from "~/core/interactiveRunner/browserAction.js";
+import type { ActionFlags } from "~/core/interactiveRunner/browserAction.js";
 import { appendSentence } from "~/core/sentences.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
@@ -23,7 +23,7 @@ import { announceRunner, resolveRunner } from "./resolveRunner.js";
 import { runnerRequestFailure } from "./runnerRequestFailure.js";
 
 /**
- * Performs one raw browser action.
+ * Performs one raw action.
  *
  * One per call, and the runner serves one at a time, so there is no queue and the
  * caller decides what to do next from each answer. The action is admitted by the
@@ -41,7 +41,7 @@ import { runnerRequestFailure } from "./runnerRequestFailure.js";
 export async function handleRunnerAct(
   ctx: AuthCommandContext,
   options: {
-    flags: BrowserActionFlags;
+    flags: ActionFlags;
     runner: string | undefined;
     /** Where to write the screen that comes with the answer; `-` for stdout. */
     screenshot: string | undefined;

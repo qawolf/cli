@@ -1,4 +1,4 @@
-import type { BrowserAction } from "@qawolf/api-contracts/v1";
+import type { RunnerAction } from "@qawolf/api-contracts/v1";
 
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import { appendSentence } from "~/core/sentences.js";
@@ -26,7 +26,7 @@ import type { InteractiveRunnerDeps } from "./deps.js";
 export async function writeActionScreenshot(
   ctx: AuthCommandContext,
   options: {
-    action: BrowserAction;
+    action: RunnerAction;
     imageJpegBase64: string | undefined;
     out: string;
   },

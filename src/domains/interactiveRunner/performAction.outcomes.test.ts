@@ -6,11 +6,16 @@ import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
 const click = {
   flags: {
     button: "left",
+    durationMs: undefined,
+    from: undefined,
     keys: undefined,
     path: undefined,
     scrollX: undefined,
     scrollY: undefined,
+    selector: undefined,
+    strategy: undefined,
     text: undefined,
+    to: undefined,
     url: undefined,
     x: "1",
     y: "2",
@@ -36,9 +41,7 @@ describe("handleRunnerAct outcomes", () => {
     expect(outputs()[0]?.data).toMatchObject({ outcome: "success" });
   });
 
-  // The runner answers this for a click whose button is not left, so the message
-  // must not deny the one action a touchscreen does support.
-  it("names the action and the tap a touchscreen does support", async () => {
+  it("names the action and the touchscreen actions to use instead", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({
       ok: true,
@@ -55,7 +58,31 @@ describe("handleRunnerAct outcomes", () => {
     );
 
     expect(result?.error).toContain("cannot perform click");
-    expect(result?.error).toContain("left-button click");
+    expect(result?.error).toContain("Use tap, swipe, fill");
+    expect(result?.exitCode).toBe(2);
+  });
+
+  it("says a touchscreen action needs a mobile runner", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValue({
+      ok: true,
+      value: {
+        failureReason: "action-not-supported-on-browser",
+        outcome: "failure",
+      },
+    });
+
+    const result = await handleRunnerAct(
+      ctx,
+      {
+        ...click,
+        flags: { ...click.flags, button: undefined },
+        type: "tap",
+      },
+      makeTestDeps(),
+    );
+
+    expect(result?.error).toContain("Only a mobile runner performs tap");
     expect(result?.exitCode).toBe(2);
   });
 

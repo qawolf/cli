@@ -22,9 +22,11 @@ describe("buildFlagSpecs union inputs", () => {
       { flag: "--workspace-id <value>", required: false },
       { flag: "--type <value>", required: true },
       { flag: "--estimated-due-date <value>", required: false },
+      { flag: "--effort <value>", required: false },
+      { flag: "--reason <value>", required: false },
     ]);
     const type = result.flags.find((spec) => spec.optionKey === "type");
-    expect(type?.description).toBe("One of: bug, coverageRequest");
+    expect(type?.description).toBe("One of: bug, coverageRequest, maintenance");
   });
 
   it("maps a discriminated union with a required discriminator flag", () => {

@@ -126,7 +126,7 @@ Retry on the exit code, not on the message text:
   launch the id or name one that is running. The message says which runner was
   meant and whether `--runner`, `QAWOLF_RUNNER_ID` or this directory's stored
   default chose it — read that line before you pick an id to launch.
-- `2` will not clear on its own. Nothing has run on this runner yet, so run a flow; or the runner has no browser at all, so launch with `--name playwright` instead; or the action has no touchscreen equivalent on a mobile runner, so reach for one that has. A `runner actions` sequence also exits `2` before it sends anything, for an argument that is not a JSON array, an array of more than ten actions, and `--screenshot` flags that contradict each other. The message says which.
+- `2` will not clear on its own. Nothing has run on this runner yet, so run a flow; or the runner has no browser at all, so launch with `--name playwright` instead; or the action belongs to the other runner family, so send `tap`, `swipe` or `fill` to a mobile runner and the browser actions to a browser runner. A `runner actions` sequence also exits `2` before it sends anything, for an argument that is not a JSON array, an array of more than ten actions, and `--screenshot` flags that contradict each other. The message says which.
 
 ## Seeing and acting: the loop is yours
 
@@ -167,17 +167,18 @@ Coordinates are pixels on the same screenshot you just read. The runner serves o
 
 `act`, `actions`, `run` and `exec` are the commands whose lost answer may still have taken effect. On a `4` from `act` or `actions`, take a screenshot before repeating a click. `exec`'s message says the snippet could not be evaluated, but a lost answer looks the same from outside, so treat a `4` from a snippet that changes something as "may have run" rather than "did not run".
 
-A mobile runner has a touchscreen, not a mouse, so only three of the eight
-actions have a touchscreen equivalent and go through: `click` with
-`button: "left"` taps, `drag` swipes, and `type` types into whatever the last
-tap focused. The rest — `double_click`, `scroll`, `move`, `keypress`,
-`navigate` — answer `action-not-supported-on-mobile` rather than doing
-something approximate. `navigate` is the one to watch for, since it works on a
-browser runner without a run first but has no meaning on mobile at all.
+A mobile runner has a touchscreen, not a mouse, so it has actions of its own:
+
+- `tap` touches a point (`--x`, `--y`) or the element `--selector` names. Check the selector first with `inspect elements --selector`, and pass `--strategy ios-predicate` or `shadow` when it is not XPath.
+- `swipe --from x,y --to x,y` moves in a straight line between two points. `--duration-ms` sets how long it takes, up to 10000: a slow swipe scrolls, a fast one flings.
+- `fill --selector ... --text ...` replaces the value of that field, and `--text ""` clears it. To add to what a field already holds, `tap` it and then `type`.
+- `type` types into whatever the last tap focused, the same as on a browser.
+
+The browser actions `double_click`, `scroll`, `move`, `keypress` and `navigate` answer `action-not-supported-on-mobile` rather than doing something approximate. `navigate` is the one to watch for, since it works on a browser runner without a run first but has no meaning on mobile at all. `click` with `button: "left"` and `drag` still tap and swipe on mobile, but they are deprecated there, so send `tap` and `swipe`. A browser runner answers `tap`, `swipe` and `fill` with `action-not-supported-on-browser`.
 
 ### Several steps in one request: `runner actions`
 
-`qawolf runner actions '<json array>'` performs up to ten of those same actions back to back in one request, for the steps you already know: click the field, type into it, press Enter. One round trip instead of three, with no delay to guess at between them, and `-` reads the array from stdin the way `act -` reads one action.
+`qawolf runner actions '<json array>'` performs up to ten of the browser actions back to back in one request (not `tap`, `swipe` or `fill`), for the steps you already know: click the field, type into it, press Enter. One round trip instead of three, with no delay to guess at between them, and `-` reads the array from stdin the way `act -` reads one action.
 
 ```sh
 qawolf runner actions '[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"me@example.com"},{"type":"keypress","keys":["Enter"]}]' --screenshot after-login.jpg

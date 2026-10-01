@@ -1,28 +1,34 @@
 import { describe, expect, it } from "bun:test";
 
 import {
-  type BrowserActionFlags,
-  buildBrowserAction,
+  type ActionFlags,
+  buildRunnerAction,
   parseBrowserAction,
+  parseRunnerAction,
 } from "./browserAction.js";
 
-const noFlags: BrowserActionFlags = {
+const noFlags: ActionFlags = {
   button: undefined,
+  durationMs: undefined,
+  from: undefined,
   keys: undefined,
   path: undefined,
   scrollX: undefined,
   scrollY: undefined,
+  selector: undefined,
+  strategy: undefined,
   text: undefined,
+  to: undefined,
   url: undefined,
   x: undefined,
   y: undefined,
 };
 
-function build(type: string, flags: Partial<BrowserActionFlags> = {}) {
-  return buildBrowserAction(type, { ...noFlags, ...flags });
+function build(type: string, flags: Partial<ActionFlags> = {}) {
+  return buildRunnerAction(type, { ...noFlags, ...flags });
 }
 
-describe("buildBrowserAction", () => {
+describe("buildRunnerAction", () => {
   it("keeps the model's own spelling of the action names", () => {
     const built = build("double_click", { x: "10", y: "20" });
 
@@ -133,7 +139,92 @@ describe("buildBrowserAction", () => {
   });
 });
 
+describe("buildRunnerAction, mobile", () => {
+  it("taps a point, or the element a selector names", () => {
+    expect(build("tap", { x: "540", y: "1200" })).toEqual({
+      action: { type: "tap", x: 540, y: 1200 },
+      ok: true,
+    });
+    expect(
+      build("tap", { selector: 'name == "Add"', strategy: "ios-predicate" }),
+    ).toEqual({
+      action: {
+        selector: 'name == "Add"',
+        strategy: "ios-predicate",
+        type: "tap",
+      },
+      ok: true,
+    });
+  });
+
+  it("refuses a tap aimed at both a point and an element", () => {
+    const built = build("tap", { selector: "//a", x: "1", y: "2" });
+
+    expect(built.ok).toBe(false);
+    if (built.ok) return;
+    expect(built.error).toContain("not both");
+  });
+
+  it("reads a swipe's --from and --to as x,y points", () => {
+    expect(
+      build("swipe", { durationMs: "1500", from: "540,1600", to: "540,600" }),
+    ).toEqual({
+      action: {
+        duration_ms: 1500,
+        from: { x: 540, y: 1600 },
+        to: { x: 540, y: 600 },
+        type: "swipe",
+      },
+      ok: true,
+    });
+  });
+
+  it.each(["540", "540,1600,2", ""])(
+    "says what --from should look like when given %p",
+    (from) => {
+      const built = build("swipe", { from, to: "540,600" });
+
+      expect(built.ok).toBe(false);
+      if (built.ok) return;
+      expect(built.error).toContain("x,y");
+    },
+  );
+
+  it.each(["94107", ""])(
+    "fills the field a selector names with %p, where empty clears it",
+    (text) => {
+      expect(
+        build("fill", { selector: "//android.widget.EditText", text }),
+      ).toEqual({
+        action: { selector: "//android.widget.EditText", text, type: "fill" },
+        ok: true,
+      });
+    },
+  );
+
+  it("refuses a selector on a browser action", () => {
+    const built = build("type", { selector: "//input", text: "hi" });
+
+    expect(built.ok).toBe(false);
+    if (built.ok) return;
+    expect(built.error).toContain("selector");
+  });
+});
+
+describe("parseRunnerAction", () => {
+  it("takes a touchscreen action as well as a browser one", () => {
+    expect(parseRunnerAction({ type: "tap", x: 1, y: 2 }).ok).toBe(true);
+    expect(
+      parseRunnerAction({ button: "left", type: "click", x: 1, y: 2 }).ok,
+    ).toBe(true);
+  });
+});
+
 describe("parseBrowserAction", () => {
+  it("refuses a touchscreen action, which a sequence does not take", () => {
+    expect(parseBrowserAction({ type: "tap", x: 1, y: 2 }).ok).toBe(false);
+  });
+
   it("takes a complete action as a model emitted it", () => {
     const parsed = parseBrowserAction({
       button: "left",

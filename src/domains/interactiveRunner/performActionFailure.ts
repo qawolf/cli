@@ -29,6 +29,12 @@ export function describePerformActionFailure(options: {
         error: interactiveRunnerMessages.actionNotSupportedOnMobile(actionType),
         exitCode: exitCodes.invalidArgs,
       };
+    case "action-not-supported-on-browser":
+      return {
+        error:
+          interactiveRunnerMessages.actionNotSupportedOnBrowser(actionType),
+        exitCode: exitCodes.invalidArgs,
+      };
     case "screen-needs-a-run":
       return {
         error: interactiveRunnerMessages.screenNeedsARun,

@@ -1,11 +1,11 @@
 // oxlint-disable eslint/max-lines -- The SDK publishes this self-contained type module; splitting it would require publishing additional declaration files.
 import type {
-  BrowserAction,
   InspectOnRunnerRequest,
   JournalStream,
   PublicApiInput,
   PublicApiOutput,
   ReadJournalResponse,
+  RunnerAction,
   RunnerNameForPublicApi,
   publicContractsV1,
 } from "@qawolf/api-contracts/v1";
@@ -84,7 +84,7 @@ export type EventsRequest = RunnerRequest & {
 };
 
 export type ActRequest = RunnerRequest & {
-  action: BrowserAction;
+  action: RunnerAction;
   /**
    * Ask the runner to answer with a screenshot taken after the action, on
    * `imageJpegBase64`. One call instead of an act and a screenshot, with no
