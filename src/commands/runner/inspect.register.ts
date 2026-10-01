@@ -22,9 +22,9 @@ Examples:
 
 /**
  * A group rather than one command with a positional, because each arm needs
- * different flags. `element-html`/`page-html`/`variable` read a browser's
- * page; `session`/`contexts`/`page-source`/`elements` read a mobile runner's
- * Appium session instead — the two never apply to the same runner.
+ * different flags. `element-html`/`page-html` read a browser's page;
+ * `session`/`contexts`/`page-source`/`elements` read a mobile runner's Appium
+ * session instead. `variable` reads the running workflow on either.
  */
 export function registerRunnerInspectCommands(
   runner: Command,
