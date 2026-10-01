@@ -14,8 +14,9 @@ import { envLabelFor, readEnvLabels } from "./envLabels.js";
 import { selectPulledEnv } from "./selectPulledEnv.js";
 import { emptySelectionResult, tagsNotCachedResult } from "./selectorGuards.js";
 import { renderFlowsList } from "./renderFlowsList.js";
+import { filterFlows } from "./filterFlows.js";
 import { type FlowsListItem, toListRow } from "./listItem.js";
-import { type ListView, printedView } from "./listView.js";
+import { type ListView, printedView, unavailableView } from "./listView.js";
 import type { CachedFlow } from "./readCachedFlows.js";
 import { renderListTable } from "./renderListTable.js";
 
@@ -47,6 +48,9 @@ export async function flowsList(
   selectors: FlowSelectors & { env?: string | undefined } = { tags: [] },
   view: ListView = printedView,
 ): Promise<CommandResult> {
+  const unavailable = unavailableView(ctx, view);
+  if (unavailable !== undefined) return unavailable;
+
   const patterns = pattern ? [pattern] : [];
   let files = await deps.expandPatterns(patterns, deps.cwd);
 
@@ -95,6 +99,9 @@ export async function flowsList(
   const empty = await emptySelectionResult(selectors, items.length, undefined);
   if (empty !== undefined) return empty;
 
+  if (view.interactive) {
+    return filterFlows(ctx.ui, items.map(toListRow), view);
+  }
   if (ctx.ui.mode === "json") {
     ctx.ui.json(items);
     return;
