@@ -59,8 +59,10 @@ A run that has been requested but not yet created answers exit `8` too, and
 says it is still being created. That one clears on its own, so read the message
 rather than the code before deciding whether to poll.
 
-Poll `status` until it reaches `passed`, `failed` or `canceled`. The other
-values mean the run is still going.
+Poll `status` until it reaches `passed`, `failed`, `canceled` or `superseded`.
+When it is `superseded`, this run will never change again. Read the replacement
+run in `supersededBy.runId` for the verdict. `queued` and `running` mean the run
+is still going.
 
 ## Fields a passing run does not show you
 
@@ -185,13 +187,17 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `git.commitUrl` — Link to the commit on the code host.
 - `needsReview` — True once every flow has finished its attempts and at least one failed flow still has no diagnosis, including one whose investigation carried over to a later run. `status` stays `running` until that failure is diagnosed, so a caller that is not waiting for a diagnosis can stop polling here and read the run's failed flows.
 - `runId` — The run this response describes. Treat it as canonical: it can differ from the id you asked for. A deploy notification returns a run id before the run exists, and if a second notification for the same commit is folded into an earlier run, that id resolves to the earlier run instead.
-- `status` — One of: queued, running, passed, failed, canceled
+- `status` — One of: queued, running, passed, failed, canceled, superseded
+- `supersededBy` — The run that replaced this one, present only when `status` is `superseded`. A newer deployment to the same branch and environment (and service, when the deployment named one) cancels the older run's unfinished flows and takes over. Deduplication ignores the commit, so the replacement may be testing a later commit than this run did. Only the direct replacement is named; that run can itself be superseded.
+- `supersededBy.runId` — The id of the run.
+- `supersededBy.url` — Absolute URL of the replacement run's page.
 - `blockingBugCount` — How many bugs this run found are blocking: still open, and priority urgent, high, or unprioritized — unprioritized counts because nobody has ruled it out yet. This is what `failed` is derived from, so it explains a failure rather than adding a second verdict: gate on `status`, then read this to say how many bugs are holding the build. It counts a bug filed against a later run by an investigation that carried over from this one, and it drops a bug once that bug is resolved.
 - `flows` — The run's flows, ordered alphabetically by name. Only the flows matching flowStatuses when the request set it.
 - `flows[].attempts` — The flow's finished execution attempts, oldest first, including manual Wolf Browser attempts. Present once at least one attempt has finished, so a flow that passed after retries also lists its failed attempts. Artifact URLs appear only on automated attempts that reached a verdict, stay valid for at least a day (call run.get again for fresh ones), and can return 404 when the attempt did not produce that artifact.
 - `flows[].attempts[].logsUrl` — Signed URL for the attempt's execution logs.
 - `flows[].attempts[].traceUrl` — Signed URL for the attempt's Playwright trace (a trace.zip; open it with `npx playwright show-trace`).
 - `flows[].attempts[].videoUrl` — Signed URL for the attempt's screen recording.
+- `flows[].attempts[].attemptId` — The id of the run attempt.
 - `flows[].attempts[].kind` — One of: automated, manual
 - `flows[].attempts[].startedAt` — Absent when the attempt failed before it could start.
 - `flows[].attempts[].status` — One of: passed, failed, canceled
