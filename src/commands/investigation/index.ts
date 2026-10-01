@@ -60,7 +60,11 @@ export function registerAttemptCommand(
     .option("--console", "Inspect browser console evidence")
     .option("--log", "Inspect execution log evidence")
     .option("--evidence-id <id>", "Console or log evidence ID")
-    .option("--limit <number>", "Maximum entries to return", "20")
+    .option(
+      "--limit <number>",
+      "Maximum entries to return: the most recent for --timeline, --network and --log, the earliest for --console",
+      "20",
+    )
     .option(
       "--start-time-ms <number>",
       "Earliest trace timestamp in milliseconds",
