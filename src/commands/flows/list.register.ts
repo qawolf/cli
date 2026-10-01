@@ -74,7 +74,7 @@ export function registerFlowsListCommand(
     // Declared before --no-interactive, so neither passed leaves it undefined.
     .option(
       "-i, --interactive",
-      "Open the flow table to filter as you type; the default at a terminal",
+      "Open the flow table to filter as you type, mark flows and copy their paths or ids; the default at a terminal",
     )
     .option("--no-interactive", "Print the flow table instead of opening it")
     .addOption(

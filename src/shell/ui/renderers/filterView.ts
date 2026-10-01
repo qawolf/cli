@@ -8,7 +8,7 @@ import {
   frameGutter,
   renderFilterFrame,
 } from "./filterFrame.js";
-import type { FilterListArgs, FilterTable } from "./types.js";
+import type { FilterListArgs, FilterNotice, FilterTable } from "./types.js";
 
 export type PromptView<Item> = {
   readonly state: FilterFrame["state"];
@@ -24,6 +24,12 @@ export type PromptView<Item> = {
 export function createFrameDrawer<Item>(
   args: FilterListArgs<Item>,
   output: Writable,
+  status: {
+    readonly hints: string;
+    readonly notice: () => FilterNotice | undefined;
+    /** Marked items, by their place in `args.items`. */
+    readonly marked: ReadonlySet<number>;
+  },
 ): (view: PromptView<Item>, state?: FilterFrame["state"]) => string {
   // Laid out from every item rather than the current matches, so columns
   // hold still while the list narrows. Redone only on a resize.
@@ -59,8 +65,16 @@ export function createFrameDrawer<Item>(
         return line;
       },
       focus: view.cursor,
+      marked: new Set(
+        view.filteredOptions.flatMap((option, line) =>
+          status.marked.has(option.value) ? [line] : [],
+        ),
+      ),
+      markedCount: status.marked.size,
       detail:
         highlighted === undefined ? undefined : args.detail(highlighted.item),
+      notice: status.notice(),
+      hints: status.hints,
       columns,
       terminalRows: getRows(output),
       count: args.describeCount(view.filteredOptions.length, args.items.length),

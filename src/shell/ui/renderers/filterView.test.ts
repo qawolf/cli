@@ -15,9 +15,11 @@ it("formats only visible rows and reuses them until width changes", () => {
       table,
       searchText: (item) => [item],
       describeCount: (matched) => String(matched),
+      actions: [],
       detail: (item) => item,
     },
     output,
+    { hints: "", notice: () => undefined, marked: new Set() },
   );
   const view = {
     state: "active" as const,

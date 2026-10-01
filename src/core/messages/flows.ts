@@ -2,6 +2,13 @@ import { pluralize } from "~/core/pluralize.js";
 
 import { flowsPullMessages } from "./flowsPull.js";
 
+function copiedValues(values: readonly string[], noun: string): string {
+  const [only] = values;
+  return values.length === 1 && only !== undefined
+    ? only
+    : pluralize(values.length, noun);
+}
+
 export const flowsMessages = {
   title: "Flows",
   remoteTitle: "Remote Flows",
@@ -19,6 +26,15 @@ export const flowsMessages = {
       `${String(matched)} of ${pluralize(total, "flow")}`,
     interactiveRequiresTerminal:
       "--interactive needs a terminal. Run it in a terminal, without --json or --agent, and without piping its output.",
+    copyPath: "copy path",
+    copyId: "copy id",
+    copied: (values: readonly string[], noun: string) =>
+      `Copied ${copiedValues(values, noun)}`,
+    copiedViaTerminal: (values: readonly string[], noun: string) =>
+      `Sent ${copiedValues(values, noun)} to your terminal's clipboard`,
+    idsLeftOut: (missing: number) =>
+      `${pluralize(missing, "flow")} had no id yet and ${missing === 1 ? "was" : "were"} left out`,
+    noFlowId: "No flow id yet. Pull this environment again to fetch it.",
     noFlowIdShort: "no id yet",
   },
   selectors: {
