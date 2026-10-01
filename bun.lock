@@ -5,6 +5,7 @@
     "": {
       "name": "@qawolf/cli",
       "dependencies": {
+        "@clack/core": "1.4.1",
         "@clack/prompts": "1.5.1",
         "@napi-rs/keyring": "1.3.0",
         "@oxc-node/core": "0.1.0",
