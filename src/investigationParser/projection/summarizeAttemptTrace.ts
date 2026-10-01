@@ -9,6 +9,7 @@ import {
   listTraceSnapshots,
   nearestScreenshotForSnapshot,
   readFailureStack,
+  readTraceActionStack,
   readTraceSnapshot,
 } from "../trace/playwrightTrace.js";
 
@@ -26,6 +27,7 @@ import { summarizeAttemptNetworkErrors } from "./summarizeAttemptNetwork.js";
 import { summarizeAttemptWaitingLogs } from "./summarizeAttemptWaitingLogs.js";
 
 const evidenceLimit = 10;
+const maxActionEvidenceBytes = 512;
 const maxSnapshotReconstructionBytes = 256 * 1024;
 
 function normalizedFailure(value: string): string {
@@ -55,15 +57,36 @@ export async function summarizeAttemptTrace(
   );
   const toAction = (action: (typeof actions.items)[number]) => {
     const stack =
-      failure?.action.id === action.id
-        ? failure.frames.map((frame) => `${frame.file}:${frame.compiledLine}`)
-        : [];
+      action.errorMessage === undefined
+        ? []
+        : readTraceActionStack(trace, action).map(
+            (frame) => `${frame.file}:${frame.compiledLine}`,
+          );
+    const error =
+      action.errorMessage === undefined
+        ? undefined
+        : redactAndBoundAttemptEvidenceResult(
+            action.errorMessage,
+            maxActionEvidenceBytes,
+          );
+    const selector =
+      action.selector === undefined
+        ? undefined
+        : redactAndBoundAttemptEvidenceResult(
+            action.selector,
+            maxActionEvidenceBytes,
+          );
     return {
       actionId: action.id,
       apiName: action.apiName,
       ...(action.endTime !== undefined && {
         endedAtMilliseconds: action.endTime,
       }),
+      ...(error && { error: error.text }),
+      ...((error?.truncated || selector?.truncated) && {
+        evidenceTruncated: true,
+      }),
+      ...(selector && { selector: selector.text }),
       ...(action.startTime !== undefined && {
         startedAtMilliseconds: action.startTime,
       }),
