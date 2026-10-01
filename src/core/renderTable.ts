@@ -1,3 +1,5 @@
+import { displayWidth, padColumns } from "./displayWidth.js";
+
 export type TableColumn<Row> = {
   readonly header: string;
   readonly value: (row: Row) => string;
@@ -15,14 +17,14 @@ export function renderTable<Row>(options: {
   const measured = columns.map((column) => ({
     column,
     width: Math.max(
-      column.header.length,
-      ...rows.map((row) => column.value(row).length),
+      displayWidth(column.header),
+      ...rows.map((row) => displayWidth(column.value(row))),
     ),
   }));
 
   const renderRow = (cell: (column: TableColumn<Row>) => string): string =>
     measured
-      .map(({ column, width }) => cell(column).padEnd(width))
+      .map(({ column, width }) => padColumns(cell(column), width))
       .join("  ")
       .trimEnd();
 
