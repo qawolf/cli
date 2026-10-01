@@ -59,8 +59,10 @@ A run that has been requested but not yet created answers exit `8` too, and
 says it is still being created. That one clears on its own, so read the message
 rather than the code before deciding whether to poll.
 
-Poll `status` until it reaches `passed`, `failed` or `canceled`. The other
-values mean the run is still going.
+Poll `status` until it reaches `passed`, `failed`, `canceled` or `superseded`.
+When it is `superseded`, this run will never change again. Read the replacement
+run in `supersededBy.runId` for the verdict. `queued` and `running` mean the run
+is still going.
 
 ## Fields a passing run does not show you
 
