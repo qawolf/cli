@@ -168,7 +168,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf install clear` | local | Remove the managed runtime cache (all installed runtime versions) |
 | `qawolf investigation get` | read | Read what the QA Wolf AI investigating a run has concluded: one finding per cause of its failures, with the question waiting for a person and any answer or dispute the investigation hasn't acted on yet. |
 | `qawolf issue addFlows` | write | Add flows to a coverage request owned by the caller's team. Flows already covered stay covered. Bug and maintenance reports link to flows through the runs that reproduce them; use run.diagnose to record one. |
-| `qawolf issue create` | write | Create a bug or coverage request issue for the caller's team. Maintenance issues cannot be created through the public API. |
+| `qawolf issue create` | write | Create a bug report, maintenance report, or coverage request issue for the caller's team. A user can create a maintenance report only when they can see the workspace's maintenance reports; a team or organization API key credits it to the workspace's automation user. Link its failed flows afterwards with run.diagnose. |
 | `qawolf issue find` | read | List the team's bug reports, maintenance reports, or coverage requests, newest first. |
 | `qawolf issue get` | read | Get an issue by id. |
 | `qawolf issue removeFlows` | write | Remove flows from a coverage request owned by the caller's team. Flows the request does not cover are left alone. Bug and maintenance reports link to flows through the runs that reproduce them, so their flows cannot be set directly. |
