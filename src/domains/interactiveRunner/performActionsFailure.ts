@@ -1,4 +1,4 @@
-import type { BrowserAction } from "@qawolf/api-contracts/v1";
+import type { RunnerAction } from "@qawolf/api-contracts/v1";
 
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import { appendSentence } from "~/core/sentences.js";
@@ -13,7 +13,7 @@ import {
 
 /** Every action that did not succeed, why, and what the caller should do about it. */
 export function describeSequenceFailure(options: {
-  actions: BrowserAction[];
+  actions: RunnerAction[];
   answer: SequenceFailure;
 }): Exclude<CommandResult, void> {
   const { actions, answer } = options;
