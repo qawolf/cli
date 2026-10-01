@@ -46,6 +46,11 @@ const signedUrlFieldPattern = [
   "key-pair-id",
   "policy",
 ].join("|");
+// A JWT's header is base64url JSON, so it always starts with "eyJ" (`{"`).
+// Matching the token itself catches the ones no field name points at, such as
+// a session token streamed inside a React Server Components payload. The
+// signature is optional so a token cut off by a truncated body still matches.
+const jwtPattern = /eyJ[\w-]+\.[\w-]+(?:\.[\w-]*){0,3}/g;
 
 function redactQuotedAssignments(
   text: string,
@@ -140,7 +145,8 @@ function redactCallArguments(text: string): string {
 }
 
 export function redactAttemptEvidence(text: string): string {
-  const userInfoRedacted = text.replace(
+  const jwtRedacted = text.replace(jwtPattern, redacted);
+  const userInfoRedacted = jwtRedacted.replace(
     /((?:https?:)?\/\/)[^/\s?#]*@/gi,
     `$1${redacted}@`,
   );

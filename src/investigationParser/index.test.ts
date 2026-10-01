@@ -26,6 +26,24 @@ describe("investigation parser", () => {
     expect(unterminated).toContain("[REDACTED]");
   });
 
+  it("redacts a JWT that no field name points at", () => {
+    const jwt =
+      "eyJhbGciOiJSUzI1NiJ9.eyJzaWQiOiJzeW50aGV0aWMifQ.c3ludGhldGljLXNpZw";
+    const value = redactEvidence(`0:["$","div"]\n2:T4a3,${jwt}\n3:"visible"`);
+
+    expect(value).not.toContain(jwt);
+    expect(value).toContain("2:T4a3,[REDACTED]");
+    expect(value).toContain('3:"visible"');
+  });
+
+  it("redacts a JWT cut off before its signature", () => {
+    const value = redactEvidence(
+      "session eyJhbGciOiJSUzI1NiJ9.eyJzaWQiOiJzeW50aGV0aWMifQ",
+    );
+
+    expect(value).toBe("session [REDACTED]");
+  });
+
   it.each([
     {
       evidence: "Request failed: {'password': 'hunter2', 'safe': 'visible'}",
