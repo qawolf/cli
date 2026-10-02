@@ -80,6 +80,11 @@ export function describeReason(step: FailedStep): Described {
         exitCode: exitCodes.invalidArgs,
         why: "has no touchscreen equivalent on a mobile runner.",
       };
+    case "action-not-supported-on-browser":
+      return {
+        exitCode: exitCodes.invalidArgs,
+        why: "is a touchscreen action, which only a mobile runner performs.",
+      };
     case "screen-needs-a-run":
       return {
         exitCode: exitCodes.invalidArgs,
