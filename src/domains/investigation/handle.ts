@@ -2,13 +2,15 @@
 
 import { basename } from "node:path";
 
+import { publicContractsV1 } from "@qawolf/api-contracts/v1";
+import type { z } from "zod";
+
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import type {
   AuthCommandContext,
   CommandResult,
 } from "~/shell/commandContext.js";
 
-import { getAttemptArtifactsContract } from "./contracts.js";
 import { downloadLogTail, downloadTrace } from "./download.js";
 import { loadInvestigationParser } from "./lazyParser.js";
 import type {
@@ -17,6 +19,10 @@ import type {
   InvestigationRequest,
   InvestigationResult,
 } from "./types.js";
+
+export type AttemptArtifacts = z.infer<
+  typeof publicContractsV1.run.getAttemptArtifacts.output
+>;
 
 export type InspectOptions = {
   actionId?: string;
@@ -44,7 +50,7 @@ function artifactUnavailable(status: "not-captured" | "signing-failed") {
 }
 
 export async function loadSummaryArtifacts(
-  value: Awaited<ReturnType<typeof getAttemptArtifactsContract.output.parse>>,
+  value: AttemptArtifacts,
 ): Promise<{ logs: ArtifactInput; trace: ArtifactInput }> {
   if (value.artifactStatus !== "signed") {
     const unavailable = artifactUnavailable(value.artifactStatus);
@@ -62,7 +68,7 @@ export async function loadSummaryArtifacts(
 }
 
 export async function loadInspectArtifact(
-  value: Awaited<ReturnType<typeof getAttemptArtifactsContract.output.parse>>,
+  value: AttemptArtifacts,
   type: InspectType,
 ): Promise<{ logs: ArtifactInput; trace: ArtifactInput }> {
   const inactive = artifactUnavailable("not-captured");
@@ -136,9 +142,12 @@ function renderText(result: Record<string, unknown>): string {
 }
 
 async function fetchAttempt(ctx: AuthCommandContext, attemptId: string) {
-  return ctx.platformClient.callPublicApi(getAttemptArtifactsContract, {
-    attemptId,
-  });
+  return ctx.platformClient.callPublicApi(
+    publicContractsV1.run.getAttemptArtifacts,
+    {
+      attemptId,
+    },
+  );
 }
 
 export async function handleInvestigationSummary(

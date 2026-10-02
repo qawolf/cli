@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-import type { AttemptArtifacts } from "./contracts.js";
-import { loadInspectArtifact, loadSummaryArtifacts } from "./handle.js";
+import {
+  type AttemptArtifacts,
+  loadInspectArtifact,
+  loadSummaryArtifacts,
+} from "./handle.js";
 
 const originalFetch = globalThis.fetch;
 
