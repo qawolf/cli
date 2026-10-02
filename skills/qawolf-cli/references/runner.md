@@ -284,8 +284,9 @@ two calls and a marker; `inspect variable` is one call and the value.
 
 ## Reading a mobile screen: `inspect session`/`contexts`/`page-source`/`elements`
 
-`element-html`, `page-html` and `variable` are a browser's shapes. A mobile
-runner answers four different ones instead, one subcommand per question:
+`variable` reads the running workflow, so it works on a mobile runner too.
+`element-html` and `page-html` are a browser's shapes. A mobile runner answers
+four different ones instead, one subcommand per question:
 
 ```sh
 qawolf runner inspect session
