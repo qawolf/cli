@@ -2,11 +2,14 @@ import type { Command } from "commander";
 
 import { blankInspectMobileFlags } from "~/core/interactiveRunner/inspectMobileRequest.js";
 import { declareCommandKind } from "~/commands/commandKind.js";
-import { withAuthContext } from "~/commands/context.js";
 import { handleRunnerInspectMobile } from "~/domains/interactiveRunner/inspectMobile.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
-import { runnerDeps, runnerFlagDescription } from "./context.js";
+import {
+  runnerDeps,
+  runnerFlagDescription,
+  withRunnerContext,
+} from "./context.js";
 
 type InspectElementsFlags = {
   context?: string;
@@ -28,7 +31,7 @@ export function registerRunnerInspectMobileCommands(
     .description("Print the Appium session's status: ready, or why not")
     .option("--runner <id>", runnerFlagDescription)
     .action((opts: { runner?: string }, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerInspectMobile(
           ctx,
           {
@@ -45,7 +48,7 @@ export function registerRunnerInspectMobileCommands(
     .description("List the WebView contexts available, and which is current")
     .option("--runner <id>", runnerFlagDescription)
     .action((opts: { runner?: string }, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerInspectMobile(
           ctx,
           {
@@ -63,7 +66,7 @@ export function registerRunnerInspectMobileCommands(
     .option("--context <name>", "Read this context instead of the current one")
     .option("--runner <id>", runnerFlagDescription)
     .action((opts: { context?: string; runner?: string }, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerInspectMobile(
           ctx,
           {
@@ -98,7 +101,7 @@ export function registerRunnerInspectMobileCommands(
     .option("--x <pixels>", "point: whole pixels on the device's own screen")
     .option("--y <pixels>", "point: whole pixels on the device's own screen")
     .action((opts: InspectElementsFlags, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerInspectMobile(
           ctx,
           {

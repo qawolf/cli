@@ -1,7 +1,6 @@
 import type { Command } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
-import { withAuthContext } from "~/commands/context.js";
 import { handleRunnerKeepalive } from "~/domains/interactiveRunner/keepalive.js";
 import { handleRunnerLaunch } from "~/domains/interactiveRunner/launch.js";
 import { handleRunnerList } from "~/domains/interactiveRunner/list.js";
@@ -9,7 +8,11 @@ import { handleRunnerStopRun } from "~/domains/interactiveRunner/stopRun.js";
 import { handleRunnerTerminate } from "~/domains/interactiveRunner/terminate.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
-import { runnerDeps, runnerFlagDescription } from "./context.js";
+import {
+  runnerDeps,
+  runnerFlagDescription,
+  withRunnerContext,
+} from "./context.js";
 
 const launchExamples = `
 Examples:
@@ -43,7 +46,7 @@ export function registerRunnerLifecycleCommands(
     .option("--name <family>", "Runner family to run, e.g. playwright")
     .addHelpText("after", launchExamples)
     .action((opts: { id?: string; name?: string }, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerLaunch(
           ctx,
           { id: opts.id, name: opts.name },
@@ -57,7 +60,7 @@ export function registerRunnerLifecycleCommands(
     .option("--here", "Only the runners this directory launched")
     .addHelpText("after", listExamples)
     .action((opts: { here?: boolean }, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerList(ctx, { here: opts.here === true }, runnerDeps(ctx)),
       )(opts, command),
     );
@@ -66,7 +69,7 @@ export function registerRunnerLifecycleCommands(
     .description("End an interactive runner, and the pod it runs on with it")
     .option("--runner <id>", runnerFlagDescription)
     .action((opts: { runner?: string }, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerTerminate(ctx, { runner: opts.runner }, runnerDeps(ctx)),
       )(opts, command),
     );
@@ -77,7 +80,7 @@ export function registerRunnerLifecycleCommands(
     )
     .option("--runner <id>", runnerFlagDescription)
     .action((opts: { runner?: string }, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerStopRun(ctx, { runner: opts.runner }, runnerDeps(ctx)),
       )(opts, command),
     );
@@ -89,7 +92,7 @@ export function registerRunnerLifecycleCommands(
     .option("--runner <id>", runnerFlagDescription)
     .addHelpText("after", keepaliveExamples)
     .action((opts: { runner?: string }, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerKeepalive(ctx, { runner: opts.runner }, runnerDeps(ctx)),
       )(opts, command),
     );

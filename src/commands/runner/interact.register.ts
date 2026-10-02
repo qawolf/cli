@@ -1,13 +1,16 @@
 import type { Command } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
-import { withAuthContext } from "~/commands/context.js";
 import { handleRunnerAct } from "~/domains/interactiveRunner/performAction.js";
 import { handleRunnerScreenshot } from "~/domains/interactiveRunner/takeScreenshot.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { actExamples } from "./actExamples.js";
-import { runnerDeps, runnerFlagDescription } from "./context.js";
+import {
+  runnerDeps,
+  runnerFlagDescription,
+  withRunnerContext,
+} from "./context.js";
 
 // JPEG, because that is what the API answers with; a .png name would be a lie
 // about the bytes in the file.
@@ -55,7 +58,7 @@ export function registerRunnerInteractCommands(
     .option("--runner <id>", runnerFlagDescription)
     .addHelpText("after", screenshotExamples)
     .action((opts: { out: string; runner?: string }, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerScreenshot(
           ctx,
           { out: opts.out, runner: opts.runner },
@@ -106,7 +109,7 @@ export function registerRunnerInteractCommands(
     .option("--y <pixels>", "click, tap and the like: y, in screenshot pixels")
     .addHelpText("after", actExamples)
     .action((action: string, opts: ActFlags, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerAct(
           ctx,
           {

@@ -1,11 +1,14 @@
 import type { Command } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
-import { withAuthContext } from "~/commands/context.js";
 import { handleRunnerHighlightSelector } from "~/domains/interactiveRunner/highlightSelector.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
-import { runnerDeps, runnerFlagDescription } from "./context.js";
+import {
+  runnerDeps,
+  runnerFlagDescription,
+  withRunnerContext,
+} from "./context.js";
 
 const highlightExamples = `
 Examples:
@@ -29,7 +32,7 @@ export function registerRunnerHighlightSelectorCommand(
         opts: { runner?: string },
         command: Command,
       ) =>
-        withAuthContext(signals, (ctx) =>
+        withRunnerContext(signals, (ctx) =>
           handleRunnerHighlightSelector(
             ctx,
             { runner: opts.runner, selector },
