@@ -75,3 +75,12 @@ export type PeekFlowMetaFn = (filePath: string) => Promise<FlowCallMeta>;
 export function extractFlowMeta(source: string): FlowCallMeta {
   return parseFlowCall(source);
 }
+
+const flowExtensions = [".flow.ts", ".flow.js"];
+const sourceExtensions = [".ts", ".js", ".mts", ".cts", ".mjs", ".cjs"];
+
+export const isFlowFile = (name: string): boolean =>
+  flowExtensions.some((extension) => name.endsWith(extension));
+
+export const isSourceFile = (name: string): boolean =>
+  sourceExtensions.some((extension) => name.endsWith(extension));
