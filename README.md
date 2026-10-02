@@ -74,9 +74,9 @@ Start with a run ID, pick an attempt ID from its failed flows, then narrow the e
 
 ```bash
 qawolf run get --run-id <run-id> --flow-statuses failed
-qawolf attempt investigate <attempt-id>
-qawolf attempt inspect <attempt-id> --timeline --limit 20
-qawolf attempt inspect <attempt-id> --request <request-id>
+qawolf attempt investigate --attempt-id <attempt-id>
+qawolf attempt inspect --attempt-id <attempt-id> --timeline --limit 20
+qawolf attempt inspect --attempt-id <attempt-id> --request <request-id>
 ```
 
 `attempt inspect` requires exactly one of `--action`, `--timeline`, `--network`, `--request`, `--snapshot`, `--screenshot`, `--console`, or `--log`. Use `--evidence-id` to start console or execution-log output at a specific evidence record; the other filters are listed in `qawolf attempt inspect --help`.
@@ -84,12 +84,12 @@ qawolf attempt inspect <attempt-id> --request <request-id>
 Snapshot HTML can be returned directly or written to a new file. Screenshots require a file. The CLI refuses to overwrite an existing path:
 
 ```bash
-qawolf attempt inspect <attempt-id> --snapshot <snapshot-id> --format html
-qawolf attempt inspect <attempt-id> --snapshot <snapshot-id> --format html --output-file snapshot.html
-qawolf attempt inspect <attempt-id> --screenshot <screenshot-id> --output-file screenshot.jpeg
+qawolf attempt inspect --attempt-id <attempt-id> --snapshot <snapshot-id> --format html
+qawolf attempt inspect --attempt-id <attempt-id> --snapshot <snapshot-id> --format html --output-file snapshot.html
+qawolf attempt inspect --attempt-id <attempt-id> --screenshot <screenshot-id> --output-file screenshot.jpeg
 ```
 
-These commands require the platform's `public.run.getAttemptArtifacts` endpoint to be deployed. The endpoint authorizes every request and returns fresh signed artifact URLs. Parsing happens locally in a separate lazy bundle, so normal CLI startup does not load the trace parser or JSZip. Downloads, decompression, output text, HTML, request bodies, and log retention are bounded; `incomplete`, `truncated`, `malformed`, and artifact status fields describe evidence that could not be read in full.
+The trace and logs are downloaded from the signed links `qawolf run getAttemptArtifacts` returns and parsed on your machine. Downloads, output text, HTML, request bodies, and log retention are bounded; `incomplete`, `truncated`, `malformed`, and artifact status fields describe evidence that could not be read in full.
 
 ## Agent integration
 

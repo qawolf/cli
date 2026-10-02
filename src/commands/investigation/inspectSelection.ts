@@ -2,12 +2,7 @@ import type { InspectOptions } from "~/domains/investigation/handle.js";
 
 export type InspectCommandOptions = Omit<
   InspectOptions,
-  | "actionId"
-  | "attemptId"
-  | "requestId"
-  | "screenshotId"
-  | "snapshotId"
-  | "type"
+  "actionId" | "requestId" | "screenshotId" | "snapshotId" | "type"
 > & {
   action?: string;
   console?: boolean;

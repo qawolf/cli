@@ -31,16 +31,18 @@ export function registerAttemptCommand(
     .command("attempt")
     .description("Investigate a finished run attempt from recorded evidence");
 
-  declareCommandKind(attempt.command("investigate <attemptId>"), "read")
+  declareCommandKind(attempt.command("investigate"), "read")
     .description("Summarize the evidence for one finished attempt")
-    .action((attemptId: string, _options: unknown, command: Command) =>
+    .requiredOption("--attempt-id <id>", "Attempt to summarize")
+    .action((options: { attemptId: string }, command: Command) =>
       withAuthContext(signals, (ctx) =>
-        handleInvestigationSummary(ctx, attemptId),
-      )({}, command),
+        handleInvestigationSummary(ctx, options.attemptId),
+      )(options, command),
     );
 
-  declareCommandKind(attempt.command("inspect <attemptId>"), "read")
+  declareCommandKind(attempt.command("inspect"), "read")
     .description("Inspect one kind of evidence for a finished attempt")
+    .requiredOption("--attempt-id <id>", "Attempt to inspect")
     .option("--action <id>", "Inspect one action evidence ID")
     .option("--timeline", "Inspect the action timeline")
     .option("--network", "Inspect network requests")
@@ -76,25 +78,23 @@ export function registerAttemptCommand(
       "--output-file <path>",
       "Write HTML or screenshot bytes without overwriting",
     )
-    .action(
-      (attemptId: string, options: InspectCommandOptions, command: Command) => {
-        const selection = resolveInspectSelection(options);
-        if ("error" in selection) return command.error(selection.error);
-        const {
-          action: _action,
-          console: _console,
-          log: _log,
-          network: _network,
-          request: _request,
-          screenshot: _screenshot,
-          snapshot: _snapshot,
-          timeline: _timeline,
-          ...common
-        } = options;
-        const normalized = { ...common, ...selection, attemptId };
-        return withAuthContext(signals, (ctx) =>
-          handleInvestigationInspect(ctx, normalized),
-        )(options, command);
-      },
-    );
+    .action((options: InspectCommandOptions, command: Command) => {
+      const selection = resolveInspectSelection(options);
+      if ("error" in selection) return command.error(selection.error);
+      const {
+        action: _action,
+        console: _console,
+        log: _log,
+        network: _network,
+        request: _request,
+        screenshot: _screenshot,
+        snapshot: _snapshot,
+        timeline: _timeline,
+        ...common
+      } = options;
+      const normalized = { ...common, ...selection };
+      return withAuthContext(signals, (ctx) =>
+        handleInvestigationInspect(ctx, normalized),
+      )(options, command);
+    });
 }

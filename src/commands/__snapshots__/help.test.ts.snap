@@ -157,32 +157,33 @@ exports[`--help output qawolf attempt 1`] = `
 Investigate a finished run attempt from recorded evidence
 
 Options:
-  -h, --help                     display help for command
+  -h, --help             display help for command
 
 Commands:
-  investigate <attemptId>        Summarize the evidence for one finished attempt
-  inspect [options] <attemptId>  Inspect one kind of evidence for a finished
-                                 attempt
-  help [command]                 display help for command
+  investigate [options]  Summarize the evidence for one finished attempt
+  inspect [options]      Inspect one kind of evidence for a finished attempt
+  help [command]         display help for command
 "
 `;
 
 exports[`--help output qawolf attempt investigate 1`] = `
-"Usage: qawolf attempt investigate [options] <attemptId>
+"Usage: qawolf attempt investigate [options]
 
 Summarize the evidence for one finished attempt
 
 Options:
-  -h, --help  display help for command
+  --attempt-id <id>  Attempt to summarize
+  -h, --help         display help for command
 "
 `;
 
 exports[`--help output qawolf attempt inspect 1`] = `
-"Usage: qawolf attempt inspect [options] <attemptId>
+"Usage: qawolf attempt inspect [options]
 
 Inspect one kind of evidence for a finished attempt
 
 Options:
+  --attempt-id <id>         Attempt to inspect
   --action <id>             Inspect one action evidence ID
   --timeline                Inspect the action timeline
   --network                 Inspect network requests
