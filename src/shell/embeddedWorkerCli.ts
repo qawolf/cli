@@ -10,6 +10,8 @@ import { getDataDir } from "~/core/paths.js";
  * executes the entry script directly.
  */
 const embeddedCliPathEnv = "QAWOLF_EMBEDDED_CLI_PATH";
+const embeddedInvestigationParserPathEnv =
+  "QAWOLF_EMBEDDED_INVESTIGATION_PARSER_PATH";
 
 /**
  * Extracts the embedded cli.js bundle to a real on-disk file so a BUN_BE_BUN
@@ -24,8 +26,14 @@ export function extractEmbeddedWorkerCli(): string | undefined {
   if (assetPath === undefined || assetPath === "") return undefined;
   const dir = join(getDataDir(), "worker");
   const dest = join(dir, basename(assetPath));
-  if (existsSync(dest)) return dest;
   mkdirSync(dir, { recursive: true });
-  writeFileSync(dest, readFileSync(assetPath));
+  if (!existsSync(dest)) writeFileSync(dest, readFileSync(assetPath));
+  const parserAssetPath = process.env[embeddedInvestigationParserPathEnv];
+  if (parserAssetPath) {
+    const parserDest = join(dir, basename(parserAssetPath));
+    if (!existsSync(parserDest))
+      writeFileSync(parserDest, readFileSync(parserAssetPath));
+    process.env["QAWOLF_INVESTIGATION_PARSER_PATH"] = parserDest;
+  }
   return dest;
 }

@@ -100,6 +100,16 @@ export function makeMemoryFs(): Fs {
         typeof data === "string" ? textEncoder.encode(data) : data,
       );
     },
+    async writeFileExclusive(rawPath, data, _options) {
+      const path = toKey(rawPath);
+      requireParent(dirs, path, rawPath, "open");
+      if (files.has(path) || dirs.has(path)) return false;
+      files.set(
+        path,
+        typeof data === "string" ? textEncoder.encode(data) : data,
+      );
+      return true;
+    },
     async openWriteHandle(rawPath) {
       const path = toKey(rawPath);
       requireParent(dirs, path, rawPath, "open");

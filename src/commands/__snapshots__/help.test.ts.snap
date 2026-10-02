@@ -22,6 +22,8 @@ Commands:
                                directory
   install [options] [pattern]  Install every runtime dependency the project's
                                flows need
+  attempt                      Investigate a finished run attempt from recorded
+                               evidence
   runner                       Drive an interactive runner on the QA Wolf
                                platform
   codeHostIntegration          QA Wolf public API codeHostIntegration commands
@@ -146,6 +148,63 @@ Options:
 Examples:
   $ qawolf doctor
   $ qawolf doctor --all
+"
+`;
+
+exports[`--help output qawolf attempt 1`] = `
+"Usage: qawolf attempt [options] [command]
+
+Investigate a finished run attempt from recorded evidence
+
+Options:
+  -h, --help                     display help for command
+
+Commands:
+  list [options]                 List finished attempt IDs for a run
+  investigate <attemptId>        Summarize the evidence for one finished attempt
+  inspect [options] <attemptId>  Inspect one kind of evidence for a finished
+                                 attempt
+  help [command]                 display help for command
+"
+`;
+
+exports[`--help output qawolf attempt investigate 1`] = `
+"Usage: qawolf attempt investigate [options] <attemptId>
+
+Summarize the evidence for one finished attempt
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`--help output qawolf attempt inspect 1`] = `
+"Usage: qawolf attempt inspect [options] <attemptId>
+
+Inspect one kind of evidence for a finished attempt
+
+Options:
+  --action <id>             Inspect one action evidence ID
+  --timeline                Inspect the action timeline
+  --network                 Inspect network requests
+  --request <id>            Inspect one network request evidence ID
+  --snapshot <id>           Inspect one page snapshot evidence ID
+  --screenshot <id>         Export one screenshot evidence ID
+  --console                 Inspect browser console evidence
+  --log                     Inspect execution log evidence
+  --evidence-id <id>        Console or log evidence ID
+  --limit <number>          Maximum entries to return (default: "20")
+  --start-time-ms <number>  Earliest trace timestamp in milliseconds
+  --end-time-ms <number>    Latest trace timestamp in milliseconds
+  --start-timestamp <iso>   Earliest execution log timestamp
+  --end-timestamp <iso>     Latest execution log timestamp
+  --source <source>         Execution log source
+  --method <method>         Network HTTP method
+  --status <code>           Network HTTP status
+  --url-contains <text>     Network URL substring
+  --format <format>         Snapshot format (text or html) (default: "text")
+  --output-file <path>      Write HTML or screenshot bytes without overwriting
+  -h, --help                display help for command
 "
 `;
 

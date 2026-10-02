@@ -4,6 +4,7 @@ const config: KnipConfig = {
   entry: [
     "*.config.ts",
     "src/runnerSdk/index.ts",
+    "src/investigationParser/index.ts",
     "src/**/*.test.ts",
     "src/**/*.mock.ts",
     "src/**/*.fixtures.ts",
