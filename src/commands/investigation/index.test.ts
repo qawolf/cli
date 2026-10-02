@@ -27,7 +27,6 @@ describe("attempt command registration", () => {
     const investigation = subcommand(program, "investigation");
 
     expect(attempt.commands.map((command) => command.name())).toEqual([
-      "list",
       "investigate",
       "inspect",
     ]);

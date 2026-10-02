@@ -4,7 +4,6 @@ import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext } from "~/commands/context.js";
 import {
   handleInvestigationInspect,
-  handleInvestigationList,
   handleInvestigationSummary,
 } from "~/domains/investigation/handle.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
@@ -31,15 +30,6 @@ export function registerAttemptCommand(
   const attempt = program
     .command("attempt")
     .description("Investigate a finished run attempt from recorded evidence");
-
-  declareCommandKind(attempt.command("list"), "read")
-    .description("List finished attempt IDs for a run")
-    .requiredOption("--run-id <id>", "Run to discover attempts for")
-    .action((options: { runId: string }, command: Command) =>
-      withAuthContext(signals, (ctx) =>
-        handleInvestigationList(ctx, options.runId),
-      )(options, command),
-    );
 
   declareCommandKind(attempt.command("investigate <attemptId>"), "read")
     .description("Summarize the evidence for one finished attempt")

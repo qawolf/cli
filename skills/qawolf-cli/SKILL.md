@@ -131,7 +131,6 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf agent send` | write | Ask the QA Wolf AI to do a piece of work, such as covering a journey or fixing a broken flow |
 | `qawolf attempt inspect` | read | Inspect one kind of evidence for a finished attempt |
 | `qawolf attempt investigate` | read | Summarize the evidence for one finished attempt |
-| `qawolf attempt list` | read | List finished attempt IDs for a run |
 | `qawolf auth login` | local | Authenticate with QA Wolf in a browser or with an API key |
 | `qawolf auth logout` | local | Remove stored credentials |
 | `qawolf auth switch` | local | Choose which workspace to work in |

@@ -160,7 +160,6 @@ Options:
   -h, --help                     display help for command
 
 Commands:
-  list [options]                 List finished attempt IDs for a run
   investigate <attemptId>        Summarize the evidence for one finished attempt
   inspect [options] <attemptId>  Inspect one kind of evidence for a finished
                                  attempt

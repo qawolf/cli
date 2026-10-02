@@ -8,10 +8,7 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 
-import {
-  discoverInvestigationsContract,
-  getAttemptArtifactsContract,
-} from "./contracts.js";
+import { getAttemptArtifactsContract } from "./contracts.js";
 import { downloadLogTail, downloadTrace } from "./download.js";
 import { loadInvestigationParser } from "./lazyParser.js";
 import type {
@@ -260,39 +257,5 @@ export async function outputInvestigationInspection(
     return undefined;
   }
   ctx.ui.output(result, renderText(result));
-  return undefined;
-}
-
-export async function handleInvestigationList(
-  ctx: AuthCommandContext,
-  runId: string,
-): Promise<CommandResult> {
-  const result = await ctx.platformClient.callPublicApi(
-    discoverInvestigationsContract,
-    { runId },
-  );
-  if (!result.ok) return failureFields(result);
-  const investigations = result.value.flows.flatMap((flow) =>
-    (flow.attempts ?? []).map((attempt, index, attempts) => ({
-      attemptId: attempt.attemptId,
-      flowId: flow.flowId,
-      flowName: flow.name,
-      kind: attempt.kind,
-      ordinal: index + 1,
-      status: attempt.status,
-      totalAttempts: attempts.length,
-    })),
-  );
-  ctx.ui.output(
-    { investigations, runId: result.value.runId, status: result.value.status },
-    investigations.length
-      ? investigations
-          .map(
-            (item) =>
-              `${item.attemptId}\t${item.status}\t${item.flowName}\t${item.ordinal}/${item.totalAttempts}`,
-          )
-          .join("\n")
-      : "No finished attempts were found.",
-  );
   return undefined;
 }

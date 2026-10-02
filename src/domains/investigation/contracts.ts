@@ -55,38 +55,6 @@ export const getAttemptArtifactsContract = {
     .loose(),
 };
 
-const discoveredAttempt = z
-  .object({
-    attemptId: z.string(),
-    completedAt: z.string().optional(),
-    kind: z.enum(["automated", "manual"]),
-    startedAt: z.string().optional(),
-    status: attemptStatus,
-  })
-  .loose();
-
-export const discoverInvestigationsContract = {
-  input: z.object({ runId: z.string().min(1) }),
-  kind: "read" as const,
-  name: "run.get",
-  output: z
-    .object({
-      flows: z.array(
-        z
-          .object({
-            attempts: z.array(discoveredAttempt).optional(),
-            flowId: z.string(),
-            name: z.string(),
-            status: z.string(),
-          })
-          .loose(),
-      ),
-      runId: z.string(),
-      status: z.string(),
-    })
-    .loose(),
-};
-
 export type AttemptArtifacts = z.infer<
   typeof getAttemptArtifactsContract.output
 >;

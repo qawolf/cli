@@ -70,10 +70,10 @@ Run any command with `--help` for its flags and options. `qawolf help ref <comma
 
 ### Investigate a run attempt
 
-Start with a run ID, choose an attempt, then narrow the evidence only when the summary points to it:
+Start with a run ID, pick an attempt ID from its failed flows, then narrow the evidence only when the summary points to it:
 
 ```bash
-qawolf attempt list --run-id <run-id>
+qawolf run get --run-id <run-id> --flow-statuses failed
 qawolf attempt investigate <attempt-id>
 qawolf attempt inspect <attempt-id> --timeline --limit 20
 qawolf attempt inspect <attempt-id> --request <request-id>
