@@ -6,6 +6,7 @@ import { manifestFilename } from "~/shell/manifest/io.js";
 import type { Manifest } from "~/shell/manifest/types.js";
 
 import { readCachedTags } from "./readCachedTags.js";
+import { makeManifestFlow } from "~/shell/manifest/manifest.testUtils.js";
 
 const envDir = "/proj/.qawolf/staging";
 const flowA = `${envDir}/src/flows/a.flow.ts`;
@@ -43,8 +44,16 @@ describe("readCachedTags", () => {
     const fs = await fsWith(
       manifest({
         flows: [
-          { path: "src/flows/a.flow.ts", contentHash: "h1", tags: ["auth"] },
-          { path: "src/flows/b.flow.ts", contentHash: "h2", tags: [] },
+          makeManifestFlow({
+            path: "src/flows/a.flow.ts",
+            contentHash: "h1",
+            tags: ["auth"],
+          }),
+          makeManifestFlow({
+            path: "src/flows/b.flow.ts",
+            contentHash: "h2",
+            tags: [],
+          }),
         ],
       }),
     );
@@ -62,7 +71,7 @@ describe("readCachedTags", () => {
       manifest({
         tagsFetchedAt: undefined,
         flows: [
-          { path: "src/flows/a.flow.ts", contentHash: "h1", tags: undefined },
+          makeManifestFlow({ path: "src/flows/a.flow.ts", contentHash: "h1" }),
         ],
       }),
     );
@@ -78,8 +87,12 @@ describe("readCachedTags", () => {
     const fs = await fsWith(
       manifest({
         flows: [
-          { path: "src/flows/a.flow.ts", contentHash: "h1", tags: ["auth"] },
-          { path: "src/flows/b.flow.ts", contentHash: "h2", tags: undefined },
+          makeManifestFlow({
+            path: "src/flows/a.flow.ts",
+            contentHash: "h1",
+            tags: ["auth"],
+          }),
+          makeManifestFlow({ path: "src/flows/b.flow.ts", contentHash: "h2" }),
         ],
       }),
     );
@@ -94,8 +107,16 @@ describe("readCachedTags", () => {
     const fs = await fsWith(
       manifest({
         flows: [
-          { path: "src/flows/a.flow.ts", contentHash: "h1", tags: ["auth"] },
-          { path: "src/flows/b.flow.ts", contentHash: "h2", tags: ["smoke"] },
+          makeManifestFlow({
+            path: "src/flows/a.flow.ts",
+            contentHash: "h1",
+            tags: ["auth"],
+          }),
+          makeManifestFlow({
+            path: "src/flows/b.flow.ts",
+            contentHash: "h2",
+            tags: ["smoke"],
+          }),
         ],
       }),
     );
@@ -120,11 +141,11 @@ describe("readCachedTags", () => {
     const fs = await fsWith(
       manifest({
         flows: [
-          {
+          makeManifestFlow({
             path: "src\\flows\\a.flow.ts",
             contentHash: "h1",
             tags: ["auth"],
-          },
+          }),
         ],
       }),
     );

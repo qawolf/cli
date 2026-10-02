@@ -44,3 +44,71 @@ describe("flowsMessages.pull.summary", () => {
     );
   });
 });
+
+describe("flowsMessages.pull.summary incomplete flows", () => {
+  const base = {
+    envDir: "/tmp/env",
+    flowCount: 1,
+    envVarCount: 0,
+    flowsWithTeamStorageRefs: [],
+    assetDownloadedCount: 0,
+    assetReusedCount: 0,
+    assetSkippedCount: 0,
+  };
+
+  it("says nothing when every key is knowable", () => {
+    expect(
+      flowsMessages.pull.summary({ ...base, incompleteFlowCount: 0 }, "/tmp/a"),
+    ).toBe("Pulled 1 flow into /tmp/env");
+  });
+
+  // Said once as a count, not marked on each of the flows it covers.
+  it("counts the flows whose list is a floor", () => {
+    expect(
+      flowsMessages.pull.summary({ ...base, incompleteFlowCount: 3 }, "/tmp/a"),
+    ).toBe(
+      [
+        "Pulled 1 flow into /tmp/env",
+        "3 flows may read more variables than listed; static analysis could not resolve every read.",
+      ].join("\n"),
+    );
+  });
+});
+
+describe("flowsMessages.pull.missingEnvVars", () => {
+  it("names one variable and how many flows read it", () => {
+    expect(
+      flowsMessages.pull.missingEnvVars([{ name: "LOGIN_PW", flowCount: 1 }]),
+    ).toBe(
+      [
+        "1 environment variable is read by flows but not set in this environment (some reads may be optional):",
+        "  - LOGIN_PW (read by 1 flow)",
+      ].join("\n"),
+    );
+  });
+
+  it("pluralizes across several variables and flows", () => {
+    expect(
+      flowsMessages.pull.missingEnvVars([
+        { name: "SHARED", flowCount: 12 },
+        { name: "RARE", flowCount: 1 },
+      ]),
+    ).toBe(
+      [
+        "2 environment variables are read by flows but not set in this environment (some reads may be optional):",
+        "  - SHARED (read by 12 flows)",
+        "  - RARE (read by 1 flow)",
+      ].join("\n"),
+    );
+  });
+
+  it("truncates a long list", () => {
+    const missing = Array.from({ length: 9 }, (_, i) => ({
+      name: `VAR_${String(i)}`,
+      flowCount: 1,
+    }));
+    expect(flowsMessages.pull.missingEnvVars(missing)).toContain(
+      "  ... and 4 more",
+    );
+  });
+});
