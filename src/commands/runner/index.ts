@@ -3,6 +3,7 @@ import type { Command } from "commander";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { registerRunnerActionsCommand } from "./actions.register.js";
+import { workspaceIdOption } from "./context.js";
 import { registerRunnerExecCommand } from "./exec.register.js";
 import { registerRunnerHighlightSelectorCommand } from "./highlightSelector.register.js";
 import { registerRunnerImportPackageCommand } from "./importPackage.register.js";
@@ -20,7 +21,11 @@ export function registerRunnerCommand(
 ): void {
   const runner = program
     .command("runner")
-    .description("Drive an interactive runner on the QA Wolf platform");
+    .description("Drive an interactive runner on the QA Wolf platform")
+    .addOption(workspaceIdOption())
+    // Set before the subcommands exist, which copy it when created, so each
+    // one's --help lists --workspace-id alongside its own flags.
+    .configureHelp({ showGlobalOptions: true });
 
   registerRunnerLifecycleCommands(runner, signals);
   registerRunCommand(runner, signals);

@@ -1,11 +1,14 @@
 import type { Command } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
-import { withAuthContext } from "~/commands/context.js";
 import { handleRunnerExec } from "~/domains/interactiveRunner/evaluateSnippet.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
-import { runnerDeps, runnerFlagDescription } from "./context.js";
+import {
+  runnerDeps,
+  runnerFlagDescription,
+  withRunnerContext,
+} from "./context.js";
 
 const execExamples = `
 Examples:
@@ -33,7 +36,7 @@ export function registerRunnerExecCommand(
         opts: { file?: string; runner?: string },
         command: Command,
       ) =>
-        withAuthContext(signals, (ctx) =>
+        withRunnerContext(signals, (ctx) =>
           handleRunnerExec(
             ctx,
             { contextFile: opts.file, runner: opts.runner, source: file },

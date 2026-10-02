@@ -62,6 +62,12 @@ rather than leaving it to time out.
 commands that follow need no `--runner`. Override that default for one command
 with `--runner <id>`, or for a whole session with `QAWOLF_RUNNER_ID`.
 
+Runner commands work in the workspace `qawolf auth switch` saved, which is
+shared by every session on the machine. When more than one session may be
+working in different workspaces, pass `--workspace-id <id>` to every runner
+command instead of switching; it applies to that command only and is never
+saved.
+
 ## Output
 
 When consuming output programmatically, always pass `--json` (or `--agent`).

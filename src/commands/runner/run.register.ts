@@ -1,12 +1,15 @@
 import type { Command } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
-import { withAuthContext } from "~/commands/context.js";
 import { defaultFollowTimeoutSeconds } from "~/core/interactiveRunner/followTimeout.js";
 import { handleRunnerRun } from "~/domains/interactiveRunner/runFlow.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
-import { runnerDeps, runnerFlagDescription } from "./context.js";
+import {
+  runnerDeps,
+  runnerFlagDescription,
+  withRunnerContext,
+} from "./context.js";
 
 const runExamples = `
 Examples:
@@ -84,7 +87,7 @@ export function registerRunCommand(
     )
     .addHelpText("after", runExamples)
     .action((flowFile: string, opts: RunFlags, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerRun(
           ctx,
           {

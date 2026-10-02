@@ -19,7 +19,9 @@ function findSub(parent: Command, name: string): Command {
 function helpFor(...path: string[]): string {
   let cmd = buildProgram();
   for (const segment of path) cmd = findSub(cmd, segment);
-  cmd.configureHelp({ helpWidth: 80 });
+  // Merged, not replaced: a group can set its own help options, such as
+  // `runner` showing its --workspace-id on every subcommand.
+  cmd.configureHelp({ ...cmd.configureHelp(), helpWidth: 80 });
   let buf = "";
   cmd.configureOutput({
     writeOut: (s) => {
