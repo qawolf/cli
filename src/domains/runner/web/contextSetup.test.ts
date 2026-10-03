@@ -147,7 +147,7 @@ describe("initHar", () => {
 });
 
 describe("buildContextSetup", () => {
-  it("should return viewport and screen without recordVideo when video is off and no harPath", () => {
+  it("should return viewport, screen, and locale without recordVideo when video is off and no harPath", () => {
     const result = buildContextSetup(
       { width: 1280, height: 720 },
       { video: "off", outputDir: "/out" },
@@ -156,6 +156,7 @@ describe("buildContextSetup", () => {
     expect(result).toEqual({
       viewport: { width: 1280, height: 720 },
       screen: { width: 1280, height: 720 },
+      locale: "en-US",
     });
   });
 
@@ -168,6 +169,7 @@ describe("buildContextSetup", () => {
     expect(result).toEqual({
       viewport: { width: 1280, height: 720 },
       screen: { width: 1280, height: 720 },
+      locale: "en-US",
       recordVideo: {
         dir: join("/out", "videos"),
         size: { width: 1280, height: 720 },
@@ -184,6 +186,7 @@ describe("buildContextSetup", () => {
     expect(result).toEqual({
       viewport: { width: 1280, height: 720 },
       screen: { width: 1280, height: 720 },
+      locale: "en-US",
       recordHar: {
         path: "/out/har/flow.har",
         mode: "minimal",
@@ -201,6 +204,7 @@ describe("buildContextSetup", () => {
     expect(result).toEqual({
       viewport: { width: 1280, height: 720 },
       screen: { width: 1280, height: 720 },
+      locale: "en-US",
       recordVideo: {
         dir: join("/out", "videos"),
         size: { width: 1280, height: 720 },
