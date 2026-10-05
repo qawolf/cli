@@ -13,7 +13,11 @@ Examples:
   $ qawolf runner actions '[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"hello@example.com"},{"type":"keypress","keys":["Enter"]}]' --screenshot after-login.jpg
   $ echo '[{"type":"click","button":"left","x":1,"y":2},{"type":"type","text":"hi"}]' | qawolf runner actions -
   $ qawolf runner actions '[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"hello"}]' --screenshot-mode each --screenshot step.jpg
-  $ qawolf runner actions '[{"type":"scroll","x":480,"y":260,"scroll_x":0,"scroll_y":600},{"type":"click","button":"left","x":120,"y":700}]' --continue-on-failure`;
+  $ qawolf runner actions '[{"type":"scroll","x":480,"y":260,"scroll_x":0,"scroll_y":600},{"type":"click","button":"left","x":120,"y":700}]' --continue-on-failure
+
+Mobile:
+  $ qawolf runner actions '[{"type":"tap","selector":"//*[@content-desc=\\"Email\\"]"},{"type":"type","text":"hello@example.com"},{"type":"tap","x":540,"y":1650}]' --screenshot after-login.jpg
+  $ qawolf runner actions '[{"type":"fill","selector":"name == \\"Postal code\\"","strategy":"ios-predicate","text":"94107"},{"type":"swipe","from":{"x":540,"y":1600},"to":{"x":540,"y":600}}]'`;
 
 type ActionsFlags = {
   continueOnFailure?: boolean;

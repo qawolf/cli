@@ -1,7 +1,7 @@
-import type { BrowserAction, ScreenshotMode } from "@qawolf/api-contracts/v1";
+import type { RunnerAction, ScreenshotMode } from "@qawolf/api-contracts/v1";
 import { maxActionsPerRequest } from "@qawolf/api-contracts/v1";
 
-import { parseBrowserAction } from "~/core/interactiveRunner/browserAction.js";
+import { parseRunnerAction } from "~/core/interactiveRunner/browserAction.js";
 import { interactiveRunnerMessages } from "~/core/messages/index.js";
 import type {
   AuthCommandContext,
@@ -16,7 +16,7 @@ import type { InteractiveRunnerDeps } from "./deps.js";
 const stdinArgument = "-";
 
 export type ReadActions =
-  | { actions: BrowserAction[]; ok: true }
+  | { actions: RunnerAction[]; ok: true }
   | { error: string; ok: false };
 
 /**
@@ -48,7 +48,7 @@ export async function readActions(
     };
   }
 
-  const built = parsed.items.map(parseBrowserAction);
+  const built = parsed.items.map(parseRunnerAction);
   const firstRefused = built.findIndex((action) => !action.ok);
   const refused = built[firstRefused];
   if (refused !== undefined && !refused.ok) {

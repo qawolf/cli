@@ -3,7 +3,6 @@ import { describe, expect, it } from "bun:test";
 import {
   type ActionFlags,
   buildRunnerAction,
-  parseBrowserAction,
   parseRunnerAction,
 } from "./browserAction.js";
 
@@ -217,33 +216,5 @@ describe("parseRunnerAction", () => {
     expect(
       parseRunnerAction({ button: "left", type: "click", x: 1, y: 2 }).ok,
     ).toBe(true);
-  });
-});
-
-describe("parseBrowserAction", () => {
-  it("refuses a touchscreen action, which a sequence does not take", () => {
-    expect(parseBrowserAction({ type: "tap", x: 1, y: 2 }).ok).toBe(false);
-  });
-
-  it("takes a complete action as a model emitted it", () => {
-    const parsed = parseBrowserAction({
-      button: "left",
-      type: "click",
-      x: 1,
-      y: 2,
-    });
-
-    expect(parsed.ok).toBe(true);
-    if (!parsed.ok) return;
-    expect(parsed.action).toEqual({
-      button: "left",
-      type: "click",
-      x: 1,
-      y: 2,
-    });
-  });
-
-  it("refuses one the published schema does not admit", () => {
-    expect(parseBrowserAction({ type: "click" }).ok).toBe(false);
   });
 });

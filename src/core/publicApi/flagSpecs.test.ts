@@ -181,7 +181,7 @@ describe("buildFlagSpecs", () => {
       "One of: unprioritized, low, medium, high, urgent",
     );
     expect(described("status")).toBe(
-      "One of: pending, inProgress, paused, resolved, canceled, archived",
+      "One of: backlog, pending, inProgress, paused, resolved, canceled, archived",
     );
   });
 

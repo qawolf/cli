@@ -1,7 +1,5 @@
 import {
-  type BrowserAction,
   type RunnerAction,
-  browserActionSchema,
   runnerActionSchema,
 } from "@qawolf/api-contracts/v1";
 import { z } from "zod";
@@ -104,27 +102,13 @@ export function buildRunnerAction(
   return parseRunnerAction(candidate);
 }
 
-function parseWith<Action>(
-  schema: z.ZodType<Action>,
+/** Puts one complete action, as a caller's model emitted it, to the schema `runner act` and `runner actions` send. */
+export function parseRunnerAction(
   candidate: unknown,
-): BuiltAction<Action> {
-  const parsed = schema.safeParse(candidate);
+): BuiltAction<RunnerAction> {
+  const parsed = runnerActionSchema.safeParse(candidate);
   if (!parsed.success) {
     return { error: z.prettifyError(parsed.error), ok: false };
   }
   return { action: parsed.data, ok: true };
-}
-
-/** Puts one complete action, as a caller's model emitted it, to the schema `runner act` sends. */
-export function parseRunnerAction(
-  candidate: unknown,
-): BuiltAction<RunnerAction> {
-  return parseWith(runnerActionSchema, candidate);
-}
-
-/** Puts one action of a `runner actions` sequence, which takes browser actions only, to its schema. */
-export function parseBrowserAction(
-  candidate: unknown,
-): BuiltAction<BrowserAction> {
-  return parseWith(browserActionSchema, candidate);
 }

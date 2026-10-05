@@ -10,6 +10,7 @@ import {
 import { createSignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { registerPublicApiCommands } from "./index.js";
+import { standInAnnotationJustifications } from "~/domains/publicApi/contract.fixtures.js";
 
 afterEach(() => {
   mock.restore();
@@ -162,6 +163,7 @@ describe("registerPublicApiCommands", () => {
         openWorldHint: false,
         readOnlyHint: true,
       },
+      annotationJustifications: standInAnnotationJustifications,
       description: "List the flows of an environment.",
       input: z.object({ environmentId: z.string() }),
       kind: "read",
@@ -174,6 +176,7 @@ describe("registerPublicApiCommands", () => {
         openWorldHint: false,
         readOnlyHint: true,
       },
+      annotationJustifications: standInAnnotationJustifications,
       description: "Look up a run.",
       input: z.object({ runId: z.string() }),
       kind: "read",
@@ -215,6 +218,7 @@ describe("registerPublicApiCommands", () => {
         openWorldHint: false,
         readOnlyHint: true,
       },
+      annotationJustifications: standInAnnotationJustifications,
       description: "Look up a run attempt.",
       input: z.object({ runId: z.string() }),
       kind: "read",

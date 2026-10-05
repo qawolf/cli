@@ -7,6 +7,7 @@ import {
   renderResponseFields,
   spliceResponseFields,
 } from "./skillRunResults.js";
+import { standInAnnotationJustifications } from "~/domains/publicApi/contract.fixtures.js";
 
 const runResultsMdPath = join(
   import.meta.dirname,
@@ -25,6 +26,7 @@ describe("renderResponseFields", () => {
         openWorldHint: false,
         readOnlyHint: true,
       },
+      annotationJustifications: standInAnnotationJustifications,
       description: "Look up a run.",
       input: z.object({ runId: z.string() }),
       kind: "read",
@@ -47,6 +49,7 @@ describe("renderResponseFields", () => {
         openWorldHint: false,
         readOnlyHint: true,
       },
+      annotationJustifications: standInAnnotationJustifications,
       description: "Look up a run.",
       input: z.object({ runId: z.string() }),
       kind: "read",
