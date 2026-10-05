@@ -174,14 +174,20 @@ A mobile runner has a touchscreen, not a mouse, so it has actions of its own:
 - `fill --selector ... --text ...` replaces the value of that field, and `--text ""` clears it. To add to what a field already holds, `tap` it and then `type`.
 - `type` types into whatever the last tap focused, the same as on a browser.
 
-The browser actions `double_click`, `scroll`, `move`, `keypress` and `navigate` answer `action-not-supported-on-mobile` rather than doing something approximate. `navigate` is the one to watch for, since it works on a browser runner without a run first but has no meaning on mobile at all. `click` with `button: "left"` and `drag` still tap and swipe on mobile, but they are deprecated there, so send `tap` and `swipe`. A browser runner answers `tap`, `swipe` and `fill` with `action-not-supported-on-browser`.
+The browser actions `double_click`, `scroll`, `move`, `keypress` and `navigate` answer `action-not-supported-on-mobile` rather than doing something approximate. `navigate` is the one to watch for, since it works on a browser runner without a run first but has no meaning on mobile at all. On mobile, send `tap` and `swipe`, never `click` or `drag`. A browser runner answers `tap`, `swipe` and `fill` with `action-not-supported-on-browser`.
 
 ### Several steps in one request: `runner actions`
 
-`qawolf runner actions '<json array>'` performs up to ten of the browser actions back to back in one request (not `tap`, `swipe` or `fill`), for the steps you already know: click the field, type into it, press Enter. One round trip instead of three, with no delay to guess at between them, and `-` reads the array from stdin the way `act -` reads one action.
+`qawolf runner actions '<json array>'` performs up to ten of the actions `act` takes back to back in one request, for the steps you already know: click the field, type into it, press Enter. One round trip instead of three, with no delay to guess at between them, and `-` reads the array from stdin the way `act -` reads one action.
 
 ```sh
 qawolf runner actions '[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"me@example.com"},{"type":"keypress","keys":["Enter"]}]' --screenshot after-login.jpg
+```
+
+On a mobile runner the steps are `tap`, `swipe`, `fill` and `type`, the same as `act`. A step the runner does not take fails with the same reason `act` would give, `action-not-supported-on-mobile` or `action-not-supported-on-browser`.
+
+```sh
+qawolf runner actions '[{"type":"tap","selector":"//*[@content-desc=\"Email\"]"},{"type":"type","text":"me@example.com"},{"type":"tap","x":540,"y":1650}]' --screenshot after-login.jpg
 ```
 
 Batch only steps whose targets are all on the screen you last saw and are not moved by the steps before them, and make the step that changes the page — a submit, a navigation, opening a menu — the last one. Then read the frame and decide the next batch from it.
