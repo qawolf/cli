@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { buildCommandSpecs } from "./commandSpecs.js";
 import { skippedContractNames } from "./skippedContracts.js";
+import { standInAnnotationJustifications } from "./contract.fixtures.js";
 
 describe("buildCommandSpecs", () => {
   it("flattens the published contract tree into command specs", () => {
@@ -44,6 +45,7 @@ describe("buildCommandSpecs", () => {
         openWorldHint: false,
         readOnlyHint: true,
       },
+      annotationJustifications: standInAnnotationJustifications,
       description: "Hand-written elsewhere",
       input: z.object({ config: z.object({ counts: z.array(z.number()) }) }),
       kind: "read",
@@ -56,6 +58,7 @@ describe("buildCommandSpecs", () => {
         openWorldHint: false,
         readOnlyHint: true,
       },
+      annotationJustifications: standInAnnotationJustifications,
       description: "Generated",
       input: z.object({ runId: z.string() }),
       kind: "read",
@@ -78,6 +81,7 @@ describe("buildCommandSpecs", () => {
         openWorldHint: false,
         readOnlyHint: true,
       },
+      annotationJustifications: standInAnnotationJustifications,
       description: "Mismatched",
       input: z.object({}),
       kind: "read",
@@ -97,6 +101,7 @@ describe("buildCommandSpecs", () => {
         openWorldHint: false,
         readOnlyHint: true,
       },
+      annotationJustifications: standInAnnotationJustifications,
       description: "Unmappable",
       input: z.object({ config: z.object({ counts: z.array(z.number()) }) }),
       kind: "read",

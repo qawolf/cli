@@ -201,6 +201,7 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `flows[].attempts[].kind` — One of: automated, manual
 - `flows[].attempts[].startedAt` — Absent when the attempt failed before it could start.
 - `flows[].attempts[].status` — One of: passed, failed, canceled
+- `flows[].attempts[].canceledReason` — Why the attempt was canceled. userCanceled means a person stopped it; do not immediately retry that activity.
 - `flows[].failure.diagnosis` — QA Wolf's investigation verdict for the failure: `bug` means the application is broken, `maintenance` means the test needed an update and the failure does not indicate an application problem. Absent until the investigation reaches a verdict, and absent when the flow was opted out of investigation. Pass issueId to issue.get for details.
 - `flows[].failure.diagnosis.issueId` — The id of the issue.
 - `flows[].failure.diagnosis.type` — One of: bug, maintenance

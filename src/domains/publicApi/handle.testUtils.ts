@@ -7,6 +7,7 @@ import type { PlatformClient } from "~/shell/platform/createPlatformClient.js";
 import type { UI } from "~/shell/ui/index.js";
 
 import { buildCommandSpecs, type CommandSpec } from "./commandSpecs.js";
+import { standInAnnotationJustifications } from "./contract.fixtures.js";
 
 export const runCreateSpec = (): CommandSpec => {
   const spec = buildCommandSpecs({
@@ -25,6 +26,7 @@ export const countSpec = (): CommandSpec => {
       openWorldHint: false,
       readOnlyHint: false,
     },
+    annotationJustifications: standInAnnotationJustifications,
     name: "fake.count",
     kind: "write" as const,
     description: "synthetic number-flag contract",

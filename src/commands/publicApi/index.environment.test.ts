@@ -10,6 +10,7 @@ import {
 import { createSignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { registerPublicApiCommands } from "./index.js";
+import { standInAnnotationJustifications } from "~/domains/publicApi/contract.fixtures.js";
 
 const originalAiTaskId = process.env["QAWOLF_AI_TASK_ID"];
 const originalChatSessionId = process.env["QAWOLF_CHAT_SESSION_ID"];
@@ -45,6 +46,7 @@ function makeNotificationContract() {
       openWorldHint: true,
       readOnlyHint: false,
     },
+    annotationJustifications: standInAnnotationJustifications,
     description: "Create a run.",
     input: z.object({
       aiTaskId: z.string().optional(),
@@ -86,6 +88,7 @@ it("defaults public API options from their environment variables", async () => {
       openWorldHint: true,
       readOnlyHint: false,
     },
+    annotationJustifications: standInAnnotationJustifications,
     description: "Create a run.",
     input: z.object({
       aiTaskId: z.string().optional(),

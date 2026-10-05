@@ -9,6 +9,7 @@ import {
 import { createSignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { registerPublicApiCommands } from "./index.js";
+import { standInAnnotationJustifications } from "~/domains/publicApi/contract.fixtures.js";
 
 // `process.exitCode` is global state and persists across tests; reset to 0
 // (not undefined — bun ignores an undefined assignment) so leftover state
@@ -33,6 +34,7 @@ const contract = {
     openWorldHint: false,
     readOnlyHint: false,
   },
+  annotationJustifications: standInAnnotationJustifications,
   name: "fake.reportStatus",
   kind: "write" as const,
   description: "Synthetic nested contract.",
