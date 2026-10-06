@@ -11,6 +11,8 @@ const config: KnipConfig = {
   ],
   project: ["src/**/*.ts"],
   ignoreBinaries: [
+    // Optional system shell used by the clipboard quoting round-trip test.
+    "pwsh",
     // the built bundle, invoked as `node dist/cli.js` in the runtime-smoke CI
     // job; not present when knip runs (it runs before the build step)
     "dist/cli.js",
