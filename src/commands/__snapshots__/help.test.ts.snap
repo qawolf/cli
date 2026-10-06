@@ -37,7 +37,7 @@ Commands:
   skill                        QA Wolf public API skill commands
   tag                          QA Wolf public API tag commands
   trigger                      QA Wolf public API trigger commands
-  help [command]               display help for command
+  help [command...]            Display help for a command
 "
 `;
 
