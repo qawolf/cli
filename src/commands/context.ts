@@ -133,6 +133,12 @@ export function withAuthContext(
   deps: {
     requireApiKey?: typeof requireApiKey;
     createPlatform?: typeof createPlatformClient;
+    /**
+     * The workspace this one command works in, ahead of the one
+     * `qawolf auth switch` saved. Never written back, so concurrent sessions
+     * on one machine can each name their own.
+     */
+    workspaceId?: string | undefined;
   } = {},
 ): (opts: unknown, command: Command) => Promise<void> {
   return async (_opts: unknown, command: Command): Promise<void> => {
@@ -161,8 +167,8 @@ export function withAuthContext(
         fetch: globalThis.fetch,
         logger: ctx.log("trpc"),
         // A browser session names its workspace on every request; an API key
-        // carries its team, so it sends none.
-        workspaceId: resolved.workspaceId,
+        // carries its team, so it sends none unless the command names one.
+        workspaceId: deps.workspaceId ?? resolved.workspaceId,
       },
     );
 

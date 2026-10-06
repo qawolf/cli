@@ -2,11 +2,14 @@ import { type Command, Option } from "commander";
 import { type ScreenshotMode, screenshotModes } from "@qawolf/api-contracts/v1";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
-import { withAuthContext } from "~/commands/context.js";
 import { handleRunnerActions } from "~/domains/interactiveRunner/performActions.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
-import { runnerDeps, runnerFlagDescription } from "./context.js";
+import {
+  runnerDeps,
+  runnerFlagDescription,
+  withRunnerContext,
+} from "./context.js";
 
 const actionsExamples = `
 Examples:
@@ -54,7 +57,7 @@ export function registerRunnerActionsCommand(
     )
     .addHelpText("after", actionsExamples)
     .action((sequence: string, opts: ActionsFlags, command: Command) =>
-      withAuthContext(signals, (ctx) =>
+      withRunnerContext(signals, (ctx) =>
         handleRunnerActions(
           ctx,
           {

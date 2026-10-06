@@ -114,6 +114,33 @@
   ],
   "overrides": [
     {
+      "files": ["src/commands/runner/*.register.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "~/commands/context.js",
+                "importNames": ["withAuthContext"],
+                "message": "Runner commands use withRunnerContext from ./context.js, which honours the runner group's --workspace-id. withAuthContext would accept the flag and ignore it."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["../*"],
+                "message": "Use \"~/\" path alias instead of relative parent imports."
+              },
+              {
+                "group": ["bun", "bun:*"],
+                "message": "Bun module imports are not available in the nodejs build \u2014 use a portable alternative."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["src/core/**/*.ts"],
       "rules": {
         "eslint/no-restricted-imports": [

@@ -75,6 +75,40 @@ describe("withAuthContext exit code plumbing", () => {
   });
 });
 
+describe("withAuthContext workspace", () => {
+  async function workspaceSent(options: {
+    saved: string | undefined;
+    named: string | undefined;
+  }): Promise<string | undefined> {
+    let sent: string | undefined;
+    await withAuthContext(noopSignals, async () => undefined, {
+      requireApiKey: async () => ({
+        key: "qawolf_test",
+        source: "browser" as const,
+        workspaceId: options.saved,
+      }),
+      createPlatform: (_key, deps) => {
+        sent = deps.workspaceId;
+        return makeMockPlatformClient();
+      },
+      workspaceId: options.named,
+    })({}, fakeCommand());
+    return sent;
+  }
+
+  it("builds the client for the saved workspace when the command names none", async () => {
+    expect(await workspaceSent({ saved: "ws_saved", named: undefined })).toBe(
+      "ws_saved",
+    );
+  });
+
+  it("builds the client for the workspace the command names, over the saved one", async () => {
+    expect(await workspaceSent({ saved: "ws_saved", named: "ws_named" })).toBe(
+      "ws_named",
+    );
+  });
+});
+
 describe("buildBaseContext", () => {
   it("should include log factory in CommandContext", () => {
     const cmd = new Command();

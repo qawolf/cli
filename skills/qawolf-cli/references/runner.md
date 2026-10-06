@@ -15,6 +15,13 @@ rather than silently ignored.
 
 Either answer carries a `url`, which `qawolf runner launch` prints, as does a command that launched its own runner. It is a QA Wolf page showing what the runner is doing, where a person can also take over with their own mouse and keyboard. Hand it to a person who asks what your runner is up to. The page opens for anyone on the runner's team, however the runner was launched. There is nothing to see until the runner's first run starts its screen, so the page waits until then. You read the screen with `screenshot`, not with the page.
 
+Every runner command works in the workspace `qawolf auth switch` saved, unless
+it is given `--workspace-id <id>`. The flag holds for that one command and is
+never saved, so sessions on one machine working on different workspaces do not
+move each other. Since runner ids are scoped to a team, pass the same
+`--workspace-id` to every command that drives a runner you launched with it;
+leave it off one and that command looks for the runner in the saved workspace.
+
 Commands that target a runner find one in this order: `--runner`, then
 `QAWOLF_RUNNER_ID`, then the runner stored for the current directory (which
 `qawolf runner launch` sets). Setting the environment variable once is the most
