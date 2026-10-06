@@ -1,0 +1,7 @@
+# Stopping a run or ending a runner
+
+Two different things, and the names are the only warning you get:
+- stop-run stops what the runner is executing and leaves the runner up, its browser on whatever page the run reached. The run settles as stopped rather than passed or failed. Use it to abandon a run and keep the browser you were working against.
+- terminate ends the runner and the pod with it. Everything on it is gone, and the next command under that id launches and bills a new one.
+
+Both succeed when there was nothing to do, and say which: `wasRunning` is false when no run was going, and when no runner was running. Neither is an error, so a retry needs no special handling. terminate never launches a runner in order to end it.

@@ -7,6 +7,7 @@ import { handleRunnerRun } from "~/domains/interactiveRunner/runFlow.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { runnerDeps, runnerFlagDescription } from "./context.js";
+import { runnerGuides } from "./guides/index.js";
 
 const runExamples = `
 Examples:
@@ -83,6 +84,7 @@ export function registerRunCommand(
       String(defaultFollowTimeoutSeconds),
     )
     .addHelpText("after", runExamples)
+    .addHelpText("after", runnerGuides.run)
     .action((flowFile: string, opts: RunFlags, command: Command) =>
       withAuthContext(signals, (ctx) =>
         handleRunnerRun(

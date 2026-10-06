@@ -7,6 +7,7 @@ import { handleRunnerActions } from "~/domains/interactiveRunner/performActions.
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { runnerDeps, runnerFlagDescription } from "./context.js";
+import { runnerGuides } from "./guides/index.js";
 
 const actionsExamples = `
 Examples:
@@ -53,6 +54,7 @@ export function registerRunnerActionsCommand(
       ).choices([...screenshotModes]),
     )
     .addHelpText("after", actionsExamples)
+    .addHelpText("after", runnerGuides.actions)
     .action((sequence: string, opts: ActionsFlags, command: Command) =>
       withAuthContext(signals, (ctx) =>
         handleRunnerActions(

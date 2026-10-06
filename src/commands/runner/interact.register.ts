@@ -8,6 +8,7 @@ import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { actExamples } from "./actExamples.js";
 import { runnerDeps, runnerFlagDescription } from "./context.js";
+import { runnerGuides } from "./guides/index.js";
 
 // JPEG, because that is what the API answers with; a .png name would be a lie
 // about the bytes in the file.
@@ -54,6 +55,7 @@ export function registerRunnerInteractCommands(
     )
     .option("--runner <id>", runnerFlagDescription)
     .addHelpText("after", screenshotExamples)
+    .addHelpText("after", runnerGuides.screenshot)
     .action((opts: { out: string; runner?: string }, command: Command) =>
       withAuthContext(signals, (ctx) =>
         handleRunnerScreenshot(
@@ -105,6 +107,7 @@ export function registerRunnerInteractCommands(
     .option("--x <pixels>", "click, tap and the like: x, in screenshot pixels")
     .option("--y <pixels>", "click, tap and the like: y, in screenshot pixels")
     .addHelpText("after", actExamples)
+    .addHelpText("after", runnerGuides.act)
     .action((action: string, opts: ActFlags, command: Command) =>
       withAuthContext(signals, (ctx) =>
         handleRunnerAct(

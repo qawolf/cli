@@ -204,7 +204,10 @@ guess at between them.
 
 The full workflow is its own guide: how a runner is billed, why the first call
 must be a run, the order the commands go in, the see-and-act loop, `exec`, the
-recorder, reading history, staying alive, and an end-to-end example. **Read
-[`references/runner.md`](references/runner.md) before driving a runner for the
-first time.** If that path is not on your filesystem, fetch it:
+recorder, reading history, staying alive, and an end-to-end example. **Run
+`qawolf help ref runner` before driving a runner for the first time.** It prints
+that guide and the help of every runner command, for the CLI version you have.
+Each command's `--help` carries its own part, so `qawolf runner exec --help`
+alone covers `exec`. Without a CLI to run, read
+[`references/runner.md`](references/runner.md), the same text, or fetch it:
 `https://raw.githubusercontent.com/qawolf/cli/main/skills/qawolf-cli/references/runner.md`.

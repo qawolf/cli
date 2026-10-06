@@ -1,0 +1,5 @@
+# When to call it
+
+A runner is reaped after a period of inactivity, and every command that talks to the runner counts as activity, including a journal read. keepalive exists for the gap that creates: a harness that thinks, or waits on a human, for minutes between actions would otherwise come back to a pod that is gone. It resets the clock and tells you the runner is still there. It never launches a runner.
+
+It is a read with a cost: keeping the clock reset keeps a billed pod alive. Call it while you are genuinely still working, not on a timer you forget, and call `qawolf runner terminate` when you are done rather than leaving a pod to time out. A loop that keeps a runner alive and never stops it bills until someone notices.

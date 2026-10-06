@@ -1,0 +1,22 @@
+# Batching
+
+Use a sequence for the steps you already know: click the field, type into it, press Enter. One round trip instead of three, with no delay to guess at between them. On a mobile runner the steps are tap, swipe, fill and type, the same as act, and a step the runner does not take fails with the same reason act would give, action-not-supported-on-mobile or action-not-supported-on-browser.
+
+Batch only steps whose targets are all on the screen you last saw and are not moved by the steps before them, and make the step that changes the page, a submit, a navigation, opening a menu, the last one. Then read the frame and decide the next batch from it.
+
+# Screenshots
+
+--screenshot after.jpg writes the screen after the last action, as `act --screenshot` does, and - puts those bytes on stdout with the confirmation on stderr. Stdout then carries the image and nothing else, so - trades the per-action results for the frame: give --screenshot a file path whenever you need to read `effect` per action. --screenshot-mode each --screenshot step.jpg writes one frame per action instead, step-0.jpg, step-1.jpg and so on; each is a full image, so keep those sequences short.
+
+# Reading the answer
+
+The answer holds one entry per action reached, and the field to read on each is `effect`:
+- performed means the runner did it.
+- not-performed means the runner answered that it did not take effect.
+- unknown means the runner stopped answering with the action in flight, or its screen went quiet mid-action, so it may have taken effect. Take a screenshot before repeating anything from that step on, and never send it again blind.
+
+The sequence stops at the first action that fails. --continue-on-failure carries on past one that reached the runner and did not take effect, which is only safe for actions that do not depend on each other: a type after a failed click goes to whatever has focus. A runner that cannot be reached, a screen that cannot serve, or running out of time ends the sequence either way, and the message names every action that did not succeed.
+
+# Exit codes
+
+A sequence exits by the worst thing that happened to any one of its actions: an effect nobody can confirm (4) first, then running out of time (6), then a refusal (2), then an action that plainly did not happen (1). Whatever the code, the message names the last action that took effect, and only what follows it goes in a new request. A sequence also exits 2 before it sends anything for an argument that is not a JSON array, an array of more than ten actions, and --screenshot flags that contradict each other.

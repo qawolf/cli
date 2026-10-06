@@ -1,0 +1,11 @@
+# What the list holds
+
+The list names the runners this directory has launched that are still running, and marks the one a command with no --runner would reach. It also includes the runner named by QAWOLF_RUNNER_ID even though this directory did not launch it, so a harness handed a runner sees it alongside the ones it started itself. Use the id column with --runner to address any of them; addressing one does not make it the default.
+
+Every runner is looked up before it is listed, so a runner that idled out is absent rather than reported. The lookup neither starts a runner nor resets an inactivity clock, which is what separates list from keepalive: listing tells you what is there and changes nothing. A lookup that cannot be answered fails the command rather than returning a shorter list, because a short list reads as the whole truth.
+
+Nothing is billed by listing, but everything in the list is billing. Terminate what you are done with.
+
+The table leaves out the page address, which beside a 63-character id outgrows a terminal. --json carries it as `url` on every runner:
+
+$ qawolf runner list --json | jq -r '.[] | [.id, .url] | @tsv'

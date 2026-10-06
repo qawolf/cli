@@ -6,6 +6,7 @@ import { handleRunnerPromoteSnapshot } from "~/domains/interactiveRunner/promote
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { runnerDeps, runnerFlagDescription } from "./context.js";
+import { runnerGuides } from "./guides/index.js";
 
 const promoteSnapshotExamples = `
 Examples:
@@ -32,6 +33,7 @@ export function registerRunnerPromoteSnapshotCommand(
     )
     .option("--runner <id>", runnerFlagDescription)
     .addHelpText("after", promoteSnapshotExamples)
+    .addHelpText("after", runnerGuides.promoteSnapshot)
     .action(
       (
         opts: { baseline: string; runner?: string; screenshot: string },

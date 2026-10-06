@@ -1,0 +1,7 @@
+# Reading the result
+
+`inspect element-html` tells you what a selector matched; highlight-selector shows you where it is, by drawing on the page itself. The highlight stays until it is replaced or cleared, which is the point: you cannot see the runner's screen, so the only way to read the result is the next screenshot.
+
+Three answers are worth telling apart. A selector that matched prints how many elements it hit and exits 0. A selector the page read fine but that matched nothing also exits 0, because the call did what was asked and the count is the answer; the message says the syntax was fine so you look at the page, not the locator. A selector the page could not read at all exits 2, because that one is yours to correct and retrying will not change it.
+
+runner-cannot-highlight-selectors exits 2 and means the runner has no browser to draw on. no-answer exits 4: a highlight runs inside the page, so a page that is gone or mid-navigation does not answer at all rather than answering slowly.

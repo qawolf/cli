@@ -6,6 +6,7 @@ import { handleRunnerHighlightSelector } from "~/domains/interactiveRunner/highl
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { runnerDeps, runnerFlagDescription } from "./context.js";
+import { runnerGuides } from "./guides/index.js";
 
 const highlightExamples = `
 Examples:
@@ -23,6 +24,7 @@ export function registerRunnerHighlightSelectorCommand(
     )
     .option("--runner <id>", runnerFlagDescription)
     .addHelpText("after", highlightExamples)
+    .addHelpText("after", runnerGuides.highlightSelector)
     .action(
       (
         selector: string | undefined,

@@ -1,0 +1,46 @@
+# What travels
+
+run ships the flow file, everything it imports, and your package.json and tsconfig.json. Nothing else travels, so you can run from the root of a large project without sending it. The runner holds no copy of your project, so what runs is exactly what is on disk at that moment, uncommitted edits included.
+
+Imports are followed the same way a run from the QA Wolf app follows them: relative paths and tsconfig.json path aliases, resolving .ts and .js. An `export ... from` re-export is not followed, and neither is require(), so a barrel file does not pull in what it re-exports. A package.json has to be there, since the run reads its npm dependencies from it, and the files may carry at most 30 MiB in total. A missing file, a missing package.json and files over the cap are all refused before any runner is resolved or launched, so a typo costs nothing.
+
+After the first run on a runner, later runs send only the files whose content changed, so iterating on one flow costs a small request rather than the whole graph again. --json reports which happened in `fileSync`: delta or full. Nothing about this needs managing: the baseline lives in .qawolf/runner-files.json, a switch to another runner ignores it, and a runner that turns out not to hold what was claimed gets the whole set resent automatically.
+
+# Waiting for the outcome
+
+The call answers with a run id as soon as the run is accepted. The outcome is not in that answer; it is in the run-status stream, whose entries carry `runId`, `status` and an `errorMessage` when there is one.
+
+Pass --follow and let run wait for you. It reports the run's status, in progress, then passed or failed, and ends on the settled status. Exit 1 means the run did not pass. --logs, --run-events and --recorder-events mirror more streams into the follow, and each implies --follow on its own. The recorder is runner-wide rather than run-scoped, so --recorder-events carries whatever is recorded after an anchor taken just before submission. Whatever mirrors are on, the follow still ends on the status, never on them, so a run that prints nothing still ends the follow and a run that dies mid-sentence still reports how. Combining mirror flags interleaves their lines with nothing saying which stream a line came from: fine for eyeballs; when parsing, follow one stream at a time.
+
+To submit and come back later, poll with the same rule the CLI uses: `status` is in-progress while the run is going, and any other value means it has settled. `events --follow` does not end when the run settles, so it cannot be used to wait for one.
+
+$ qawolf runner run flows/checkout.flow.ts --json
+$ qawolf runner events run-status --run <runId> --tail 1 | jq -r '.status'
+
+# When the runner could not be reached
+
+If run reports that the runner could not be reached, that does not mean the run did not start. The runner may have accepted it and been too slow to answer, and resubmitting bills and journals a second run.
+
+There is no clean recovery. The journal lives on the same pod, so while the runner stays unreachable a run-status read fails the same way. Wait for the runner to answer again, then read run-status without --run and look at the newest `runId`. Nothing ties that id back to your submission, and a runner takes work from anyone addressing it, so treat the newest id as your run only if you know nothing else submits to this runner. An empty read is not proof the run did not start either: run returns the moment the run is accepted, and its first run-status entry may not be written yet. A resubmit always risks a second billed run, so prefer polling run-status a while longer, and only submit again once you are willing to accept that risk.
+
+# Running part of a flow
+
+--lines 12-40 runs those lines against the browser as it stands, so nothing is re-navigated and nothing is signed in again. Use it to iterate on a step without paying for the whole flow to reach it again.
+
+The two file paths are the thing to get right, because getting them backwards runs the wrong code and nothing reports it:
+- the positional is always the flow file. It is the run's entry point, and it is required for every run, selection or not.
+- --lines-file is where the lines live. It defaults to the positional, so pass it only when the range is in another file, typically a page object whose method you want to run against the instance your last run left alive.
+
+The lines-file has to be one of the files that travel, so it lives under the directory you run from. A range whose file is not collected is refused before a runner is addressed, naming the path.
+
+A --lines selection is the one call that does not need a run first. If the runner had no browser, one is started before your lines run, and the command says so on stderr. Those lines then ran against a fresh page rather than the one an earlier run left, which is worth reading before you act on what you see.
+
+# Environment variables
+
+A run takes one of two. --env-id names a QA Wolf environment by id or alias, the same reference `qawolf flows` takes as --env. --env-file .env gives the run the variables in a dotenv file, in the format `qawolf flows pull` writes. Passing both is refused: each gives the run its whole environment, so there is no order in which they would combine.
+
+A run with neither flag falls back to QAWOLF_ENVIRONMENT, the same variable `qawolf flows` reads, so one export covers both. The run says on stderr which environment it picked up, because those variables reach your flow's code and a run should never be given an environment silently. --env-id wins over it, and --env-file suppresses it, so a run reading a dotenv file is not handed a second environment on top.
+
+Prefer --env-id. QA Wolf reads and decrypts the environment itself, so the values never leave the server, nothing has to be pulled to disk first, and no size limit applies to them. It is the only way to run a flow whose environment holds something large, such as a session cookie.
+
+A run that sends its own variables with --env-file may carry at most 200 of them, each value at most 16 KiB. Names follow what a shell accepts, and QAWOLF_TEAM_ID is reserved because QA Wolf sets it from the key you authenticated with. All of that is refused before a runner is addressed, naming the variable at fault.

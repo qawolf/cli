@@ -1,0 +1,5 @@
+# Paths
+
+Use it when a run's image diff fails and the new screenshot is the one you want. Both paths are the ones the diff reported in its imageDiffArtifact run event, and both are named rather than positional, because two paths with one unlabelled is easy to get backwards and swapping them promotes the wrong image. They are paths inside the run's own screenshot storage, not files on your machine.
+
+snapshot-not-found exits 2 and means the run wrote no screenshot at that path, which nearly always means the paths did not come from a diff this run produced. Nothing is changed, so correcting the path and repeating is safe. Promoting twice is also safe, so an unreachable runner is worth retrying.
