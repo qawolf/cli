@@ -2,6 +2,7 @@ import path from "node:path";
 
 import type { CommandContext, CommandResult } from "~/shell/commandContext.js";
 import { flowsMessages, runnerMessages } from "~/core/messages/index.js";
+import type { CachedFlow } from "./readCachedFlows.js";
 import type { BrowserName } from "~/core/types.js";
 
 import { batchMap, flowBatchSize } from "~/core/batchMap.js";
@@ -23,10 +24,10 @@ export type FlowsListDeps = {
     cwd: string,
   ) => Promise<string[]>;
   readonly peekFlowMeta: PeekFlowMetaFn;
-  /** Tags cached at pull time, keyed by absolute flow path. */
-  readonly readCachedTags: (
+  /** What each flow’s pull recorded, keyed by absolute flow path. */
+  readonly readCachedFlows: (
     files: readonly string[],
-  ) => Promise<Map<string, readonly string[]>>;
+  ) => Promise<ReadonlyMap<string, CachedFlow>>;
   /** Human label for a pulled env dir — its slug, name, or id. */
   readonly readEnvLabel: (envDir: string) => Promise<string>;
   /** Resolves an id, slug, or name to a pulled env, without the API. */
@@ -40,6 +41,7 @@ export type FlowsListDeps = {
 type FlowsListItem = {
   file: string;
   name: string;
+  flowId: string | undefined;
   // The pulled environment the flow came from. Undefined for project flows,
   // which belong to no environment.
   env: string | undefined;
@@ -72,7 +74,11 @@ export async function flowsList(
     if (selection.kind === "unknown") return selection.result;
     files = selection.files;
   }
-  const cachedTags = await deps.readCachedTags(files);
+  const cached = await deps.readCachedFlows(files);
+  const cachedTags = new Map<string, readonly string[]>();
+  for (const [file, flow] of cached) {
+    if (flow.tags !== undefined) cachedTags.set(file, flow.tags);
+  }
   const envLabels = await readEnvLabels(files, deps.readEnvLabel);
 
   const notCached = tagsNotCachedResult(selectors, cachedTags);
@@ -87,6 +93,7 @@ export async function flowsList(
     all.push({
       file: path.relative(deps.cwd, file),
       name: meta.name ?? flowBasename(file),
+      flowId: cached.get(file)?.flowId,
       env: envLabelFor(file, envLabels),
       tags: cachedTags.get(file),
       target: meta.target,

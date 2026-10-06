@@ -8,6 +8,7 @@ import { makeNoopLogger } from "~/shell/logger.testUtils.js";
 import { makeMemoryFs } from "~/shell/fs.testUtils.js";
 
 import { type FlowsListDeps, flowsList } from "./list.js";
+import { cachedFlowsWithTags } from "./list.testUtils.js";
 import { makeFakeUI } from "~/shell/commandContext.testUtils.js";
 
 const noopSignals = makeNoopSignals();
@@ -51,8 +52,8 @@ function makeDeps(overrides?: {
         target: metaByFile[file]?.target,
       }),
     ),
-    readCachedTags: mock<FlowsListDeps["readCachedTags"]>(() =>
-      Promise.resolve(new Map(Object.entries(cachedTags))),
+    readCachedFlows: mock<FlowsListDeps["readCachedFlows"]>(() =>
+      Promise.resolve(cachedFlowsWithTags(cachedTags)),
     ),
     readEnvLabel: mock<FlowsListDeps["readEnvLabel"]>((dir: string) =>
       Promise.resolve(dir),
@@ -96,6 +97,22 @@ describe("flowsList json mode output", () => {
     expect(JSON.parse(JSON.stringify(captured))).toEqual(captured);
     expect(ui.intro).not.toHaveBeenCalled();
     expect(ui.outro).not.toHaveBeenCalled();
+  });
+
+  it("includes a pulled flow’s cached ID in JSON", async () => {
+    const ui = makeFakeUI();
+    const file = "/proj/.qawolf/staging/src/flows/a.flow.ts";
+    const deps = makeDeps({ files: [file] });
+    const cachedDeps = {
+      ...deps,
+      readCachedFlows: mock(() =>
+        Promise.resolve(new Map([[file, { flowId: "flow-a", tags: [] }]])),
+      ),
+    };
+    await flowsList(makeCtx(ui, "json"), undefined, cachedDeps);
+    expect(ui.json).toHaveBeenCalledWith([
+      expect.objectContaining({ flowId: "flow-a", tags: [] }),
+    ]);
   });
 
   it("falls back to basename for name when meta.name is undefined", async () => {

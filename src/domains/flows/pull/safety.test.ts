@@ -8,6 +8,7 @@ import {
   detectLocalModifications,
   promptOverwriteIfModified,
 } from "./safety.js";
+import { makeManifestFlow } from "~/shell/manifest/manifest.testUtils.js";
 
 let workDir = "";
 
@@ -19,9 +20,7 @@ afterEach(async () => {
   await rm(workDir, { recursive: true, force: true });
 });
 
-const baseManifest = (
-  flows: { path: string; contentHash: string; tags: undefined }[],
-): Manifest => ({
+const baseManifest = (flows: Manifest["flows"]): Manifest => ({
   envId: "env-abc",
   envSlug: undefined,
   envName: undefined,
@@ -34,6 +33,11 @@ const baseManifest = (
   flows,
 });
 
+const flowEntry = (
+  path: string,
+  contentHash: string,
+): Manifest["flows"][number] => makeManifestFlow({ path, contentHash });
+
 // sha256("hello") = 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
 const helloHash =
   "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
@@ -41,26 +45,20 @@ const helloHash =
 describe("detectLocalModifications", () => {
   it("returns [] when every file matches its manifest hash", async () => {
     await writeFile(join(workDir, "a.flow.ts"), "hello", "utf8");
-    const manifest = baseManifest([
-      { path: "a.flow.ts", contentHash: helloHash, tags: undefined },
-    ]);
+    const manifest = baseManifest([flowEntry("a.flow.ts", helloHash)]);
     expect(await detectLocalModifications(workDir, manifest)).toEqual([]);
   });
 
   it("flags a file whose hash differs as 'modified'", async () => {
     await writeFile(join(workDir, "a.flow.ts"), "edited", "utf8");
-    const manifest = baseManifest([
-      { path: "a.flow.ts", contentHash: helloHash, tags: undefined },
-    ]);
+    const manifest = baseManifest([flowEntry("a.flow.ts", helloHash)]);
     expect(await detectLocalModifications(workDir, manifest)).toEqual([
       { path: "a.flow.ts", reason: "modified" },
     ]);
   });
 
   it("flags a missing file as 'missing-from-disk'", async () => {
-    const manifest = baseManifest([
-      { path: "gone.flow.ts", contentHash: helloHash, tags: undefined },
-    ]);
+    const manifest = baseManifest([flowEntry("gone.flow.ts", helloHash)]);
     expect(await detectLocalModifications(workDir, manifest)).toEqual([
       { path: "gone.flow.ts", reason: "missing-from-disk" },
     ]);
@@ -73,9 +71,7 @@ describe("detectLocalModifications", () => {
   });
 
   it("rejects a manifest containing an absolute path entry", async () => {
-    const manifest = baseManifest([
-      { path: "/etc/passwd", contentHash: helloHash, tags: undefined },
-    ]);
+    const manifest = baseManifest([flowEntry("/etc/passwd", helloHash)]);
     let caught: unknown;
     try {
       await detectLocalModifications(workDir, manifest);
@@ -87,9 +83,7 @@ describe("detectLocalModifications", () => {
   });
 
   it("rejects a manifest entry that escapes the env directory", async () => {
-    const manifest = baseManifest([
-      { path: "../escape.flow.ts", contentHash: helloHash, tags: undefined },
-    ]);
+    const manifest = baseManifest([flowEntry("../escape.flow.ts", helloHash)]);
     let caught: unknown;
     try {
       await detectLocalModifications(workDir, manifest);
@@ -120,9 +114,7 @@ describe("promptOverwriteIfModified", () => {
 
   it("proceeds without prompt when there are no modifications", async () => {
     await writeFile(join(workDir, "a.flow.ts"), "hello", "utf8");
-    const manifest = baseManifest([
-      { path: "a.flow.ts", contentHash: helloHash, tags: undefined },
-    ]);
+    const manifest = baseManifest([flowEntry("a.flow.ts", helloHash)]);
     const confirm = makeFakeConfirm(false);
     const log = makeLog();
 
@@ -139,9 +131,7 @@ describe("promptOverwriteIfModified", () => {
   });
 
   it("proceeds without prompt when only missing-from-disk entries exist", async () => {
-    const manifest = baseManifest([
-      { path: "gone.flow.ts", contentHash: helloHash, tags: undefined },
-    ]);
+    const manifest = baseManifest([flowEntry("gone.flow.ts", helloHash)]);
     const confirm = makeFakeConfirm(false);
     const log = makeLog();
 
@@ -159,9 +149,7 @@ describe("promptOverwriteIfModified", () => {
 
   it("proceeds without prompt and logs a notice when yes is true and mods exist", async () => {
     await writeFile(join(workDir, "a.flow.ts"), "edited", "utf8");
-    const manifest = baseManifest([
-      { path: "a.flow.ts", contentHash: helloHash, tags: undefined },
-    ]);
+    const manifest = baseManifest([flowEntry("a.flow.ts", helloHash)]);
     const confirm = makeFakeConfirm(true);
     const log = makeLog();
 
@@ -181,9 +169,7 @@ describe("promptOverwriteIfModified", () => {
 
   it("prompts via confirm and proceeds when the user accepts", async () => {
     await writeFile(join(workDir, "a.flow.ts"), "edited", "utf8");
-    const manifest = baseManifest([
-      { path: "a.flow.ts", contentHash: helloHash, tags: undefined },
-    ]);
+    const manifest = baseManifest([flowEntry("a.flow.ts", helloHash)]);
     const confirm = makeFakeConfirm(true);
     const log = makeLog();
 
@@ -202,9 +188,7 @@ describe("promptOverwriteIfModified", () => {
 
   it("aborts when the user declines the prompt", async () => {
     await writeFile(join(workDir, "a.flow.ts"), "edited", "utf8");
-    const manifest = baseManifest([
-      { path: "a.flow.ts", contentHash: helloHash, tags: undefined },
-    ]);
+    const manifest = baseManifest([flowEntry("a.flow.ts", helloHash)]);
     const confirm = makeFakeConfirm(false);
     const log = makeLog();
 

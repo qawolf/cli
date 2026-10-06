@@ -15,14 +15,18 @@ type FetchedBundle = {
   // Undefined when the tag fetch did not succeed. Tags enrich a pull; they are
   // never a precondition for one, so a failure here leaves the pull intact.
   tags: FetchedTags | undefined;
+  // From the same listing as the tags, and missing whenever they are.
+  flowIds: ReadonlyMap<string, string> | undefined;
 };
+
+type FetchedListing = { tags: FetchedTags; flowIds: Map<string, string> };
 
 // Drafts are included so the cache covers every flow the bundle can contain;
 // a flow missing from the response keeps unknown tags rather than empty ones.
-async function fetchTags(
+async function fetchListing(
   ctx: AuthCommandContext,
   envId: string,
-): Promise<FetchedTags | undefined> {
+): Promise<FetchedListing | undefined> {
   try {
     const result = await ctx.platformClient.callPublicApi(
       publicContractsV1.flow.list,
@@ -30,8 +34,12 @@ async function fetchTags(
     );
     if (!result.ok) return undefined;
     return {
-      fetchedAt: new Date(),
-      byPath: new Map(result.value.flows.map((f) => [f.path, [...f.tags]])),
+      tags: {
+        fetchedAt: new Date(),
+        byPath: new Map(result.value.flows.map((f) => [f.path, [...f.tags]])),
+      },
+      // Kept so a pulled flow can be named by id offline, as --remote does.
+      flowIds: new Map(result.value.flows.map((f) => [f.path, f.flowId])),
     };
   } catch {
     return undefined;
@@ -48,7 +56,7 @@ export async function fetchBundleAndEnvVars(
   let envVars: Record<string, string> | undefined;
   let envVarsFetchedAt: Date | undefined;
   let teamId: string | undefined;
-  let tags: FetchedTags | undefined;
+  let listing: FetchedListing | undefined;
 
   await ctx.ui.withProgress(
     [
@@ -75,7 +83,7 @@ export async function fetchBundleAndEnvVars(
       {
         message: flowsMessages.pull.fetchingTags,
         task: async () => {
-          tags = await fetchTags(ctx, envId);
+          listing = await fetchListing(ctx, envId);
         },
       },
     ],
@@ -100,6 +108,7 @@ export async function fetchBundleAndEnvVars(
     envVars,
     envVarsFetchedAt,
     teamId,
-    tags,
+    tags: listing?.tags,
+    flowIds: listing?.flowIds,
   };
 }

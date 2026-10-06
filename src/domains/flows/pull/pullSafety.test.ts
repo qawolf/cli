@@ -8,6 +8,7 @@ import type { Manifest } from "~/shell/manifest/types.js";
 import { buildBundle } from "./pull.fixtures.js";
 import { checkSafety } from "./pull.js";
 import { stageBundle } from "./stage.js";
+import { makeManifestFlow } from "~/shell/manifest/manifest.testUtils.js";
 
 let workDir = "";
 let bundleArchive = "";
@@ -38,11 +39,10 @@ describe("safety + staging integration", () => {
       qawolfCommittedAt: undefined,
       tagsFetchedAt: undefined,
       flows: [
-        {
+        makeManifestFlow({
           path: "a.flow.ts",
           contentHash: await hashFile(join(destDir, "a.flow.ts")),
-          tags: undefined,
-        },
+        }),
       ],
     };
     await writeManifest(destDir, manifest);
@@ -61,6 +61,7 @@ describe("safety + staging integration", () => {
     expect(safety).toBe("proceed");
 
     await stageBundle({
+      flowIds: undefined,
       tmpArchive: bundleArchive,
       destAbs: destDir,
       assetsAbs: join(destDir, "..", "assets"),
