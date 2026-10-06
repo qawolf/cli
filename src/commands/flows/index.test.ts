@@ -41,7 +41,14 @@ async function runList(args: string[]): Promise<string> {
   spyOn(process.stdout, "write").mockImplementation(capture);
   spyOn(process.stderr, "write").mockImplementation(capture);
 
-  await makeProgram().parseAsync(["flows", "list", ...args], { from: "user" });
+  // Printed, never the interactive table: this runs through a real context,
+  // and from a developer's terminal the default would open a prompt and wait.
+  await makeProgram().parseAsync(
+    ["flows", "list", "--no-interactive", ...args],
+    {
+      from: "user",
+    },
+  );
   return writes.join("");
 }
 
