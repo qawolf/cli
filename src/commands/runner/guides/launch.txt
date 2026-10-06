@@ -1,0 +1,15 @@
+# Ids
+
+Runner ids are yours to choose and are scoped to your team, so agent-1 is a fine id. Launching an id that is already running attaches to that runner instead of starting and billing a second one, and the answer says which happened: read `alreadyRunning`. Reusing one id is therefore the cheap and safe pattern. The same id with a different --name is refused rather than silently ignored.
+
+launch takes its id from --id and never reads QAWOLF_RUNNER_ID. A bare `qawolf runner launch` invents a random id, bills a pod under it and stores it, so a harness that exported the variable and then launched without --id ends up with a pod it is not addressing. Pass --id whenever you have an id in mind.
+
+Launching an id that differs from QAWOLF_RUNNER_ID prints a warning on stderr naming both ids: the variable still outranks the directory default, so commands that omit --runner keep going to whatever it names, not the runner you just launched. That is expected when you launch an additional runner on purpose. Address that one with --runner rather than re-exporting the variable, which would repoint every other runner-less command too.
+
+# The page
+
+Either answer carries a `url`, which launch prints, as does a command that launched its own runner. It is a QA Wolf page showing what the runner is doing, where a person can also take over with their own mouse and keyboard. Hand it to a person who asks what your runner is up to. The page opens for anyone on the runner's team, however the runner was launched. There is nothing to see until the runner's first run starts its screen, so the page waits until then. You read the screen with `screenshot`, not with the page.
+
+# Browser or mobile
+
+--name also chooses between a browser and a mobile device: --name android or --name ios starts an Appium session instead of a browser. A command built for the other kind answers a failureReason naming the mismatch rather than doing something approximate: runner-is-not-mobile from inspect session, contexts, page-source and elements on a browser runner, and runner-is-not-a-browser from inspect element-html and page-html on a mobile one. Launch the right family up front rather than discovering it from a refusal mid-session.

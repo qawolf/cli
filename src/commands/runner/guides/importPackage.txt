@@ -1,0 +1,3 @@
+# Installing mid-session
+
+The package goes into the runner's live run, so a snippet or a selection can import it without a whole run to reinstall dependencies. The flag is --package-version because --version belongs to the CLI itself. The install resolves against your project's own dependencies, read from package.json, so it needs a run already going: there is no live run on a runner that has not run anything. npm's own refusal comes back verbatim on an exit 2, which is a name or a version to correct rather than something to retry.

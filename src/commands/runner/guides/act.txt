@@ -1,0 +1,23 @@
+# Seeing and acting
+
+There is no hosted vision loop: you look with screenshot, decide with your own model, and act. act performs exactly one action per call, in the computer-use tool vocabulary a vision model already emits. The names and the field names are unchanged from that vocabulary on purpose, so you can forward a tool call rather than translate it with `act -`.
+
+Every action in a see-and-act loop is followed by a look at the result, so ask for it in the same call with --screenshot. Prefer it over act and then screenshot: each step is one call instead of two, with no delay to guess at between them. The screen the runner answers with is taken once it has changed from just before the action or half a second has passed, whichever comes first. An action that reached the screen and did not take effect answers with one too, so an exit 1 still leaves you a picture of why the click missed. A 4 whose message starts with "Performed" means the action happened and only the picture is missing: take a screenshot, never send the action again to get it. As with `screenshot --out -`, a terminal on stdout is refused.
+
+Coordinates are pixels on the same screenshot you just read. The runner serves one see-or-act request at a time, so never have two in flight; when the next few steps are already known, send them as one `runner actions` sequence instead. Bounds are checked before anything is sent, so an over-long --text or an out-of-range coordinate comes back immediately naming the limit.
+
+On a 4, the answer may have been lost with the action in flight: take a screenshot before repeating a click, and repeat only what the screen says did not happen.
+
+# Mobile
+
+A mobile runner has a touchscreen, not a mouse, so it has actions of its own:
+- tap touches a point (--x, --y) or the element --selector names. Check the selector first with `inspect elements --selector`, and pass --strategy ios-predicate or shadow when it is not XPath.
+- swipe --from x,y --to x,y moves in a straight line between two points. --duration-ms sets how long it takes, up to 10000: a slow swipe scrolls, a fast one flings.
+- fill --selector ... --text ... replaces the value of that field, and --text "" clears it. To add to what a field already holds, tap it and then type.
+- type types into whatever the last tap focused, the same as on a browser.
+
+On mobile, send tap and swipe, never click or drag. The other browser actions, double_click, scroll, move, keypress and navigate, answer action-not-supported-on-mobile rather than doing something approximate. navigate is the one to watch for, since it works on a browser runner without a run first but has no meaning on mobile at all. A browser runner answers tap, swipe and fill with action-not-supported-on-browser.
+
+# Before the first run
+
+A runner has no screen until its first run, so act exits 2 until then, except navigate, which exits 1 (action-failed): it skips the screen but still needs the runner to have run something. With no runner named at all, act launches one and says so on stderr.

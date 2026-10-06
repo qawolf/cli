@@ -1,0 +1,27 @@
+# Streams
+
+Everything observable is an append-only stream on the pod, read by cursor or tail rather than subscribed to, so attaching late still gets you the history that is still there. QA Wolf writes recorder, console, run-events, run-logs and run-status; a stream nobody has written reads as empty rather than as an error, and a stream this CLI version does not know about is still readable by name. One payload per line, so shell tools compose:
+
+$ qawolf runner events console --tail 20 | jq -r '.message'
+$ qawolf runner events run-logs --run <runId> --follow > run.log
+
+--tail N takes the newest N, --since <sequence> reads everything after a cursor, and --run <id> narrows the run-scoped streams.
+
+History is not unbounded: a size cap drops the oldest entries on a long-lived runner, and a --tail N read can stop early and hand back fewer than N even when more matched. Both are warned about on stderr, dropped entries only once a read holds a cursor, a stopped-early read with a pointer at --since. Watch stderr, treat a short answer as "at least this" rather than "all there was", and read what you care about as you go rather than at the end.
+
+# The recorder
+
+`events recorder` is what has no equivalent in a screenshot. As you drive the browser, the runner records each interaction and publishes `locator` (the real Playwright locator it resolved), `alternates` (the others that matched the same element) and `code` (the generated Playwright call), alongside `type`, `sourceUrl` and `timestamp`:
+
+$ qawolf runner events recorder --tail 5 | jq -r '.code // .type'
+$ qawolf runner events recorder --tail 5 | jq -r '[.locator] + (.alternates // []) | @tsv'
+
+`code` is absent on events with no call of their own, such as a navigation, which is why the first line falls back to `type`. Use these to turn a session you drove by pixel coordinates into durable selectors, and to check that a click landed on the element you meant rather than near it. The stream is empty until the runner's first run gives it a browser context, so an early empty answer means "not yet", not "broken". Do not add --json here: it wraps each line in an envelope and these field paths stop matching.
+
+# Following
+
+--follow polls and prints as entries arrive. It is tail -f with a bound: it ends only at its --timeout (an hour by default, exit 6), because reading keeps the runner alive and billing. It does not end when a run settles, so it cannot be used to wait for a run: use `runner run --follow`, or poll run-status. Redirect it to a file and stop it yourself, or use repeated --since reads when you need the command to end sooner.
+
+Where --follow wins is the cursor. The pod reports how far a read scanned rather than how far it matched, and --follow carries that number, so a filtered read that matched nothing still moves forward. A caller paging by hand cannot see it, because the CLI does not print it, and the best available substitute is the highest `sequence` you actually saw. So a narrow --run filter over a busy stream stalls: with nothing matching, there is no new `sequence` to move on to, and you re-read the same window until something matches.
+
+events never launches a runner.

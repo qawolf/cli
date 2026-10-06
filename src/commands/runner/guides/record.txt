@@ -1,0 +1,12 @@
+# Recording
+
+Start a flow first so the runner has a screen, then start a manual capture and keep `result.state.active.id` from the `record start --json` answer to stop that capture:
+
+$ qawolf runner record start --runner ci --json
+$ qawolf runner record stop <recording-id> --runner ci
+$ qawolf runner record status --runner ci
+$ qawolf runner record auto on --runner ci
+
+Start generates a UUID unless you pass --recording-id <uuid>. If a start response is lost, the error includes that UUID: check `record status` and reuse the UUID when retrying. Stop always names a specific recording, so retrying it cannot stop a later capture. Manual recordings span runs and suppress automatic capture until stopped. The auto setting affects subsequent full runs. An active automatic recording ends with its run; `record stop` cannot interrupt it. If a stop publishes a recording with status "failed", the CLI exits 1 and still prints the manifest so callers can inspect it.
+
+Published recordings stay readable after the runner terminates, with `qawolf runner list-recordings`.

@@ -6,6 +6,7 @@ import { handleRunnerExec } from "~/domains/interactiveRunner/evaluateSnippet.js
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { runnerDeps, runnerFlagDescription } from "./context.js";
+import { runnerGuides } from "./guides/index.js";
 
 const execExamples = `
 Examples:
@@ -27,6 +28,7 @@ export function registerRunnerExecCommand(
     )
     .option("--runner <id>", runnerFlagDescription)
     .addHelpText("after", execExamples)
+    .addHelpText("after", runnerGuides.exec)
     .action(
       (
         file: string,

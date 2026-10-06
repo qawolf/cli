@@ -7,6 +7,7 @@ import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { runnerDeps, runnerFlagDescription } from "./context.js";
 import { registerRunnerInspectMobileCommands } from "./inspectMobile.register.js";
+import { runnerGuides } from "./guides/index.js";
 
 const inspectExamples = `
 Examples:
@@ -35,7 +36,8 @@ export function registerRunnerInspectCommands(
     .description(
       "Read one thing off a runner's live page (browser) or Appium session (mobile)",
     )
-    .addHelpText("after", inspectExamples);
+    .addHelpText("after", inspectExamples)
+    .addHelpText("after", runnerGuides.inspect);
 
   declareCommandKind(inspect.command("element-html"), "read")
     .description("Print the HTML of the first element a selector matches")

@@ -4,11 +4,19 @@ import { join } from "node:path";
 
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { createProgram } from "./program.js";
-import { renderCommandsTable, spliceCommandsTable } from "./skill.js";
+import {
+  renderCommandsTable,
+  renderRunnerReferenceMd,
+  spliceCommandsTable,
+} from "./skill.js";
 
 const skillMdPath = join(
   import.meta.dirname,
   "../../skills/qawolf-cli/SKILL.md",
+);
+const runnerMdPath = join(
+  import.meta.dirname,
+  "../../skills/qawolf-cli/references/runner.md",
 );
 const skillTemplatePath = join(
   import.meta.dirname,
@@ -46,6 +54,13 @@ describe("renderCommandsTable", () => {
 });
 
 describe("qawolf-cli skill", () => {
+  it("ships the runner reference as qawolf help ref runner prints it", async () => {
+    const runnerMd = await Bun.file(runnerMdPath).text();
+    expect(runnerMd).toBe(
+      renderRunnerReferenceMd(createProgram({ signals: makeNoopSignals() })),
+    );
+  });
+
   it("matches its template and generated commands table", async () => {
     const skillMd = await Bun.file(skillMdPath).text();
     const skillTemplate = await Bun.file(skillTemplatePath).text();

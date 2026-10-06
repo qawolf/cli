@@ -9,6 +9,7 @@ import {
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { runnerDeps, runnerFlagDescription } from "./context.js";
+import { runnerGuides } from "./guides/index.js";
 
 type RecordFlags = { runner?: string; recordingId?: string };
 type RecordingsFlags = RecordFlags & { pageToken?: string };
@@ -19,7 +20,8 @@ export function registerRunnerRecordingCommands(
 ): void {
   const record = runner
     .command("record")
-    .description("Control video recording on a Playwright runner");
+    .description("Control video recording on a Playwright runner")
+    .addHelpText("after", runnerGuides.record);
 
   declareCommandKind(record.command("start"), "write")
     .description(
@@ -114,6 +116,7 @@ export function registerRunnerRecordingCommands(
       "--page-token <token>",
       "Continue from nextPageToken returned by the previous page",
     )
+    .addHelpText("after", runnerGuides.listRecordings)
     .action((opts: RecordingsFlags, command: Command) =>
       withAuthContext(signals, (ctx) =>
         handleRunnerRecordings(

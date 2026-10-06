@@ -1,0 +1,17 @@
+# Browser
+
+inspect answers one question about the live page and prints the answer on stdout by itself, so you can redirect or pipe it. `page-html` is simplified for a model to read rather than being the browser's exact markup, and --selector narrows it to one subtree. `variable` reads a top-level variable of the running workflow and prints it as JSON, which is how you see what your own code computed rather than what the page shows. Use it before reaching for exec: reading a value through a snippet means printing it and then fishing it back out of the console stream, which is two calls and a marker.
+
+One failure covers three causes, because a runner cannot tell them apart: no live page, no element matching the selector, no variable under that name. All three exit 2 and none clears by waiting, so read the message, which carries whatever the runner said. An unreachable runner exits 4 and is worth retrying; a runner that is not running at all exits 8 and is not.
+
+# Mobile
+
+element-html and page-html are a browser's shapes, and a mobile runner answers them with runner-is-not-a-browser. It answers session, contexts, page-source and elements instead, and variable works on both.
+
+session prints one summary line, ready or why not, because that line is the whole answer. contexts, page-source and elements print their answer as JSON on stdout, on its own, so you can pipe it (| jq .current, | jq .matches, | jq .pageSource) rather than getting a count with no way to see what was found.
+
+session is the one subcommand that never answers screen-needs-a-run: readiness is the question it exists to answer, so it reports ready (with the platform, device and session id), unreachable, ambiguous (more than one session is somehow live) or no-session. The other three need a live session first. screen-needs-a-run exits 2 and means no Appium session has started on this runner yet: run a flow that opens one, then inspect again. screen-not-ready exits 4 and means the session exists but did not answer this instant, or more than one is somehow live: retry once, and relaunch the runner if it persists.
+
+elements takes one of three ways to search: whole-pixel --x/--y on the device's own screen, the same coordinates a screenshot is measured in; --text, which matches exactly unless --partial is passed; or --selector, resolved the same way a screen object's own selector is, with --strategy naming how (xpath, ios-predicate or shadow; defaults to xpath). Prefer --selector when checking a selector you are about to write: it answers what that exact string resolves to, where --text and --x/--y only approximate it. The three do not mix: flags from more than one are refused before a runner is addressed. An unparseable selector answers invalid-selector, exit 2, distinctly from a selector that parsed fine but matched nothing, which answers an empty `matches` list, exit 0. --context on page-source or elements reads a context other than the current one, once contexts has told you which are available.
+
+A browser runner answers runner-is-not-mobile to session, contexts, page-source and elements, exit 2, since retrying never helps: launch with --name android or --name ios instead. runner-unreachable exits 4 and is worth retrying.

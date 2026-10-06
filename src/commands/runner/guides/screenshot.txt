@@ -1,0 +1,5 @@
+# Reading the screen
+
+The image is a real JPEG on disk, decoded, because every coding harness can open an image file. Read it with whatever vision you have. --out - writes the JPEG bytes to stdout instead, on their own, for a caller that is a process rather than an agent: the confirmation, and the JSON line under --json, goes to stderr so nothing follows the image on stdout. A terminal on stdout is refused: redirect or pipe it.
+
+A runner has no screen until its first run, so until then screenshot exits 2. It never launches a runner. When you are about to act anyway, `act --screenshot` performs the action and returns the screen in one call.

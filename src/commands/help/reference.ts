@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 
 import { listVisibleSubcommands } from "./commandTree.js";
+import { renderReferenceGuide } from "./referenceGuide.js";
 
 // Fixed rather than the terminal's width, so the reference reads the same in
 // every terminal and in the files generated from it.
@@ -34,7 +35,10 @@ function renderSections(
 ): string[] {
   const heading = `${"#".repeat(Math.min(depth, deepestHeadingLevel))} ${path.join(" ")}`;
   const help = ["```text", formatCommandHelp(command), "```"].join("\n");
-  const section = `${heading}\n\n${help}`;
+  const guide = renderReferenceGuide(command, depth);
+  const section = [heading, ...(guide === undefined ? [] : [guide]), help].join(
+    "\n\n",
+  );
   return [
     section,
     ...listVisibleSubcommands(command).flatMap((child) =>
@@ -45,8 +49,8 @@ function renderSections(
 
 /**
  * The full `--help` of `command` and of every visible command under it, as
- * Markdown: one heading per command, nested by depth, followed by its help in
- * a text block. `path` is the command's full name, e.g. `["qawolf", "runner"]`.
+ * Markdown: one heading per command, nested by depth, followed by the guide
+ * declared for it, if any, and its help in a text block. `path` is the command's full name, e.g. `["qawolf", "runner"]`.
  */
 export function renderHelpReference(
   command: Command,

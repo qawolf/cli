@@ -6,6 +6,7 @@ import { handleRunnerImportPackage } from "~/domains/interactiveRunner/importPac
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { runnerDeps, runnerFlagDescription } from "./context.js";
+import { runnerGuides } from "./guides/index.js";
 
 const importPackageExamples = `
 Examples:
@@ -23,6 +24,7 @@ export function registerRunnerImportPackageCommand(
     .option("--package-version <version>", "Version to install", "latest")
     .option("--runner <id>", runnerFlagDescription)
     .addHelpText("after", importPackageExamples)
+    .addHelpText("after", runnerGuides.importPackage)
     .action(
       (
         name: string,

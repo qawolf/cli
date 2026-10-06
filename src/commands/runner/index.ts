@@ -13,14 +13,17 @@ import { registerRunnerPromoteSnapshotCommand } from "./promoteSnapshot.register
 import { registerRunnerEventsCommand } from "./events.register.js";
 import { registerRunCommand } from "./run.register.js";
 import { registerRunnerRecordingCommands } from "./recording.register.js";
+import { declareReferenceGuide } from "~/commands/help/referenceGuide.js";
+import { runnerWorkflowGuide } from "./guides/index.js";
 
 export function registerRunnerCommand(
   program: Command,
   signals: SignalRegistry,
 ): void {
-  const runner = program
-    .command("runner")
-    .description("Drive an interactive runner on the QA Wolf platform");
+  const runner = declareReferenceGuide(
+    program.command("runner"),
+    runnerWorkflowGuide,
+  ).description("Drive an interactive runner on the QA Wolf platform");
 
   registerRunnerLifecycleCommands(runner, signals);
   registerRunCommand(runner, signals);

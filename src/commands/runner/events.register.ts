@@ -8,6 +8,7 @@ import { handleRunnerEvents } from "~/domains/interactiveRunner/events.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { runnerDeps, runnerFlagDescription } from "./context.js";
+import { runnerGuides } from "./guides/index.js";
 
 const eventsExamples = `
 Examples:
@@ -47,6 +48,7 @@ export function registerRunnerEventsCommand(
       String(defaultFollowTimeoutSeconds),
     )
     .addHelpText("after", eventsExamples)
+    .addHelpText("after", runnerGuides.events)
     .action((stream: string, opts: EventsFlags, command: Command) =>
       withAuthContext(signals, (ctx) =>
         handleRunnerEvents(
