@@ -1,0 +1,614 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`qawolf help prints the runner reference 1`] = `
+"# qawolf runner
+
+\`\`\`text
+Usage: qawolf runner [options] [command]
+
+Drive an interactive runner on the QA Wolf platform
+
+Options:
+  -h, --help                               display help for command
+
+Commands:
+  launch [options]                         Launch an interactive runner and make it this directory's
+                                           default
+  list [options]                           List the runners running on your team
+  terminate [options]                      End an interactive runner, and the pod it runs on with it
+  stop-run [options]                       Stop what a runner is currently executing, leaving the
+                                           runner up
+  keepalive [options]                      Reset a runner's inactivity clock, for a caller that
+                                           pauses between actions
+  run [options] <flowFile>                 Run a flow on an interactive runner, shipping the flow
+                                           and what it imports
+  events [options] <stream>                Print a runner's journal, one entry per line. QA Wolf
+                                           writes console, recorder, run-events, run-logs,
+                                           run-status
+  screenshot [options]                     Save a JPEG of an interactive runner's screen to a file,
+                                           or write it to stdout with --out -
+  act [options] <action>                   Perform one raw action on a runner's screen. A browser
+                                           runner takes click, double_click, scroll, move, drag,
+                                           keypress, navigate and type; a mobile runner takes tap,
+                                           swipe, fill and type. A browser runner answers mobile
+                                           actions with action-not-supported-on-browser; a mobile
+                                           runner answers the other browser actions with
+                                           action-not-supported-on-mobile. Use - to read a whole
+                                           action as JSON from stdin
+  actions [options] <sequence>             Perform a sequence of up to ten raw actions on a runner's
+                                           screen in one request, as a JSON array of the same
+                                           actions \`runner act\` takes. Use - to read the array from
+                                           stdin. Actions run back to back, so batch only steps
+                                           whose targets are on the screen you last saw, and end the
+                                           sequence at the step that changes the page. Each result
+                                           carries an effect: performed, not-performed, or unknown
+                                           when the runner stopped answering and the action may have
+                                           landed
+  exec [options] <file>                    Evaluate a snippet against a runner's live page. Use - to
+                                           read the snippet from stdin
+  inspect                                  Read one thing off a runner's live page (browser) or
+                                           Appium session (mobile)
+  import-package [options] <name>          Install a package into a runner's live run, so a snippet
+                                           or a selection can import it
+  highlight-selector [options] [selector]  Highlight what a selector matches on a runner's live
+                                           page, so the next screenshot shows it. Omit the selector
+                                           to clear the highlight
+  promote-snapshot [options]               Accept a run's screenshot as the new baseline for an
+                                           image diff, on the runner that produced it
+  record                                   Control video recording on a Playwright runner
+  list-recordings [options]                Read a page of published video recordings, including
+                                           after the runner terminates. Platform URLs persist; video
+                                           URLs expire
+  help [command]                           display help for command
+\`\`\`
+
+## qawolf runner launch
+
+\`\`\`text
+Usage: qawolf runner launch [options]
+
+Launch an interactive runner and make it this directory's default
+
+Options:
+  --id <id>        Id to launch under. Relaunching an id attaches to that runner
+  --name <family>  Runner family to run, e.g. playwright
+  -h, --help       display help for command
+
+Examples:
+  $ qawolf runner launch
+  $ qawolf runner launch --name android
+  $ qawolf runner launch --id ci
+\`\`\`
+
+## qawolf runner list
+
+\`\`\`text
+Usage: qawolf runner list [options]
+
+List the runners running on your team
+
+Options:
+  --here      Only the runners this directory launched
+  -h, --help  display help for command
+
+Examples:
+  $ qawolf runner list
+  $ qawolf runner list --here
+  $ qawolf runner list --json
+\`\`\`
+
+## qawolf runner terminate
+
+\`\`\`text
+Usage: qawolf runner terminate [options]
+
+End an interactive runner, and the pod it runs on with it
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored runner
+  -h, --help     display help for command
+\`\`\`
+
+## qawolf runner stop-run
+
+\`\`\`text
+Usage: qawolf runner stop-run [options]
+
+Stop what a runner is currently executing, leaving the runner up
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored runner
+  -h, --help     display help for command
+\`\`\`
+
+## qawolf runner keepalive
+
+\`\`\`text
+Usage: qawolf runner keepalive [options]
+
+Reset a runner's inactivity clock, for a caller that pauses between actions
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored runner
+  -h, --help     display help for command
+
+Examples:
+  $ qawolf runner keepalive
+  $ qawolf runner keepalive --runner ci
+\`\`\`
+
+## qawolf runner run
+
+\`\`\`text
+Usage: qawolf runner run [options] <flowFile>
+
+Run a flow on an interactive runner, shipping the flow and what it imports
+
+Options:
+  --follow             Report the run's status until it settles: in progress, then passed or failed
+                       (default: false)
+  --logs               Stream every log line the run produces while following. Implies --follow
+                       (default: false)
+  --run-events         Stream the run's progress events as JSON lines while following. Implies
+                       --follow (default: false)
+  --recorder-events    Stream the browser actions the runner records as JSON lines while following,
+                       from an anchor taken just before submission: the recorder is runner-wide, not
+                       run-scoped. Implies --follow (default: false)
+  --env-id <env>       QA Wolf environment whose variables the run is given, by id or alias.
+                       Defaults to QAWOLF_ENVIRONMENT. QA Wolf reads and decrypts them itself, so
+                       they never leave the server and no size limit applies to them
+  --env-file <path>    Dotenv file on this machine whose variables the run is given. Pass this or
+                       --env-id, not both
+  --lines <start-end>  Run only these 1-indexed lines against the browser as it stands, instead of
+                       the whole flow from a fresh one
+  --lines-file <path>  File the --lines range lives in. Defaults to <flowFile>; pass it only when
+                       the lines are in another file, such as a page object
+  --runner <id>        Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored
+                       runner
+  --timeout <seconds>  Give up following after this long. Following keeps the runner alive, so a run
+                       that never settles would otherwise bill until the terminal closed (default:
+                       "3600")
+  -h, --help           display help for command
+
+Examples:
+  $ qawolf runner run flows/checkout.flow.ts
+  $ qawolf runner run flows/checkout.flow.ts --follow
+  $ qawolf runner run flows/checkout.flow.ts --follow --logs
+  $ qawolf runner run flows/checkout.flow.ts --lines 12-40
+  $ qawolf runner run flows/checkout.flow.ts --lines 4-9 --lines-file pages/login.ts
+  $ qawolf runner run flows/checkout.flow.ts --env-id staging
+\`\`\`
+
+## qawolf runner events
+
+\`\`\`text
+Usage: qawolf runner events [options] <stream>
+
+Print a runner's journal, one entry per line. QA Wolf writes console, recorder, run-events,
+run-logs, run-status
+
+Options:
+  --follow             Keep reading as new entries arrive. Reading counts as activity, so a follow
+                       left open keeps the runner alive and billing (default: false)
+  --run <id>           Restrict run-scoped streams to one run
+  --runner <id>        Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored
+                       runner
+  --since <sequence>   Read entries after this sequence
+  --tail <count>       Read only the newest <count> entries
+  --timeout <seconds>  Give up following after this long. Reading keeps the runner alive, so a
+                       follow left open would otherwise bill until the terminal closed (default:
+                       "3600")
+  -h, --help           display help for command
+
+Examples:
+  $ qawolf runner events recorder --tail 5
+  $ qawolf runner events run-logs --run <runId> --follow
+  $ qawolf runner events console --since 120 --json
+\`\`\`
+
+## qawolf runner screenshot
+
+\`\`\`text
+Usage: qawolf runner screenshot [options]
+
+Save a JPEG of an interactive runner's screen to a file, or write it to stdout with --out -
+
+Options:
+  --out <path>   File to write the image to. - writes the JPEG bytes to stdout on their own and
+                 moves the confirmation, JSON included, to stderr (default: "screenshot.jpg")
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored runner
+  -h, --help     display help for command
+
+Examples:
+  $ qawolf runner screenshot
+  $ qawolf runner screenshot --out screens/step-3.jpg
+  $ qawolf runner screenshot --out - > step-3.jpg
+  $ qawolf runner screenshot --out - | my-vision-tool
+\`\`\`
+
+## qawolf runner act
+
+\`\`\`text
+Usage: qawolf runner act [options] <action>
+
+Perform one raw action on a runner's screen. A browser runner takes click, double_click, scroll,
+move, drag, keypress, navigate and type; a mobile runner takes tap, swipe, fill and type. A browser
+runner answers mobile actions with action-not-supported-on-browser; a mobile runner answers the
+other browser actions with action-not-supported-on-mobile. Use - to read a whole action as JSON from
+stdin
+
+Options:
+  --button <button>      click: left, right, wheel, back or forward
+  --duration-ms <ms>     swipe: how long it takes, up to 10000. Slow scrolls, fast flings
+  --from <x,y>           swipe: the point it starts at
+  --keys <keys...>       keypress: modifiers and the key, e.g. Control a
+  --path <json>          drag: JSON array of points to drag through
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's
+                         stored runner
+  --screenshot <path>    Also save a JPEG of the screen, taken after the action, to this file, in
+                         place of a separate screenshot. An action that did not take effect answers
+                         with one too. - writes it to stdout and moves the confirmation, JSON
+                         included, to stderr
+  --scroll-x <delta>     scroll: horizontal wheel delta
+  --scroll-y <delta>     scroll: vertical wheel delta
+  --selector <selector>  tap or fill: the element to act on, as a screen object would find it. tap
+                         takes it in place of --x and --y
+  --strategy <strategy>  how --selector is resolved: xpath (default), ios-predicate or shadow
+  --text <text>          type: the text to type into what has focus. fill: the field's new value
+  --to <x,y>             swipe: the point it ends at
+  --url <url>            navigate: the http or https URL to go to
+  --x <pixels>           click, tap and the like: x, in screenshot pixels
+  --y <pixels>           click, tap and the like: y, in screenshot pixels
+  -h, --help             display help for command
+
+Examples:
+  $ qawolf runner act click --button left --x 480 --y 260
+  $ qawolf runner act type --text "hello@example.com"
+  $ qawolf runner act keypress --keys Control a
+  $ qawolf runner act navigate --url https://example.com
+  $ qawolf runner act drag --path '[{"x":10,"y":20},{"x":80,"y":90}]'
+  $ qawolf runner act click --button left --x 480 --y 260 --screenshot step-4.jpg
+  $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act -
+  $ echo '{"type":"click","button":"left","x":1,"y":2}' | qawolf runner act - --screenshot - > step-5.jpg
+
+Mobile:
+  $ qawolf runner act tap --x 540 --y 1200
+  $ qawolf runner act tap --selector '//*[@content-desc="Continue"]'
+  $ qawolf runner act fill --selector 'name == "Postal code"' --strategy ios-predicate --text 94107
+  $ qawolf runner act swipe --from 540,1600 --to 540,600 --duration-ms 1500
+\`\`\`
+
+## qawolf runner actions
+
+\`\`\`text
+Usage: qawolf runner actions [options] <sequence>
+
+Perform a sequence of up to ten raw actions on a runner's screen in one request, as a JSON array of
+the same actions \`runner act\` takes. Use - to read the array from stdin. Actions run back to back,
+so batch only steps whose targets are on the screen you last saw, and end the sequence at the step
+that changes the page. Each result carries an effect: performed, not-performed, or unknown when the
+runner stopped answering and the action may have landed
+
+Options:
+  --continue-on-failure     Carry on past an action that reached the runner and did not take effect;
+                            a runner that cannot be reached or a screen that cannot serve still ends
+                            the sequence
+  --runner <id>             Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's
+                            stored runner
+  --screenshot <path>       Save a JPEG of the screen after the last action to this file. With
+                            --screenshot-mode each, one file per action, with the action's index
+                            before the extension. - writes the final frame to stdout and moves the
+                            confirmation to stderr
+  --screenshot-mode <mode>  Defaults to final when --screenshot is given, none otherwise (choices:
+                            "none", "final", "each")
+  -h, --help                display help for command
+
+Examples:
+  $ qawolf runner actions '[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"hello@example.com"},{"type":"keypress","keys":["Enter"]}]' --screenshot after-login.jpg
+  $ echo '[{"type":"click","button":"left","x":1,"y":2},{"type":"type","text":"hi"}]' | qawolf runner actions -
+  $ qawolf runner actions '[{"type":"click","button":"left","x":480,"y":260},{"type":"type","text":"hello"}]' --screenshot-mode each --screenshot step.jpg
+  $ qawolf runner actions '[{"type":"scroll","x":480,"y":260,"scroll_x":0,"scroll_y":600},{"type":"click","button":"left","x":120,"y":700}]' --continue-on-failure
+
+Mobile:
+  $ qawolf runner actions '[{"type":"tap","selector":"//*[@content-desc=\\"Email\\"]"},{"type":"type","text":"hello@example.com"},{"type":"tap","x":540,"y":1650}]' --screenshot after-login.jpg
+  $ qawolf runner actions '[{"type":"fill","selector":"name == \\"Postal code\\"","strategy":"ios-predicate","text":"94107"},{"type":"swipe","from":{"x":540,"y":1600},"to":{"x":540,"y":600}}]'
+\`\`\`
+
+## qawolf runner exec
+
+\`\`\`text
+Usage: qawolf runner exec [options] <file>
+
+Evaluate a snippet against a runner's live page. Use - to read the snippet from stdin
+
+Options:
+  --file <path>  File whose scope the snippet is evaluated in; it and the directory's other files
+                 travel with it
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored runner
+  -h, --help     display help for command
+
+Examples:
+  $ qawolf runner exec snippet.ts
+  $ echo 'console.log(await page.title())' | qawolf runner exec -
+  $ qawolf runner exec snippet.ts --file flows/checkout.flow.ts
+\`\`\`
+
+## qawolf runner inspect
+
+\`\`\`text
+Usage: qawolf runner inspect [options] [command]
+
+Read one thing off a runner's live page (browser) or Appium session (mobile)
+
+Options:
+  -h, --help              display help for command
+
+Commands:
+  element-html [options]  Print the HTML of the first element a selector matches
+  page-html [options]     Print the page's HTML, simplified for a model to read
+  variable [options]      Print a top-level variable's value from the running workflow
+  session [options]       Print the Appium session's status: ready, or why not
+  contexts [options]      List the WebView contexts available, and which is current
+  page-source [options]   Print the current context's page source, as a tree
+  elements [options]      Find elements at a screen point, carrying some text, or matching a
+                          selector
+  help [command]          display help for command
+
+Examples:
+  $ qawolf runner inspect element-html --selector "#email"
+  $ qawolf runner inspect page-html > page.html
+  $ qawolf runner inspect variable --name cart | jq .total
+  $ qawolf runner inspect session
+  $ qawolf runner inspect contexts
+  $ qawolf runner inspect page-source --context WEBVIEW_1
+  $ qawolf runner inspect elements --x 200 --y 400
+  $ qawolf runner inspect elements --text "Sign in" --partial
+  $ qawolf runner inspect elements --selector "//android.widget.Button[@text='Sign in']"
+\`\`\`
+
+### qawolf runner inspect element-html
+
+\`\`\`text
+Usage: qawolf runner inspect element-html [options]
+
+Print the HTML of the first element a selector matches
+
+Options:
+  --selector <selector>  Playwright selector to inspect
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's
+                         stored runner
+  -h, --help             display help for command
+\`\`\`
+
+### qawolf runner inspect page-html
+
+\`\`\`text
+Usage: qawolf runner inspect page-html [options]
+
+Print the page's HTML, simplified for a model to read
+
+Options:
+  --selector <selector>  Limit the output to this subtree
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's
+                         stored runner
+  -h, --help             display help for command
+\`\`\`
+
+### qawolf runner inspect variable
+
+\`\`\`text
+Usage: qawolf runner inspect variable [options]
+
+Print a top-level variable's value from the running workflow
+
+Options:
+  --name <name>  Name of the variable to read
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored runner
+  -h, --help     display help for command
+\`\`\`
+
+### qawolf runner inspect session
+
+\`\`\`text
+Usage: qawolf runner inspect session [options]
+
+Print the Appium session's status: ready, or why not
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored runner
+  -h, --help     display help for command
+\`\`\`
+
+### qawolf runner inspect contexts
+
+\`\`\`text
+Usage: qawolf runner inspect contexts [options]
+
+List the WebView contexts available, and which is current
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored runner
+  -h, --help     display help for command
+\`\`\`
+
+### qawolf runner inspect page-source
+
+\`\`\`text
+Usage: qawolf runner inspect page-source [options]
+
+Print the current context's page source, as a tree
+
+Options:
+  --context <name>  Read this context instead of the current one
+  --runner <id>     Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored
+                    runner
+  -h, --help        display help for command
+\`\`\`
+
+### qawolf runner inspect elements
+
+\`\`\`text
+Usage: qawolf runner inspect elements [options]
+
+Find elements at a screen point, carrying some text, or matching a selector
+
+Options:
+  --context <name>       Read this context instead of the current one
+  --partial              text: match text containing this, rather than exactly this
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's
+                         stored runner
+  --selector <selector>  Resolved the same way a screen object's own selector is
+  --strategy <strategy>  selector: xpath, ios-predicate, or shadow (defaults to xpath)
+  --text <text>          text: the text to match
+  --x <pixels>           point: whole pixels on the device's own screen
+  --y <pixels>           point: whole pixels on the device's own screen
+  -h, --help             display help for command
+\`\`\`
+
+## qawolf runner import-package
+
+\`\`\`text
+Usage: qawolf runner import-package [options] <name>
+
+Install a package into a runner's live run, so a snippet or a selection can import it
+
+Options:
+  --package-version <version>  Version to install (default: "latest")
+  --runner <id>                Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's
+                               stored runner
+  -h, --help                   display help for command
+
+Examples:
+  $ qawolf runner import-package dayjs
+  $ qawolf runner import-package dayjs --package-version 1.11.13
+\`\`\`
+
+## qawolf runner highlight-selector
+
+\`\`\`text
+Usage: qawolf runner highlight-selector [options] [selector]
+
+Highlight what a selector matches on a runner's live page, so the next screenshot shows it. Omit the
+selector to clear the highlight
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored runner
+  -h, --help     display help for command
+
+Examples:
+  $ qawolf runner highlight-selector "text=Sign in"
+  $ qawolf runner highlight-selector "#checkout" && qawolf runner screenshot
+  $ qawolf runner highlight-selector
+\`\`\`
+
+## qawolf runner promote-snapshot
+
+\`\`\`text
+Usage: qawolf runner promote-snapshot [options]
+
+Accept a run's screenshot as the new baseline for an image diff, on the runner that produced it
+
+Options:
+  --screenshot <path>  The screenshot to promote, as the image diff named it
+  --baseline <path>    The baseline to replace, as the image diff named it
+  --runner <id>        Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored
+                       runner
+  -h, --help           display help for command
+
+Examples:
+  $ qawolf runner promote-snapshot --screenshot checkout-1-actual.png --baseline checkout-1.png
+  $ qawolf runner events run-events --tail 20 | jq 'select(.type == "imageDiffArtifact")'
+\`\`\`
+
+## qawolf runner record
+
+\`\`\`text
+Usage: qawolf runner record [options] [command]
+
+Control video recording on a Playwright runner
+
+Options:
+  -h, --help                     display help for command
+
+Commands:
+  start [options]                Start manual video capture across runs. Requires a ready screen and
+                                 suppresses automatic capture until stopped
+  stop [options] <recording-id>  Stop the recording with this UUID and publish it. Retrying cannot
+                                 stop a later recording
+  status [options]               Show the active recording and automatic recording setting
+  auto [options] <setting>       Enable or disable automatic recording for subsequent full runs
+  help [command]                 display help for command
+\`\`\`
+
+### qawolf runner record start
+
+\`\`\`text
+Usage: qawolf runner record start [options]
+
+Start manual video capture across runs. Requires a ready screen and suppresses automatic capture
+until stopped
+
+Options:
+  --recording-id <uuid>  Recording UUID. Generated when omitted; reuse it when retrying this start
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's
+                         stored runner
+  -h, --help             display help for command
+\`\`\`
+
+### qawolf runner record stop
+
+\`\`\`text
+Usage: qawolf runner record stop [options] <recording-id>
+
+Stop the recording with this UUID and publish it. Retrying cannot stop a later recording
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored runner
+  -h, --help     display help for command
+\`\`\`
+
+### qawolf runner record status
+
+\`\`\`text
+Usage: qawolf runner record status [options]
+
+Show the active recording and automatic recording setting
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored runner
+  -h, --help     display help for command
+\`\`\`
+
+### qawolf runner record auto
+
+\`\`\`text
+Usage: qawolf runner record auto [options] <setting>
+
+Enable or disable automatic recording for subsequent full runs
+
+Arguments:
+  setting        Automatic recording setting (choices: "on", "off")
+
+Options:
+  --runner <id>  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's stored runner
+  -h, --help     display help for command
+\`\`\`
+
+## qawolf runner list-recordings
+
+\`\`\`text
+Usage: qawolf runner list-recordings [options]
+
+Read a page of published video recordings, including after the runner terminates. Platform URLs
+persist; video URLs expire
+
+Options:
+  --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's
+                         stored runner
+  --recording-id <uuid>  Look up one recording; an empty result means it is not published or does
+                         not exist
+  --page-token <token>   Continue from nextPageToken returned by the previous page
+  -h, --help             display help for command
+\`\`\`
+"
+`;

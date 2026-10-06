@@ -65,7 +65,7 @@ qawolf flows run examples/example.flow.ts
 | `qawolf init`    | [Set up a local-only project](https://docs.qawolf.com/qawolf/local-execution/set-up-a-project)                                                                 |
 | `qawolf doctor`  | [Diagnose problems](https://docs.qawolf.com/qawolf/local-execution/diagnose-problems)                                                                          |
 
-Run any command with `--help` for its flags and options.
+Run any command with `--help` for its flags and options. `qawolf help ref <command>` prints the help of a command and of every command under it, as Markdown.
 
 ## Agent integration
 

@@ -5,6 +5,7 @@ import { registerAgentCommand } from "./agent/index.js";
 import { registerAuthCommand } from "./auth/index.js";
 import { registerDoctorCommand } from "./doctor/index.js";
 import { registerFlowsCommand } from "./flows/index.js";
+import { registerHelpCommand } from "./help/index.js";
 import { registerInitCommand } from "./init/index.js";
 import { registerInstallCommand } from "./install/index.js";
 import { registerPublicApiCommands } from "./publicApi/index.js";
@@ -36,6 +37,7 @@ export function createProgram({
   registerInstallCommand(program, signals);
   registerRunnerCommand(program, signals);
   registerPublicApiCommands(program, signals);
+  registerHelpCommand(program);
 
   return program;
 }
