@@ -1,5 +1,16 @@
 # @qawolf/cli
 
+## 1.40.0
+
+### Minor Changes
+
+- cc5b447: Add `qawolf help ref [command...]` (alias `reference`): prints the full help of a command and of every command under it as Markdown, e.g. `qawolf help ref runner` for every runner command in one read. `qawolf help <command>` works as before.
+- e18d76c: The runner guide now ships inside the CLI. Each `qawolf runner` command's `--help` carries what used to be its section of `references/runner.md`, `qawolf help ref runner` prints the whole guide for the installed version, and `references/runner.md` is generated from it. The guide also covers mobile `runner actions` sequences: on mobile, send `tap` and `swipe`, never `click` or `drag`.
+
+### Patch Changes
+
+- a68f95d: The runner guide says `qawolf runner inspect variable` works on a mobile runner too; only `element-html` and `page-html` are browser-only.
+
 ## 1.39.0
 
 ### Minor Changes
