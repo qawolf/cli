@@ -10,7 +10,9 @@ import { flowsMessages, runnerMessages } from "~/core/messages/index.js";
 import { matchesSelectors } from "~/core/flowSelectors.js";
 
 import { fetchKnownTags } from "./fetchKnownTags.js";
-import { renderListTable } from "./renderListTable.js";
+import { renderFlowsList } from "./renderFlowsList.js";
+import { renderListTable, type FlowsListRow } from "./renderListTable.js";
+import { type ListView, printedView } from "./listView.js";
 import { emptySelectionResult } from "./selectorGuards.js";
 
 type RemoteListItem = {
@@ -21,6 +23,17 @@ type RemoteListItem = {
   target: string;
   url: string;
 };
+
+const toListRow = (it: RemoteListItem): FlowsListRow => ({
+  name: it.name,
+  flowId: it.flowId,
+  target: it.target,
+  // A remote listing is scoped to one environment by definition, so the env
+  // column would repeat the --env value on every row.
+  env: undefined,
+  tags: it.tags,
+  file: it.file,
+});
 
 export type FlowsListRemoteOptions = {
   readonly env: string;
@@ -33,6 +46,7 @@ export async function flowsListRemote(
   ctx: AuthCommandContext,
   pattern: string | undefined,
   options: FlowsListRemoteOptions,
+  view: ListView = printedView,
 ): Promise<CommandResult> {
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.flow.list,
@@ -77,21 +91,13 @@ export async function flowsListRemote(
     ctx.ui.info(runnerMessages.noFlowsMatched);
     return;
   }
-  const rows = items.map((it) => ({
-    name: it.name,
-    target: it.target,
-    // A remote listing is scoped to one environment by definition, so the env
-    // column would repeat the --env value on every row.
-    env: undefined,
-    tags: it.tags,
-    file: it.file,
-  }));
+  const rows = items.map(toListRow);
   if (ctx.ui.mode === "agent") {
     ctx.ui.write(renderListTable(rows, false));
     return;
   }
   ctx.ui.gap();
   ctx.ui.intro(flowsMessages.remoteTitle);
-  ctx.ui.write(renderListTable(rows, true));
+  ctx.ui.write(renderFlowsList(rows, { styled: true, columns: view.columns }));
   ctx.ui.outro(flowsMessages.flowCount(items.length));
 }

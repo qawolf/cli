@@ -8,6 +8,7 @@ const row = (over: Partial<FlowsListRow> = {}): FlowsListRow => ({
   file: "src/flows/login.flow.ts",
   env: undefined,
   tags: undefined,
+  flowId: undefined,
   ...over,
 });
 

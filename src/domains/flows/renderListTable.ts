@@ -2,13 +2,15 @@ import { type TableColumn, renderTable } from "~/core/renderTable.js";
 
 export type FlowsListRow = {
   readonly name: string;
-  readonly target: string;
+  // Undefined when the flow does not declare one.
+  readonly target: string | undefined;
   readonly file: string;
   // The pulled environment a flow came from, undefined for project flows.
   readonly env: string | undefined;
   // Undefined when the caller cannot determine the tags, as opposed to a flow
   // that is genuinely untagged.
   readonly tags: readonly string[] | undefined;
+  readonly flowId: string | undefined;
 };
 
 const nameColumn: TableColumn<FlowsListRow> = {
@@ -17,7 +19,7 @@ const nameColumn: TableColumn<FlowsListRow> = {
 };
 const targetColumn: TableColumn<FlowsListRow> = {
   header: "target",
-  value: (row) => row.target,
+  value: (row) => row.target ?? "",
 };
 const envColumn: TableColumn<FlowsListRow> = {
   header: "env",
@@ -33,10 +35,10 @@ const fileColumn: TableColumn<FlowsListRow> = {
   value: (row) => row.file,
 };
 
-export function renderListTable(
+function listTableColumns(
   rows: readonly FlowsListRow[],
-  boldHeader: boolean,
-): string {
+  detail: "compact" | "full" = "compact",
+): TableColumn<FlowsListRow>[] {
   // Tagging is sparse, and local flows that were never pulled have no tags to
   // report at all, so the column only appears once some row can fill it.
   const someTagged = rows.some((row) => (row.tags ?? []).length > 0);
@@ -46,10 +48,25 @@ export function renderListTable(
   const severalEnvs = new Set(rows.map((row) => row.env)).size > 1;
   const columns = [
     nameColumn,
+    ...(detail === "full" && rows.some((row) => row.flowId !== undefined)
+      ? [{ header: "id", value: (row: FlowsListRow) => row.flowId ?? "" }]
+      : []),
     targetColumn,
     ...(severalEnvs ? [envColumn] : []),
     ...(someTagged ? [tagsColumn] : []),
     fileColumn,
   ];
-  return renderTable({ boldHeader, columns, rows });
+  return columns;
+}
+
+export function renderListTable(
+  rows: readonly FlowsListRow[],
+  boldHeader: boolean,
+  detail: "compact" | "full" = "compact",
+): string {
+  return renderTable({
+    boldHeader,
+    columns: listTableColumns(rows, detail),
+    rows,
+  });
 }
