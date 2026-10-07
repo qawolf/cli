@@ -58,10 +58,6 @@ export function resolveSnapshot(
 
 const collapse = (text: string) => text.replace(/\s+/g, " ").trim();
 
-function textOf(node: Node): string {
-  return typeof node === "string" ? node : node.children.map(textOf).join(" ");
-}
-
 type Projection = {
   depth: number;
   lines: string[];
@@ -101,16 +97,4 @@ export function projectToText(node: Node, max: number): string {
   const lines: string[] = [];
   project(node, { depth: 0, lines, max, redactText: false });
   return lines.join("\n");
-}
-
-export function findSmallestTextRegions(root: Node, query: string): Node[] {
-  const find = (node: Node, parent: Element | undefined): Element[] => {
-    if (typeof node === "string") return [];
-    const childMatches = node.children.flatMap((child) => find(child, node));
-    if (childMatches.length) return childMatches;
-    return collapse(textOf(node)).toLowerCase().includes(query.toLowerCase())
-      ? [parent ?? node]
-      : [];
-  };
-  return [...new Set(find(root, undefined))];
 }

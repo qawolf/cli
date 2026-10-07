@@ -1,11 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import JSZip from "jszip";
 
-import { investigate, redactEvidence } from "./index.js";
+import { investigate } from "./index.js";
+import { redactAttemptEvidence } from "./projection/attemptEvidenceText.js";
 
 describe("investigation parser", () => {
   it("redacts conventional secret fields and signed URLs", () => {
-    const value = redactEvidence(
+    const value = redactAttemptEvidence(
       'authorization: Bearer secret\n{"token":"abc"}\nhttps://x.test/a?x-goog-signature=secret&ok=1\nembedded https://user:synthetic@secret@example.test/path and //user:protocol@secret@example.test/path',
     );
     expect(value).not.toContain("secret");
@@ -14,10 +15,10 @@ describe("investigation parser", () => {
   });
 
   it("redacts escaped and unterminated credential values", () => {
-    const escaped = redactEvidence(
+    const escaped = redactAttemptEvidence(
       String.raw`payload={\"token\":\"synthetic-secret\"}`,
     );
-    const unterminated = redactEvidence(
+    const unterminated = redactAttemptEvidence(
       'payload={"password":"synthetic-secret[TRUNCATED]',
     );
     expect(escaped).not.toContain("synthetic-secret");
@@ -29,7 +30,9 @@ describe("investigation parser", () => {
   it("redacts a JWT that no field name points at", () => {
     const jwt =
       "eyJhbGciOiJSUzI1NiJ9.eyJzaWQiOiJzeW50aGV0aWMifQ.c3ludGhldGljLXNpZw";
-    const value = redactEvidence(`0:["$","div"]\n2:T4a3,${jwt}\n3:"visible"`);
+    const value = redactAttemptEvidence(
+      `0:["$","div"]\n2:T4a3,${jwt}\n3:"visible"`,
+    );
 
     expect(value).not.toContain(jwt);
     expect(value).toContain("2:T4a3,[REDACTED]");
@@ -37,7 +40,7 @@ describe("investigation parser", () => {
   });
 
   it("redacts a JWT cut off before its signature", () => {
-    const value = redactEvidence(
+    const value = redactAttemptEvidence(
       "session eyJhbGciOiJSUzI1NiJ9.eyJzaWQiOiJzeW50aGV0aWMifQ",
     );
 
@@ -88,7 +91,7 @@ describe("investigation parser", () => {
       secret: "later-secret",
     },
   ])("redacts structured credential evidence", ({ evidence, safe, secret }) => {
-    const redacted = redactEvidence(evidence);
+    const redacted = redactAttemptEvidence(evidence);
 
     expect(redacted).toContain("[REDACTED]");
     expect(redacted).not.toContain(secret);

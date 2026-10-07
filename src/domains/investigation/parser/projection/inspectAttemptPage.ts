@@ -11,7 +11,6 @@ import {
 import type { InspectionCommon } from "./inspectAttemptShared.js";
 import { serializeSnapshotToHtml } from "~/domains/investigation/parser/snapshot/snapshotHtmlProjection.js";
 import {
-  findSmallestTextRegions,
   projectToText,
   resolveSnapshot,
 } from "~/domains/investigation/parser/snapshot/snapshotProjection.js";
@@ -23,7 +22,6 @@ export function inspectSnapshot(
   common: InspectionCommon,
   target: {
     format?: "html" | "text";
-    regionText?: string;
     snapshotId: string;
     type: "snapshot";
   },
@@ -34,7 +32,6 @@ export function inspectSnapshot(
   if (!page) {
     return {
       ...common,
-      focusedRegionTruncated: false,
       ...(target.format === "html" && { htmlTruncated: false }),
       status: "not-found" as const,
       type: target.type,
@@ -46,16 +43,6 @@ export function inspectSnapshot(
         redactAttemptEvidence(projectToText(root, Number.MAX_SAFE_INTEGER)),
       )
     : { text: "", truncated: true };
-  const regions =
-    target.regionText && root
-      ? findSmallestTextRegions(root, target.regionText)
-      : [];
-  const region = regions.length === 1 ? regions[0] : undefined;
-  const focusedRegion = region
-    ? boundAttemptPageText(
-        redactAttemptEvidence(projectToText(region, Number.MAX_SAFE_INTEGER)),
-      )
-    : undefined;
   const nearest = nearestScreenshotForSnapshot(trace, target.snapshotId);
   const serializedHtml =
     target.format === "html" && root
@@ -63,16 +50,6 @@ export function inspectSnapshot(
       : undefined;
   return {
     ...common,
-    ...(focusedRegion && { focusedRegion: focusedRegion.text }),
-    focusedRegionTruncated: focusedRegion?.truncated ?? false,
-    ...(target.regionText && {
-      focusedRegionStatus:
-        regions.length === 0
-          ? ("not-found" as const)
-          : regions.length === 1
-            ? ("available" as const)
-            : ("multiple-match" as const),
-    }),
     ...(nearest && {
       nearestScreenshot: {
         deltaMilliseconds: nearest.deltaMilliseconds,

@@ -100,7 +100,6 @@ async function inspect(
     case "timeline":
       return inspectActionTimeline(parsed.trace, common, {
         limit: target.limit,
-        ...(target.method !== undefined && { method: target.method }),
         type: target.type,
       });
     case "network":
@@ -180,5 +179,3 @@ export async function investigate(
 ): Promise<InvestigationResult> {
   return request.mode === "summary" ? summarize(request) : inspect(request);
 }
-
-export { redactAttemptEvidence as redactEvidence } from "./projection/attemptEvidenceText.js";

@@ -16,24 +16,12 @@ import {
 export function inspectActionTimeline(
   trace: PlaywrightTrace,
   common: InspectionCommon,
-  target: { beforeActionId?: string; limit: number; type: "timeline" },
+  target: { limit: number; type: "timeline" },
 ) {
   const listed = listTraceActions(trace, { limit: Number.MAX_SAFE_INTEGER });
   const actions = chronologicallySortActions(listed.items);
-  const boundary = target.beforeActionId
-    ? actions.findIndex((item) => item.id === target.beforeActionId)
-    : actions.length;
-  if (boundary === -1) {
-    return {
-      ...common,
-      actions: [],
-      coverage: { ...listed.coverage, returned: 0 },
-      status: "not-found" as const,
-      type: target.type,
-    };
-  }
-  const start = Math.max(0, boundary - target.limit);
-  const selected = actions.slice(start, boundary);
+  const start = Math.max(0, actions.length - target.limit);
+  const selected = actions.slice(start);
   const logs = listTraceActionLogs(trace, {
     limit: Number.MAX_SAFE_INTEGER,
     maxTextBytes: Number.MAX_SAFE_INTEGER,
@@ -46,9 +34,8 @@ export function inspectActionTimeline(
     coverage: {
       ...listed.coverage,
       returned: selected.length,
-      truncated: start > 0 || boundary < actions.length,
+      truncated: start > 0,
     },
-    ...(start > 0 && selected[0] && { nextBeforeActionId: selected[0].id }),
     status: "available" as const,
     type: target.type,
   };
