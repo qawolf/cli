@@ -6,7 +6,6 @@ import { handleInvestigationInspect, type InspectOptions } from "./handle.js";
 const base: InspectOptions = {
   attemptId: "attempt-1",
   format: "text",
-  limit: "20",
   type: "network",
 };
 
@@ -38,6 +37,26 @@ describe("investigation inspect flag validation", () => {
           error: `Invalid ${flag}: yesterday. Use an ISO 8601 timestamp such as 2026-01-31T12:00:00Z.`,
         },
       );
+    },
+  );
+
+  it.each([
+    [
+      { method: "GET", type: "console" },
+      "--method does not apply to --console; use it with --network.",
+    ],
+    [
+      { source: "serverConsole", type: "network" },
+      "--source does not apply to --network; use it with --log.",
+    ],
+    [
+      { limit: "5", actionId: "action-1", type: "action" },
+      "--limit does not apply to --action; use it with --timeline, --network, --console, --log.",
+    ],
+  ] as const)(
+    "rejects a filter that does not apply to the selector",
+    async (options, error) => {
+      expect(await inspectError(options)).toEqual({ error });
     },
   );
 });

@@ -1,4 +1,4 @@
-import type { Command } from "commander";
+import { type Command, Option } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext } from "~/commands/context.js";
@@ -15,12 +15,6 @@ import {
 function parseFormat(value: string): "html" | "text" {
   if (value === "html" || value === "text") return value;
   throw new Error("Expected text or html.");
-}
-
-function parseSource(value: string): "qawolfTraceCollection" | "serverConsole" {
-  if (value === "qawolfTraceCollection" || value === "serverConsole")
-    return value;
-  throw new Error("Expected qawolfTraceCollection or serverConsole.");
 }
 
 export function registerAttemptCommand(
@@ -54,8 +48,7 @@ export function registerAttemptCommand(
     .option("--evidence-id <id>", "Console or log evidence ID")
     .option(
       "--limit <number>",
-      "Maximum entries to return, up to 100: the most recent for --timeline, --network and --log, the earliest for --console",
-      "20",
+      "Maximum entries to return, 20 by default and up to 100: the most recent for --timeline, --network and --log, the earliest for --console",
     )
     .option(
       "--start-time-ms <number>",
@@ -64,7 +57,12 @@ export function registerAttemptCommand(
     .option("--end-time-ms <number>", "Latest trace timestamp in milliseconds")
     .option("--start-timestamp <iso>", "Earliest execution log timestamp")
     .option("--end-timestamp <iso>", "Latest execution log timestamp")
-    .option("--source <source>", "Execution log source", parseSource)
+    .addOption(
+      new Option("--source <source>", "Execution log source").choices([
+        "qawolfTraceCollection",
+        "serverConsole",
+      ]),
+    )
     .option("--method <method>", "Network HTTP method")
     .option("--status <code>", "Network HTTP status")
     .option("--url-contains <text>", "Network URL substring")

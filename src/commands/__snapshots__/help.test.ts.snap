@@ -198,14 +198,15 @@ Options:
   --console                 Inspect browser console evidence
   --log                     Inspect execution log evidence
   --evidence-id <id>        Console or log evidence ID
-  --limit <number>          Maximum entries to return, up to 100: the most
-                            recent for --timeline, --network and --log, the
-                            earliest for --console (default: "20")
+  --limit <number>          Maximum entries to return, 20 by default and up to
+                            100: the most recent for --timeline, --network and
+                            --log, the earliest for --console
   --start-time-ms <number>  Earliest trace timestamp in milliseconds
   --end-time-ms <number>    Latest trace timestamp in milliseconds
   --start-timestamp <iso>   Earliest execution log timestamp
   --end-timestamp <iso>     Latest execution log timestamp
-  --source <source>         Execution log source
+  --source <source>         Execution log source (choices:
+                            "qawolfTraceCollection", "serverConsole")
   --method <method>         Network HTTP method
   --status <code>           Network HTTP status
   --url-contains <text>     Network URL substring

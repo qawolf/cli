@@ -31,7 +31,7 @@ export type InspectOptions = {
   endTimestamp?: string;
   evidenceId?: string;
   format: "html" | "text";
-  limit: string;
+  limit?: string;
   method?: string;
   outputFile?: string;
   requestId?: string;
@@ -94,7 +94,33 @@ export async function loadInspectArtifact(
   };
 }
 
+const defaultInspectLimit = "20";
 const maxInspectLimit = 100;
+
+const filterSelectors: [keyof InspectOptions, string, InspectType[]][] = [
+  ["evidenceId", "--evidence-id", ["console", "log"]],
+  ["limit", "--limit", ["timeline", "network", "console", "log"]],
+  ["startTimeMs", "--start-time-ms", ["network", "console"]],
+  ["endTimeMs", "--end-time-ms", ["network", "console"]],
+  ["startTimestamp", "--start-timestamp", ["log"]],
+  ["endTimestamp", "--end-timestamp", ["log"]],
+  ["source", "--source", ["log"]],
+  ["method", "--method", ["network"]],
+  ["status", "--status", ["network"]],
+  ["urlContains", "--url-contains", ["network"]],
+];
+
+function inapplicableFilter(options: InspectOptions): CommandResult {
+  for (const [field, flag, selectors] of filterSelectors) {
+    if (options[field] === undefined || selectors.includes(options.type))
+      continue;
+    const allowed = selectors.map((selector) => `--${selector}`).join(", ");
+    return {
+      error: `${flag} does not apply to --${options.type}; use it with ${allowed}.`,
+    };
+  }
+  return undefined;
+}
 
 function numberFlag(
   value: string | undefined,
@@ -189,14 +215,14 @@ export async function handleInvestigationInspect(
   ctx: AuthCommandContext,
   options: InspectOptions,
 ): Promise<CommandResult> {
-  const invalid = validateInspect(options);
+  const invalid = validateInspect(options) ?? inapplicableFilter(options);
   if (invalid) return invalid;
   if (options.outputFile && (await ctx.fs.pathExists(options.outputFile)))
     return {
       error: `Refusing to overwrite existing file: ${options.outputFile}`,
     };
 
-  const limit = numberFlag(options.limit, "--limit", {
+  const limit = numberFlag(options.limit ?? defaultInspectLimit, "--limit", {
     integer: true,
     max: maxInspectLimit,
     min: 1,
