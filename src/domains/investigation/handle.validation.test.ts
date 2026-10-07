@@ -26,4 +26,18 @@ describe("investigation inspect flag validation", () => {
       error: "--limit must be at most 100, got 101.",
     });
   });
+
+  it.each([
+    ["startTimestamp", "--start-timestamp"],
+    ["endTimestamp", "--end-timestamp"],
+  ] as const)(
+    "rejects an unparseable %s before calling the API",
+    async (field, flag) => {
+      expect(await inspectError({ [field]: "yesterday", type: "log" })).toEqual(
+        {
+          error: `Invalid ${flag}: yesterday. Use an ISO 8601 timestamp such as 2026-01-31T12:00:00Z.`,
+        },
+      );
+    },
+  );
 });

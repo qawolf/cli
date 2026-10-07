@@ -114,6 +114,16 @@ function numberFlag(
   return parsed;
 }
 
+function timestampFlag(
+  value: string | undefined,
+  name: string,
+): { error: string } | undefined {
+  if (value === undefined || !Number.isNaN(Date.parse(value))) return undefined;
+  return {
+    error: `Invalid ${name}: ${value}. Use an ISO 8601 timestamp such as 2026-01-31T12:00:00Z.`,
+  };
+}
+
 function validateInspect(options: InspectOptions): CommandResult {
   if (options.type === "action" && !options.actionId)
     return { error: "--action requires an evidence ID." };
@@ -204,6 +214,10 @@ export async function handleInvestigationInspect(
     min: 0,
   });
   if (typeof status === "object") return status;
+  const timestampError =
+    timestampFlag(options.startTimestamp, "--start-timestamp") ??
+    timestampFlag(options.endTimestamp, "--end-timestamp");
+  if (timestampError) return timestampError;
 
   const authorized = await fetchAttempt(ctx, options.attemptId);
   if (!authorized.ok) return failureFields(authorized);
