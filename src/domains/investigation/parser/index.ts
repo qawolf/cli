@@ -3,7 +3,7 @@
 import type {
   InvestigationRequest,
   InvestigationResult,
-} from "../domains/investigation/types.js";
+} from "~/domains/investigation/types.js";
 import {
   inspectExecutionLogs,
   summarizeExecutionLogs,

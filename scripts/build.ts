@@ -50,7 +50,7 @@ const bundles = [
   buildArgs("./src/runnerSdk/index.ts", "runner-sdk"),
   [
     "build",
-    "./src/investigationParser/index.ts",
+    "./src/domains/investigation/parser/index.ts",
     "--outdir",
     "dist",
     "--entry-naming=investigation-parser.[ext]",

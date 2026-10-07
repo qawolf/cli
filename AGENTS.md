@@ -72,6 +72,7 @@ src/
 │   ├── init/            # init handler + templates
 │   ├── install/         # installBrowsers, installBrowserList
 │   ├── interactiveRunner/ # remote runners: launch, stop, keepalive, runFlow, journal, screenshot, act, exec
+│   ├── investigation/   # attempt investigate/inspect: artifact download; parser/ is a lazily loaded bundle (dist/investigation-parser.js)
 │   ├── runner/          # the LOCAL execution engine: flowsRun, runWebFlow, runAndroidFlow, worker dispatch + pool
 │   └── updateCheck/     # startUpdateCheck: new-version notice after commands
 ├── commands/            # Thin CLI glue — Commander registration + composite root

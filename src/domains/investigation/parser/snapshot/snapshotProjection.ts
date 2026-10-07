@@ -1,6 +1,6 @@
 // oxlint-disable eslint/max-lines -- Keep snapshot resolution and text projection aligned with the platform implementation.
 
-import { reconstructSnapshotHtml } from "../trace/playwrightTraceSnapshots.js";
+import { reconstructSnapshotHtml } from "~/domains/investigation/parser/trace/playwrightTraceSnapshots.js";
 
 // Playwright stores a page snapshot as nested arrays: a text node is a
 // string, an element is [tag, attributes, ...children], and [[back, index]]

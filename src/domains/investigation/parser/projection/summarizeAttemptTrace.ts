@@ -11,7 +11,7 @@ import {
   readFailureStack,
   readTraceActionStack,
   readTraceSnapshot,
-} from "../trace/playwrightTrace.js";
+} from "~/domains/investigation/parser/trace/playwrightTrace.js";
 
 import {
   boundAttemptPageText,
@@ -22,7 +22,7 @@ import { chronologicallySortActions } from "./chronologicallySortActions.js";
 import {
   projectToText,
   resolveSnapshot,
-} from "../snapshot/snapshotProjection.js";
+} from "~/domains/investigation/parser/snapshot/snapshotProjection.js";
 import { summarizeAttemptNetworkErrors } from "./summarizeAttemptNetwork.js";
 import { summarizeAttemptWaitingLogs } from "./summarizeAttemptWaitingLogs.js";
 

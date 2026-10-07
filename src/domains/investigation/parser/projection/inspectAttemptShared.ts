@@ -1,8 +1,11 @@
 // oxlint-disable eslint/max-lines -- Keep shared typed fallback and action shaping aligned with the platform implementation.
 
-import type { listTraceActionLogs } from "../trace/playwrightTrace.js";
-import type { PlaywrightTrace, TraceAction } from "../trace/playwrightTrace.js";
-import { readTraceActionStack } from "../trace/playwrightTrace.js";
+import type { listTraceActionLogs } from "~/domains/investigation/parser/trace/playwrightTrace.js";
+import type {
+  PlaywrightTrace,
+  TraceAction,
+} from "~/domains/investigation/parser/trace/playwrightTrace.js";
+import { readTraceActionStack } from "~/domains/investigation/parser/trace/playwrightTrace.js";
 
 import { redactAndBoundAttemptEvidenceResult } from "./attemptEvidenceText.js";
 

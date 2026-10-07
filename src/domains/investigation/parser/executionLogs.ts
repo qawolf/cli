@@ -1,7 +1,7 @@
 import type {
   ArtifactInput,
   InvestigationRequest,
-} from "../domains/investigation/types.js";
+} from "~/domains/investigation/types.js";
 import { redactAttemptEvidence } from "./projection/attemptEvidenceText.js";
 import { parseRunLogs } from "./trace/runLogs.js";
 

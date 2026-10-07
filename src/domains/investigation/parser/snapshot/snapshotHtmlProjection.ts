@@ -1,6 +1,6 @@
 // oxlint-disable eslint/max-lines -- Keep the sanitizer and its byte-budget writer aligned with the platform implementation.
 
-import { redactAttemptEvidence } from "~/investigationParser/projection/attemptEvidenceText.js";
+import { redactAttemptEvidence } from "~/domains/investigation/parser/projection/attemptEvidenceText.js";
 
 import type { Element, Node } from "./snapshotProjection.js";
 

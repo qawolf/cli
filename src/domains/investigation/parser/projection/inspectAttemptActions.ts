@@ -4,7 +4,7 @@ import {
   listTraceActions,
   listTraceNetwork,
   listTraceSnapshots,
-} from "../trace/playwrightTrace.js";
+} from "~/domains/investigation/parser/trace/playwrightTrace.js";
 
 import { chronologicallySortActions } from "./chronologicallySortActions.js";
 import {

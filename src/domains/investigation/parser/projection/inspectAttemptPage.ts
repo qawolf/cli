@@ -2,19 +2,19 @@ import {
   type PlaywrightTrace,
   nearestScreenshotForSnapshot,
   readTraceSnapshot,
-} from "../trace/playwrightTrace.js";
+} from "~/domains/investigation/parser/trace/playwrightTrace.js";
 
 import {
   boundAttemptPageText,
   redactAttemptEvidence,
 } from "./attemptEvidenceText.js";
 import type { InspectionCommon } from "./inspectAttemptShared.js";
-import { serializeSnapshotToHtml } from "../snapshot/snapshotHtmlProjection.js";
+import { serializeSnapshotToHtml } from "~/domains/investigation/parser/snapshot/snapshotHtmlProjection.js";
 import {
   findSmallestTextRegions,
   projectToText,
   resolveSnapshot,
-} from "../snapshot/snapshotProjection.js";
+} from "~/domains/investigation/parser/snapshot/snapshotProjection.js";
 
 const maxSnapshotReconstructionBytes = 256 * 1024;
 

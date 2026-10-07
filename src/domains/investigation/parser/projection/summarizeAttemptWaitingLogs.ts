@@ -1,4 +1,7 @@
-import type { Bounded, TraceActionLog } from "../trace/playwrightTrace.js";
+import type {
+  Bounded,
+  TraceActionLog,
+} from "~/domains/investigation/parser/trace/playwrightTrace.js";
 
 import { redactAndBoundAttemptEvidenceResult } from "./attemptEvidenceText.js";
 

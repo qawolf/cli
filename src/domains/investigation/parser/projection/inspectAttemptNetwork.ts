@@ -1,7 +1,7 @@
 import {
   type PlaywrightTrace,
   listTraceNetwork,
-} from "../trace/playwrightTrace.js";
+} from "~/domains/investigation/parser/trace/playwrightTrace.js";
 
 import { redactAndBoundAttemptEvidenceResult } from "./attemptEvidenceText.js";
 import type { InspectionCommon } from "./inspectAttemptShared.js";

@@ -6,7 +6,7 @@ import {
   listTraceNetwork,
   readTraceResponseBody,
   readTraceScreenshot,
-} from "../trace/playwrightTrace.js";
+} from "~/domains/investigation/parser/trace/playwrightTrace.js";
 
 import { redactAndBoundAttemptEvidenceResult } from "./attemptEvidenceText.js";
 import { redactInspectionHeaders } from "./inspectAttemptRequestHeaders.js";
