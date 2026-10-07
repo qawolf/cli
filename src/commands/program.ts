@@ -8,7 +8,7 @@ import { registerFlowsCommand } from "./flows/index.js";
 import { registerHelpCommand } from "./help/index.js";
 import { registerInitCommand } from "./init/index.js";
 import { registerInstallCommand } from "./install/index.js";
-import { registerAttemptCommand } from "./investigation/index.js";
+import { registerAttemptCommand } from "./attempt/index.js";
 import { registerPublicApiCommands } from "./publicApi/index.js";
 import { registerRunnerCommand } from "./runner/index.js";
 import { exitCodes, exit } from "~/shell/exit.js";

@@ -78,6 +78,7 @@ src/
 ├── commands/            # Thin CLI glue — Commander registration + composite root
     ├── context.ts       # withContext() / withAuthContext() action wrappers
     ├── program.ts       # createProgram() factory
+    ├── attempt/         # attempt investigate/inspect (domains/investigation)
     ├── auth/            # login, logout, whoami handlers
     ├── doctor/          # doctor handler
     ├── flows/           # flows run/list/pull handlers; runDefaults composite root
