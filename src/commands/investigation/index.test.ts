@@ -5,6 +5,7 @@ import { z } from "zod";
 import { makeNoopSignals } from "~/shell/signals/createSignalRegistry.fixtures.js";
 import { createProgram } from "~/commands/program.js";
 import { registerPublicApiCommands } from "~/commands/publicApi/index.js";
+import { standInAnnotationJustifications } from "~/domains/publicApi/contract.fixtures.js";
 import { registerAttemptCommand } from "./index.js";
 
 function subcommand(parent: Command, name: string): Command {
@@ -43,6 +44,7 @@ describe("attempt command registration", () => {
       contracts: {
         attempt: {
           get: {
+            annotationJustifications: standInAnnotationJustifications,
             annotations: {
               destructiveHint: false,
               openWorldHint: false,
