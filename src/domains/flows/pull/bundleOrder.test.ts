@@ -19,6 +19,7 @@ it("sorts manifest paths after normalizing separators", async () => {
       wrapperName: undefined,
       qawolfCommittedAt: undefined,
       tags: undefined,
+      envVarsByFlow: undefined,
     },
     {
       ...fs,

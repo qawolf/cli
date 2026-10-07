@@ -1,32 +1,22 @@
 import { relative } from "node:path";
 
 import { doctorMessages } from "~/core/messages/index.js";
+import {
+  expandEnvVarPattern,
+  type FileAssetCategory,
+  fileAssetVarPatterns,
+} from "~/core/runtimeEnvVars.js";
 import type { CheckResult } from "~/domains/doctor/types.js";
 import { errorMessage } from "~/core/errors.js";
 
-type FileAssetCategory = "file-asset" | "mobile-input";
-
-const fileAssetVarPatterns: readonly {
-  readonly pattern: string;
-  readonly category: FileAssetCategory;
-}[] = [
-  { pattern: "TEAM_STORAGE_DIR", category: "file-asset" },
-  { pattern: "QAWOLF_*_DIR", category: "file-asset" },
-  { pattern: "RUN_*_DIR", category: "mobile-input" },
-  { pattern: "RUN_INPUT_PATH", category: "mobile-input" },
-];
-
-const expandPattern = (pattern: string): string =>
-  pattern.replace(/\*/g, "\\w+");
-
 const fileAssetVarRe = new RegExp(
-  `\\b(?:${fileAssetVarPatterns.map(({ pattern }) => expandPattern(pattern)).join("|")})\\b`,
+  `\\b(?:${fileAssetVarPatterns.map(({ pattern }) => expandEnvVarPattern(pattern)).join("|")})\\b`,
   "g",
 );
 
 const compiledByCategory = fileAssetVarPatterns.map(
   ({ pattern, category }) => ({
-    re: new RegExp(`^${expandPattern(pattern)}$`),
+    re: new RegExp(`^${expandEnvVarPattern(pattern)}$`),
     category,
   }),
 );

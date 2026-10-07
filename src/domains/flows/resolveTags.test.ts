@@ -13,6 +13,7 @@ import {
 } from "~/shell/platform/createPlatformClient.testUtils.js";
 
 import { resolveTags } from "./resolveTags.js";
+import { makeManifestFlow } from "~/shell/manifest/manifest.testUtils.js";
 
 afterEach(() => {
   mock.restore();
@@ -52,7 +53,11 @@ async function fsWithManifest(over: Partial<Manifest>): Promise<Fs> {
     qawolfCommittedAt: undefined,
     tagsFetchedAt: "2026-05-01T12:00:00.000Z",
     flows: [
-      { path: "src/flows/a.flow.ts", contentHash: "h1", tags: ["cached-tag"] },
+      makeManifestFlow({
+        path: "src/flows/a.flow.ts",
+        contentHash: "h1",
+        tags: ["cached-tag"],
+      }),
     ],
     ...over,
   };
@@ -146,7 +151,7 @@ describe("resolveTags fallback", () => {
       envDir,
       await fsWithManifest({
         flows: [
-          { path: "src/flows/a.flow.ts", contentHash: "h1", tags: undefined },
+          makeManifestFlow({ path: "src/flows/a.flow.ts", contentHash: "h1" }),
         ],
       }),
     );
@@ -164,11 +169,11 @@ describe("resolveTags fallback", () => {
       envDir,
       await fsWithManifest({
         flows: [
-          {
+          makeManifestFlow({
             path: "src\\flows\\a.flow.ts",
             contentHash: "h1",
             tags: ["cached-tag"],
-          },
+          }),
         ],
       }),
     );
