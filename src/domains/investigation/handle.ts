@@ -21,7 +21,7 @@ import type {
 } from "./types.js";
 
 export type AttemptArtifacts = z.infer<
-  typeof publicContractsV1.run.getAttemptArtifacts.output
+  typeof publicContractsV1.attempt.get.output
 >;
 
 export type InspectOptions = {
@@ -142,12 +142,9 @@ function renderText(result: Record<string, unknown>): string {
 }
 
 async function fetchAttempt(ctx: AuthCommandContext, attemptId: string) {
-  return ctx.platformClient.callPublicApi(
-    publicContractsV1.run.getAttemptArtifacts,
-    {
-      attemptId,
-    },
-  );
+  return ctx.platformClient.callPublicApi(publicContractsV1.attempt.get, {
+    attemptId,
+  });
 }
 
 export async function handleInvestigationSummary(

@@ -35,6 +35,7 @@ Commands:
   investigation                QA Wolf public API investigation commands
   issue                        QA Wolf public API issue commands
   legacyTrigger                QA Wolf public API legacyTrigger commands
+  promotion                    QA Wolf public API promotion commands
   run                          Trigger and manage QA Wolf runs on the platform
   skill                        QA Wolf public API skill commands
   tag                          QA Wolf public API tag commands
@@ -162,6 +163,10 @@ Options:
 Commands:
   investigate [options]  Summarize the evidence for one finished attempt
   inspect [options]      Inspect one kind of evidence for a finished attempt
+  get [options]          Get a finished run attempt: its run and flow status,
+                         its place among that flow's attempts in the run, and
+                         signed links to its logs, trace, and video when they
+                         were captured.
   help [command]         display help for command
 "
 `;

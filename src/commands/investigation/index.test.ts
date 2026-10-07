@@ -32,6 +32,7 @@ describe("attempt command registration", () => {
     expect(attempt.commands.map((command) => command.name())).toEqual([
       "investigate",
       "inspect",
+      "get",
     ]);
     expect(investigation.commands.map((command) => command.name())).toContain(
       "get",

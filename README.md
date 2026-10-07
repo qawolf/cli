@@ -89,7 +89,7 @@ qawolf attempt inspect --attempt-id <attempt-id> --snapshot <snapshot-id> --form
 qawolf attempt inspect --attempt-id <attempt-id> --screenshot <screenshot-id> --output-file screenshot.jpeg
 ```
 
-The trace and logs are downloaded from the signed links `qawolf run getAttemptArtifacts` returns and parsed on your machine. Downloads, output text, HTML, request bodies, and log retention are bounded; `incomplete`, `truncated`, `malformed`, and artifact status fields describe evidence that could not be read in full.
+The trace and logs are downloaded from the signed links `qawolf attempt get` returns and parsed on your machine. Downloads, output text, HTML, request bodies, and log retention are bounded; `incomplete`, `truncated`, `malformed`, and artifact status fields describe evidence that could not be read in full.
 
 ## Agent integration
 
