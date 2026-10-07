@@ -79,7 +79,7 @@ qawolf attempt inspect --attempt-id <attempt-id> --timeline --limit 20
 qawolf attempt inspect --attempt-id <attempt-id> --request <request-id>
 ```
 
-`attempt inspect` requires exactly one of `--action`, `--timeline`, `--network`, `--request`, `--snapshot`, `--screenshot`, `--console`, or `--log`. Use `--evidence-id` to start console or execution-log output at a specific evidence record; the other filters are listed in `qawolf attempt inspect --help`.
+`attempt inspect` requires exactly one of `--action`, `--timeline`, `--network`, `--request`, `--snapshot`, `--screenshot`, `--console`, or `--log`. Use `--evidence-id` with `--console` or `--log` to return exactly that one evidence record; the other filters are listed in `qawolf attempt inspect --help`.
 
 Snapshot HTML can be returned directly or written to a new file. Screenshots require a file. The CLI refuses to overwrite an existing path:
 

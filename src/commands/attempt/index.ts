@@ -45,7 +45,7 @@ export function registerAttemptCommand(
     .option("--screenshot <id>", "Export one screenshot evidence ID")
     .option("--console", "Inspect browser console evidence")
     .option("--log", "Inspect execution log evidence")
-    .option("--evidence-id <id>", "Console or log evidence ID")
+    .option("--evidence-id <id>", "Return only this console or log record")
     .option(
       "--limit <number>",
       "Maximum entries to return, 20 by default and up to 100: the most recent for --timeline, --network and --log, the earliest for --console",
