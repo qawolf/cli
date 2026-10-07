@@ -48,6 +48,16 @@ function buildArgs(entry: string, name: string): string[] {
 const bundles = [
   buildArgs("./src/main.ts", "cli"),
   buildArgs("./src/runnerSdk/index.ts", "runner-sdk"),
+  [
+    "build",
+    "./src/domains/investigation/parser/index.ts",
+    "--outdir",
+    "dist",
+    "--entry-naming=investigation-parser.[ext]",
+    "--target",
+    "node",
+    "--sourcemap=external",
+  ],
 ];
 
 for (const args of bundles) {

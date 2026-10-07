@@ -22,6 +22,8 @@ Commands:
                                directory
   install [options] [pattern]  Install every runtime dependency the project's
                                flows need
+  attempt                      Investigate a finished run attempt from recorded
+                               evidence
   runner                       Drive an interactive runner on the QA Wolf
                                platform
   codeHostIntegration          QA Wolf public API codeHostIntegration commands
@@ -33,6 +35,7 @@ Commands:
   investigation                QA Wolf public API investigation commands
   issue                        QA Wolf public API issue commands
   legacyTrigger                QA Wolf public API legacyTrigger commands
+  promotion                    QA Wolf public API promotion commands
   run                          Trigger and manage QA Wolf runs on the platform
   skill                        QA Wolf public API skill commands
   tag                          QA Wolf public API tag commands
@@ -146,6 +149,70 @@ Options:
 Examples:
   $ qawolf doctor
   $ qawolf doctor --all
+"
+`;
+
+exports[`--help output qawolf attempt 1`] = `
+"Usage: qawolf attempt [options] [command]
+
+Investigate a finished run attempt from recorded evidence
+
+Options:
+  -h, --help             display help for command
+
+Commands:
+  investigate [options]  Summarize the evidence for one finished attempt
+  inspect [options]      Inspect one kind of evidence for a finished attempt
+  get [options]          Get a finished run attempt: its run and flow status,
+                         its place among that flow's attempts in the run, and
+                         signed links to its logs, trace, and video when they
+                         were captured.
+  help [command]         display help for command
+"
+`;
+
+exports[`--help output qawolf attempt investigate 1`] = `
+"Usage: qawolf attempt investigate [options]
+
+Summarize the evidence for one finished attempt
+
+Options:
+  --attempt-id <id>  Attempt to summarize
+  -h, --help         display help for command
+"
+`;
+
+exports[`--help output qawolf attempt inspect 1`] = `
+"Usage: qawolf attempt inspect [options]
+
+Inspect one kind of evidence for a finished attempt
+
+Options:
+  --attempt-id <id>         Attempt to inspect
+  --action <id>             Inspect one action evidence ID
+  --timeline                Inspect the action timeline
+  --network                 Inspect network requests
+  --request <id>            Inspect one network request evidence ID
+  --snapshot <id>           Inspect one page snapshot evidence ID
+  --screenshot <id>         Export one screenshot evidence ID
+  --console                 Inspect browser console evidence
+  --log                     Inspect execution log evidence
+  --evidence-id <id>        Return only this console or log record
+  --limit <number>          Maximum entries to return, 20 by default and up to
+                            100: the most recent for --timeline, --network and
+                            --log, the earliest for --console
+  --start-time-ms <number>  Earliest trace timestamp in milliseconds
+  --end-time-ms <number>    Latest trace timestamp in milliseconds
+  --start-timestamp <iso>   Earliest execution log timestamp
+  --end-timestamp <iso>     Latest execution log timestamp
+  --source <source>         Execution log source (choices:
+                            "qawolfTraceCollection", "serverConsole")
+  --method <method>         Network HTTP method
+  --status <code>           Network HTTP status
+  --url-contains <text>     Network URL substring
+  --format <format>         Snapshot format (text or html) (default: "text")
+  --output-file <path>      Write HTML or screenshot bytes without overwriting
+  -h, --help                display help for command
 "
 `;
 

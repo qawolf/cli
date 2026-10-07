@@ -62,6 +62,18 @@ describe("--help output", () => {
     expect(helpFor("doctor")).toMatchSnapshot();
   });
 
+  it("qawolf attempt", () => {
+    expect(helpFor("attempt")).toMatchSnapshot();
+  });
+
+  it("qawolf attempt investigate", () => {
+    expect(helpFor("attempt", "investigate")).toMatchSnapshot();
+  });
+
+  it("qawolf attempt inspect", () => {
+    expect(helpFor("attempt", "inspect")).toMatchSnapshot();
+  });
+
   it("qawolf flows", () => {
     expect(helpFor("flows")).toMatchSnapshot();
   });

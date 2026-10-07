@@ -61,11 +61,35 @@ qawolf flows run examples/example.flow.ts
 | `qawolf auth`    | [Authenticate with QA Wolf](https://docs.qawolf.com/qawolf/local-execution/authenticate)                                                                       |
 | `qawolf flows`   | [Run flows locally](https://docs.qawolf.com/qawolf/local-execution/run-flows-locally), [pull flows](https://docs.qawolf.com/qawolf/local-execution/pull-flows) |
 | `qawolf run`     | Trigger and manage QA Wolf runs on the platform (public API)                                                                                                   |
+| `qawolf attempt` | Summarize and inspect a finished run attempt's trace and logs                                                                                                  |
 | `qawolf install` | [Install runtime dependencies](https://docs.qawolf.com/qawolf/local-execution/install-dependencies)                                                            |
 | `qawolf init`    | [Set up a local-only project](https://docs.qawolf.com/qawolf/local-execution/set-up-a-project)                                                                 |
 | `qawolf doctor`  | [Diagnose problems](https://docs.qawolf.com/qawolf/local-execution/diagnose-problems)                                                                          |
 
 Run any command with `--help` for its flags and options. `qawolf help ref <command>` prints the help of a command and of every command under it, as Markdown.
+
+### Investigate a run attempt
+
+Start with a run ID, pick an attempt ID from its failed flows, then narrow the evidence only when the summary points to it:
+
+```bash
+qawolf run get --run-id <run-id> --flow-statuses failed
+qawolf attempt investigate --attempt-id <attempt-id>
+qawolf attempt inspect --attempt-id <attempt-id> --timeline --limit 20
+qawolf attempt inspect --attempt-id <attempt-id> --request <request-id>
+```
+
+`attempt inspect` requires exactly one of `--action`, `--timeline`, `--network`, `--request`, `--snapshot`, `--screenshot`, `--console`, or `--log`. Use `--evidence-id` with `--console` or `--log` to return exactly that one evidence record; the other filters are listed in `qawolf attempt inspect --help`.
+
+Snapshot HTML can be returned directly or written to a new file. Screenshots require a file. The CLI refuses to overwrite an existing path:
+
+```bash
+qawolf attempt inspect --attempt-id <attempt-id> --snapshot <snapshot-id> --format html
+qawolf attempt inspect --attempt-id <attempt-id> --snapshot <snapshot-id> --format html --output-file snapshot.html
+qawolf attempt inspect --attempt-id <attempt-id> --screenshot <screenshot-id> --output-file screenshot.jpeg
+```
+
+The trace and logs are downloaded from the signed links `qawolf attempt get` returns and parsed on your machine. Downloads, output text, HTML, request bodies, and log retention are bounded; `incomplete`, `truncated`, `malformed`, and artifact status fields describe evidence that could not be read in full.
 
 ## Agent integration
 
