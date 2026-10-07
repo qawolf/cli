@@ -1,10 +1,26 @@
+import { isTimeoutError } from "~/core/errors.js";
+
 export type ArtifactDownload =
   | { bytes: Uint8Array; offset: number; status: "available" }
-  | { status: "expired-url" | "not-found" | "too-large" | "unavailable" };
+  | {
+      status:
+        | "expired-url"
+        | "not-found"
+        | "timed-out"
+        | "too-large"
+        | "unavailable";
+    };
 
 const traceLimit = 50 * 1024 * 1024;
 const logTailLimit = 5 * 1024 * 1024;
 const logTransferLimit = 50 * 1024 * 1024;
+// Covers the whole transfer, not just the response headers: 50 MB in two
+// minutes still allows a slow (~3.5 Mbit/s) connection.
+const downloadTimeoutMs = 120_000;
+
+function downloadFailure(error: unknown): ArtifactDownload {
+  return { status: isTimeoutError(error) ? "timed-out" : "unavailable" };
+}
 
 async function responseFailure(response: Response): Promise<ArtifactDownload> {
   await response.body?.cancel().catch(() => undefined);
@@ -81,15 +97,15 @@ export async function downloadTrace(
   fetchImpl: typeof globalThis.fetch = globalThis.fetch,
 ): Promise<ArtifactDownload> {
   try {
-    const signal = AbortSignal.timeout(30_000);
+    const signal = AbortSignal.timeout(downloadTimeoutMs);
     const response = await fetchImpl(url, { redirect: "follow", signal });
     return await readBounded(response, {
       keepTail: false,
       retainBytes: traceLimit,
       transferBytes: traceLimit,
     });
-  } catch {
-    return { status: "unavailable" };
+  } catch (error) {
+    return downloadFailure(error);
   }
 }
 
@@ -98,7 +114,7 @@ export async function downloadLogTail(
   fetchImpl: typeof globalThis.fetch = globalThis.fetch,
 ): Promise<ArtifactDownload> {
   try {
-    const signal = AbortSignal.timeout(30_000);
+    const signal = AbortSignal.timeout(downloadTimeoutMs);
     const response = await fetchImpl(url, {
       headers: { range: `bytes=-${logTailLimit}` },
       redirect: "follow",
@@ -109,7 +125,7 @@ export async function downloadLogTail(
       retainBytes: logTailLimit,
       transferBytes: logTransferLimit,
     });
-  } catch {
-    return { status: "unavailable" };
+  } catch (error) {
+    return downloadFailure(error);
   }
 }

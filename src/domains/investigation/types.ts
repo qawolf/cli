@@ -1,6 +1,13 @@
 export type ArtifactInput =
   | { bytes: Uint8Array; offset: number; status: "available" }
-  | { status: "expired-url" | "not-found" | "too-large" | "unavailable" }
+  | {
+      status:
+        | "expired-url"
+        | "not-found"
+        | "timed-out"
+        | "too-large"
+        | "unavailable";
+    }
   | { status: "not-captured" | "signing-failed" };
 
 export type InspectType =

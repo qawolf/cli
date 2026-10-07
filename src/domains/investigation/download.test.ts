@@ -41,4 +41,25 @@ describe("investigation artifact downloads", () => {
     expect(request?.headers).toEqual({ range: "bytes=-5242880" });
     expect(request?.headers).not.toHaveProperty("authorization");
   });
+
+  it("reports a timed-out transfer separately from other failures", async () => {
+    const timedOutBody = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1, 2, 3]));
+        controller.error(new DOMException("timed out", "TimeoutError"));
+      },
+    });
+    const timingOut = (async () =>
+      new Response(timedOutBody)) as unknown as typeof fetch;
+    const failing = (async () => {
+      throw new TypeError("network down");
+    }) as unknown as typeof fetch;
+
+    expect(
+      await downloadTrace("https://storage.invalid/trace", timingOut),
+    ).toEqual({ status: "timed-out" });
+    expect(
+      await downloadLogTail("https://storage.invalid/logs", failing),
+    ).toEqual({ status: "unavailable" });
+  });
 });
