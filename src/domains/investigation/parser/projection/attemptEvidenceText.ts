@@ -1,51 +1,35 @@
 // oxlint-disable eslint/max-lines -- Keep the conventional redaction passes and UTF-8 bounding logic aligned with the platform implementation.
 
 const redacted = "[REDACTED]";
-const sensitiveFieldNames = [
-  "accessToken",
-  "access_token",
-  "access-token",
-  "refreshToken",
-  "refresh_token",
-  "refresh-token",
-  "api_key",
-  "api-key",
-  "apiKey",
-  "apikey",
-  "set-cookie",
-  "authorization",
+// Field names are matched by the sensitive word they contain, so variants such
+// as client_secret, idToken and x-session-id are caught without listing each.
+// "key" counts only after a qualifier like api or private, so keyboard events
+// stay readable; "auth" skips author and :authority.
+const sensitiveWords = [
+  "secret",
+  "token",
+  "passw(?:or)?d",
+  "passphrase",
+  "session",
+  "auth(?!or)",
+  "authoriz",
+  "credential",
   "cookie",
-  "password",
-  "token",
-  "value",
-];
-const sensitiveFieldPattern = sensitiveFieldNames.join("|");
-const signedUrlFieldPattern = [
-  "accessToken",
-  "access_token",
-  "access-token",
-  "refreshToken",
-  "refresh_token",
-  "refresh-token",
-  "api_key",
-  "api-key",
-  "apiKey",
-  "apikey",
-  "authorization",
-  "password",
-  "token",
   "signature",
-  "sig",
-  "x-amz-signature",
-  "x-amz-credential",
-  "x-amz-security-token",
-  "x-goog-signature",
-  "x-goog-credential",
-  "awsaccesskeyid",
-  "googleaccessid",
-  "key-pair-id",
-  "policy",
+  "(?:api|private|secret|access|client|signing|encryption|master)[_-]?key",
 ].join("|");
+// Bounded so a long run of word characters cannot make the match quadratic.
+const sensitiveName = `[\\w-]{0,40}(?:${sensitiveWords})[\\w-]{0,40}`;
+const sensitiveFieldPattern = `${sensitiveName}|value`;
+const signedUrlFieldPattern = [
+  sensitiveName,
+  "code",
+  "sig",
+  "policy",
+  "key-pair-id",
+  "googleaccessid",
+].join("|");
+const bearerPattern = /\b(Bearer\s+)[\w.~+/-]{8,}=*/gi;
 // A JWT's header is base64url JSON, so it always starts with "eyJ" (`{"`).
 // Matching the token itself catches the ones no field name points at, such as
 // a session token streamed inside a React Server Components payload. The
@@ -145,7 +129,9 @@ function redactCallArguments(text: string): string {
 }
 
 export function redactAttemptEvidence(text: string): string {
-  const jwtRedacted = text.replace(jwtPattern, redacted);
+  const jwtRedacted = text
+    .replace(jwtPattern, redacted)
+    .replace(bearerPattern, `$1${redacted}`);
   const userInfoRedacted = jwtRedacted.replace(
     /((?:https?:)?\/\/)[^/\s?#]*@/gi,
     `$1${redacted}@`,
