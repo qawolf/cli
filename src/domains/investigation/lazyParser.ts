@@ -17,9 +17,7 @@ function parserSpecifier(): string {
   if (embedded) return embedded;
   const sourceModule = import.meta.url.includes("/src/domains/investigation/");
   return new URL(
-    sourceModule
-      ? "../../../dist/investigation-parser.js"
-      : "./investigation-parser.js",
+    sourceModule ? "./parser/index.ts" : "./investigation-parser.js",
     import.meta.url,
   ).href;
 }
