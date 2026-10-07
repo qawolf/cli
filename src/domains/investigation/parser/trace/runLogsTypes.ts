@@ -13,7 +13,7 @@ export type RunLogRecord = {
 };
 
 export type RunLogLimits = {
-  /** Bounds the tail window parsed after `readFileIfExists` returns a Buffer. */
+  /** Parses at most this many bytes from the end of the downloaded log. */
   maxArtifactBytes: number;
   maxMessageBytes: number;
   maxRecords: number;
