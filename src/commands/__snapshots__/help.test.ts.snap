@@ -198,9 +198,9 @@ Options:
   --console                 Inspect browser console evidence
   --log                     Inspect execution log evidence
   --evidence-id <id>        Console or log evidence ID
-  --limit <number>          Maximum entries to return: the most recent for
-                            --timeline, --network and --log, the earliest for
-                            --console (default: "20")
+  --limit <number>          Maximum entries to return, up to 100: the most
+                            recent for --timeline, --network and --log, the
+                            earliest for --console (default: "20")
   --start-time-ms <number>  Earliest trace timestamp in milliseconds
   --end-time-ms <number>    Latest trace timestamp in milliseconds
   --start-timestamp <iso>   Earliest execution log timestamp

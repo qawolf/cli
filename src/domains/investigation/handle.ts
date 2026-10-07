@@ -94,10 +94,12 @@ export async function loadInspectArtifact(
   };
 }
 
+const maxInspectLimit = 100;
+
 function numberFlag(
   value: string | undefined,
   name: string,
-  options: { integer?: boolean; min?: number } = {},
+  options: { integer?: boolean; max?: number; min?: number } = {},
 ): number | undefined | { error: string } {
   if (value === undefined) return undefined;
   const parsed = Number(value);
@@ -107,6 +109,8 @@ function numberFlag(
     (options.min !== undefined && parsed < options.min)
   )
     return { error: `Invalid ${name}: ${value}.` };
+  if (options.max !== undefined && parsed > options.max)
+    return { error: `${name} must be at most ${options.max}, got ${value}.` };
   return parsed;
 }
 
@@ -182,7 +186,11 @@ export async function handleInvestigationInspect(
       error: `Refusing to overwrite existing file: ${options.outputFile}`,
     };
 
-  const limit = numberFlag(options.limit, "--limit", { integer: true, min: 1 });
+  const limit = numberFlag(options.limit, "--limit", {
+    integer: true,
+    max: maxInspectLimit,
+    min: 1,
+  });
   if (typeof limit !== "number") return limit;
   const startTimeMilliseconds = numberFlag(
     options.startTimeMs,

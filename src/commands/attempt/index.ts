@@ -54,7 +54,7 @@ export function registerAttemptCommand(
     .option("--evidence-id <id>", "Console or log evidence ID")
     .option(
       "--limit <number>",
-      "Maximum entries to return: the most recent for --timeline, --network and --log, the earliest for --console",
+      "Maximum entries to return, up to 100: the most recent for --timeline, --network and --log, the earliest for --console",
       "20",
     )
     .option(
