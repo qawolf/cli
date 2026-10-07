@@ -61,7 +61,7 @@ qawolf flows run examples/example.flow.ts
 | `qawolf auth`    | [Authenticate with QA Wolf](https://docs.qawolf.com/qawolf/local-execution/authenticate)                                                                       |
 | `qawolf flows`   | [Run flows locally](https://docs.qawolf.com/qawolf/local-execution/run-flows-locally), [pull flows](https://docs.qawolf.com/qawolf/local-execution/pull-flows) |
 | `qawolf run`     | Trigger and manage QA Wolf runs on the platform (public API)                                                                                                   |
-| `qawolf attempt` | Discover attempt IDs and inspect bounded run evidence                                                                                                          |
+| `qawolf attempt` | Summarize and inspect a finished run attempt's trace and logs                                                                                                  |
 | `qawolf install` | [Install runtime dependencies](https://docs.qawolf.com/qawolf/local-execution/install-dependencies)                                                            |
 | `qawolf init`    | [Set up a local-only project](https://docs.qawolf.com/qawolf/local-execution/set-up-a-project)                                                                 |
 | `qawolf doctor`  | [Diagnose problems](https://docs.qawolf.com/qawolf/local-execution/diagnose-problems)                                                                          |
