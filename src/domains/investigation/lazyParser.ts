@@ -12,7 +12,8 @@ export function loadInvestigationParser(): Promise<InvestigationParser> {
 }
 
 function parserSpecifier(): string {
-  const embedded = process.env["QAWOLF_INVESTIGATION_PARSER_PATH"];
+  const embedded = (globalThis as { qawolfInvestigationParserPath?: string })
+    .qawolfInvestigationParserPath;
   if (embedded) return embedded;
   const sourceModule = import.meta.url.includes("/src/domains/investigation/");
   return new URL(

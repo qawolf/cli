@@ -19,7 +19,9 @@ const { values } = parseArgs({
 // spawns as a BUN_BE_BUN worker so flows resolve their own node_modules —
 // including native modules like sharp — at runtime, which the in-process
 // compiled resolver cannot. Never bundled into cli.js (build.ts builds
-// src/main.ts), so there is no embed cycle.
+// src/main.ts), so there is no embed cycle. The investigation parser bundle is
+// embedded too; its path goes through a global rather than env so it does not
+// leak into the flow worker and other child processes.
 const entryPath = "dist/binary-entry.ts";
 writeFileSync(
   entryPath,
@@ -28,8 +30,7 @@ writeFileSync(
     'import investigationParserAsset from "./investigation-parser.js" with { type: "file" };',
     "",
     "process.env.QAWOLF_EMBEDDED_CLI_PATH = cliAsset;",
-    "process.env.QAWOLF_EMBEDDED_INVESTIGATION_PARSER_PATH = investigationParserAsset;",
-    "process.env.QAWOLF_INVESTIGATION_PARSER_PATH = investigationParserAsset;",
+    "globalThis.qawolfInvestigationParserPath = investigationParserAsset;",
     "",
     'await import("../src/main.ts");',
     "",
