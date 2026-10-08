@@ -1,5 +1,11 @@
 # @qawolf/cli
 
+## 1.42.0
+
+### Minor Changes
+
+- bfc73f7: Add the promotion commands. `qawolf promotion resolve` submits the resolution of a conflicted environment promotion, and `qawolf environment promote` and `qawolf environment terminate` settle a preview environment when its pull request closes.
+
 ## 1.41.0
 
 ### Minor Changes
