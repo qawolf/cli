@@ -117,6 +117,7 @@ export function env(
   return {
     id,
     isDefault,
+    isDefaultBase: false,
     name,
     ...(alias === undefined ? {} : { alias }),
     kind,
