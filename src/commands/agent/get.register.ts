@@ -17,11 +17,13 @@ Examples:
   $ qawolf agent get
   $ qawolf agent get --follow
   $ qawolf agent get <sessionId> --follow
-  $ qawolf agent get --session <sessionId>`;
+  $ qawolf agent get --session <sessionId>
+  $ qawolf --json agent get --sessions <id1> <id2> --follow --timeout 120`;
 
 type GetFlags = {
   follow: boolean;
   session?: string;
+  sessions?: string[];
   timeout: string;
   workspaceId?: string;
 };
@@ -41,6 +43,10 @@ export function registerAgentGetCommand(
     )
     .option("--session <id>", sessionFlagDescription)
     .option(
+      "--sessions <ids...>",
+      "Follow these sessions in one process and return the first completion, failure, cancellation or question. Requires --follow",
+    )
+    .option(
       "--workspace-id <id>",
       "The workspace an answer given during --follow is sent to. Required when authenticating with an organization or user API key",
     )
@@ -58,6 +64,7 @@ export function registerAgentGetCommand(
             follow: opts.follow,
             session: opts.session,
             sessionArgument: session,
+            sessions: opts.sessions,
             timeout: opts.timeout,
             workspaceId: opts.workspaceId,
           },

@@ -10,6 +10,10 @@ export const agentMessages = {
   answerCancelled:
     "No answer sent, so QA Wolf is still waiting on one. The session keeps its place: answer it whenever you like.",
   answerPrompt: "Your answer",
+  conflictingSessionList:
+    "Pass --sessions alone, without --session or a session argument.",
+  emptySessionList: "Pass at least one session id with --sessions.",
+  sessionListNeedsFollow: "Pass --follow when using --sessions.",
   answerSendFailed: (reason: string) =>
     `The answer could not be sent: ${reason}. The session is still waiting, so try again.`,
   // Printed instead of prompting when nothing can be typed back — a pipe, a CI
@@ -27,6 +31,11 @@ export const agentMessages = {
     `Stopped following. The session is still running — pick it back up with ${followAgain(sessionId)}.`,
   followTimedOut: (sessionId: string, seconds: number) =>
     `Stopped following after ${formatSeconds(seconds * 1000)}. The session may still be going: pick it back up with ${followAgain(sessionId)}, or pass --timeout to wait longer.`,
+  followSessionsTimedOut: (options: {
+    sessionIds: readonly string[];
+    seconds: number;
+  }) =>
+    `Stopped following ${options.sessionIds.length} sessions after ${formatSeconds(options.seconds * 1000)}. No session completed or asked a question. Continue with qawolf agent get --sessions ${options.sessionIds.join(" ")} --follow, or pass --timeout to wait longer.`,
   noSession:
     "No session named. Pass --session, set QAWOLF_SESSION_ID, or start one with qawolf agent send.",
   // The send succeeded; only the convenience was lost. Said so, because a later
