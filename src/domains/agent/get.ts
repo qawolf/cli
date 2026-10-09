@@ -16,6 +16,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { AgentDeps } from "./deps.js";
 import { followSession } from "./followSession.js";
+import { followSessions } from "./followSessions.js";
 import { chooseGivenSessionId, resolveSessionId } from "./resolveSessionId.js";
 
 export type AgentGetOptions = {
@@ -24,6 +25,7 @@ export type AgentGetOptions = {
   sessionArgument: string | undefined;
   /** The id given as `--session <id>`. */
   session: string | undefined;
+  sessions?: readonly string[] | undefined;
   timeout: string | undefined;
   /** Sent with every answer given during a follow. */
   workspaceId: string | undefined;
@@ -60,6 +62,30 @@ export async function handleAgentGet(
   );
   if (!timeout.ok) {
     return { error: timeout.error, exitCode: exitCodes.invalidArgs };
+  }
+
+  if (options.sessions !== undefined) {
+    if (options.session !== undefined || options.sessionArgument !== undefined)
+      return {
+        error: agentMessages.conflictingSessionList,
+        exitCode: exitCodes.invalidArgs,
+      };
+    if (!options.follow)
+      return {
+        error: agentMessages.sessionListNeedsFollow,
+        exitCode: exitCodes.invalidArgs,
+      };
+    if (options.sessions.length === 0)
+      return {
+        error: agentMessages.emptySessionList,
+        exitCode: exitCodes.invalidArgs,
+      };
+    return followSessions({
+      ctx,
+      deps,
+      sessionIds: [...new Set(options.sessions)],
+      timeoutSeconds: timeout.seconds,
+    });
   }
 
   const given = chooseGivenSessionId({
