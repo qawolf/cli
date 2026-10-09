@@ -1,5 +1,11 @@
 # @qawolf/cli
 
+## 1.43.0
+
+### Minor Changes
+
+- d83833a: Follow several agent sessions in one process with `agent get --sessions <ids...> --follow`. Return the first completion, failure, cancellation or question.
+
 ## 1.42.0
 
 ### Minor Changes
