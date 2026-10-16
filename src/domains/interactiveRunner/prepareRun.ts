@@ -5,6 +5,8 @@ import { buildRunSelection } from "~/core/interactiveRunner/lineSelection.js";
 import {
   type BuiltRunEnvironment,
   buildRunEnvironment,
+  checkRunEnvironment,
+  parseRunVariables,
 } from "~/core/interactiveRunner/runEnvironment.js";
 import {
   checkRunFiles,
@@ -46,19 +48,16 @@ export async function prepareRun(
     envId: string | undefined;
     lines: string | undefined;
     linesFile: string | undefined;
+    vars: readonly string[];
   },
   deps: InteractiveRunnerDeps,
 ): Promise<PreparedRun> {
   const explicitEnvId = options.envId?.trim();
-  if (explicitEnvId !== undefined && options.envFile !== undefined) {
-    return refused(
-      interactiveRunnerMessages.envIdWithEnvFile,
-      exitCodes.invalidArgs,
-    );
-  }
   if (explicitEnvId === "") {
     return refused(interactiveRunnerMessages.envIdBlank, exitCodes.invalidArgs);
   }
+  const fromVars = parseRunVariables(options.vars);
+  if (!fromVars.ok) return refused(fromVars.error, exitCodes.invalidArgs);
 
   const fromEnvVar = deps.env["QAWOLF_ENVIRONMENT"]?.trim();
   const environmentId =
@@ -83,11 +82,21 @@ export async function prepareRun(
     return refused(describeRunFilesCheck(check), exitCodes.invalidArgs);
   }
 
-  const environment = await readEnvironment(options.envFile, deps);
-  if (environment !== undefined && !environment.ok) {
-    return refused(environment.error, exitCodes.config);
+  const fromFile = await readEnvironment(options.envFile, deps);
+  if (fromFile !== undefined && !fromFile.ok) {
+    return refused(fromFile.error, exitCodes.config);
   }
-  const given = environment?.ok === true ? environment.environment : undefined;
+  const combined =
+    fromFile === undefined && options.vars.length === 0
+      ? undefined
+      : checkRunEnvironment({
+          ...fromFile?.environment,
+          ...fromVars.environment,
+        });
+  if (combined !== undefined && !combined.ok) {
+    return refused(combined.error, exitCodes.invalidArgs);
+  }
+  const given = combined?.environment;
 
   if (options.lines === undefined) {
     return options.linesFile === undefined

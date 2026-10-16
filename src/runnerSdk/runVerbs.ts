@@ -65,6 +65,7 @@ export function createRunVerbs({ deps, platformClient }: SdkContext) {
           envId: environment === "ambient" ? undefined : environment.id,
           lines: toLineRange(selection),
           linesFile: toLinesFile(selection),
+          vars: [],
         },
         deps,
       );

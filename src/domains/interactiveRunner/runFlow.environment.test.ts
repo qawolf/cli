@@ -1,64 +1,11 @@
-import { basename } from "node:path";
 import { describe, expect, it } from "bun:test";
 
-import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
-import { handleRunnerRun } from "./runFlow.js";
-
-const submitted = { outcome: "success" as const, runId: "run-a" };
+import {
+  runWithEnvironment as run,
+  sentRequest,
+} from "./runFlow.environment.testUtils.js";
 
 describe("handleRunnerRun with --env-file and --env-id", () => {
-  const envFileDeps = (content: string, env: Record<string, string> = {}) =>
-    makeTestDeps({
-      env,
-      collectRunFiles: async () => ({
-        files: {
-          "flow.ts": "export default {};",
-          "package.json": "{}",
-        },
-        unresolvedImports: [],
-      }),
-      readFile: async (path) => {
-        if (basename(path) === ".env") return content;
-        throw Error(`no such file: ${path}`);
-      },
-    });
-
-  const run = async ({
-    content = 'A="1"\n',
-    env,
-    envFile,
-    envId,
-  }: {
-    content?: string;
-    env?: Record<string, string>;
-    envFile?: string;
-    envId?: string;
-  }) => {
-    const { callPublicApi, ctx, infos } = makeAuthCtx();
-    callPublicApi.mockResolvedValue({ ok: true, value: submitted });
-    const result = await handleRunnerRun(
-      ctx,
-      {
-        entryPoint: "flow.ts",
-        envFile,
-        envId,
-        follow: false,
-        lines: undefined,
-        linesFile: undefined,
-        logs: false,
-        recorderEvents: false,
-        runEvents: false,
-        runner: "ci",
-        timeout: undefined,
-      },
-      envFileDeps(content, env),
-    );
-    return { callPublicApi, infos, result };
-  };
-
-  const sentRequest = (callPublicApi: { mock: { calls: unknown[][] } }) =>
-    callPublicApi.mock.calls[0]?.[1] ?? {};
-
   it("sends the file's variables as the run's environment", async () => {
     const { callPublicApi, result } = await run({ envFile: ".env" });
 
@@ -163,14 +110,16 @@ describe("handleRunnerRun with --env-file and --env-id", () => {
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 
-  it("refuses both flags together before addressing a runner", async () => {
+  it("puts the file's variables on top of a QA Wolf environment", async () => {
     const { callPublicApi, result } = await run({
       envFile: ".env",
       envId: "staging",
     });
 
-    expect(result?.error).toContain("--env-id and --env-file");
-    expect(result?.exitCode).toBe(2);
-    expect(callPublicApi).not.toHaveBeenCalled();
+    expect(result).toBeUndefined();
+    expect(sentRequest(callPublicApi)).toMatchObject({
+      env: { A: "1" },
+      environmentId: "staging",
+    });
   });
 });

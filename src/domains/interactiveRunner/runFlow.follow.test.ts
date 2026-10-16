@@ -31,6 +31,7 @@ const runFollowing = (
       runEvents: options.runEvents ?? false,
       runner: options.launch ? undefined : "ci",
       timeout: options.timeout ?? "1",
+      vars: [],
     },
     makeTestDeps(),
   );

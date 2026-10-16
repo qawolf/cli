@@ -33,6 +33,7 @@ export async function handleRunnerRun(
     runEvents: boolean;
     runner: string | undefined;
     timeout: string | undefined;
+    vars: readonly string[];
   },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
@@ -55,6 +56,7 @@ export async function handleRunnerRun(
       envId: options.envId,
       lines: options.lines,
       linesFile: options.linesFile,
+      vars: options.vars,
     },
     deps,
   );

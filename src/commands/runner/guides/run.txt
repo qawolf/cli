@@ -37,10 +37,15 @@ A --lines selection is the one call that does not need a run first. If the runne
 
 # Environment variables
 
-A run takes one of two. --env-id names a QA Wolf environment by id or alias, the same reference `qawolf flows` takes as --env. --env-file .env gives the run the variables in a dotenv file, in the format `qawolf flows pull` writes. Passing both is refused: each gives the run its whole environment, so there is no order in which they would combine.
+A run's variables come from up to three places, each on top of the one before:
+- --env-id names a QA Wolf environment by id or alias, the same reference `qawolf flows` takes as --env.
+- --env-file .env reads a dotenv file, in the format `qawolf flows pull` writes.
+- --var NAME=VALUE gives one variable, and can be repeated. It splits on the first =, so a value may hold one.
 
-A run with neither flag falls back to QAWOLF_ENVIRONMENT, the same variable `qawolf flows` reads, so one export covers both. The run says on stderr which environment it picked up, because those variables reach your flow's code and a run should never be given an environment silently. --env-id wins over it, and --env-file suppresses it, so a run reading a dotenv file is not handed a second environment on top.
+A later source replaces a variable of the same name from an earlier one, for this run only; the QA Wolf environment itself is not changed. Use that to run against something the environment does not hold, such as a new app build: `--var RUN_INPUT_PATH=uploads/app.apk`.
+
+A run with no --env-id falls back to QAWOLF_ENVIRONMENT, the same variable `qawolf flows` reads, so one export covers both. The run says on stderr which environment it picked up, because those variables reach your flow's code and a run should never be given an environment silently. --env-id wins over it, and --env-file alone suppresses it, so a run reading a dotenv file is not handed a second environment unless you name one with --env-id. --var keeps it, since a --var adds to the environment rather than replacing it.
 
 Prefer --env-id. QA Wolf reads and decrypts the environment itself, so the values never leave the server, nothing has to be pulled to disk first, and no size limit applies to them. It is the only way to run a flow whose environment holds something large, such as a session cookie.
 
-A run that sends its own variables with --env-file may carry at most 200 of them, each value at most 16 KiB. Names follow what a shell accepts, and QAWOLF_TEAM_ID is reserved because QA Wolf sets it from the key you authenticated with. All of that is refused before a runner is addressed, naming the variable at fault.
+The variables sent with --env-file and --var together may number at most 200, each value at most 16 KiB. Names follow what a shell accepts, and QAWOLF_TEAM_ID is reserved because QA Wolf sets it from the key you authenticated with. QAWOLF_ENVIRONMENT_ID, QAWOLF_ENVIRONMENT_NAME and QAWOLF_TEAM_API_KEY are set by QA Wolf for a run given an environment, and replace any value of yours. All of the refusals are made before a runner is addressed, naming the variable at fault.

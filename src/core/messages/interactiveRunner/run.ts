@@ -8,8 +8,6 @@ export const runMessages = {
     `No env file at ${path}. Pass a path that exists, or drop --env-file to send no environment.`,
   envIdBlank:
     "--env-id was given nothing. Pass the id or alias of a QA Wolf environment, or drop the flag to send no environment.",
-  envIdWithEnvFile:
-    "--env-id and --env-file both give the run its environment, so only one may be passed. Use --env-id for a QA Wolf environment, which QA Wolf reads itself, or --env-file for a dotenv file on this machine.",
   fileNotCollected: (path: string) =>
     `"${path}" is not one of the files that travel to a runner. It must be inside the current directory and end in .ts, .tsx, .js, .mjs, .cjs or .json.`,
   fileUnreadable: (path: string, reason: string) =>
@@ -69,4 +67,8 @@ export const runMessages = {
     "The runner did not answer, which does not mean the run did not start. Read qawolf runner events run-status before running the flow again, and use the newest run id there if one appeared.",
   targetMismatch: (runnerName: string, requiredRunnerName: string) =>
     `This flow needs a ${requiredRunnerName} runner and ${runnerName} is running. Launch one with --name ${requiredRunnerName}.`,
+  varMalformed: (assignment: string) =>
+    `--var takes NAME=VALUE, and "${assignment}" names no variable.`,
+  varRepeated: (name: string) =>
+    `--var gives ${name} more than once, so the run's value is unclear. Pass it once.`,
 } as const;

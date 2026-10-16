@@ -43,6 +43,7 @@ async function run(
       runEvents: false,
       runner: "ci",
       timeout: undefined,
+      vars: [],
     },
     deps,
   );
@@ -181,6 +182,7 @@ describe("handleRunnerRun file delta", () => {
         runEvents: false,
         runner: "ci",
         timeout: undefined,
+        vars: [],
       },
       deps,
     );

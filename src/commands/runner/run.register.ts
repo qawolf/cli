@@ -4,6 +4,7 @@ import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext } from "~/commands/context.js";
 import { defaultFollowTimeoutSeconds } from "~/core/interactiveRunner/followTimeout.js";
 import { handleRunnerRun } from "~/domains/interactiveRunner/runFlow.js";
+import { collectValue } from "~/domains/runner/runFlagParsers.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { runnerDeps, runnerFlagDescription } from "./context.js";
@@ -16,7 +17,8 @@ Examples:
   $ qawolf runner run flows/checkout.flow.ts --follow --logs
   $ qawolf runner run flows/checkout.flow.ts --lines 12-40
   $ qawolf runner run flows/checkout.flow.ts --lines 4-9 --lines-file pages/login.ts
-  $ qawolf runner run flows/checkout.flow.ts --env-id staging`;
+  $ qawolf runner run flows/checkout.flow.ts --env-id staging
+  $ qawolf runner run flows/checkout.flow.ts --var RUN_INPUT_PATH=uploads/app.apk`;
 
 type RunFlags = {
   envFile?: string;
@@ -29,6 +31,7 @@ type RunFlags = {
   runEvents: boolean;
   runner?: string;
   timeout: string;
+  var: string[];
 };
 
 export function registerRunCommand(
@@ -63,11 +66,17 @@ export function registerRunCommand(
     )
     .option(
       "--env-id <env>",
-      "QA Wolf environment whose variables the run is given, by id or alias. Defaults to QAWOLF_ENVIRONMENT. QA Wolf reads and decrypts them itself, so they never leave the server and no size limit applies to them",
+      "QA Wolf environment whose variables the run is given, by id or alias. Defaults to QAWOLF_ENVIRONMENT unless --env-file is passed. QA Wolf reads and decrypts them itself, so they never leave the server and no size limit applies to them",
     )
     .option(
       "--env-file <path>",
-      "Dotenv file on this machine whose variables the run is given. Pass this or --env-id, not both",
+      "Dotenv file on this machine whose variables the run is given. With --env-id, they go on top of that environment's",
+    )
+    .option(
+      "--var <name=value>",
+      "One variable for this run only, on top of the environment and --env-file; repeat for several",
+      collectValue,
+      [],
     )
     .option(
       "--lines <start-end>",
@@ -101,6 +110,7 @@ export function registerRunCommand(
             runEvents: opts.runEvents,
             runner: opts.runner,
             timeout: opts.timeout,
+            vars: opts.var,
           },
           runnerDeps(ctx),
         ),

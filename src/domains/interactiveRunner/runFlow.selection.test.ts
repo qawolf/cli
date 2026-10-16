@@ -49,6 +49,7 @@ async function runWith(options: {
       runEvents: false,
       runner: "ci",
       timeout: undefined,
+      vars: [],
     },
     deps,
   );
