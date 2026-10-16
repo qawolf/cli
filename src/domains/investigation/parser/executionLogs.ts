@@ -2,7 +2,10 @@ import type {
   ArtifactInput,
   InvestigationRequest,
 } from "~/domains/investigation/types.js";
-import { redactAttemptEvidence } from "./projection/attemptEvidenceText.js";
+import {
+  redactAttemptEvidence,
+  redactAndBoundAttemptEvidenceResult,
+} from "./projection/attemptEvidenceText.js";
 import { parseRunLogs } from "./trace/runLogs.js";
 
 type PublicLog = {
@@ -105,13 +108,27 @@ export function inspectExecutionLogs(request: InvestigationRequest) {
 
 export function summarizeExecutionLogs(input: ArtifactInput) {
   const parsed = parseExecutionLogs(input);
-  const selected = parsed.items
-    .filter(
-      (record) =>
-        record.source === "qawolfTraceCollection" ||
-        record.severity === "error",
-    )
-    .slice(-20);
+  const errors = parsed.items
+    .filter((record) => record.severity === "error")
+    .slice(-5);
+  const traceCollection = parsed.items.findLast(
+    (record) => record.source === "qawolfTraceCollection",
+  );
+  const selectedIds = new Set([
+    ...errors.map((record) => record.evidenceId),
+    ...(traceCollection ? [traceCollection.evidenceId] : []),
+  ]);
+  const selected = parsed.items.filter((record) =>
+    selectedIds.has(record.evidenceId),
+  );
+  const summaries = selected.map((record) => {
+    const message = redactAndBoundAttemptEvidenceResult(record.message, 1024);
+    return {
+      ...record,
+      message: message.text,
+      ...(message.truncated && { evidenceTruncated: true }),
+    };
+  });
   return {
     artifactState: parsed.status,
     evidence: {
@@ -120,9 +137,11 @@ export function summarizeExecutionLogs(input: ArtifactInput) {
         returned: selected.length,
         total: parsed.items.length,
         truncated:
-          parsed.coverage.truncated || selected.length < parsed.items.length,
+          parsed.coverage.truncated ||
+          selected.length < parsed.items.length ||
+          summaries.some((record) => record.evidenceTruncated),
       },
-      items: selected,
+      items: summaries,
     },
   };
 }

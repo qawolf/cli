@@ -14,7 +14,6 @@ import {
 } from "~/domains/investigation/parser/trace/playwrightTrace.js";
 
 import {
-  boundAttemptPageText,
   redactAndBoundAttemptEvidenceResult,
   redactAttemptEvidence,
 } from "./attemptEvidenceText.js";
@@ -27,6 +26,7 @@ import { summarizeAttemptNetworkErrors } from "./summarizeAttemptNetwork.js";
 import { summarizeAttemptWaitingLogs } from "./summarizeAttemptWaitingLogs.js";
 
 const evidenceLimit = 10;
+const consoleLimit = 5;
 const maxActionEvidenceBytes = 512;
 const maxSnapshotReconstructionBytes = 256 * 1024;
 
@@ -55,7 +55,10 @@ export async function summarizeAttemptTrace(
     metadataError &&
     (metadataError.includes(traceError) || traceError.includes(metadataError)),
   );
-  const toAction = (action: (typeof actions.items)[number]) => {
+  const toAction = (
+    action: (typeof actions.items)[number],
+    includeDetails: boolean,
+  ) => {
     const stack =
       action.errorMessage === undefined
         ? []
@@ -90,9 +93,11 @@ export async function summarizeAttemptTrace(
       ...(action.startTime !== undefined && {
         startedAtMilliseconds: action.startTime,
       }),
-      stack: stack.slice(0, 20),
-      stackTruncated: stack.length > 20,
-      ...summarizeAttemptWaitingLogs(logs, action.id),
+      ...(includeDetails && {
+        stack: stack.slice(0, 20),
+        stackTruncated: stack.length > 20,
+        ...summarizeAttemptWaitingLogs(logs, action.id),
+      }),
     };
   };
   const completed = chronologicallySortActions(
@@ -104,10 +109,10 @@ export async function summarizeAttemptTrace(
     limit: Number.MAX_SAFE_INTEGER,
     maxTextBytes: Number.MAX_SAFE_INTEGER,
   });
-  const consoleItems = allConsoleEntries.items.slice(-evidenceLimit);
+  const consoleItems = allConsoleEntries.items.slice(-consoleLimit);
   const consoleSummaries = consoleItems.map((entry) => ({
     entry,
-    message: redactAndBoundAttemptEvidenceResult(entry.message, 1024),
+    message: redactAndBoundAttemptEvidenceResult(entry.message, 256),
   }));
   const network = await listTraceNetwork(trace, {
     limit: Number.MAX_SAFE_INTEGER,
@@ -157,13 +162,12 @@ export async function summarizeAttemptTrace(
   const projectedPage = page?.truncated
     ? { text: "", truncated: true }
     : page
-      ? boundAttemptPageText(
-          redactAttemptEvidence(
-            projectToText(
-              resolveSnapshot([page.html], 0),
-              Number.MAX_SAFE_INTEGER,
-            ),
+      ? redactAndBoundAttemptEvidenceResult(
+          projectToText(
+            resolveSnapshot([page.html], 0),
+            Number.MAX_SAFE_INTEGER,
           ),
+          2 * 1024,
         )
       : undefined;
 
@@ -174,7 +178,7 @@ export async function summarizeAttemptTrace(
         returned: selectedActions.length,
         truncated: actions.coverage.total > selectedActions.length,
       },
-      items: selectedActions.map(toAction),
+      items: selectedActions.map((action) => toAction(action, false)),
     },
     browserConsole: {
       coverage: {
@@ -188,18 +192,21 @@ export async function summarizeAttemptTrace(
       items: consoleSummaries.map(({ entry, message }) => ({
         evidenceId: entry.id,
         message: message.text,
+        ...(message.truncated && { evidenceTruncated: true }),
         type: entry.type,
       })),
     },
     ...(errorMatches &&
       failure && {
-        failedBrowserAction: toAction(failure.action),
+        failedBrowserAction: toAction(failure.action, true),
       }),
     failedBrowserActionAttribution: errorMatches
       ? ("trace-error-matches-attempt" as const)
       : ("none" as const),
     ...(!errorMatches &&
-      lastCompleted && { lastCompletedBrowserAction: toAction(lastCompleted) }),
+      lastCompleted && {
+        lastCompletedBrowserAction: toAction(lastCompleted, true),
+      }),
     networkErrors,
     ...(page &&
       projectedPage &&
