@@ -1,5 +1,12 @@
 # @qawolf/cli
 
+## 2.2.1
+
+### Patch Changes
+
+- 9a06689: When a firewall in front of the QA Wolf API blocks a command's request with HTTP 403, the error no longer tells you to check your API key; it says the request was blocked before it reached the API.
+- ab84d52: Keep the runner named by `QAWOLF_RUNNER_ID` in `qawolf runner list --here`, so a harness that was handed a runner sees it there.
+
 ## 2.2.0
 
 ### Minor Changes
