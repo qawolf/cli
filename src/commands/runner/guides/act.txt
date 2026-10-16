@@ -20,4 +20,4 @@ On mobile, send tap and swipe, never click or drag. The other browser actions, d
 
 # Before the first run
 
-A runner has no screen until its first run, so act exits 2 until then, except navigate, which exits 1 (action-failed): it skips the screen but still needs the runner to have run something. With no runner named at all, act launches one and says so on stderr.
+A playwright runner's screen starts as it launches, so act works on it before anything has run. Any other runner has no screen until its first run, so act exits 2 on it until then. With no runner named at all, act launches one and says so on stderr.

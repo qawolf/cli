@@ -27,8 +27,8 @@ export async function handleRunnerHighlightSelector(
   options: { runner: string | undefined; selector: string | undefined },
   deps: InteractiveRunnerDeps,
 ): Promise<CommandResult> {
-  // Never launches: a highlight needs a live page, which a runner only has once
-  // a run has opened one.
+  // Never launches: a runner launched for this command would only show the
+  // welcome page, so there would be nothing of yours to highlight.
   const resolved = await resolveRunner(
     ctx,
     {

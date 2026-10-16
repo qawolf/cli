@@ -393,8 +393,8 @@ Ids:
   fine id. Launching an id that is already running attaches to that runner
   instead of starting and billing a second one, and the answer says which
   happened: read \`alreadyRunning\`. Reusing one id is therefore the cheap and
-  safe pattern. The same id with a different --name is refused rather than
-  silently ignored.
+  safe pattern. --name does not change a runner that is already running: the
+  answer's \`runnerName\` says what you attached to.
 
   launch takes its id from --id and never reads QAWOLF_RUNNER_ID. A bare \`qawolf
   runner launch\` invents a random id, bills a pod under it and stores it, so a
@@ -413,9 +413,10 @@ The page:
   launched its own runner. It is a QA Wolf page showing what the runner is
   doing, where a person can also take over with their own mouse and keyboard.
   Hand it to a person who asks what your runner is up to. The page opens for
-  anyone on the runner's team, however the runner was launched. There is nothing
-  to see until the runner's first run starts its screen, so the page waits until
-  then. You read the screen with \`screenshot\`, not with the page.
+  anyone on the runner's team, however the runner was launched. A playwright
+  runner's screen starts as it launches, showing a QA Wolf welcome page. Any
+  other runner's screen starts with its first run, so its page waits until then.
+  You read the screen with \`screenshot\`, not with the page.
 
 Browser or mobile:
   --name also chooses between a browser and a mobile device: --name android or
@@ -908,9 +909,10 @@ Reading the screen:
   to stderr so nothing follows the image on stdout. A terminal on stdout is
   refused: redirect or pipe it.
 
-  A runner has no screen until its first run, so until then screenshot exits 2.
-  It never launches a runner. When you are about to act anyway, \`act
-  --screenshot\` performs the action and returns the screen in one call.
+  A playwright runner's screen starts as it launches. Any other runner has no
+  screen until its first run, so until then screenshot exits 2 on it. It never
+  launches a runner. When you are about to act anyway, \`act --screenshot\`
+  performs the action and returns the screen in one call.
 "
 `;
 
@@ -1016,10 +1018,10 @@ Mobile:
   swipe and fill with action-not-supported-on-browser.
 
 Before the first run:
-  A runner has no screen until its first run, so act exits 2 until then, except
-  navigate, which exits 1 (action-failed): it skips the screen but still needs
-  the runner to have run something. With no runner named at all, act launches
-  one and says so on stderr.
+  A playwright runner's screen starts as it launches, so act works on it before
+  anything has run. Any other runner has no screen until its first run, so act
+  exits 2 on it until then. With no runner named at all, act launches one and
+  says so on stderr.
 "
 `;
 
@@ -1273,11 +1275,11 @@ Scope:
   files, so the snippet can use your own page objects and helpers.
 
 Failures:
-  exec exits 2 until the runner's first run, since there is no page to evaluate
-  against. On a 4 the message says the snippet could not be evaluated, but a
-  lost answer looks the same from outside, so treat a 4 from a snippet that
-  changes something as "may have run" rather than "did not run", and check its
-  effect before running it again. With no runner named at all, exec launches one
-  and says so on stderr.
+  A playwright runner has a page to evaluate against as soon as it launches. On
+  a 4 the message says the snippet could not be evaluated, but a lost answer
+  looks the same from outside, so treat a 4 from a snippet that changes
+  something as "may have run" rather than "did not run", and check its effect
+  before running it again. With no runner named at all, exec launches one and
+  says so on stderr.
 "
 `;

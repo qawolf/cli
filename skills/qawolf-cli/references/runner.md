@@ -11,28 +11,23 @@ Commands that target a runner find one in this order: `--runner`, then `QAWOLF_R
 - `qawolf runner launch` is not in that order: it takes its id from `--id` and never reads `QAWOLF_RUNNER_ID`. Pass `--id` whenever you have an id in mind.
 - A runner id that is set is treated as found, whether or not anything is running under it. Exporting `QAWOLF_RUNNER_ID=agent-1` turns off the auto-launch described next: instead of starting `agent-1`, commands try to reach it and fail with exit code `8`, naming the id and saying the variable is what chose it. Launch that id once yourself and the rest follows.
 
-If nothing names a runner, the commands that change something launch one and say so on stderr, naming it: `run`, `act` and `exec`. Read that announcement. The browser it just started is fresh: nothing has been run on it, nothing is signed in, and no page is open. Acting as though your earlier setup survived is the single most likely way to drive the wrong page.
+If nothing names a runner, the commands that change something launch one and say so on stderr, naming it: `run`, `act`, `actions` and `exec`. Read that announcement. The browser it just started is fresh: nothing has been run on it, nothing is signed in, and it shows only the QA Wolf welcome page. Acting as though your earlier setup survived is the single most likely way to drive the wrong page.
 
 No read command ever launches a runner. `screenshot`, `events` and `keepalive` tell you there is no runner rather than quietly billing one, and so does `terminate`.
 
 ## The order that matters
 
-A freshly launched runner has no screen. The virtual desktop starts with the runner's first run and nothing else starts it, so until you have run something:
+A playwright runner's screen starts as it launches, showing a QA Wolf welcome page, so the screenshot-and-act loop works before you run anything.
 
-- `screenshot` and `act` fail with exit code `2`, except `navigate`, which fails with exit code `1` (`action-failed`): it skips the screen but still needs the runner to have run something
-- `exec` fails with exit code `2`
-- `events recorder` reads as empty
-
-None of that is a fault, and none of it clears on its own. Only `qawolf runner run <flow>` starts the screen. A bare navigate does not: it fails until the first run, however long you wait.
-
-So the first thing you do to a new runner has to put a browser on it. That means a flow file and a `package.json` on disk, even if all you want is to drive the browser by hand; there is no "just give me a screen" call. Once one run has happened, the screenshot-and-act loop works for the rest of the runner's life. A `--lines` selection is the one call that does not need a run first.
+Any other runner, such as a mobile one, has no screen until its first run, and nothing else starts it. Until you have run something on it, `screenshot` and `act` fail with exit code `2`. That is not a fault, and it does not clear on its own: run a flow with `qawolf runner run <flow>`, which needs a flow file and a `package.json` on disk.
 
 ## Exit codes
 
 Retry on the exit code, not on the message text:
 
-- `4` is transient, with one exception. The screen is up but cannot serve this instant: restarting after a display-size change, or busy with another request. Retry in a second or two, and bound the retries. The exception is a command that changes something, where a `4` can instead mean the answer was lost with the work in flight. For `act` and `actions`, take a screenshot first and repeat only what the screen says did not happen. For `run`, poll `run-status` instead of submitting again, since a second submission risks a second billed run. For `exec`, check the effect the snippet was meant to have before running it again.
+- `4` is transient, with one exception. The screen cannot serve this instant: still coming up just after launch, restarting after a display-size change, or busy with another request. Retry in a second or two, and bound the retries. The exception is a command that changes something, where a `4` can instead mean the answer was lost with the work in flight. For `act` and `actions`, take a screenshot first and repeat only what the screen says did not happen. For `run`, poll `run-status` instead of submitting again, since a second submission risks a second billed run. For `exec`, check the effect the snippet was meant to have before running it again.
 - `6` means the work ran out of the time it is given.
+- `7` means billing prevented the request, such as a plan that does not cover the runner you asked for. The message says what was refused and what clears it.
 - `8` means there is no such runner. It was never launched, or it was terminated, or it idled out. Retrying never brings one back, so stop and launch the id or name one that is running. The message says which runner was meant and whether `--runner`, `QAWOLF_RUNNER_ID` or this directory's stored default chose it; read that line before you pick an id to launch.
 - `2` will not clear on its own. Nothing has run on this runner yet, so run a flow; or the runner has no browser at all, so launch with `--name playwright` instead; or the action belongs to the other runner family, so send `tap`, `swipe` or `fill` to a mobile runner and the browser actions to a browser runner. The message says which.
 
@@ -40,14 +35,14 @@ Retry on the exit code, not on the message text:
 
 ## End to end
 
-Run from a directory holding a flow and a `package.json`. The run is what starts the screen, so it is not optional even though the goal here is to drive by hand.
+Run from a directory holding a flow and a `package.json`.
 
 ```sh
 export QAWOLF_API_KEY=...          # the only credential
 export QAWOLF_RUNNER_ID=agent-1    # so no command below needs --runner
 
 qawolf runner launch --id agent-1 --json          # --id, not the variable; read .alreadyRunning and .url
-qawolf runner run flows/smoke.flow.ts --follow    # starts the screen; exit 1 if it failed
+qawolf runner run flows/smoke.flow.ts --follow    # exit 1 if it failed
 
 qawolf runner act navigate --url https://example.com/login --screenshot step-1.jpg   # then read step-1.jpg yourself
 qawolf runner act click --button left --x 480 --y 260 --screenshot step-2.jpg
@@ -144,8 +139,8 @@ Ids:
   fine id. Launching an id that is already running attaches to that runner
   instead of starting and billing a second one, and the answer says which
   happened: read `alreadyRunning`. Reusing one id is therefore the cheap and
-  safe pattern. The same id with a different --name is refused rather than
-  silently ignored.
+  safe pattern. --name does not change a runner that is already running: the
+  answer's `runnerName` says what you attached to.
 
   launch takes its id from --id and never reads QAWOLF_RUNNER_ID. A bare `qawolf
   runner launch` invents a random id, bills a pod under it and stores it, so a
@@ -164,9 +159,10 @@ The page:
   launched its own runner. It is a QA Wolf page showing what the runner is
   doing, where a person can also take over with their own mouse and keyboard.
   Hand it to a person who asks what your runner is up to. The page opens for
-  anyone on the runner's team, however the runner was launched. There is nothing
-  to see until the runner's first run starts its screen, so the page waits until
-  then. You read the screen with `screenshot`, not with the page.
+  anyone on the runner's team, however the runner was launched. A playwright
+  runner's screen starts as it launches, showing a QA Wolf welcome page. Any
+  other runner's screen starts with its first run, so its page waits until then.
+  You read the screen with `screenshot`, not with the page.
 
 Browser or mobile:
   --name also chooses between a browser and a mobile device: --name android or
@@ -566,9 +562,10 @@ Reading the screen:
   to stderr so nothing follows the image on stdout. A terminal on stdout is
   refused: redirect or pipe it.
 
-  A runner has no screen until its first run, so until then screenshot exits 2.
-  It never launches a runner. When you are about to act anyway, `act
-  --screenshot` performs the action and returns the screen in one call.
+  A playwright runner's screen starts as it launches. Any other runner has no
+  screen until its first run, so until then screenshot exits 2 on it. It never
+  launches a runner. When you are about to act anyway, `act --screenshot`
+  performs the action and returns the screen in one call.
 ```
 
 ## qawolf runner act
@@ -670,10 +667,10 @@ Mobile:
   swipe and fill with action-not-supported-on-browser.
 
 Before the first run:
-  A runner has no screen until its first run, so act exits 2 until then, except
-  navigate, which exits 1 (action-failed): it skips the screen but still needs
-  the runner to have run something. With no runner named at all, act launches
-  one and says so on stderr.
+  A playwright runner's screen starts as it launches, so act works on it before
+  anything has run. Any other runner has no screen until its first run, so act
+  exits 2 on it until then. With no runner named at all, act launches one and
+  says so on stderr.
 ```
 
 ## qawolf runner actions
@@ -798,12 +795,12 @@ Scope:
   files, so the snippet can use your own page objects and helpers.
 
 Failures:
-  exec exits 2 until the runner's first run, since there is no page to evaluate
-  against. On a 4 the message says the snippet could not be evaluated, but a
-  lost answer looks the same from outside, so treat a 4 from a snippet that
-  changes something as "may have run" rather than "did not run", and check its
-  effect before running it again. With no runner named at all, exec launches one
-  and says so on stderr.
+  A playwright runner has a page to evaluate against as soon as it launches. On
+  a 4 the message says the snippet could not be evaluated, but a lost answer
+  looks the same from outside, so treat a 4 from a snippet that changes
+  something as "may have run" rather than "did not run", and check its effect
+  before running it again. With no runner named at all, exec launches one and
+  says so on stderr.
 ```
 
 ## qawolf runner inspect

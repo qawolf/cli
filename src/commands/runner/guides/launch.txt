@@ -1,6 +1,6 @@
 # Ids
 
-Runner ids are yours to choose and are scoped to your team, so agent-1 is a fine id. Launching an id that is already running attaches to that runner instead of starting and billing a second one, and the answer says which happened: read `alreadyRunning`. Reusing one id is therefore the cheap and safe pattern. The same id with a different --name is refused rather than silently ignored.
+Runner ids are yours to choose and are scoped to your team, so agent-1 is a fine id. Launching an id that is already running attaches to that runner instead of starting and billing a second one, and the answer says which happened: read `alreadyRunning`. Reusing one id is therefore the cheap and safe pattern. --name does not change a runner that is already running: the answer's `runnerName` says what you attached to.
 
 launch takes its id from --id and never reads QAWOLF_RUNNER_ID. A bare `qawolf runner launch` invents a random id, bills a pod under it and stores it, so a harness that exported the variable and then launched without --id ends up with a pod it is not addressing. Pass --id whenever you have an id in mind.
 
@@ -8,7 +8,7 @@ Launching an id that differs from QAWOLF_RUNNER_ID prints a warning on stderr na
 
 # The page
 
-Either answer carries a `url`, which launch prints, as does a command that launched its own runner. It is a QA Wolf page showing what the runner is doing, where a person can also take over with their own mouse and keyboard. Hand it to a person who asks what your runner is up to. The page opens for anyone on the runner's team, however the runner was launched. There is nothing to see until the runner's first run starts its screen, so the page waits until then. You read the screen with `screenshot`, not with the page.
+Either answer carries a `url`, which launch prints, as does a command that launched its own runner. It is a QA Wolf page showing what the runner is doing, where a person can also take over with their own mouse and keyboard. Hand it to a person who asks what your runner is up to. The page opens for anyone on the runner's team, however the runner was launched. A playwright runner's screen starts as it launches, showing a QA Wolf welcome page. Any other runner's screen starts with its first run, so its page waits until then. You read the screen with `screenshot`, not with the page.
 
 # Browser or mobile
 

@@ -126,9 +126,10 @@ describe("handleRunnerScreenshot", () => {
 
     expect(result?.exitCode).toBe(2);
     expect(result?.error).toContain("qawolf runner launch");
-    // A run is the only thing that starts the virtual desktop, so it is the only
-    // next step worth naming: navigating needs a page a fresh runner has not got.
-    expect(result?.error).toContain("run a flow on it with qawolf runner run");
+    // A browser runner's screen starts at launch, but a mobile runner's only
+    // with its first run, so the message has to name both.
+    expect(result?.error).toContain("as soon as it launches");
+    expect(result?.error).toContain("run on it with qawolf runner run");
     expect(callPublicApi).not.toHaveBeenCalled();
     expect(deps.written).toEqual([]);
   });

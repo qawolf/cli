@@ -13,4 +13,4 @@ The snippet imports nothing of yours by default. Pass --file <path> to evaluate 
 
 # Failures
 
-exec exits 2 until the runner's first run, since there is no page to evaluate against. On a 4 the message says the snippet could not be evaluated, but a lost answer looks the same from outside, so treat a 4 from a snippet that changes something as "may have run" rather than "did not run", and check its effect before running it again. With no runner named at all, exec launches one and says so on stderr.
+A playwright runner has a page to evaluate against as soon as it launches. On a 4 the message says the snippet could not be evaluated, but a lost answer looks the same from outside, so treat a 4 from a snippet that changes something as "may have run" rather than "did not run", and check its effect before running it again. With no runner named at all, exec launches one and says so on stderr.

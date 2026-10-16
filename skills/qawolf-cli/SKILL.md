@@ -312,9 +312,9 @@ of calling `act` and then `screenshot`. One call performs the action and writes
 the screen the runner answers with: half the calls per step, and no delay to
 guess at between them.
 
-The full workflow is its own guide: how a runner is billed, why the first call
-must be a run, the order the commands go in, the see-and-act loop, `exec`, the
-recorder, reading history, staying alive, and an end-to-end example. **Run
+The full workflow is its own guide: how a runner is billed, the order the
+commands go in, the see-and-act loop, `exec`, the recorder, reading history,
+staying alive, and an end-to-end example. **Run
 `qawolf help ref runner` before driving a runner for the first time.** It prints
 that guide and the help of every runner command, for the CLI version you have.
 Each command's `--help` carries its own part, so `qawolf runner exec --help`

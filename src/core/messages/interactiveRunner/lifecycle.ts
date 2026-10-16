@@ -3,9 +3,9 @@ import type { RunnerIdSource } from "~/core/interactiveRunner/runnerIdSource.js"
 // Ends the line with no period: a terminal that linkifies takes the period as
 // part of the address.
 //
-// Offers the page rather than promising a screen: the virtual desktop starts
-// with the runner's first run, so a person following this link before then
-// finds the page waiting rather than a picture.
+// Offers the page rather than promising a screen: only a playwright runner's
+// virtual desktop starts at launch, so a person following this link to any
+// other runner before its first run finds the page waiting rather than a picture.
 const pageAt = (url: string) => `Its runner page is at ${url}`;
 
 const noRunnerId =
@@ -31,10 +31,10 @@ export const lifecycleMessages = {
   launchedForCommand: (id: string, url: string) =>
     `No runner was given, so launched ${id} for this command. Its browser is fresh: nothing has been run on it and nothing is signed in. It bills until it is terminated or idles out, so terminate it with qawolf runner terminate --runner ${id} when you are done. ${pageAt(url)}`,
   noRunnerIdForImport: `${noRunnerId} An install also needs a live run to go into, which a runner gets from qawolf runner run.`,
-  noRunnerIdForHighlight: `${noRunnerId} Highlighting also needs a live page to draw on, which a runner gets from its first run: run a flow on it with qawolf runner run.`,
-  noRunnerIdForInspect: `${noRunnerId} Inspecting also needs a page, which a runner gets from its first run: run a flow on it with qawolf runner run.`,
+  noRunnerIdForHighlight: `${noRunnerId} A playwright runner has a page to draw on as soon as it launches.`,
+  noRunnerIdForInspect: `${noRunnerId} A playwright runner can be inspected as soon as it launches, and any other runner once a flow has run on it with qawolf runner run.`,
   noRunnerIdForPromoteSnapshot: `${noRunnerId} A baseline is replaced on the runner that produced the screenshot, so it has to be the runner the diff came from.`,
-  noRunnerIdForScreenshot: `${noRunnerId} A screenshot also needs a screen, which a runner gets from its first run: run a flow on it with qawolf runner run.`,
+  noRunnerIdForScreenshot: `${noRunnerId} A playwright runner has a screen as soon as it launches, and any other runner once a flow has run on it with qawolf runner run.`,
   noRunnerId,
   wasNotRunning: (id: string) => `Runner ${id} was not running.`,
   terminated: (id: string) => `Terminated runner ${id}.`,
