@@ -1,13 +1,18 @@
-import { toPosix } from "~/core/repoRelativePath.js";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
-import { readManifest, writeManifest } from "~/shell/manifest/io.js";
+import { writeManifest } from "~/shell/manifest/io.js";
 import {
   buildManifest,
   flattenSingleWrapper,
   sampleQawolfCommittedAt,
   type FetchedTags,
 } from "./bundle.js";
+import {
+  findMissingEnvVars,
+  type MissingEnvVar,
+} from "~/core/envVarAnalysis/missing.js";
 import { applyTeamStorageRewrite } from "./applyTeamStorageRewrite.js";
+import { carriedFromPreviousPull } from "./previousPull.js";
+import { collectFlowEnvVars } from "./collectFlowEnvVars.js";
 import { writeEnvFile } from "./envVars.js";
 import { extractTarGz } from "./extract.js";
 import {
@@ -35,6 +40,11 @@ type StageBundleResult = {
   flowCount: number;
   envVarCount: number;
   flowsWithTeamStorageRefs: string[];
+  // Variables the flows read that this environment does not define, most-read
+  // first. Aggregated by name rather than by flow: one missing variable in a
+  // shared helper reaches nearly every flow, so a per-flow list is unreadable.
+  missingEnvVars: MissingEnvVar[];
+  incompleteFlowCount: number;
 };
 
 export async function stageBundle(
@@ -67,10 +77,20 @@ export async function stageBundle(
       TEAM_STORAGE_DIR: args.assetsAbs,
     };
     await writeEnvFile(tmpDir, effectiveEnvVars, fs);
+    const { byFlow } = await collectFlowEnvVars(tmpDir, fs);
+    const missingEnvVars = findMissingEnvVars({
+      byFlow,
+      definedNames: new Set(Object.keys(effectiveEnvVars)),
+    });
+    // A failed tag fetch must not erase cached tags.
+    const carried =
+      args.tags === undefined
+        ? await carriedFromPreviousPull(args.destAbs, fs)
+        : undefined;
     const manifest = await buildManifest(
       {
         envId: args.envId,
-        tags: args.tags ?? (await carriedTags(args.destAbs, fs)),
+        tags: args.tags ?? carried?.tags,
         envSlug: args.envSlug,
         envName: args.envName,
         bundleDir: tmpDir,
@@ -79,6 +99,7 @@ export async function stageBundle(
         envVarsFetchedAt: args.envVarsFetchedAt,
         wrapperName,
         qawolfCommittedAt,
+        envVarsByFlow: byFlow,
       },
       fs,
     );
@@ -103,34 +124,13 @@ export async function stageBundle(
       flowCount: manifest.flows.length,
       envVarCount: Object.keys(effectiveEnvVars).length,
       flowsWithTeamStorageRefs,
+      missingEnvVars,
+      incompleteFlowCount: [...byFlow.values()].filter(
+        (entry) => entry.mayBeIncomplete,
+      ).length,
     };
   } catch (err) {
     await removeTempDir(tmpDir, registry, fs).catch(() => {});
     throw err;
   }
-}
-
-/**
- * Tags kept from the previous pull of this environment.
- *
- * A pull rebuilds the manifest from the bundle, so a failed tag fetch would
- * otherwise erase tags that were cached successfully earlier. Stale tags are
- * reported as stale; losing them silently would break every offline query.
- */
-async function carriedTags(
-  envDir: string,
-  fs: Fs,
-): Promise<FetchedTags | undefined> {
-  const previous = await readManifest(envDir, fs);
-  if (typeof previous === "string") return undefined;
-  if (previous.tagsFetchedAt === undefined) return undefined;
-
-  const byPath = new Map<string, string[]>();
-  for (const flow of previous.flows) {
-    // A manifest written by an older CLI on win32 may hold `\` paths; the new
-    // manifest looks entries up by posix path, so normalize or the carried
-    // tags never match and vanish silently.
-    if (flow.tags !== undefined) byPath.set(toPosix(flow.path), [...flow.tags]);
-  }
-  return { fetchedAt: new Date(previous.tagsFetchedAt), byPath };
 }

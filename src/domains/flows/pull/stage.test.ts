@@ -51,6 +51,8 @@ describe("stageBundle", () => {
       flowCount: 2,
       envVarCount: 1,
       flowsWithTeamStorageRefs: [],
+      missingEnvVars: [],
+      incompleteFlowCount: 0,
     });
     expect(await readFile(join(destDir, "checkout.flow.ts"), "utf8")).toBe(
       "// checkout\n",
@@ -219,5 +221,12 @@ describe("stageBundle", () => {
     // The written .env overrides the API's TEAM_STORAGE_DIR with assetsAbs.
     const env = parseDotenv(await readFile(join(destDir, ".env"), "utf8"));
     expect(env["TEAM_STORAGE_DIR"]).toBe(assetsDir);
+
+    // Analysis must see the env read introduced by the rewrite.
+    const manifest = await readManifest(destDir);
+    if (typeof manifest === "string") throw new Error(manifest);
+    expect(
+      manifest.flows.find((flow) => flow.path === "upload.flow.ts")?.envVars,
+    ).toEqual(["TEAM_STORAGE_DIR"]);
   });
 });

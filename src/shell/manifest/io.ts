@@ -15,6 +15,10 @@ const flowEntrySchema = z.object({
   // Absent on manifests written before tags existed, and on flows the tag
   // fetch did not return. Both optional so an older manifest still parses.
   tags: z.array(z.string()).optional(),
+  // Absent on manifests written before per-flow env vars existed. Optional so
+  // an older manifest still parses.
+  envVars: z.array(z.string()).optional(),
+  envVarsMayBeIncomplete: z.boolean().optional(),
 });
 
 const manifestSchema = z.object({
@@ -70,6 +74,8 @@ export async function readManifest(
       path: flow.path,
       contentHash: flow.contentHash,
       tags: flow.tags,
+      envVars: flow.envVars,
+      envVarsMayBeIncomplete: flow.envVarsMayBeIncomplete,
     })),
   };
 }
