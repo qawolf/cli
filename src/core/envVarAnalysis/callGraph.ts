@@ -63,6 +63,7 @@ export function collectEnvVarsByFlow(
     for (const entry of entries) {
       const summary = summaries.get(entry);
       if (summary !== undefined) mergeReads(reads, summary.reads);
+      if (args.accessors.has(entry)) reads.dynamic = true;
     }
     byFlow.set(flow.fileName, {
       names: [...reads.names].sort(),
