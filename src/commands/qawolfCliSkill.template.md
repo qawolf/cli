@@ -193,6 +193,21 @@ more until the AI speaks, so several minutes with no output is the session
 working, not the command hanging. `--timeout` bounds the wait; it is 30 minutes
 by default.
 
+## Uploading an app build: `build upload`
+
+`qawolf build upload <file>` uploads an `.apk`, `.aab` or `.ipa` and creates a
+build from it in one step. Use it instead of `build requestUpload`, a PUT and
+`build create` whenever the file is on this machine.
+
+Without an environment flag, the build belongs to no environment: only a run
+created with it installs it. `--environment-id <id>` or
+`--environment-name <name>` puts it on an environment, and that environment's
+runs install it from then on. It does not read `QAWOLF_ENVIRONMENT`: pass the
+environment on purpose.
+
+If the upload succeeds but creating the build fails, do not upload again.
+Finish it with `qawolf build create --build-id <id>` and the same flags.
+
 ## Driving a browser: the `runner` group
 
 The `runner` commands drive a live cloud browser: `launch` one, `screenshot` to
