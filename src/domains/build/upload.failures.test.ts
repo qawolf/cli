@@ -64,9 +64,9 @@ describe("handleBuildUpload failures", () => {
     expect(result?.exitCode).toBe(exitCodes.network);
   });
 
-  it("says how to finish the build when a cross-field rule refuses the flags after the upload", async () => {
+  it("refuses a base environment without --environment-ephemeral before anything is sent", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
-    callPublicApi.mockResolvedValueOnce(requested);
+    const deps = makeDeps();
 
     const result = await handleBuildUpload(
       ctx,
@@ -75,17 +75,15 @@ describe("handleBuildUpload failures", () => {
         environmentBaseEphemeralEnvironment: "staging",
         environmentName: "pr-42",
       },
-      makeDeps(),
+      deps,
     );
 
     expect(result?.exitCode).toBe(exitCodes.invalidArgs);
     expect(result?.error).toContain(
       "baseEphemeralEnvironment is only valid with ephemeral",
     );
-    expect(result?.error).toContain(
-      `qawolf build create --build-id ${buildId}`,
-    );
-    expect(callPublicApi).toHaveBeenCalledTimes(1);
+    expect(deps.putFile).not.toHaveBeenCalled();
+    expect(callPublicApi).not.toHaveBeenCalled();
   });
 
   it("says how to finish the build when it is uploaded but not created", async () => {
@@ -98,7 +96,7 @@ describe("handleBuildUpload failures", () => {
     const result = await handleBuildUpload(ctx, baseOptions, makeDeps());
 
     expect(result).toEqual({
-      error: `The file is uploaded as build ${buildId}, but the build could not be created: QA Wolf API request failed (HTTP 503). If the cause was temporary, finish it with qawolf build create --build-id ${buildId} and the same environment, branch and commit flags.`,
+      error: `The file is uploaded as build ${buildId}, but the build could not be created: QA Wolf API request failed (HTTP 503). If the cause was temporary, finish it with qawolf build create --build-id ${buildId} and the same environment, branch, commit and workspace flags.`,
       exitCode: exitCodes.network,
     });
   });

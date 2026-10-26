@@ -13,9 +13,8 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import { uploadFileName } from "./uploadFileName.js";
 import {
   type BuildUploadOptions,
-  createFields,
   describePutFailure,
-  flagProblemsBeforeUpload,
+  parseCreateFlags,
   requestUploadFields,
 } from "./uploadInput.js";
 
@@ -38,17 +37,16 @@ const invalid = (error: z.ZodError): CommandResult => ({
 /**
  * Uploads a local app file as a build: asks for a create-only upload URL,
  * streams the file there, then creates the build, which reads the app id and
- * version from the file. The flags are checked before anything is sent, so a
- * bad flag does not leave an uploaded file behind.
+ * version from the file. The flags and the file are checked before anything
+ * is sent, so a bad flag does not leave an uploaded file behind.
  */
 export async function handleBuildUpload(
   ctx: AuthCommandContext,
   options: BuildUploadOptions,
   deps: BuildUploadDeps,
 ): Promise<CommandResult> {
-  const fields = createFields(options);
-  const createProblem = flagProblemsBeforeUpload(fields);
-  if (createProblem !== undefined) return invalid(createProblem);
+  const flags = parseCreateFlags(options);
+  if (!flags.ok) return invalid(flags.error);
 
   const file = await deps.openFile(options.filePath);
   if (file === undefined) {
@@ -93,22 +91,9 @@ export async function handleBuildUpload(
     };
   }
 
-  const createInput = publicContractsV1.build.create.input.safeParse({
-    ...fields,
-    buildId,
-  });
-  if (!createInput.success) {
-    return {
-      error: buildMessages.createFailed(
-        buildId,
-        z.prettifyError(createInput.error),
-      ),
-      exitCode: exitCodes.invalidArgs,
-    };
-  }
   const created = await ctx.platformClient.callPublicApi(
     publicContractsV1.build.create,
-    createInput.data,
+    { ...flags.value, buildId },
   );
   if (!created.ok) {
     return {

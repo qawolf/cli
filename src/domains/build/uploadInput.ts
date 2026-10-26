@@ -1,5 +1,5 @@
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
-import { z } from "zod";
+import type { z } from "zod";
 
 import { describeFetchCause } from "~/core/fetchCause.js";
 import { buildMessages } from "~/core/messages/index.js";
@@ -42,29 +42,31 @@ export function describePutFailure(error: WireError): string {
   );
 }
 
-// The build id exists only after the upload, and zod cannot omit a field from a
-// refined schema. So the flags are checked against the full input, minus the
-// issue for the missing id. Zod skips cross-field refinements on an incomplete
-// input, so those are checked again once the id is known.
-export function flagProblemsBeforeUpload(
-  fields: Record<string, unknown>,
-): z.ZodError | undefined {
-  const parsed = publicContractsV1.build.create.input.safeParse(fields);
-  if (parsed.success) return undefined;
-  const issues = parsed.error.issues.filter(
-    (issue) => issue.path[0] !== "buildId",
-  );
-  return issues.length === 0 ? undefined : new z.ZodError(issues);
-}
+type CreateInput = z.output<typeof publicContractsV1.build.create.input>;
+export type CreateFlags = Omit<CreateInput, "buildId">;
 
-/** The `build.create` fields the flags give, without the build id. */
-export const createFields = (options: BuildUploadOptions) =>
-  definedOnly({
-    branch: options.branch,
-    commitSha: options.commitSha,
-    workspaceId: options.workspaceId,
+// The build id exists only after the upload, and zod cannot omit a field from
+// a refined schema. A well-formed id that is never sent lets every rule,
+// cross-field ones included, check the flags before the upload.
+const idForFlagCheck = "000000000000000000000000obld";
+
+/** Checks the `build.create` flags before anything is sent. */
+export function parseCreateFlags(
+  options: BuildUploadOptions,
+): { ok: true; value: CreateFlags } | { ok: false; error: z.ZodError } {
+  const parsed = publicContractsV1.build.create.input.safeParse({
+    ...definedOnly({
+      branch: options.branch,
+      commitSha: options.commitSha,
+      workspaceId: options.workspaceId,
+    }),
     ...environmentSelector(options),
+    buildId: idForFlagCheck,
   });
+  if (!parsed.success) return { ok: false, error: parsed.error };
+  const { buildId: _idForFlagCheck, ...flags } = parsed.data;
+  return { ok: true, value: flags };
+}
 
 export const requestUploadFields = (options: {
   fileName: string;
