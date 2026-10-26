@@ -1,4 +1,5 @@
-import { openAsBlob } from "node:fs";
+import { constants, openAsBlob } from "node:fs";
+import { access } from "node:fs/promises";
 
 import { isTimeoutError } from "~/core/errors.js";
 import type { Fs } from "~/shell/fs.js";
@@ -26,7 +27,11 @@ export async function openFileAsBlob(
 ): Promise<Blob | undefined> {
   try {
     const stats = await fs.stat(path);
-    return stats.isFile() ? await openAsBlob(path) : undefined;
+    if (!stats.isFile()) return undefined;
+    // openAsBlob reads lazily, so without this an unreadable file would only
+    // fail during the PUT.
+    await access(path, constants.R_OK);
+    return await openAsBlob(path);
   } catch {
     return undefined;
   }

@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -119,4 +125,16 @@ describe("openFileAsBlob", () => {
       await openFileAsBlob(makeDefaultFs(), join(dir, "app.apk")),
     ).toBeUndefined();
   });
+
+  // Root reads any file whatever its mode, and Windows ignores the mode.
+  it.skipIf(process.getuid?.() === 0 || process.platform === "win32")(
+    "answers undefined for a file it cannot read",
+    async () => {
+      const path = join(makeTempDir(), "app.apk");
+      writeFileSync(path, "apk bytes");
+      chmodSync(path, 0o000);
+
+      expect(await openFileAsBlob(makeDefaultFs(), path)).toBeUndefined();
+    },
+  );
 });

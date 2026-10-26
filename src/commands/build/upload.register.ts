@@ -2,7 +2,10 @@ import type { Command } from "commander";
 
 import { declareCommandKind } from "~/commands/commandKind.js";
 import { withAuthContext } from "~/commands/context.js";
-import { handleBuildUpload } from "~/domains/build/upload.js";
+import {
+  type BuildUploadOptions,
+  handleBuildUpload,
+} from "~/domains/build/upload.js";
 import { openFileAsBlob, putSignedUrl } from "~/shell/platform/putSignedUrl.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
@@ -15,7 +18,7 @@ Examples:
 Without an environment flag, the build belongs to no environment: only a run
 created with it installs it.`;
 
-type UploadFlags = {
+export type UploadFlags = {
   branch?: string;
   commitSha?: string;
   environmentBaseEphemeralEnvironment?: string;
@@ -24,6 +27,20 @@ type UploadFlags = {
   environmentName?: string;
   workspaceId?: string;
 };
+
+export const toUploadOptions = (
+  filePath: string,
+  opts: UploadFlags,
+): BuildUploadOptions => ({
+  branch: opts.branch,
+  commitSha: opts.commitSha,
+  environmentBaseEphemeralEnvironment: opts.environmentBaseEphemeralEnvironment,
+  environmentEphemeral: opts.environmentEphemeral,
+  environmentId: opts.environmentId,
+  environmentName: opts.environmentName,
+  filePath,
+  workspaceId: opts.workspaceId,
+});
 
 export function registerBuildUploadCommand(
   build: Command,
@@ -58,24 +75,10 @@ export function registerBuildUploadCommand(
     .addHelpText("after", uploadExamples)
     .action((filePath: string, opts: UploadFlags, command: Command) =>
       withAuthContext(signals, (ctx) =>
-        handleBuildUpload(
-          ctx,
-          {
-            branch: opts.branch,
-            commitSha: opts.commitSha,
-            environmentBaseEphemeralEnvironment:
-              opts.environmentBaseEphemeralEnvironment,
-            environmentEphemeral: opts.environmentEphemeral,
-            environmentId: opts.environmentId,
-            environmentName: opts.environmentName,
-            filePath,
-            workspaceId: opts.workspaceId,
-          },
-          {
-            openFile: (path) => openFileAsBlob(ctx.fs, path),
-            putFile: (args) => putSignedUrl(args),
-          },
-        ),
+        handleBuildUpload(ctx, toUploadOptions(filePath, opts), {
+          openFile: (path) => openFileAsBlob(ctx.fs, path),
+          putFile: (args) => putSignedUrl(args),
+        }),
       )(opts, command),
     );
 }

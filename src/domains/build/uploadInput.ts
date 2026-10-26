@@ -33,8 +33,29 @@ function environmentSelector(options: BuildUploadOptions) {
   return Object.keys(environment).length === 0 ? {} : { environment };
 }
 
+const storageReasonMaxLength = 200;
+
+// GCS and S3 answer with XML that names the cause, such as ExpiredToken or
+// SignatureDoesNotMatch.
+function storageReason(body: string): string | undefined {
+  const code = /<Code>([^<]+)<\/Code>/.exec(body)?.[1];
+  const message = /<Message>([^<]+)<\/Message>/.exec(body)?.[1];
+  const reason =
+    code === undefined
+      ? body.replace(/\s+/g, " ").trim()
+      : [code, message].filter((part) => part !== undefined).join(": ");
+  if (reason.length === 0) return undefined;
+  return reason.length > storageReasonMaxLength
+    ? `${reason.slice(0, storageReasonMaxLength)}…`
+    : reason;
+}
+
 export function describePutFailure(error: WireError): string {
-  if (error.kind === "http") return buildMessages.storageRefused(error.status);
+  if (error.kind === "http")
+    return buildMessages.storageRefused(
+      error.status,
+      storageReason(error.body),
+    );
   if (error.kind === "timeout")
     return buildMessages.storageTimedOut(error.timeoutMs);
   return buildMessages.storageUnreachable(

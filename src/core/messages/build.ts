@@ -7,7 +7,8 @@ export const buildMessages = {
   createFailed: (buildId: string, reason: string) =>
     `The file is uploaded as build ${buildId}, but the build could not be created: ${withoutPeriod(reason)}. If the cause was temporary, finish it with qawolf build create --build-id ${buildId} and the same environment, branch, commit and workspace flags.`,
   fileUnreadable: (path: string) => `${path} is not a readable file.`,
-  storageRefused: (status: number) => `storage refused it (HTTP ${status})`,
+  storageRefused: (status: number, reason: string | undefined) =>
+    `storage refused it (HTTP ${status}${reason === undefined ? "" : `: ${reason}`})`,
   storageTimedOut: (timeoutMs: number) =>
     `it did not finish within ${formatSeconds(timeoutMs)}`,
   storageUnreachable: (cause: string | undefined) =>

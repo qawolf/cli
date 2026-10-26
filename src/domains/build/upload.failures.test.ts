@@ -12,7 +12,7 @@ import {
 } from "./upload.testUtils.js";
 
 describe("handleBuildUpload failures", () => {
-  it("stops when no upload URL is given, with the platform's reason", async () => {
+  it("stops when no upload URL is given, with the platform's reason and the generated commands' exit code", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValueOnce({
       ok: false,
@@ -26,7 +26,6 @@ describe("handleBuildUpload failures", () => {
     expect(result).toEqual({
       error: "QA Wolf API request failed (HTTP 400).",
       errorBody: "Builds are not enabled for this workspace.",
-      exitCode: exitCodes.network,
     });
     expect(deps.putFile).not.toHaveBeenCalled();
   });
@@ -47,6 +46,26 @@ describe("handleBuildUpload failures", () => {
       exitCode: exitCodes.network,
     });
     expect(callPublicApi).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the code and message storage refused the file with", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValueOnce(requested);
+    const deps = makeDeps();
+    deps.putFile.mockResolvedValueOnce({
+      ok: false,
+      error: {
+        body: "<?xml version='1.0'?><Error><Code>ExpiredToken</Code><Message>The provided token has expired.</Message></Error>",
+        kind: "http",
+        status: 400,
+      },
+    });
+
+    const result = await handleBuildUpload(ctx, baseOptions, deps);
+
+    expect(result?.error).toContain(
+      "storage refused it (HTTP 400: ExpiredToken: The provided token has expired.)",
+    );
   });
 
   it("names the cause when storage cannot be reached", async () => {
@@ -97,7 +116,20 @@ describe("handleBuildUpload failures", () => {
 
     expect(result).toEqual({
       error: `The file is uploaded as build ${buildId}, but the build could not be created: QA Wolf API request failed (HTTP 503). If the cause was temporary, finish it with qawolf build create --build-id ${buildId} and the same environment, branch, commit and workspace flags.`,
-      exitCode: exitCodes.network,
     });
+  });
+
+  it("exits with the network code only when the platform never answered", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockResolvedValueOnce(requested).mockResolvedValueOnce({
+      ok: false,
+      error: "Could not reach the QA Wolf API.",
+      unreachable: true,
+    });
+
+    const result = await handleBuildUpload(ctx, baseOptions, makeDeps());
+
+    expect(result?.exitCode).toBe(exitCodes.network);
+    expect(result?.error).toContain(`--build-id ${buildId}`);
   });
 });

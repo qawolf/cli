@@ -8,7 +8,10 @@ import type {
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
 import type { WireResult } from "~/shell/platform/createTrpcClient.js";
-import { failureFields } from "~/shell/platform/requestWithRetry.js";
+import {
+  failureFields,
+  type PlatformFailure,
+} from "~/shell/platform/requestWithRetry.js";
 
 import { uploadFileName } from "./uploadFileName.js";
 import {
@@ -28,6 +31,13 @@ export type BuildUploadDeps = {
     url: string;
   }) => Promise<WireResult<void>>;
 };
+
+// Only a platform that never answered is a network failure. A refusal keeps the
+// exit code the generated build commands give it.
+const platformFailure = (failure: PlatformFailure): CommandResult => ({
+  ...(failure.unreachable === true ? { exitCode: exitCodes.network } : {}),
+  ...failureFields(failure),
+});
 
 const invalid = (error: z.ZodError): CommandResult => ({
   error: z.prettifyError(error),
@@ -69,9 +79,7 @@ export async function handleBuildUpload(
     publicContractsV1.build.requestUpload,
     requestInput.data,
   );
-  if (!requested.ok) {
-    return { exitCode: exitCodes.network, ...failureFields(requested) };
-  }
+  if (!requested.ok) return platformFailure(requested);
   const { buildId, uploadHeaders, uploadUrl } = requested.value;
 
   const waiting = ctx.ui.wait(buildMessages.uploading(fileName, file.size));
@@ -97,8 +105,7 @@ export async function handleBuildUpload(
   );
   if (!created.ok) {
     return {
-      exitCode: exitCodes.network,
-      ...failureFields(created),
+      ...platformFailure(created),
       error: buildMessages.createFailed(buildId, created.error),
     };
   }
