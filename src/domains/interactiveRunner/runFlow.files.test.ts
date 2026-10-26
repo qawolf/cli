@@ -10,6 +10,7 @@ describe("handleRunnerRun file refusals", () => {
     const result = await handleRunnerRun(
       ctx,
       {
+        builds: [],
         entryPoint: "flows/missing.ts",
         follow: false,
         envFile: undefined,
@@ -37,6 +38,7 @@ describe("handleRunnerRun file refusals", () => {
     const result = await handleRunnerRun(
       ctx,
       {
+        builds: [],
         entryPoint: "flow.ts",
         follow: false,
         envFile: undefined,
@@ -69,6 +71,7 @@ describe("handleRunnerRun file refusals", () => {
     const result = await handleRunnerRun(
       ctx,
       {
+        builds: [],
         entryPoint: "flows/chekcout.flow.ts",
         follow: false,
         envFile: undefined,

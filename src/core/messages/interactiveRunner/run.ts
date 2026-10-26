@@ -57,6 +57,8 @@ export const runMessages = {
   runSubmitted: (runId: string) => `Submitted run ${runId}.`,
   requestTooLarge: (byteLength: number, maxByteLength: number) =>
     `The run request encodes to ${String(byteLength)} bytes, over the ${String(maxByteLength)} a runner accepts. Escaping inflates file content, so a set of files inside the content cap can still encode to more than this. Run from a directory holding only the flow and what it imports.`,
+  notBuildId: (value: string) =>
+    `\`${value}\` is not a build id. Put the flow file before \`--builds\`.`,
   skippedEntries: (stream: string, count: number) =>
     `${pluralize(count, "entry", "entries")} of ${stream} were dropped before this read: the runner keeps a bounded history and this follow has been overtaken.`,
   unknownStream: (stream: string, known: readonly string[]) =>

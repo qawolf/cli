@@ -15,6 +15,7 @@ const started = {
 } as const;
 
 const base = {
+  builds: undefined,
   environmentId: undefined,
   follow: false,
   message: "cover the checkout journey",

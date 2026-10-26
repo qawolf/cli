@@ -20,6 +20,7 @@ async function runWith(
   const result = await handleRunnerRun(
     ctx,
     {
+      builds: [],
       entryPoint: options.entryPoint ?? "flow.ts",
       follow: false,
       envFile: undefined,
@@ -117,6 +118,7 @@ describe("handleRunnerRun", () => {
     await handleRunnerRun(
       ctx,
       {
+        builds: [],
         entryPoint: "flow.ts",
         follow: false,
         envFile: undefined,
@@ -156,6 +158,7 @@ describe("handleRunnerRun", () => {
     const result = await handleRunnerRun(
       ctx,
       {
+        builds: [],
         entryPoint: "flow.ts",
         follow: false,
         envFile: undefined,

@@ -29,6 +29,7 @@ type Runner = Extract<ResolvedRunner, { type: "launched" | "resolved" }>;
 export async function submitRun(
   ctx: RunnerApiContext,
   options: {
+    builds: string[] | undefined;
     entryPointPath: string;
     environment: Record<string, string> | undefined;
     environmentId: string | undefined;

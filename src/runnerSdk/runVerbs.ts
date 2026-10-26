@@ -60,6 +60,7 @@ export function createRunVerbs({ deps, platformClient }: SdkContext) {
     }: RunRequest): Promise<SdkResult<SubmittedRun>> {
       const prepared = await prepareRun(
         {
+          builds: [],
           entryPointPath,
           envFile: undefined,
           envId: environment === "ambient" ? undefined : environment.id,
@@ -74,6 +75,7 @@ export function createRunVerbs({ deps, platformClient }: SdkContext) {
       const submitted = await submitRun(
         ctx,
         {
+          builds: prepared.builds,
           entryPointPath,
           environment: prepared.environment,
           environmentId: prepared.environmentId,

@@ -22,6 +22,7 @@ import { submitRun } from "./submitRun.js";
 export async function handleRunnerRun(
   ctx: AuthCommandContext,
   options: {
+    builds: readonly string[];
     entryPoint: string;
     envFile: string | undefined;
     envId: string | undefined;
@@ -51,6 +52,7 @@ export async function handleRunnerRun(
   const entryPointPath = toCollectedPath(deps.cwd, options.entryPoint);
   const prepared = await prepareRun(
     {
+      builds: options.builds,
       entryPointPath,
       envFile: options.envFile,
       envId: options.envId,
@@ -88,6 +90,7 @@ export async function handleRunnerRun(
   const submitted = await submitRun(
     ctx,
     {
+      builds: prepared.builds,
       entryPointPath,
       environment: prepared.environment,
       environmentId: prepared.environmentId,

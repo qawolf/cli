@@ -13,6 +13,7 @@ const started = {
 } as const;
 
 const base = {
+  builds: undefined,
   environmentId: undefined,
   filePaths: undefined,
   follow: false,

@@ -41,3 +41,24 @@ describe("runner run variable flags", () => {
     });
   });
 });
+
+describe("runner run --builds", () => {
+  const first = "abcdefghij0123456789klmnobld";
+  const second = "0123456789abcdefghijklmnobld";
+
+  it("takes several space-separated build ids", async () => {
+    expect(await parseOptions(["--builds", first, second])).toMatchObject({
+      builds: [first, second],
+    });
+  });
+
+  it("adds the ids of a repeated --builds", async () => {
+    expect(
+      await parseOptions(["--builds", first, "--builds", second]),
+    ).toMatchObject({ builds: [first, second] });
+  });
+
+  it("is empty when not given", async () => {
+    expect(await parseOptions([])).toMatchObject({ builds: [] });
+  });
+});

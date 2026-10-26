@@ -32,6 +32,7 @@ async function run(
   const result = await handleRunnerRun(
     ctx,
     {
+      builds: [],
       entryPoint: "flow.ts",
       envFile: undefined,
       envId: undefined,
@@ -171,6 +172,7 @@ describe("handleRunnerRun file delta", () => {
     await handleRunnerRun(
       ctx,
       {
+        builds: [],
         entryPoint: "flow.ts",
         envFile: undefined,
         envId: undefined,

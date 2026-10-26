@@ -376,6 +376,9 @@ Options:
                                  --env-id, they go on top of that environment's
   --var, --env-var <name=value>  One variable for this run only, on top of the environment and
                                  --env-file; repeat for several (default: [])
+  --builds <ids...>              Builds to install in this run, from build.create, one per app and
+                                 platform. Each replaces the environment's latest build of its app
+                                 and platform. Put the flow file before this flag (default: [])
   --lines <start-end>            Run only these 1-indexed lines against the browser as it stands,
                                  instead of the whole flow from a fresh one
   --lines-file <path>            File the --lines range lives in. Defaults to <flowFile>; pass it
@@ -403,6 +406,7 @@ Examples:
   $ qawolf runner run flows/checkout.flow.ts --lines 4-9 --lines-file pages/login.ts
   $ qawolf runner run flows/checkout.flow.ts --env-id staging
   $ qawolf runner run flows/checkout.flow.ts --env-var RUN_INPUT_PATH=uploads/app.apk
+  $ qawolf runner run flows/checkout.flow.ts --builds <buildId> <buildId>
 
 What travels:
   run ships the flow file, everything it imports, and your package.json and

@@ -17,6 +17,8 @@ import { followSession } from "./followSession.js";
 const chatSessionIdEnvironmentVariable = "QAWOLF_CHAT_SESSION_ID";
 
 export type AgentSendOptions = {
+  /** Builds from `build create`, installed by the session's runs over the environment's. */
+  builds: readonly string[] | undefined;
   environmentId: string | undefined;
   /** Team-storage paths from `file requestUpload`, read by the AI instead of the message. */
   filePaths: readonly string[] | undefined;
@@ -41,6 +43,7 @@ function parseInput(
 ) {
   return publicContractsV1.agent.send.input.safeParse({
     message: options.message,
+    ...(options.builds === undefined ? {} : { builds: options.builds }),
     ...(options.environmentId === undefined
       ? {}
       : { environmentId: options.environmentId }),
