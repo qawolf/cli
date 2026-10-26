@@ -179,7 +179,7 @@ describe("buildFlagSpecs", () => {
     const described = (field: string) =>
       result.flags.find((spec) => spec.path.join(".") === field)?.description;
     expect(described("priority")).toBe(
-      "One of: unprioritized, low, medium, high, urgent",
+      "An open bug report at unprioritized, high or urgent priority blocks its suite and CI gate. Low and medium don't block. Priority never makes a blocker or coverage request block. One of: unprioritized, low, medium, high, urgent",
     );
     expect(described("status")).toBe(
       "Bug reports and blockers allow only these changes: pending to canceled or archived, canceled to archived, and resolved to archived. Requesting pending or inProgress on a bug report resolved in the last 7 days reopens it. The stored status is inProgress when a flow still reproduces it, and pending otherwise. Never set resolved on a bug report: it resolves on its own once its flows pass. A coverage request can move to backlog, pending, paused, inProgress, resolved or archived. One of: backlog, pending, inProgress, paused, resolved, canceled, archived",
