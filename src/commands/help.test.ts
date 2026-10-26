@@ -108,6 +108,10 @@ describe("--help output", () => {
     expect(helpFor("runner", "stop-run")).toMatchSnapshot();
   });
 
+  it("qawolf build upload", () => {
+    expect(helpFor("build", "upload")).toMatchSnapshot();
+  });
+
   it("qawolf runner run", () => {
     expect(helpFor("runner", "run")).toMatchSnapshot();
   });
