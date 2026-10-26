@@ -245,6 +245,8 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `siteVersions[].observed[].source` — One of header, meta, versionPath, frameworkBuildId, fingerprint; newer servers may add values, so ignore any you don't know. Where the attempt read the version.
 - `siteVersions[].origin` — The site origin the attempts visited.
 - `siteVersions[].warnings` — Why the site may not be the version the run should test.
+- `waitSeconds` — The hold this check was allowed, in seconds, after clamping. Absent when the check did not wait.
+- `wokeOn` — One of: status, timeout
 - `url` — Absolute URL of the run page.
 
 <!-- fields:end -->
