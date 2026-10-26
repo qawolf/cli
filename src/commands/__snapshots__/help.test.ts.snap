@@ -28,6 +28,7 @@ Commands:
                                evidence
   runner [options]             Drive an interactive runner on the QA Wolf
                                platform
+  activity                     QA Wolf public API activity commands
   codeHostIntegration          QA Wolf public API codeHostIntegration commands
   deployment                   QA Wolf public API deployment commands
   email                        QA Wolf public API email commands
