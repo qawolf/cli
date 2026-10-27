@@ -12,6 +12,7 @@ async function runAfterFailing(failure: {
   return handleRunnerRun(
     ctx,
     {
+      builds: [],
       entryPoint: "flow.ts",
       follow: false,
       envFile: undefined,

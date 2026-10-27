@@ -38,6 +38,7 @@ async function runWith(options: {
   const result = await handleRunnerRun(
     ctx,
     {
+      builds: [],
       entryPoint: options.entryPoint ?? "flow.ts",
       follow: false,
       envFile: undefined,

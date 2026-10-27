@@ -27,6 +27,7 @@ export type SendResult =
 export async function sendRunFlowRequest(
   ctx: RunnerApiContext,
   options: {
+    builds: string[] | undefined;
     entryPointPath: string;
     environment: Record<string, string> | undefined;
     environmentId: string | undefined;
@@ -41,6 +42,7 @@ export async function sendRunFlowRequest(
   const result = await ctx.platformClient.callPublicApi(
     publicContractsV1.runner.runFlow,
     {
+      ...(options.builds === undefined ? {} : { builds: options.builds }),
       entryPointPath: options.entryPointPath,
       files: delta.files,
       id: options.resolved.runnerId,

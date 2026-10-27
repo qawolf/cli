@@ -39,6 +39,7 @@ export const runWithEnvironment = async ({
   const result = await handleRunnerRun(
     ctx,
     {
+      builds: [],
       entryPoint: "flow.ts",
       envFile,
       envId,

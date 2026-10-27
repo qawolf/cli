@@ -21,9 +21,11 @@ Examples:
   $ qawolf runner run flows/checkout.flow.ts --lines 12-40
   $ qawolf runner run flows/checkout.flow.ts --lines 4-9 --lines-file pages/login.ts
   $ qawolf runner run flows/checkout.flow.ts --env-id staging
-  $ qawolf runner run flows/checkout.flow.ts --env-var RUN_INPUT_PATH=uploads/app.apk`;
+  $ qawolf runner run flows/checkout.flow.ts --env-var RUN_INPUT_PATH=uploads/app.apk
+  $ qawolf runner run flows/checkout.flow.ts --builds <buildId> <buildId>`;
 
 type RunFlags = {
+  builds: string[];
   envFile?: string;
   envId?: string;
   envVar: string[];
@@ -82,6 +84,11 @@ export function registerRunCommand(
       [],
     )
     .option(
+      "--builds <ids...>",
+      "Builds to install in this run, from build.create, one per app and platform. Each replaces the environment's latest build of its app and platform. Put the flow file before this flag",
+      [],
+    )
+    .option(
       "--lines <start-end>",
       "Run only these 1-indexed lines against the browser as it stands, instead of the whole flow from a fresh one",
     )
@@ -102,6 +109,7 @@ export function registerRunCommand(
         handleRunnerRun(
           ctx,
           {
+            builds: opts.builds,
             entryPoint: flowFile,
             envFile: opts.envFile,
             envId: opts.envId,

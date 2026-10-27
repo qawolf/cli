@@ -2,6 +2,7 @@ import type { RunFiles, RunSelection } from "@qawolf/api-contracts/v1";
 import { resolve } from "node:path";
 
 import { buildRunSelection } from "~/core/interactiveRunner/lineSelection.js";
+import { parseRunBuilds } from "~/core/interactiveRunner/runBuilds.js";
 import {
   type BuiltRunEnvironment,
   buildRunEnvironment,
@@ -22,6 +23,7 @@ import type { InteractiveRunnerDeps } from "./deps.js";
 export type PreparedRun =
   | {
       ok: true;
+      builds: string[] | undefined;
       environment: Record<string, string> | undefined;
       environmentId: string | undefined;
       files: RunFiles;
@@ -43,6 +45,7 @@ const refused = (error: string, exitCode: number): PreparedRun => ({
  */
 export async function prepareRun(
   options: {
+    builds: readonly string[];
     entryPointPath: string;
     envFile: string | undefined;
     envId: string | undefined;
@@ -58,6 +61,8 @@ export async function prepareRun(
   }
   const fromVars = parseRunVariables(options.vars);
   if (!fromVars.ok) return refused(fromVars.error, exitCodes.invalidArgs);
+  const builds = parseRunBuilds(options.builds);
+  if (!builds.ok) return refused(builds.error, exitCodes.invalidArgs);
 
   const fromEnvVar = deps.env["QAWOLF_ENVIRONMENT"]?.trim();
   const environmentId =
@@ -96,17 +101,17 @@ export async function prepareRun(
   if (combined !== undefined && !combined.ok) {
     return refused(combined.error, exitCodes.invalidArgs);
   }
-  const given = combined?.environment;
+  const ready = {
+    builds: builds.builds,
+    environment: combined?.environment,
+    environmentId,
+    files,
+    ok: true as const,
+  };
 
   if (options.lines === undefined) {
     return options.linesFile === undefined
-      ? {
-          environment: given,
-          environmentId,
-          files,
-          ok: true,
-          selection: undefined,
-        }
+      ? { ...ready, selection: undefined }
       : refused(
           interactiveRunnerMessages.linesFileWithoutLines,
           exitCodes.invalidArgs,
@@ -123,13 +128,7 @@ export async function prepareRun(
 
   const built = buildRunSelection({ lines: options.lines, path });
   return built.ok
-    ? {
-        environment: given,
-        environmentId,
-        files,
-        ok: true,
-        selection: built.selection,
-      }
+    ? { ...ready, selection: built.selection }
     : refused(built.error, exitCodes.invalidArgs);
 }
 

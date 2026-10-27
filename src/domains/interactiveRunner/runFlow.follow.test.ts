@@ -20,6 +20,7 @@ const runFollowing = (
   handleRunnerRun(
     ctx,
     {
+      builds: [],
       entryPoint: "flow.ts",
       follow: options.follow ?? true,
       envFile: undefined,

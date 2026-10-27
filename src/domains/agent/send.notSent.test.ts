@@ -50,6 +50,7 @@ describe("handleAgentSend after its first write succeeded", () => {
     const result = await handleAgentSend(
       ctx,
       {
+        builds: undefined,
         environmentId: undefined,
         filePaths: undefined,
         follow: true,
