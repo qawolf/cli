@@ -11,7 +11,7 @@ function isProcessEnv(compiler: typeof ts, node: ts.Node): boolean {
   );
 }
 
-function isReadAccess(compiler: typeof ts, node: ts.Node): boolean {
+export function isReadAccess(compiler: typeof ts, node: ts.Node): boolean {
   let target = node;
   while (
     compiler.isParenthesizedExpression(target.parent) ||
