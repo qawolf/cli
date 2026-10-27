@@ -10,6 +10,7 @@ import { describeRequestError } from "./describeErrors.js";
 import type {
   RequestOptions,
   TrpcClient,
+  WireError,
   WireResult,
 } from "./createTrpcClient.js";
 import { type PlatformResult, requestWithRetry } from "./requestWithRetry.js";
@@ -58,6 +59,13 @@ const notSentCodes = new Set([
   "UND_ERR_CONNECT_TIMEOUT",
 ]);
 
+function wasNeverSent(err: WireError): boolean {
+  if (err.kind !== "network") return false;
+  // Node's fetch puts the code on the error's cause, Bun's on the error.
+  const code = errorCode(err.cause.cause) ?? errorCode(err.cause);
+  return code !== undefined && notSentCodes.has(code);
+}
+
 type MethodDeps = {
   baseUrl: string;
   sleep?: ((ms: number) => Promise<void>) | undefined;
@@ -66,12 +74,13 @@ type MethodDeps = {
 };
 
 // Builds the PlatformClient method: reads retry on transient network
-// errors, writes never retry — they are not idempotent, and a retried
-// request that reached the server the first time would repeat the action.
+// errors, writes only when nothing was sent — they are not idempotent, and a
+// retried request that reached the server the first time would repeat the
+// action.
 export function makeCallPublicApiMethod(
   trpc: TrpcClient,
   deps: MethodDeps,
-  readBackoffMs: readonly number[],
+  backoffMs: readonly number[],
 ): CallPublicApiMethod {
   return async (contract, input, options) => {
     const sent = applyWorkspaceId(contract.input, input, deps.workspaceId);
@@ -80,7 +89,8 @@ export function makeCallPublicApiMethod(
     const subject = notFoundSubject(contract.name, sent);
     return requestWithRetry({
       call: () => callPublicApi(trpc, contract, sent, options),
-      backoffMs: contract.kind === "read" ? readBackoffMs : [],
+      backoffMs,
+      ...(contract.kind === "write" ? { retryable: wasNeverSent } : {}),
       describe: (err) => {
         const failure = describeRequestError(
           err,
@@ -88,15 +98,9 @@ export function makeCallPublicApiMethod(
           contract.name,
           subject,
         );
-        // Node's fetch puts the code on the error's cause, Bun's on the error.
-        const code =
-          err.kind === "network"
-            ? (errorCode(err.cause.cause) ?? errorCode(err.cause))
-            : undefined;
         // Only a write: a read can fail inside a command that already changed
         // something, as `runner run --follow` polls after submitting.
-        if (contract.kind !== "write" || !code || !notSentCodes.has(code))
-          return failure;
+        if (contract.kind !== "write" || !wasNeverSent(err)) return failure;
         return {
           ...failure,
           error: `${failure.error} ${authMessages.errors.request.notSent}`,

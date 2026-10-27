@@ -90,3 +90,44 @@ describe("a write that was never sent", () => {
     expect(result.error).not.toContain("Nothing was sent");
   });
 });
+
+function sendWrite(f: typeof fetch) {
+  return createPlatformClient("qawolf_key", {
+    baseUrl: "https://test.qawolf.com",
+    fetch: f,
+    sleep: noSleep,
+  }).callPublicApi(
+    {
+      input: z.object({ runnerId: z.string() }),
+      kind: "write" as const,
+      name: "runner.performAction",
+      output: z.object({ outcome: z.string() }),
+    },
+    { runnerId: "r1" },
+  );
+}
+
+describe("retrying a write", () => {
+  it("sends a write again when nothing was sent", async () => {
+    const f = mock<typeof fetch>()
+      .mockRejectedValueOnce(fetchFailed("UND_ERR_CONNECT_TIMEOUT"))
+      .mockResolvedValue(
+        Response.json({ result: { data: { outcome: "success" } } }),
+      );
+
+    const result = await sendWrite(f as unknown as typeof fetch);
+
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({ ok: true, value: { outcome: "success" } });
+  });
+
+  it("does not send a write again after a reset", async () => {
+    const f = mock<typeof fetch>().mockRejectedValue(
+      fetchFailed("UND_ERR_SOCKET"),
+    );
+
+    await sendWrite(f as unknown as typeof fetch);
+
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+});

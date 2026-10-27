@@ -49,6 +49,9 @@ type RequestWithRetryArgs<T> = {
   // Backoff schedule. Length = retry budget. Final attempt has no backoff
   // and surfaces the error if it still hasn't succeeded.
   backoffMs: readonly number[];
+  // Which failures to retry, when not every transient one is safe to repeat.
+  // Defaults to transient network errors and reached deadlines.
+  retryable?: (err: WireError) => boolean;
   // Builds the user-facing error from the WireError.
   describe: (err: WireError) => PlatformFailure;
   // Override for sleep (tests pass a no-op). Pass undefined for production
@@ -56,8 +59,8 @@ type RequestWithRetryArgs<T> = {
   sleep: ((ms: number) => Promise<void>) | undefined;
 };
 
-// Retries `call` on transient network errors and reached deadlines only;
-// HTTP/parse errors are deterministic and surface immediately. The infinite loop
+// Retries `call` on the failures `retryable` allows; HTTP/parse errors are
+// deterministic and surface immediately. The infinite loop
 // is bounded by the `backoffMs` array: once `backoffMs[attempt]` is undefined,
 // the next non-ok result surfaces the error.
 export async function requestWithRetry<T>(
@@ -69,8 +72,7 @@ export async function requestWithRetry<T>(
     if (result.ok) return { ok: true, value: result.data };
 
     const backoff = args.backoffMs[attempt];
-    const retryable =
-      result.error.kind === "network" || result.error.kind === "timeout";
+    const retryable = (args.retryable ?? isTransient)(result.error);
     if (backoff === undefined || !retryable) {
       // Only an HTTP status proves the server answered without acting on a
       // lost request. A reached deadline says nothing about whether the server
@@ -94,4 +96,8 @@ export async function requestWithRetry<T>(
     }
     await sleep(backoff);
   }
+}
+
+function isTransient(err: WireError): boolean {
+  return err.kind === "network" || err.kind === "timeout";
 }

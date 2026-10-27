@@ -36,8 +36,8 @@ describe("handleAgentSend after its first write succeeded", () => {
         reply({ sessionId: "sess_1", status: "working", url }),
       )
       .mockResolvedValueOnce(reply(asking))
-      // The answer never leaves.
-      .mockRejectedValueOnce(refused);
+      // The answer never leaves, however often it is retried.
+      .mockRejectedValue(refused);
     const ctx = {
       ...base,
       platformClient: createPlatformClient("qawolf_key", {
