@@ -5,6 +5,12 @@ type ManifestFlowEntry = {
   // absent both on pre-tags manifests and on flows the tag fetch skipped —
   // `Manifest.tagsFetchedAt` distinguishes those from a genuinely untagged flow.
   tags: string[] | undefined;
+  // Reads found in module initialization and reachable calls at pull time.
+  // Undefined on older manifests. Recomputed on every pull; carrying this
+  // forward would resurrect names removed by a source rewrite.
+  envVars: string[] | undefined;
+  // Unknown keys or unresolved local calls can hide additional reads.
+  envVarsMayBeIncomplete: boolean | undefined;
 };
 
 // Identifies a flow run against a pulled env: derived by walking the

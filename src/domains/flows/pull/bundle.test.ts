@@ -116,6 +116,7 @@ describe("buildManifest", () => {
     wrapperName: string | undefined;
     qawolfCommittedAt: string | undefined;
     tags: undefined;
+    envVarsByFlow: undefined;
   } => ({
     envId: "env-x",
     bundleDir: workDir,
@@ -125,6 +126,7 @@ describe("buildManifest", () => {
     wrapperName: undefined,
     qawolfCommittedAt: undefined,
     tags: undefined,
+    envVarsByFlow: undefined,
   });
 
   it("walks .flow.ts and .flow.js files, ignores other extensions", async () => {
