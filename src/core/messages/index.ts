@@ -1,5 +1,6 @@
 export { agentMessages, sessionGivenTwice } from "./agent.js";
 export { authMessages } from "./auth.js";
+export { buildMessages } from "./build.js";
 export { doctorMessages } from "./doctor.js";
 export { environmentsMessages } from "./environments.js";
 export { flowsMessages } from "./flows.js";

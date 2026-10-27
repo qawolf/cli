@@ -16,6 +16,8 @@ Commands:
   agent                        Ask the QA Wolf AI for work and follow what it
                                does
   auth                         Manage authentication with QA Wolf
+  build                        Upload app builds and manage the builds runs
+                               install
   doctor [options]             Diagnose problems running flows locally
   flows                        Manage and run QA Wolf flows
   init [options]               Scaffold a QA Wolf project in the current
@@ -27,7 +29,6 @@ Commands:
   runner [options]             Drive an interactive runner on the QA Wolf
                                platform
   activity                     QA Wolf public API activity commands
-  build                        QA Wolf public API build commands
   codeHostIntegration          QA Wolf public API codeHostIntegration commands
   deployment                   QA Wolf public API deployment commands
   email                        QA Wolf public API email commands
@@ -516,6 +517,32 @@ Stopping a run or ending a runner:
   false when no run was going, and when no runner was running. Neither is an
   error, so a retry needs no special handling. terminate never launches a runner
   in order to end it.
+"
+`;
+
+exports[`--help output qawolf build upload 1`] = `
+"Usage: qawolf build upload [options] <file>
+
+Upload an app file (.apk, .aab or .ipa, up to 500 MB) and create a build from
+it. Runs build requestUpload, the PUT and build create in one step
+
+Options:
+  --environment-id <id>                            Put the build on this existing environment: its runs install it from now on, until a newer build of the same app and platform arrives
+  --environment-name <name>                        Put the build on the environment with this alias or name, and create the environment when none matches
+  --environment-ephemeral                          With --environment-name, create an ephemeral environment when the name creates one, such as a pull request's
+  --environment-base-ephemeral-environment <name>  With --environment-ephemeral, the alias or name of the environment a created ephemeral environment copies from
+  --branch <branch>                                The branch the build came from
+  --commit-sha <sha>                               The commit the build came from
+  --workspace-id <id>                              The workspace to upload into. Required when authenticating with an organization or user API key
+  -h, --help                                       display help for command
+
+Examples:
+  $ qawolf build upload app-release.apk
+  $ qawolf build upload App.ipa --environment-id <id>
+  $ qawolf build upload app-release.aab --environment-name pr-42 --environment-ephemeral --environment-base-ephemeral-environment staging --branch feat/login --commit-sha 1a2b3c4
+
+Without an environment flag, the build belongs to no environment: only a run
+created with it installs it.
 "
 `;
 

@@ -151,6 +151,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf build list` | read | List the workspace's undeleted builds, newest first. With latestOnly, list what the environment's next run installs. |
 | `qawolf build requestDownload` | read | Get a URL to download a build's file. Deleted builds can be downloaded while their file exists. Answers 404 when the file has expired. |
 | `qawolf build requestUpload` | write | Get a URL to upload an app build: an .apk, .aab or .ipa, up to 500 MB. PUT the file there with uploadHeaders, then call build.create with the buildId. |
+| `qawolf build upload` | write | Upload an app file (.apk, .aab or .ipa, up to 500 MB) and create a build from it. Runs build requestUpload, the PUT and build create in one step |
 | `qawolf codeHostIntegration find` | read | List the workspace's code host integrations (GitHub or GitLab). A connected integration lets QA Wolf read repositories and receive the code host's webhooks. codeHostIntegration.listRepositories pages the repositories each integration covers. |
 | `qawolf codeHostIntegration listRepositories` | read | List the repositories the workspace's code host integrations cover, alphabetical by full name. The list reflects the last sync from the code host; codeHostIntegration.find lists the integrations themselves. |
 | `qawolf deployment find` | read | List the deployments QA Wolf has received for the workspace, newest first. A deployment arrives through a code host integration's webhook or through deployment.reportStatus, and is what a deployment trigger evaluates against. deployment.listTriggerEvaluations reports each trigger's verdict for one deployment. |
@@ -188,7 +189,8 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf install browsers` | local | Install Playwright browsers used by the project's web flows |
 | `qawolf install clear` | local | Remove the managed runtime cache (all installed runtime versions) |
 | `qawolf investigation get` | read | Read what the QA Wolf AI investigating a run has concluded: one finding per cause of its failures, with the question waiting for a person and any answer or dispute the investigation hasn't acted on yet. A run that automatic investigation does not cover answers status "not-enabled". |
-| `qawolf investigation question find` | read | List the questions the QA Wolf AI investigating failed runs is waiting for a person to answer, across a workspace's runs. Each question names its run, flows, details and offered answers. To answer one, send the person's answer to its sessionId with agent.send. |
+| `qawolf investigation question answer` | write | Answer the questions the QA Wolf AI investigating a failed run is waiting on, as the signed-in person. List the questions with investigation.question.find, and answer only with the person's approval. The first answer to a question wins, and the investigation acts on it. Only a person's own sign-in or user API key can answer; a team or organization key cannot. |
+| `qawolf investigation question find` | read | List the questions the QA Wolf AI investigating failed runs is waiting for a person to answer, across a workspace's runs. Each question names its run, flows, details and offered answers. To answer them, call investigation.question.answer with the run and the person's answers. |
 | `qawolf issue addFlows` | write | Add flows to a coverage request owned by the caller's team. Flows already covered stay covered. Bug reports and blockers link to flows through the runs that reproduce them; use run.diagnose to record one. |
 | `qawolf issue attachFiles` | write | Attach files from the team's storage to a bug report owned by the caller's team, for example the files a bug was reproduced with. Files already attached stay attached. Upload a file with file.requestUpload first. |
 | `qawolf issue comment` | write | Comment on a bug report, blocker (issue type `maintenance`), or coverage request owned by the caller's team. The comment changes nothing else on the issue, such as its status or priority. |
@@ -315,6 +317,21 @@ Expect quiet stretches. QA Wolf reports a session as working and says nothing
 more until the AI speaks, so several minutes with no output is the session
 working, not the command hanging. `--timeout` bounds the wait; it is 30 minutes
 by default.
+
+## Uploading an app build: `build upload`
+
+`qawolf build upload <file>` uploads an `.apk`, `.aab` or `.ipa` and creates a
+build from it in one step. Use it instead of `build requestUpload`, a PUT and
+`build create` whenever the file is on this machine.
+
+Without an environment flag, the build belongs to no environment: only a run
+created with it installs it. `--environment-id <id>` or
+`--environment-name <name>` puts it on an environment, and that environment's
+runs install it from then on. It does not read `QAWOLF_ENVIRONMENT`: pass the
+environment on purpose.
+
+If the upload succeeds but creating the build fails, do not upload again.
+Finish it with `qawolf build create --build-id <id>` and the same flags.
 
 ## Driving a browser: the `runner` group
 

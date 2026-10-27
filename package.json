@@ -1,6 +1,6 @@
 {
   "name": "@qawolf/cli",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "Run and manage QA Wolf flows from the terminal, CI, or an AI agent",
   "keywords": [
     "automation",
@@ -72,7 +72,7 @@
     "@clack/prompts": "1.5.1",
     "@napi-rs/keyring": "1.3.0",
     "@oxc-node/core": "0.1.0",
-    "@qawolf/api-contracts": "0.113.0",
+    "@qawolf/api-contracts": "0.116.0",
     "@qawolf/emails": "1.1.1",
     "@qawolf/flow-targets": "2.0.0",
     "@qawolf/flows": "0.3.0",
