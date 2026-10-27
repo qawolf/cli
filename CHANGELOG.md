@@ -1,5 +1,15 @@
 # @qawolf/cli
 
+## 2.8.0
+
+### Minor Changes
+
+- Upgrades `@qawolf/api-contracts` to `0.116.0`.
+
+  `qawolf runner run` and `qawolf agent send` take `--builds <ids...>`, the builds from `qawolf build create` that the run or the session installs over the environment's builds of the same app and platform. Put the flow file or the message before `--builds`, which takes every word after it.
+
+- fd84753: Adds `qawolf build upload <file>`. It uploads an `.apk`, `.aab` or `.ipa` and creates a build from it in one step: it requests an upload URL, PUTs the file, then calls `build create`. `--environment-id` or `--environment-name` puts the build on an environment, so that environment's runs install it. `--branch` and `--commit-sha` record where it came from.
+
 ## 2.7.0
 
 ### Minor Changes
