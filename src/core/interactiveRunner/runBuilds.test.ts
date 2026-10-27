@@ -16,10 +16,16 @@ describe("parseRunBuilds", () => {
     });
   });
 
-  it("names a flow file given after --builds", () => {
+  it("refuses a value that is not a build id", () => {
     expect(parseRunBuilds([buildId, "flows/checkout.flow.ts"])).toEqual({
-      error:
-        "`flows/checkout.flow.ts` is not a build id. Put the flow file before `--builds`.",
+      error: "✖ Expected a build id from build.requestUpload.\n  → at [1]",
+      ok: false,
+    });
+  });
+
+  it("refuses more builds than a run takes", () => {
+    expect(parseRunBuilds(Array.from({ length: 21 }, () => buildId))).toEqual({
+      error: "✖ Too big: expected array to have <=20 items",
       ok: false,
     });
   });

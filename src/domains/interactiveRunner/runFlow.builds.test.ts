@@ -60,7 +60,7 @@ describe("handleRunnerRun with --builds", () => {
     const { callPublicApi, result } = await run([buildId, "flows/a.flow.ts"]);
 
     expect(result?.error).toBe(
-      "`flows/a.flow.ts` is not a build id. Put the flow file before `--builds`.",
+      "✖ Expected a build id from build.requestUpload.\n  → at [1]",
     );
     expect(result?.exitCode).toBe(2);
     expect(callPublicApi).not.toHaveBeenCalled();

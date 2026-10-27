@@ -1,22 +1,18 @@
-import { interactiveRunnerMessages } from "~/core/messages/index.js";
-
-// What `build.requestUpload` answers as a build id.
-const buildIdPattern = /^[a-z0-9]{24}obld$/;
+import { publicContractsV1 } from "@qawolf/api-contracts/v1";
+import { z } from "zod";
 
 /**
- * The build ids a `runner run --builds` names, or why one is not a build id.
- * `--builds` takes every word after it, so a flow file given after it lands
- * here.
+ * The build ids a `runner run --builds` names, put to the published schema so
+ * a malformed id or too many builds are refused before a runner is launched.
  */
 export function parseRunBuilds(
   values: readonly string[],
 ): { ok: true; builds: string[] | undefined } | { ok: false; error: string } {
-  const notBuildId = values.find((value) => !buildIdPattern.test(value));
-  if (notBuildId !== undefined) {
-    return {
-      error: interactiveRunnerMessages.notBuildId(notBuildId),
-      ok: false,
-    };
+  if (values.length === 0) return { builds: undefined, ok: true };
+  const checked =
+    publicContractsV1.runner.runFlow.input.shape.builds.safeParse(values);
+  if (!checked.success) {
+    return { error: z.prettifyError(checked.error), ok: false };
   }
-  return { builds: values.length === 0 ? undefined : [...values], ok: true };
+  return { builds: checked.data, ok: true };
 }
