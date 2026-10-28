@@ -141,4 +141,66 @@ describe("followSession held waits", () => {
     expect(result?.exitCode).toBe(exitCodes.timeout);
     expect(heldReads).toHaveBeenCalledTimes(1);
   });
+
+  it("retries a held wait whose connection dropped, even with little time left", async () => {
+    const { callPublicApi, ctx, heldReads } = makeAuthCtx();
+    callPublicApi
+      .mockResolvedValueOnce(session({ status: "working" }))
+      .mockResolvedValueOnce(session({ status: "completed" }));
+    heldReads
+      .mockResolvedValueOnce({
+        error: "socket hang up",
+        ok: false,
+        unreachable: true,
+      })
+      .mockImplementation(async (input) => heldRead(input, "status"));
+
+    const result = await followSession(
+      ctx,
+      { ...follow, timeoutSeconds: 30 },
+      makeTestDeps(),
+    );
+
+    expect(result).toBeUndefined();
+    expect(heldReads).toHaveBeenCalledTimes(2);
+  });
+
+  it("exits as a network failure once three held waits in a row run out of time", async () => {
+    const { callPublicApi, ctx, heldReads } = makeAuthCtx();
+    let clock = 0;
+    callPublicApi.mockResolvedValue(session({ status: "working" }));
+    heldReads.mockImplementation(async (_input, requestOptions) => {
+      clock += requestOptions?.timeoutMs ?? 0;
+      return { error: "timed out", ok: false, timedOut: true };
+    });
+
+    const result = await followSession(
+      ctx,
+      { ...follow, timeoutSeconds: 1800 },
+      makeTestDeps({ now: () => clock }),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.network);
+    expect(heldReads).toHaveBeenCalledTimes(3);
+  });
+
+  it("stops reading the transcript at the deadline and exits as a timeout", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    let clock = 0;
+    callPublicApi.mockImplementation(
+      async (_contract, _input, requestOptions) => {
+        clock += requestOptions?.timeoutMs ?? 0;
+        return { error: "socket hang up", ok: false, unreachable: true };
+      },
+    );
+
+    const result = await followSession(
+      ctx,
+      { ...follow, timeoutSeconds: 20 },
+      makeTestDeps({ now: () => clock }),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.timeout);
+    expect(clock).toBe(20_000);
+  });
 });

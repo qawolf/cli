@@ -23,7 +23,9 @@ export async function sendWireRequest<T>(
   try {
     response = await fetchFn(url, {
       ...init,
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: init.signal
+        ? AbortSignal.any([AbortSignal.timeout(timeoutMs), init.signal])
+        : AbortSignal.timeout(timeoutMs),
     });
   } catch (error: unknown) {
     if (isTimeoutError(error)) {

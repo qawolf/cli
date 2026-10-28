@@ -1,3 +1,4 @@
+import { sleep as defaultSleep } from "~/core/sleep.js";
 import {
   type AgentSessionStore,
   makeAgentSessionStore,
@@ -7,11 +8,12 @@ import type { Fs } from "~/shell/fs.js";
 /**
  * Everything about the machine these handlers touch, in one injectable bundle
  * so that a test drives them with an in-memory filesystem, the environment it
- * chose, and a clock it controls.
+ * chose, and a clock and a sleep it controls.
  */
 export type AgentDeps = {
   env: Record<string, string | undefined>;
   now: () => number;
+  sleep: (ms: number) => Promise<void>;
   store: AgentSessionStore;
 };
 
@@ -23,6 +25,7 @@ export function makeAgentDeps(options: {
   return {
     env: options.env,
     now: Date.now,
+    sleep: defaultSleep,
     store: makeAgentSessionStore({ cwd: options.cwd, fs: options.fs }),
   };
 }

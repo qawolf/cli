@@ -17,8 +17,8 @@ export type WireResult<T> =
 /** Per-call overrides, for the calls that differ from the client's defaults. */
 export type RequestOptions = {
   timeoutMs?: number;
-  retryTimeouts?: boolean;
   canRetry?: () => boolean;
+  signal?: AbortSignal;
 };
 
 type Deps = {
@@ -76,7 +76,11 @@ export function createTrpcClient(apiKey: string, deps: Deps): TrpcClient {
         sendWireRequest(
           deps.fetch,
           url,
-          { headers: authHeader, method: "GET" },
+          {
+            headers: authHeader,
+            method: "GET",
+            ...(options?.signal ? { signal: options.signal } : {}),
+          },
           schema,
           options?.timeoutMs ?? defaultTimeoutMs,
         ),
@@ -96,6 +100,7 @@ export function createTrpcClient(apiKey: string, deps: Deps): TrpcClient {
             // A followed redirect can fail after the server got the body, and
             // that failure would read as a request that was never sent.
             redirect: "error",
+            ...(options?.signal ? { signal: options.signal } : {}),
           },
           schema,
           options?.timeoutMs ?? defaultTimeoutMs,

@@ -1,80 +1,46 @@
+import { publicContractsV1 } from "@qawolf/api-contracts/v1";
+
+import type { AuthCommandContext } from "~/shell/commandContext.js";
+
 import {
-  maxAgentWaitSeconds,
-  publicContractsV1,
-} from "@qawolf/api-contracts/v1";
+  type Deadline,
+  type Ended,
+  holdWithinDeadline,
+  readWithinDeadline,
+} from "./withinDeadline.js";
 
-import { agentMessages } from "~/core/messages/index.js";
-import type {
-  AuthCommandContext,
-  CommandResult,
-} from "~/shell/commandContext.js";
-import { exitCodes } from "~/shell/exit.js";
-import type { RequestOptions } from "~/shell/platform/createTrpcClient.js";
-import { failureFields } from "~/shell/platform/requestWithRetry.js";
-
-const answerMarginMs = 15_000;
-
-export function planHold(remainingMs: () => number): {
-  requestOptions: RequestOptions;
-  waitSeconds: number;
-} {
-  const waitSeconds = Math.min(
-    maxAgentWaitSeconds,
-    Math.max(1, Math.ceil(remainingMs() / 1_000)),
+export function readSession(
+  ctx: AuthCommandContext,
+  deadline: Deadline,
+  sessionId: string,
+) {
+  return readWithinDeadline(deadline, (plan) =>
+    ctx.platformClient.callPublicApi(
+      publicContractsV1.agent.get,
+      { sessionId, waitSeconds: 0 },
+      plan.requestOptions,
+    ),
   );
-  const timeoutMs = waitSeconds * 1_000 + answerMarginMs;
-  return {
-    requestOptions: {
-      canRetry: () => remainingMs() >= timeoutMs,
-      retryTimeouts: false,
-      timeoutMs,
-    },
-    waitSeconds,
-  };
 }
-
-type Wake = { type: "activity" } | { type: "ended"; result: CommandResult };
 
 export async function waitForActivity(
   ctx: AuthCommandContext,
-  options: {
-    cursor: string;
-    remainingMs: () => number;
-    sessionId: string;
-    timeoutSeconds: number;
-  },
-): Promise<Wake> {
+  deadline: Deadline,
+  options: { cursor: string; sessionId: string },
+): Promise<{ type: "activity" } | Ended> {
   for (;;) {
-    const remainingMs = options.remainingMs();
-    if (remainingMs <= 0) {
-      return {
-        result: {
-          error: agentMessages.followTimedOut(
-            options.sessionId,
-            options.timeoutSeconds,
-          ),
-          exitCode: exitCodes.timeout,
+    const held = await holdWithinDeadline(deadline, (plan) =>
+      ctx.platformClient.callPublicApi(
+        publicContractsV1.agent.get,
+        {
+          cursor: options.cursor,
+          sessionId: options.sessionId,
+          waitSeconds: plan.waitSeconds,
         },
-        type: "ended",
-      };
-    }
-    const hold = planHold(options.remainingMs);
-    const held = await ctx.platformClient.callPublicApi(
-      publicContractsV1.agent.get,
-      {
-        cursor: options.cursor,
-        sessionId: options.sessionId,
-        waitSeconds: hold.waitSeconds,
-      },
-      hold.requestOptions,
+        plan.requestOptions,
+      ),
     );
-    if (!held.ok) {
-      if (held.timedOut || options.remainingMs() <= 0) continue;
-      return {
-        result: { exitCode: exitCodes.network, ...failureFields(held) },
-        type: "ended",
-      };
-    }
+    if (held.type !== "answered") return held;
     if (held.value.wokeOn !== "timeout") return { type: "activity" };
   }
 }

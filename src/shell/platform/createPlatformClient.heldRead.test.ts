@@ -19,6 +19,22 @@ function failingFetch(error: Error): typeof fetch {
   ) as unknown as typeof fetch;
 }
 
+type FetchImpl = (
+  url: string | URL | Request,
+  init?: RequestInit,
+) => Promise<Response>;
+
+function fetchSettledOnlyByAbort(): typeof fetch {
+  return mock<FetchImpl>(
+    (_url, init) =>
+      new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () =>
+          reject(new DOMException("The operation was aborted.", "AbortError")),
+        );
+      }),
+  ) as unknown as typeof fetch;
+}
+
 function callCount(f: typeof fetch): number {
   return (f as unknown as Mock<typeof fetch>).mock.calls.length;
 }
@@ -27,44 +43,49 @@ function client(f: typeof fetch) {
   return createPlatformClient(apiKey, { baseUrl, fetch: f, sleep: noSleep });
 }
 
-describe("a read that asked not to retry its timeouts", () => {
+describe("a read whose caller owns the retries", () => {
   it("sends a timed-out read once and says it timed out", async () => {
     const f = failingFetch(timeoutAbortError());
 
     const result = await client(f).callPublicApi(
       publicContractsV1.agent.get,
       heldInput,
-      { retryTimeouts: false, timeoutMs: 60_000 },
+      { canRetry: () => false, timeoutMs: 60_000 },
     );
 
     expect(callCount(f)).toBe(1);
     expect(result).toMatchObject({ ok: false, timedOut: true });
   });
 
-  it("still retries a connection that failed", async () => {
+  it("sends a read whose connection failed once", async () => {
     const f = failingFetch(new TypeError("fetch failed"));
 
     const result = await client(f).callPublicApi(
       publicContractsV1.agent.get,
       heldInput,
-      { retryTimeouts: false, timeoutMs: 60_000 },
+      { canRetry: () => false, timeoutMs: 60_000 },
     );
 
-    expect(callCount(f)).toBe(3);
-    expect(result.ok).toBe(false);
+    expect(callCount(f)).toBe(1);
+    expect(result).toMatchObject({ ok: false, unreachable: true });
     expect(result).not.toHaveProperty("timedOut");
   });
 
-  it("stops retrying once the caller says another attempt would not fit", async () => {
-    const f = failingFetch(new TypeError("fetch failed"));
+  it("ends a read in flight when its signal aborts, without retrying it", async () => {
+    const f = fetchSettledOnlyByAbort();
+    const abort = new AbortController();
 
-    await client(f).callPublicApi(publicContractsV1.agent.get, heldInput, {
-      canRetry: () => false,
-      retryTimeouts: false,
-      timeoutMs: 60_000,
-    });
+    const pending = client(f).callPublicApi(
+      publicContractsV1.agent.get,
+      heldInput,
+      { signal: abort.signal, timeoutMs: 60_000 },
+    );
+    abort.abort();
+    const result = await pending;
 
     expect(callCount(f)).toBe(1);
+    expect(result.ok).toBe(false);
+    expect(result).not.toHaveProperty("timedOut");
   });
 
   it("retries a timed-out read by default", async () => {

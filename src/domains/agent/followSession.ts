@@ -1,5 +1,3 @@
-import { publicContractsV1 } from "@qawolf/api-contracts/v1";
-
 import { replyParts } from "~/core/agent/formatReply.js";
 import {
   type AgentSession,
@@ -12,12 +10,12 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { exitCodes } from "~/shell/exit.js";
-import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import { handleQuestion } from "./answerQuestion.js";
 import type { AgentDeps } from "./deps.js";
-import { waitForActivity } from "./hold.js";
+import { readSession, waitForActivity } from "./hold.js";
 import { reportSettlement } from "./settlement.js";
+import { type Deadline, endedBy } from "./withinDeadline.js";
 
 export type FollowOptions = {
   sessionId: string;
@@ -50,8 +48,16 @@ export async function followSession(
   // who took ten minutes to answer has not used up ten minutes of the follow.
   const startedAt = deps.now();
   let promptedMs = 0;
-  const remainingMs = () =>
-    options.timeoutSeconds * 1_000 - (deps.now() - startedAt - promptedMs);
+  const deadline: Deadline = {
+    remainingMs: () =>
+      options.timeoutSeconds * 1_000 - (deps.now() - startedAt - promptedMs),
+    signal: undefined,
+    sleep: deps.sleep,
+  };
+  const timedOut = () => ({
+    error: agentMessages.followTimedOut(sessionId, options.timeoutSeconds),
+    exitCode: exitCodes.timeout,
+  });
 
   let pending = options.initial;
   let printed = 0;
@@ -77,13 +83,8 @@ export async function followSession(
         session = pending;
         pending = undefined;
       } else {
-        const read = await ctx.platformClient.callPublicApi(
-          publicContractsV1.agent.get,
-          { sessionId, waitSeconds: 0 },
-        );
-        if (!read.ok) {
-          return { exitCode: exitCodes.network, ...failureFields(read) };
-        }
+        const read = await readSession(ctx, deadline, sessionId);
+        if (read.type !== "answered") return endedBy(read, timedOut());
         session = read.value;
       }
       const { replies, status } = session;
@@ -131,13 +132,11 @@ export async function followSession(
         ctx.ui.info(agentMessages.detachHint);
       }
       waiting ??= ctx.ui.wait(agentMessages.waiting);
-      const wake = await waitForActivity(ctx, {
+      const wake = await waitForActivity(ctx, deadline, {
         cursor: session.nextCursor,
-        remainingMs,
         sessionId,
-        timeoutSeconds: options.timeoutSeconds,
       });
-      if (wake.type === "ended") return wake.result;
+      if (wake.type !== "activity") return endedBy(wake, timedOut());
     }
   } finally {
     stopWaiting();

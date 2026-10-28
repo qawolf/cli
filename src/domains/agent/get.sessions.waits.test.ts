@@ -107,7 +107,47 @@ describe("multi-session waits above the per-request cap", () => {
     expect(
       activityWaits.mock.calls.map(([input]) => input.waitSeconds),
     ).toEqual([maxAgentWaitSeconds, 100 - maxAgentWaitSeconds - 15]);
-    expect(activityWaits.mock.calls[0]?.[1]?.retryTimeouts).toBe(false);
+    expect(activityWaits.mock.calls[0]?.[1]?.canRetry?.()).toBe(false);
     expect(clock).toBe(100_000);
+  });
+
+  it("aborts the waits still holding once the follow ends, keeping its result", async () => {
+    const { activityWaits, callPublicApi, ctx } = makeAuthCtx("json");
+    const held: AbortSignal[] = [];
+    activityWaits.mockImplementation((input, requestOptions) => {
+      if (input.sessionIds.includes("session-45"))
+        return Promise.resolve(
+          activityAnswer(input, { "session-45": "completed" }),
+        );
+      if (requestOptions?.signal) held.push(requestOptions.signal);
+      return unanswered;
+    });
+    callPublicApi.mockResolvedValue(session({ status: "completed" }));
+
+    const result = await handleAgentGet(ctx, options, makeTestDeps());
+
+    expect(result).toBeUndefined();
+    expect(held).toHaveLength(2);
+    expect(held.every((signal) => signal.aborted)).toBe(true);
+  });
+
+  it("stops reading a session's status at the deadline and exits as a timeout", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx("json");
+    let clock = 0;
+    callPublicApi.mockImplementation(
+      async (_contract, _input, requestOptions) => {
+        clock += requestOptions?.timeoutMs ?? 0;
+        return { error: "socket hang up", ok: false, unreachable: true };
+      },
+    );
+
+    const result = await handleAgentGet(
+      ctx,
+      { ...options, sessions: ["session-one", "session-two"], timeout: "20" },
+      makeTestDeps({ now: () => clock }),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.timeout);
+    expect(clock).toBe(20_000);
   });
 });

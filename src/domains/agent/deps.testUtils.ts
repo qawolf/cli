@@ -127,6 +127,7 @@ export function makeTestDeps(overrides: Partial<AgentDeps> = {}): AgentDeps {
   return {
     env: {},
     now: () => 0,
+    sleep: async () => {},
     store: makeAgentSessionStore({ cwd: testCwd, fs: makeMemoryFs() }),
     ...overrides,
   };
