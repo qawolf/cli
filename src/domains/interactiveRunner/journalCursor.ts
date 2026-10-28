@@ -103,20 +103,22 @@ export function createPrintingCursor(
 const unreachableGraceMs = 60_000;
 
 /**
- * Counts consecutive unreachable answers and says when to stop asking. Any
+ * Says when to stop asking a runner that keeps answering unreachable. Any
  * reachable answer resets it, so the budget bounds one outage rather than the
  * whole follow.
  */
-export function createUnreachableBudget(pollIntervalMs: number): {
-  exhausted: () => boolean;
+export function createUnreachableBudget(): {
+  exhausted: (waitedMs: number) => boolean;
   reset: () => void;
 } {
-  const limit = Math.ceil(unreachableGraceMs / pollIntervalMs);
-  let consecutive = 0;
+  let outageStartedAtMs: number | undefined;
   return {
-    exhausted: () => ++consecutive >= limit,
+    exhausted: (waitedMs) => {
+      outageStartedAtMs ??= waitedMs;
+      return waitedMs - outageStartedAtMs >= unreachableGraceMs;
+    },
     reset: () => {
-      consecutive = 0;
+      outageStartedAtMs = undefined;
     },
   };
 }

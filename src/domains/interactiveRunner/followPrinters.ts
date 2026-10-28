@@ -50,8 +50,8 @@ async function anchorRecorderCursor(
   runner: TargetedRunner,
   deps: { sleep: (ms: number) => Promise<void> },
 ): Promise<RecorderAnchor> {
-  const unreachable = createUnreachableBudget(anchorPollIntervalMs);
-  for (;;) {
+  const unreachable = createUnreachableBudget();
+  for (let waitedMs = 0; ; waitedMs += anchorPollIntervalMs) {
     const anchor = await readJournal(ctx, runner, {
       stream: "recorder",
       tail: 1,
@@ -62,7 +62,7 @@ async function anchorRecorderCursor(
     if (anchor.type === "failed") {
       return { failure: journalReadFailure(anchor), ok: false };
     }
-    if (unreachable.exhausted()) {
+    if (unreachable.exhausted(waitedMs)) {
       return { failure: { ...unreachableFailure }, ok: false };
     }
     await deps.sleep(anchorPollIntervalMs);
@@ -126,4 +126,16 @@ export function createFollowPrinters(
     );
   }
   return printers;
+}
+
+export async function printEach(
+  printers: readonly (() => Promise<CursorRead>)[],
+): Promise<{ interrupted: CursorRead | undefined; sawEntries: boolean }> {
+  let sawEntries = false;
+  for (const print of printers) {
+    const window = await print();
+    if (window.type !== "entries") return { interrupted: window, sawEntries };
+    sawEntries ||= window.entries.length > 0;
+  }
+  return { interrupted: undefined, sawEntries };
 }

@@ -139,21 +139,22 @@ describe("createJournalCursor", () => {
 });
 
 describe("createUnreachableBudget", () => {
-  it("spends a poll at a time and is exhausted at the grace window", () => {
-    const budget = createUnreachableBudget(30_000);
+  it("is exhausted once the outage has lasted the grace window, however the waits were spaced", () => {
+    const budget = createUnreachableBudget();
 
-    expect(budget.exhausted()).toBe(false);
-    expect(budget.exhausted()).toBe(true);
+    expect(budget.exhausted(10_000)).toBe(false);
+    expect(budget.exhausted(40_000)).toBe(false);
+    expect(budget.exhausted(70_000)).toBe(true);
   });
 
   // The budget bounds one outage rather than the whole follow, so a runner that
   // answers again starts over.
   it("starts over once the runner answers again", () => {
-    const budget = createUnreachableBudget(30_000);
+    const budget = createUnreachableBudget();
 
-    budget.exhausted();
+    budget.exhausted(0);
     budget.reset();
 
-    expect(budget.exhausted()).toBe(false);
+    expect(budget.exhausted(60_000)).toBe(false);
   });
 });
