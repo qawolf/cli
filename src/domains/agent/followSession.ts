@@ -16,9 +16,8 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import { handleQuestion } from "./answerQuestion.js";
 import type { AgentDeps } from "./deps.js";
+import { waitForActivity } from "./hold.js";
 import { reportSettlement } from "./settlement.js";
-
-const pollIntervalMs = 5_000;
 
 export type FollowOptions = {
   sessionId: string;
@@ -51,8 +50,8 @@ export async function followSession(
   // who took ten minutes to answer has not used up ten minutes of the follow.
   const startedAt = deps.now();
   let promptedMs = 0;
-  const timedOut = () =>
-    deps.now() - startedAt - promptedMs >= options.timeoutSeconds * 1_000;
+  const remainingMs = () =>
+    options.timeoutSeconds * 1_000 - (deps.now() - startedAt - promptedMs);
 
   let pending = options.initial;
   let printed = 0;
@@ -80,7 +79,7 @@ export async function followSession(
       } else {
         const read = await ctx.platformClient.callPublicApi(
           publicContractsV1.agent.get,
-          { sessionId },
+          { sessionId, waitSeconds: 0 },
         );
         if (!read.ok) {
           return { exitCode: exitCodes.network, ...failureFields(read) };
@@ -132,16 +131,13 @@ export async function followSession(
         ctx.ui.info(agentMessages.detachHint);
       }
       waiting ??= ctx.ui.wait(agentMessages.waiting);
-      await deps.sleep(pollIntervalMs);
-      if (timedOut()) {
-        return {
-          error: agentMessages.followTimedOut(
-            sessionId,
-            options.timeoutSeconds,
-          ),
-          exitCode: exitCodes.timeout,
-        };
-      }
+      const wake = await waitForActivity(ctx, {
+        cursor: session.nextCursor,
+        remainingMs,
+        sessionId,
+        timeoutSeconds: options.timeoutSeconds,
+      });
+      if (wake.type === "ended") return wake.result;
     }
   } finally {
     stopWaiting();

@@ -17,13 +17,7 @@ describe("followSession timeout", () => {
   it("counts the time a request takes, not only the sleeps between them", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     let clock = 0;
-    const deps = makeTestDeps({
-      now: () => clock,
-      sleep: async (ms) => {
-        clock += ms;
-      },
-    });
-    // Every read takes ten seconds; the sleep between reads is five.
+    const deps = makeTestDeps({ now: () => clock });
     callPublicApi.mockImplementation(async () => {
       clock += 10_000;
       return session({ status: "working" });
@@ -40,12 +34,7 @@ describe("followSession timeout", () => {
       isInteractive: true,
     });
     let clock = 0;
-    const deps = makeTestDeps({
-      now: () => clock,
-      sleep: async (ms) => {
-        clock += ms;
-      },
-    });
+    const deps = makeTestDeps({ now: () => clock });
     ctx.ui.select = mock(async () => {
       clock += 600_000;
       return { ok: true, value: "staging" } as const;

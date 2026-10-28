@@ -111,7 +111,7 @@ export async function handleAgentSend(
   if (options.follow && options.session !== undefined) {
     const before = await ctx.platformClient.callPublicApi(
       publicContractsV1.agent.get,
-      { sessionId: options.session },
+      { sessionId: options.session, waitSeconds: 0 },
     );
     if (before.ok) repliesAtAnswer = before.value.replies.length;
   }

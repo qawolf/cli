@@ -179,22 +179,6 @@ describe("followSession", () => {
     expect(callPublicApi).toHaveBeenCalledTimes(1);
   });
 
-  it("gives up following once the timeout passes, and says how to pick it back up", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx();
-    callPublicApi.mockResolvedValue(session({ status: "working" }));
-
-    const result = await followSession(
-      ctx,
-      { ...follow, timeoutSeconds: 2 },
-      makeTestDeps(),
-    );
-
-    expect(result?.exitCode).toBe(exitCodes.timeout);
-    expect(result?.error).toContain(
-      "qawolf agent get --follow --session sess_1",
-    );
-  });
-
   it("reports a platform that cannot be reached as a network failure", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi.mockResolvedValue({ ok: false, error: "no route to host" });

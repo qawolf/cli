@@ -12,6 +12,7 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import { handleQuestion } from "./answerQuestion.js";
 import type { AgentDeps } from "./deps.js";
+import { holdWithin } from "./hold.js";
 import { reportSettlement } from "./settlement.js";
 
 export async function followSessions(options: {
@@ -33,8 +34,31 @@ export async function followSessions(options: {
   const detach = ctx.signals.register(() => waiting.stop());
 
   try {
+    let cursors: Record<string, string> = {};
     for (;;) {
-      for (const sessionId of sessionIds) {
+      const holdRemainingMs = deadline - deps.now();
+      if (holdRemainingMs <= 0) return timedOut();
+      const hold = holdWithin(holdRemainingMs);
+      const activity = await ctx.platformClient.callPublicApi(
+        publicContractsV1.activity.wait,
+        { cursors, sessionIds: [...sessionIds], waitSeconds: hold.waitSeconds },
+        { timeoutMs: hold.timeoutMs },
+      );
+      if (!activity.ok) {
+        if (deps.now() >= deadline) return timedOut();
+        return { exitCode: exitCodes.network, ...failureFields(activity) };
+      }
+      cursors = Object.fromEntries(
+        activity.value.sessions.map((watched) => [
+          watched.sessionId,
+          watched.nextCursor,
+        ]),
+      );
+      const stirred = activity.value.sessions.filter(
+        (watched) => watched.status !== "working",
+      );
+
+      for (const { sessionId } of stirred) {
         const remainingMs = deadline - deps.now();
         if (remainingMs <= 0) return timedOut();
         const read = await ctx.platformClient.callPublicApi(
@@ -72,9 +96,6 @@ export async function followSessions(options: {
           if (result.type === "ended") return result.result;
         }
       }
-      const remainingMs = deadline - deps.now();
-      if (remainingMs <= 0) return timedOut();
-      await deps.sleep(Math.min(5_000, remainingMs));
     }
   } finally {
     waiting.stop();
