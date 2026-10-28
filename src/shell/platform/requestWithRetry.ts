@@ -24,6 +24,7 @@ export type PlatformFailure = {
    * this to decide whether an offline fallback is honest.
    */
   unreachable?: boolean;
+  timedOut?: boolean;
 };
 
 export type PlatformResult<T> =
@@ -57,6 +58,7 @@ type RequestWithRetryArgs<T> = {
   // Override for sleep (tests pass a no-op). Pass undefined for production
   // callers; the helper supplies the real implementation.
   sleep: ((ms: number) => Promise<void>) | undefined;
+  canRetry?: (() => boolean) | undefined;
 };
 
 // Retries `call` on the failures `retryable` allows; HTTP/parse errors are
@@ -73,7 +75,7 @@ export async function requestWithRetry<T>(
 
     const backoff = args.backoffMs[attempt];
     const retryable = (args.retryable ?? isTransient)(result.error);
-    if (backoff === undefined || !retryable) {
+    if (backoff === undefined || !retryable || args.canRetry?.() === false) {
       // Only an HTTP status proves the server answered without acting on a
       // lost request. A reached deadline says nothing about whether the server
       // acted; an unparseable reply is the server answering, so the request
@@ -91,6 +93,7 @@ export async function requestWithRetry<T>(
         ok: false,
         ...(mayHaveArrived ? { mayHaveArrived } : {}),
         ...(unreachable ? { unreachable } : {}),
+        ...(result.error.kind === "timeout" ? { timedOut: true } : {}),
         ...args.describe(result.error),
       };
     }

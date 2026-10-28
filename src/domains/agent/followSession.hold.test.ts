@@ -94,4 +94,51 @@ describe("followSession held waits", () => {
     expect(result?.exitCode).toBe(exitCodes.network);
     expect(result?.error).toBe("no route to host");
   });
+
+  it("plans a fresh hold from the time left after a held wait times out", async () => {
+    const { callPublicApi, ctx, heldReads } = makeAuthCtx();
+    let clock = 0;
+    callPublicApi.mockResolvedValue(session({ status: "working" }));
+    heldReads
+      .mockImplementationOnce(async (_input, requestOptions) => {
+        clock += requestOptions?.timeoutMs ?? 0;
+        return { error: "timed out", ok: false, timedOut: true };
+      })
+      .mockImplementation(async (input) => {
+        clock += input.waitSeconds * 1_000;
+        return heldRead(input, "timeout");
+      });
+
+    const result = await followSession(
+      ctx,
+      { ...follow, timeoutSeconds: 100 },
+      makeTestDeps({ now: () => clock }),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.timeout);
+    expect(heldReads.mock.calls.map(([input]) => input.waitSeconds)).toEqual([
+      maxAgentWaitSeconds,
+      100 - maxAgentWaitSeconds - 15,
+    ]);
+    expect(clock).toBe(100_000);
+  });
+
+  it("ends as a timeout, not a network failure, when a held wait fails after the deadline", async () => {
+    const { callPublicApi, ctx, heldReads } = makeAuthCtx();
+    let clock = 0;
+    callPublicApi.mockResolvedValue(session({ status: "working" }));
+    heldReads.mockImplementation(async (input) => {
+      clock += input.waitSeconds * 1_000 + 1_000;
+      return { error: "socket hang up", ok: false };
+    });
+
+    const result = await followSession(
+      ctx,
+      { ...follow, timeoutSeconds: 30 },
+      makeTestDeps({ now: () => clock }),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.timeout);
+    expect(heldReads).toHaveBeenCalledTimes(1);
+  });
 });

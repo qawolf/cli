@@ -17,6 +17,8 @@ export type WireResult<T> =
 /** Per-call overrides, for the calls that differ from the client's defaults. */
 export type RequestOptions = {
   timeoutMs?: number;
+  retryTimeouts?: boolean;
+  canRetry?: () => boolean;
 };
 
 type Deps = {

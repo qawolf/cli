@@ -59,6 +59,10 @@ const notSentCodes = new Set([
   "UND_ERR_CONNECT_TIMEOUT",
 ]);
 
+function isNetworkFailure(err: WireError): boolean {
+  return err.kind === "network";
+}
+
 function wasNeverSent(err: WireError): boolean {
   if (err.kind !== "network") return false;
   // Node's fetch puts the code on the error's cause, Bun's on the error.
@@ -90,7 +94,11 @@ export function makeCallPublicApiMethod(
     return requestWithRetry({
       call: () => callPublicApi(trpc, contract, sent, options),
       backoffMs,
+      canRetry: options?.canRetry,
       ...(contract.kind === "write" ? { retryable: wasNeverSent } : {}),
+      ...(contract.kind === "read" && options?.retryTimeouts === false
+        ? { retryable: isNetworkFailure }
+        : {}),
       describe: (err) => {
         const failure = describeRequestError(
           err,
