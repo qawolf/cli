@@ -75,14 +75,11 @@
     "@qawolf/api-contracts": "0.116.0",
     "@qawolf/emails": "1.1.1",
     "@qawolf/flow-targets": "2.0.0",
-    "@qawolf/flows": "0.3.0",
-    "@qawolf/testkit": "1.2.1",
     "commander": "14.0.3",
     "env-paths": "4.0.0",
     "jszip": "3.10.1",
     "picomatch": "4.0.4",
     "pino": "10.3.1",
-    "playwright": "1.62.0",
     "superjson": "2.2.6",
     "tar": "7.5.21",
     "tinyglobby": "0.2.17",
@@ -91,6 +88,8 @@
   },
   "devDependencies": {
     "@changesets/cli": "2.31.0",
+    "@qawolf/flows": "0.3.0",
+    "@qawolf/testkit": "1.2.1",
     "@tsconfig/bun": "1.0.10",
     "@tsconfig/strictest": "2.0.8",
     "@types/bun": "1.4.1",
@@ -104,6 +103,7 @@
     "oxfmt": "0.54.0",
     "oxlint": "1.69.0",
     "oxlint-tsgolint": "0.23.0",
+    "playwright": "1.62.0",
     "webdriverio": "9.27.1"
   },
   "engines": {

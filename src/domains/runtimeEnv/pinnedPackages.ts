@@ -14,6 +14,10 @@ export type PinnedPackage = { name: string; version: string };
 
 /** Canonical list of pinned runtime packages the CLI installs and resolves from. */
 export const pinnedPackages: PinnedPackage[] = [
+  // @qawolf/flows, playwright and @qawolf/testkit are devDependencies of the CLI
+  // for the same reason as expect-webdriverio below: @qawolf/flows peer-requires
+  // expect-webdriverio 5.6.5, so as a dependency it brings that cycle back into
+  // `npm i @qawolf/cli`. The CLI only loads them from the dependency root.
   { name: "@qawolf/flows", version: flowsVersion },
   { name: "playwright", version: playwrightVersion },
   { name: "@qawolf/emails", version: emailsVersion },

@@ -50,6 +50,17 @@ jobs:
           echo "$output" | grep -qE 'dist/cli\.js$'
           ! echo "$output" | grep -qE 'dist/cli\.js\.map$' || exit 1
           ! echo "$output" | grep -qE 'dist/qawolf$' || exit 1
+      # A peer-dependency conflict can make npm resolve forever at full CPU with
+      # no error, which is how `npm i @qawolf/cli` and `npx @qawolf/cli` broke
+      # (see src/domains/runtimeEnv/pinnedPackages.ts). The time limit turns
+      # that hang into a failure.
+      - name: Smoke — npm installs the packed CLI
+        run: |
+          bun pm pack --filename "$RUNNER_TEMP/cli.tgz" --quiet
+          mkdir "$RUNNER_TEMP/consumer"
+          cd "$RUNNER_TEMP/consumer"
+          npm init -y > /dev/null
+          timeout 300 npm install "$RUNNER_TEMP/cli.tgz" --ignore-scripts --no-audit --no-fund
       # - name: PR size check
       #   if: github.event_name == 'pull_request'
       #   env:
