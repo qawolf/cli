@@ -13,6 +13,7 @@ const uploadExamples = `
 Examples:
   $ qawolf build upload app-release.apk
   $ qawolf build upload App.ipa --environment-id <id>
+  $ qawolf build upload my-app_1.0.0_amd64.deb --environment-id <id>
   $ qawolf build upload app-release.aab --environment-name pr-42 --environment-ephemeral --environment-base-ephemeral-environment staging --branch feat/login --commit-sha 1a2b3c4
 
 Without an environment flag, the build belongs to no environment: only a run
@@ -48,7 +49,7 @@ export function registerBuildUploadCommand(
 ): void {
   declareCommandKind(build.command("upload <file>"), "write")
     .description(
-      "Upload an app file (.apk, .aab or .ipa, up to 500 MB) and create a build from it. Runs build requestUpload, the PUT and build create in one step",
+      "Upload an app file (.apk, .aab, .ipa, or a Linux Electron .deb or .rpm, up to 500 MB) and create a build from it. Runs build requestUpload, the PUT and build create in one step",
     )
     .option(
       "--environment-id <id>",
