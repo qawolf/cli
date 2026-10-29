@@ -1,8 +1,7 @@
 import type { Fs } from "~/shell/fs.js";
 import { dirname, join, resolve } from "node:path";
 
-import cliPackageJson from "../../../../package.json" with { type: "json" };
-
+import { flowsVersion } from "~/generated/dependencyVersions.js";
 import {
   type AuthCommandContext,
   type CommandResult,
@@ -34,7 +33,7 @@ export async function handleFlowsPull(
   deps?: HandleFlowsPullDeps,
 ): Promise<CommandResult> {
   const resolvedDeps: HandleFlowsPullDeps = deps ?? {
-    flowsVersion: cliPackageJson.dependencies["@qawolf/flows"],
+    flowsVersion,
     fs: ctx.fs,
   };
   const validation = validateEnvId(opts.env);

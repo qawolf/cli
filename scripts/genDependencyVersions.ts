@@ -9,11 +9,10 @@ const root = join(import.meta.dirname, "..");
 
 // Exported constant name → package to read the installed version from. Read from
 // node_modules rather than package.json so the dependency kind does not matter:
-// some entries are dependencies the bundle marks external (@qawolf/flows,
-// playwright, @qawolf/emails, @qawolf/testkit), others are devDependencies kept
-// out of the published graph on purpose (appium, expect-webdriverio and its
-// wdio peers). The devDependency ones must stay that way — as dependencies their
-// peer graphs enter every `npm i @qawolf/cli`. See pinnedPackages.ts.
+// @qawolf/emails is a dependency the bundle marks external, the rest are
+// devDependencies kept out of the published graph on purpose. They must stay
+// that way — as dependencies their peer graphs enter every `npm i @qawolf/cli`.
+// See pinnedPackages.ts.
 const versionSources = {
   flowsVersion: "@qawolf/flows",
   playwrightVersion: "playwright",

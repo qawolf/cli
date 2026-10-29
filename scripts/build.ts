@@ -2,7 +2,8 @@
 // Builds the npm bundle, dist/cli.js (--outdir because bun rejects --sourcemap=external with --outfile).
 import { spawnSync } from "node:child_process";
 
-// Runtime dependencies stay external — npm installs them next to dist/cli.js.
+// Runtime packages stay external — npm installs the dependencies next to
+// dist/cli.js, and the runner loads the pinned ones from the run's dependency root.
 // The compiled binary runs web flows in a worker subprocess that executes this
 // bundle from a directory with no node_modules (src/shell/embeddedWorkerCli.ts),
 // so every external must be reached through a dynamic import(), never at
@@ -16,7 +17,8 @@ const externals = [
   // native-addon TS loader, imported only on the Node path (Node <22.18) to
   // transpile/resolve flows; the Bun binary never loads it
   "@oxc-node/core",
-  // version-coupled: playwright must match @qawolf/flows' peer range at runtime
+  // devDependencies loaded from the run's dependency root, never from the CLI's
+  // own install (see pinnedPackages.ts)
   "@qawolf/flows",
   "playwright",
   "playwright-core",
