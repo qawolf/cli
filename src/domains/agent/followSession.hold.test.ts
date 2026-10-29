@@ -142,6 +142,35 @@ describe("followSession held waits", () => {
     expect(heldReads).toHaveBeenCalledTimes(1);
   });
 
+  it("cuts a stalled held wait off at the deadline and exits as a timeout", async () => {
+    const { callPublicApi, ctx, heldReads } = makeAuthCtx();
+    let clock = 0;
+    callPublicApi.mockResolvedValue(session({ status: "working" }));
+    heldReads.mockImplementation(async (_input, requestOptions) => {
+      clock += requestOptions?.timeoutMs ?? 0;
+      return {
+        error: "timed out",
+        ok: false,
+        timedOut: true,
+        unreachable: true,
+      };
+    });
+
+    const result = await followSession(
+      ctx,
+      { ...follow, timeoutSeconds: 1 },
+      makeTestDeps({ now: () => clock }),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.timeout);
+    expect(
+      heldReads.mock.calls.map(
+        ([, requestOptions]) => requestOptions?.timeoutMs,
+      ),
+    ).toEqual([1_000]);
+    expect(clock).toBe(1_000);
+  });
+
   it("retries a held wait whose connection dropped, even with little time left", async () => {
     const { callPublicApi, ctx, heldReads } = makeAuthCtx();
     callPublicApi

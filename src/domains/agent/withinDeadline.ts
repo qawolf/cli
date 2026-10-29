@@ -38,9 +38,10 @@ function planAttempt(
   const waitSeconds = holds
     ? Math.min(maxAgentWaitSeconds, Math.max(1, Math.ceil(remainingMs / 1_000)))
     : 0;
-  const timeoutMs = holds
-    ? waitSeconds * 1_000 + answerMarginMs
-    : Math.min(readTimeoutMs, remainingMs);
+  const timeoutMs = Math.min(
+    holds ? waitSeconds * 1_000 + answerMarginMs : readTimeoutMs,
+    remainingMs,
+  );
   return {
     requestOptions: {
       canRetry: () => false,
