@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
 import { followRun } from "./followRun.js";
 import { makeAuthCtx, makeTestDeps } from "./deps.testUtils.js";
@@ -19,6 +19,7 @@ const follow = (
     logs?: boolean;
     recorderSinceSequence?: number;
     runEvents?: boolean;
+    sleep?: (milliseconds: number) => Promise<void>;
     timeoutSeconds?: number;
   } = {},
 ) =>
@@ -32,7 +33,7 @@ const follow = (
       runner: { runnerId: "ci", source: "flag" },
       timeoutSeconds: options.timeoutSeconds ?? 3600,
     },
-    makeTestDeps(),
+    makeTestDeps(options.sleep === undefined ? {} : { sleep: options.sleep }),
   );
 
 // The quiet default lives in followRun.quiet.test.ts; this file covers the
@@ -164,6 +165,22 @@ describe("followRun", () => {
 
     expect(ctx.ui.success).toHaveBeenCalled();
     expect(warnings().join(" ")).toContain("missing its final lines");
+  });
+
+  it("reads a quiet run less often, and as often again once its logs move", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi.mockImplementation(
+      makeJournal({
+        "run-logs": [[], [], [], [logLine("clicked")], [], []],
+        "run-status": [[inProgress], [], [], [], [], [passed]],
+      }),
+    );
+    const sleep = mock(async (_milliseconds: number) => {});
+
+    expect(await follow(ctx, { logs: true, sleep })).toBeUndefined();
+    expect(sleep.mock.calls.map(([milliseconds]) => milliseconds)).toEqual([
+      1_000, 2_000, 3_000, 1_000, 2_000,
+    ]);
   });
 
   it("gives up on a run that never settles, and says the run may still be going", async () => {

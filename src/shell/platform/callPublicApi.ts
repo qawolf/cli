@@ -90,6 +90,8 @@ export function makeCallPublicApiMethod(
     return requestWithRetry({
       call: () => callPublicApi(trpc, contract, sent, options),
       backoffMs,
+      canRetry: () =>
+        options?.signal?.aborted !== true && options?.canRetry?.() !== false,
       ...(contract.kind === "write" ? { retryable: wasNeverSent } : {}),
       describe: (err) => {
         const failure = describeRequestError(

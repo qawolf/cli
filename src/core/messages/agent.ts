@@ -13,6 +13,8 @@ export const agentMessages = {
   conflictingSessionList:
     "Pass --sessions alone, without --session or a session argument.",
   emptySessionList: "Pass at least one session id with --sessions.",
+  tooManySessions: (limit: number) =>
+    `Pass at most ${limit} session ids with --sessions.`,
   sessionListNeedsFollow: "Pass --follow when using --sessions.",
   // Most reasons already end with a period.
   answerSendFailed: (reason: string) =>

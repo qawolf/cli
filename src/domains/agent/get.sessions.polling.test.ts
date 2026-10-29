@@ -1,8 +1,17 @@
 import { describe, expect, it, mock } from "bun:test";
+import {
+  maxActivityWaitItems,
+  maxAgentWaitSeconds,
+} from "@qawolf/api-contracts/v1";
 
 import { exitCodes } from "~/shell/exit.js";
 
-import { makeAuthCtx, makeTestDeps, session } from "./deps.testUtils.js";
+import {
+  activityAnswer,
+  makeAuthCtx,
+  makeTestDeps,
+  session,
+} from "./deps.testUtils.js";
 import { handleAgentGet } from "./get.js";
 
 const options = {
@@ -10,61 +19,138 @@ const options = {
   session: undefined,
   sessionArgument: undefined,
   sessions: ["session-one", "session-two", "session-one"],
-  timeout: "6",
+  timeout: "120",
   workspaceId: undefined,
 };
 
-describe("multi-session polling", () => {
-  it("polls distinct children with at most one request in flight", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx("json");
-    let active = 0;
-    let maximumActive = 0;
-    let reads = 0;
-    callPublicApi.mockImplementation(async () => {
-      active++;
-      maximumActive = Math.max(maximumActive, active);
-      await Promise.resolve();
-      active--;
-      reads++;
-      return session({ status: reads === 4 ? "completed" : "working" });
-    });
+describe("multi-session waiting", () => {
+  it("holds one wait across distinct children and reads only the child that settled", async () => {
+    const { activityWaits, callPublicApi, ctx } = makeAuthCtx("json");
+    activityWaits
+      .mockImplementationOnce(async (input) => activityAnswer(input, {}))
+      .mockImplementationOnce(async (input) =>
+        activityAnswer(input, { "session-two": "completed" }),
+      );
+    callPublicApi.mockResolvedValue(session({ status: "completed" }));
 
     const result = await handleAgentGet(ctx, options, makeTestDeps());
 
     expect(result).toBeUndefined();
-    expect(maximumActive).toBe(1);
+    expect(activityWaits.mock.calls.map(([input]) => input)).toEqual([
+      {
+        cursors: {},
+        sessionIds: ["session-one", "session-two"],
+        waitSeconds: maxAgentWaitSeconds,
+      },
+      {
+        cursors: {
+          "session-one": "cursor-session-one",
+          "session-two": "cursor-session-two",
+        },
+        sessionIds: ["session-one", "session-two"],
+        waitSeconds: maxAgentWaitSeconds,
+      },
+    ]);
     expect(callPublicApi.mock.calls.map(([, input]) => input)).toEqual([
-      { sessionId: "session-one", waitSeconds: 0 },
       { sessionId: "session-two", waitSeconds: 0 },
+    ]);
+  });
+
+  it("gives the held wait longer to answer than the server holds it", async () => {
+    const { activityWaits, callPublicApi, ctx } = makeAuthCtx("json");
+    activityWaits.mockImplementationOnce(async (input) =>
+      activityAnswer(input, { "session-one": "completed" }),
+    );
+    callPublicApi.mockResolvedValue(session({ status: "completed" }));
+
+    await handleAgentGet(ctx, options, makeTestDeps());
+
+    const [, requestOptions] = activityWaits.mock.calls[0] ?? [];
+    expect(requestOptions?.timeoutMs).toBeGreaterThan(
+      maxAgentWaitSeconds * 1_000,
+    );
+  });
+
+  it("keeps waiting on a child that is waiting with nothing to ask", async () => {
+    const { activityWaits, callPublicApi, ctx } = makeAuthCtx("json");
+    activityWaits
+      .mockImplementationOnce(async (input) =>
+        activityAnswer(input, { "session-one": "waiting-for-you" }),
+      )
+      .mockImplementationOnce(async (input) =>
+        activityAnswer(input, { "session-two": "completed" }),
+      );
+    callPublicApi
+      .mockResolvedValueOnce(session({ status: "waiting-for-you" }))
+      .mockResolvedValueOnce(session({ status: "completed" }));
+
+    const result = await handleAgentGet(ctx, options, makeTestDeps());
+
+    expect(result).toBeUndefined();
+    expect(activityWaits).toHaveBeenCalledTimes(2);
+    expect(callPublicApi.mock.calls.map(([, input]) => input)).toEqual([
       { sessionId: "session-one", waitSeconds: 0 },
       { sessionId: "session-two", waitSeconds: 0 },
     ]);
   });
 
-  it("bounds request and sleep time by the whole follow deadline", async () => {
-    const { callPublicApi, ctx } = makeAuthCtx("json");
+  it("shortens the hold to the time left and stops at the follow deadline", async () => {
+    const { activityWaits, callPublicApi, ctx } = makeAuthCtx("json");
     let clock = 0;
-    const sleep = mock(async (milliseconds: number) => {
-      clock += milliseconds;
-    });
-    callPublicApi.mockImplementation(async () => {
-      clock += 1000;
-      return session({ status: "working" });
+    activityWaits.mockImplementation(async (input) => {
+      clock += input.waitSeconds * 1_000;
+      return activityAnswer(input, {});
     });
 
     const result = await handleAgentGet(
       ctx,
-      { ...options, timeout: "3" },
-      makeTestDeps({ now: () => clock, sleep }),
+      { ...options, timeout: "50" },
+      makeTestDeps({ now: () => clock }),
     );
 
     expect(result?.exitCode).toBe(exitCodes.timeout);
     expect(result?.error).toContain("2 sessions");
     expect(
-      callPublicApi.mock.calls.map(([, , requestOptions]) => requestOptions),
-    ).toEqual([{ timeoutMs: 3000 }, { timeoutMs: 2000 }]);
-    expect(sleep).toHaveBeenCalledWith(1000);
-    expect(clock).toBe(3000);
+      activityWaits.mock.calls.map(([input]) => input.waitSeconds),
+    ).toEqual([maxAgentWaitSeconds, 50 - maxAgentWaitSeconds]);
+    expect(callPublicApi).not.toHaveBeenCalled();
+    expect(clock).toBe(50_000);
+  });
+
+  it("reports a deadline that passes during a failed wait as a timeout", async () => {
+    const { activityWaits, ctx } = makeAuthCtx("json");
+    let clock = 0;
+    activityWaits.mockImplementation(async (input) => {
+      clock += input.waitSeconds * 1_000;
+      return { error: "Request timed out", ok: false };
+    });
+
+    const result = await handleAgentGet(
+      ctx,
+      { ...options, timeout: "3" },
+      makeTestDeps({ now: () => clock }),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.timeout);
+  });
+
+  it("refuses more sessions than one wait can hold before sending any request", async () => {
+    const { activityWaits, callPublicApi, ctx } = makeAuthCtx("json");
+
+    const result = await handleAgentGet(
+      ctx,
+      {
+        ...options,
+        sessions: [...Array(maxActivityWaitItems + 1).keys()].map(
+          (index) => `session-${index}`,
+        ),
+      },
+      makeTestDeps(),
+    );
+
+    expect(result?.exitCode).toBe(exitCodes.invalidArgs);
+    expect(activityWaits).not.toHaveBeenCalled();
+    expect(callPublicApi).not.toHaveBeenCalled();
   });
 
   it("surfaces a refused child read and preserves its authentication exit code", async () => {

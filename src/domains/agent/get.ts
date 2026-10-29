@@ -1,4 +1,7 @@
-import { publicContractsV1 } from "@qawolf/api-contracts/v1";
+import {
+  maxActivityWaitItems,
+  publicContractsV1,
+} from "@qawolf/api-contracts/v1";
 
 import { replyParts } from "~/core/agent/formatReply.js";
 import {
@@ -80,10 +83,16 @@ export async function handleAgentGet(
         error: agentMessages.emptySessionList,
         exitCode: exitCodes.invalidArgs,
       };
+    const sessionIds = [...new Set(options.sessions)];
+    if (sessionIds.length > maxActivityWaitItems)
+      return {
+        error: agentMessages.tooManySessions(maxActivityWaitItems),
+        exitCode: exitCodes.invalidArgs,
+      };
     return followSessions({
       ctx,
       deps,
-      sessionIds: [...new Set(options.sessions)],
+      sessionIds,
       timeoutSeconds: timeout.seconds,
     });
   }
@@ -103,7 +112,7 @@ export async function handleAgentGet(
 
   const read = await ctx.platformClient.callPublicApi(
     publicContractsV1.agent.get,
-    { sessionId },
+    { sessionId, waitSeconds: 0 },
   );
   if (!read.ok) return { exitCode: exitCodes.network, ...failureFields(read) };
 

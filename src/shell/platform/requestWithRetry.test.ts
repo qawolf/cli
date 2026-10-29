@@ -23,6 +23,7 @@ describe("requestWithRetry", () => {
       error: "failed",
       mayHaveArrived: true,
       ok: false,
+      timedOut: true,
       unreachable: true,
     });
   });

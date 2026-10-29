@@ -16,6 +16,7 @@ import {
   type RunnerEventsOptions,
   parseEventsOptions,
 } from "./eventsOptions.js";
+import { createFollowPace } from "./followPace.js";
 import {
   createJournalCursor,
   createUnreachableBudget,
@@ -24,8 +25,6 @@ import { journalReadFailure, unreachableFailure } from "./readJournal.js";
 import { resolveRunner } from "./resolveRunner.js";
 
 export type { RunnerEventsOptions } from "./eventsOptions.js";
-
-const pollIntervalMs = 1_000;
 
 /**
  * Prints one stream of a runner's journal, one entry per line.
@@ -80,23 +79,20 @@ export async function handleRunnerEvents(
   }
 
   const read = createJournalCursor(ctx, resolved, parsed.value);
-  const unreachable = createUnreachableBudget(pollIntervalMs);
+  const unreachable = createUnreachableBudget();
+  const pace = createFollowPace({
+    sleep: deps.sleep,
+    timeoutMs: timeout.seconds * 1_000,
+  });
 
-  // Polls rather than a clock, like followRun: the loop sleeps a known interval
-  // between reads, so counting them bounds the follow.
-  const maxPolls = Math.max(
-    1,
-    Math.ceil((timeout.seconds * 1_000) / pollIntervalMs),
-  );
-
-  for (let poll = 1; ; poll++) {
+  for (;;) {
     const window = await read();
     if (window.type === "failed") return journalReadFailure(window);
 
     // A single read has nothing to retry with, so an unreachable runner is all
     // it can report. A follow keeps asking until the grace window is spent.
     if (window.type === "unreachable") {
-      if (!options.follow || unreachable.exhausted()) {
+      if (!options.follow || unreachable.exhausted(pace.waitedMs())) {
         return { ...unreachableFailure };
       }
     } else {
@@ -111,7 +107,8 @@ export async function handleRunnerEvents(
       if (!options.follow) return undefined;
     }
 
-    if (poll >= maxPolls) {
+    const sawEntries = window.type === "entries" && window.entries.length > 0;
+    if ((await pace.wait(sawEntries)) === "timed-out") {
       return {
         error: interactiveRunnerMessages.followEventsTimedOut(
           parsed.value.stream,
@@ -120,6 +117,5 @@ export async function handleRunnerEvents(
         exitCode: exitCodes.timeout,
       };
     }
-    await deps.sleep(pollIntervalMs);
   }
 }

@@ -60,7 +60,10 @@ describe("handleAgentGet", () => {
 
     await handleAgentGet(ctx, base, deps);
 
-    expect(callPublicApi.mock.calls[0]?.[1]).toEqual({ sessionId: "sess_env" });
+    expect(callPublicApi.mock.calls[0]?.[1]).toEqual({
+      sessionId: "sess_env",
+      waitSeconds: 0,
+    });
   });
 
   it("reads the session this directory last started when nothing else names one", async () => {
@@ -73,6 +76,7 @@ describe("handleAgentGet", () => {
 
     expect(callPublicApi.mock.calls[0]?.[1]).toEqual({
       sessionId: "sess_stored",
+      waitSeconds: 0,
     });
   });
 
@@ -86,7 +90,10 @@ describe("handleAgentGet", () => {
       makeTestDeps(),
     );
 
-    expect(callPublicApi.mock.calls[0]?.[1]).toEqual({ sessionId: "sess_arg" });
+    expect(callPublicApi.mock.calls[0]?.[1]).toEqual({
+      sessionId: "sess_arg",
+      waitSeconds: 0,
+    });
   });
 
   it("refuses two different sessions rather than picking one", async () => {

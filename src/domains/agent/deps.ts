@@ -8,7 +8,7 @@ import type { Fs } from "~/shell/fs.js";
 /**
  * Everything about the machine these handlers touch, in one injectable bundle
  * so that a test drives them with an in-memory filesystem, the environment it
- * chose, and a sleep that does not wait.
+ * chose, and a clock and a sleep it controls.
  */
 export type AgentDeps = {
   env: Record<string, string | undefined>;

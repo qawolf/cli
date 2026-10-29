@@ -11,18 +11,17 @@ import type {
 import { exitCodes } from "~/shell/exit.js";
 
 import type { InteractiveRunnerDeps } from "./deps.js";
+import { createFollowPace } from "./followPace.js";
 import {
   type FollowStreamOptions,
   createFollowPrinters,
+  printEach,
 } from "./followPrinters.js";
 import {
-  type CursorRead,
   createJournalCursor,
   createUnreachableBudget,
 } from "./journalCursor.js";
 import { journalReadFailure, unreachableFailure } from "./readJournal.js";
-
-const pollIntervalMs = 1_000;
 
 function reportSettlement(
   ctx: AuthCommandContext,
@@ -73,16 +72,11 @@ export async function followRun(
     runId: options.runId,
     stream: "run-status",
   });
-  const unreachable = createUnreachableBudget(pollIntervalMs);
-
-  /** Undefined when every printer read cleanly; the interrupting read if not. */
-  const printAll = async (): Promise<CursorRead | undefined> => {
-    for (const print of printers) {
-      const window = await print();
-      if (window.type !== "entries") return window;
-    }
-    return undefined;
-  };
+  const unreachable = createUnreachableBudget();
+  const pace = createFollowPace({
+    sleep: deps.sleep,
+    timeoutMs: options.timeoutSeconds * 1_000,
+  });
 
   // The in-progress line is for the otherwise-silent follow: any mirror stream
   // already shows life, and prose among its JSON lines would hurt a parser. The
@@ -99,15 +93,9 @@ export async function followRun(
     ctx.ui.stream(entry, interactiveRunnerMessages.runInProgress);
   };
 
-  // Polls rather than a clock: the loop sleeps a known interval between reads,
-  // so counting them bounds the follow without making it depend on wall time.
-  const maxPolls = Math.max(
-    1,
-    Math.ceil((options.timeoutSeconds * 1_000) / pollIntervalMs),
-  );
-
-  for (let poll = 1; ; poll++) {
-    const interrupted = await printAll();
+  for (;;) {
+    const printed = await printEach(printers);
+    const { interrupted } = printed;
     if (interrupted?.type === "failed") return journalReadFailure(interrupted);
 
     const status =
@@ -115,7 +103,9 @@ export async function followRun(
     if (status.type === "failed") return journalReadFailure(status);
 
     if (status.type === "unreachable") {
-      if (unreachable.exhausted()) return { ...unreachableFailure };
+      if (unreachable.exhausted(pace.waitedMs())) {
+        return { ...unreachableFailure };
+      }
     } else {
       unreachable.reset();
       printProgress(status.entries);
@@ -127,14 +117,17 @@ export async function followRun(
         // short of the very failure being reported. A warning rather than a
         // failure when this read does not answer: the settlement is known, and
         // the run's outcome must not be overridden by a flush of its output.
-        if ((await printAll()) !== undefined) {
+        if ((await printEach(printers)).interrupted !== undefined) {
           ctx.ui.warn(interactiveRunnerMessages.followEndCutShort);
         }
         return reportSettlement(ctx, settlement);
       }
     }
 
-    if (poll >= maxPolls) {
+    const sawEntries =
+      printed.sawEntries ||
+      (status.type === "entries" && status.entries.length > 0);
+    if ((await pace.wait(sawEntries)) === "timed-out") {
       return {
         error: interactiveRunnerMessages.followTimedOut(
           options.runId,
@@ -144,6 +137,5 @@ export async function followRun(
         exitCode: exitCodes.timeout,
       };
     }
-    await deps.sleep(pollIntervalMs);
   }
 }
