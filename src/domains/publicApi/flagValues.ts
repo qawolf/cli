@@ -1,4 +1,3 @@
-import { errorMessage } from "~/core/errors.js";
 import type { FlagSpec } from "~/core/publicApi/flagSpecs.js";
 
 export const flagName = (flag: FlagSpec): string =>
@@ -35,12 +34,13 @@ export function parseJson(
       error: `Invalid ${flagName(flag)} value: expected a JSON value.`,
     };
   }
+  // The parser's message is left out: on Node it quotes part of the input.
   try {
     return { ok: true, value: JSON.parse(value) };
-  } catch (error) {
+  } catch {
     return {
       ok: false,
-      error: `Invalid ${flagName(flag)} value: expected a JSON value (${errorMessage(error)}).`,
+      error: `Invalid ${flagName(flag)} value: expected a JSON value.`,
     };
   }
 }

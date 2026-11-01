@@ -6,6 +6,7 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
+import { readStdin } from "~/shell/stdin.js";
 
 import type { CommandSpec } from "./commandSpecs.js";
 import {
@@ -14,6 +15,7 @@ import {
   parseJson,
   parseKeyValueRecord,
 } from "./flagValues.js";
+import { readJsonFlagSources } from "./jsonFlagSources.js";
 
 type AssembledInput =
   | { ok: true; input: Record<string, unknown> }
@@ -96,8 +98,15 @@ export async function handlePublicApiCommand(
   ctx: AuthCommandContext,
   spec: CommandSpec,
   options: Record<string, unknown>,
+  stdin: { readStdin: () => Promise<string> } = { readStdin },
 ): Promise<CommandResult> {
-  const assembled = assembleInput(spec.flags, options);
+  const sourced = await readJsonFlagSources(spec.flags, options, {
+    readFile: (path) => ctx.fs.readFile(path),
+    readStdin: stdin.readStdin,
+  });
+  if (!sourced.ok) return { error: sourced.error };
+
+  const assembled = assembleInput(spec.flags, sourced.options);
   if (!assembled.ok) return { error: assembled.error };
 
   // Validate locally before any network call so flag mistakes get fast,

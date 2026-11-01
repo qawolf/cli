@@ -46,8 +46,8 @@ describe("handlePublicApiCommand JSON flags", () => {
       changes: "{items: []}",
     });
 
-    expect(result?.error).toStartWith(
-      "Invalid --changes value: expected a JSON value (",
+    expect(result?.error).toBe(
+      "Invalid --changes value: expected a JSON value.",
     );
     expect(callPublicApi).not.toHaveBeenCalled();
   });

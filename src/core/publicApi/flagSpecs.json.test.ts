@@ -3,6 +3,9 @@ import { z } from "zod";
 
 import { buildFlagSpecs } from "./flagSpecs.js";
 
+const jsonSources =
+  "Takes JSON inline, @<path> to read it from a file, or - to read it from stdin.";
+
 const changeItem = z.strictObject({
   kind: z.enum(["pull-request", "commit"]),
   title: z.string(),
@@ -40,7 +43,7 @@ describe("buildFlagSpecs JSON flags", () => {
         path: ["changes"],
         optionKey: "changes",
         flag: "--changes <json>",
-        description: "What the deployment changed.",
+        description: `What the deployment changed. ${jsonSources}`,
         required: false,
         kind: "json",
       },
@@ -57,7 +60,7 @@ describe("buildFlagSpecs JSON flags", () => {
         path: ["items"],
         optionKey: "items",
         flag: "--items <json>",
-        description: "",
+        description: jsonSources,
         required: true,
         kind: "json",
       },
@@ -98,6 +101,37 @@ describe("buildFlagSpecs JSON flags", () => {
       ok: false,
       field: "counts",
       reason: "only string arrays can be expressed as flags",
+    });
+  });
+
+  it("takes a nullable top-level object as one JSON flag", () => {
+    const input = z.object({
+      metadata: z.object({ commitSha: z.string() }).nullable(),
+      changes: z.array(changeItem).nullable().optional(),
+    });
+
+    const result = buildFlagSpecs(input);
+
+    expect(
+      result.ok &&
+        result.flags.map(({ flag, kind, required }) => ({
+          flag,
+          kind,
+          required,
+        })),
+    ).toEqual([
+      { flag: "--metadata <json>", kind: "json", required: true },
+      { flag: "--changes <json>", kind: "json", required: false },
+    ]);
+  });
+
+  it("still rejects a nullable top-level field that holds no objects", () => {
+    const input = z.object({ ref: z.string().nullable() });
+
+    expect(buildFlagSpecs(input)).toEqual({
+      ok: false,
+      field: "ref",
+      reason: "type unknown cannot be expressed as a flag",
     });
   });
 });

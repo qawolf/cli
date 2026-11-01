@@ -6,6 +6,7 @@ import {
   holdsObjects,
   type JsonSchema,
 } from "./flagKind.js";
+import { describeFlag } from "./flagDescription.js";
 import { flagNameOf, flagUsage, optionKeyOf } from "./flagNames.js";
 import { type ObjectShape, toObjectShape } from "./objectShape.js";
 
@@ -26,20 +27,6 @@ export type FlagSpec = {
 export type FlagSpecsResult =
   | { ok: true; flags: FlagSpec[] }
   | { ok: false; field: string; reason: string };
-
-// An enum field accepts nothing but its own values, so --help lists them rather
-// than leaving a caller to learn them from a rejected invocation. The wording
-// matches what objectShape.ts gives a union discriminator, so generated help
-// describes a closed set of choices the same way wherever one appears.
-function describeFlag(schema: JsonSchema): string {
-  const description = schema.description ?? "";
-  // An array field carries its values on the item schema, so a repeatable flag
-  // like --statuses documents the same closed set a scalar one does.
-  const values = schema.enum ?? schema.items?.enum;
-  if (!values?.length) return description;
-  const choices = `One of: ${values.join(", ")}`;
-  return description ? `${description} ${choices}` : choices;
-}
 
 // A property that flattens to an object shape contributes one flag per leaf
 // instead of one flag for itself. Reusing toObjectShape means a union nested
@@ -82,7 +69,7 @@ function leafFlag(
     path: fieldPath,
     optionKey: optionKeyOf(fieldPath),
     flag: flagUsage(fieldPath, kind),
-    description: describeFlag(fieldSchema),
+    description: describeFlag(fieldSchema, kind),
     required,
     kind,
   };

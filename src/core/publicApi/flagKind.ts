@@ -1,8 +1,7 @@
 // The subset of input shapes that can be expressed as CLI flags. Contracts
-// are kept inside this subset by tests in @qawolf/api-contracts. `flagKind`
-// never returns "json": a top-level field only becomes a JSON flag when it
-// holds objects that cannot be flattened into the other kinds (see
-// flagSpecs.ts).
+// are kept inside this subset by tests in @qawolf/api-contracts. A top-level
+// field only becomes a JSON flag when it holds objects that cannot be
+// flattened into the other kinds (see flagSpecs.ts).
 export type FlagKind =
   | "string"
   | "number"
@@ -27,7 +26,9 @@ export type JsonSchema = {
 
 export function flagKind(
   schema: JsonSchema,
-): { ok: true; kind: FlagKind } | { ok: false; reason: string } {
+):
+  | { ok: true; kind: Exclude<FlagKind, "json"> }
+  | { ok: false; reason: string } {
   if (schema.type === "string") return { ok: true, kind: "string" };
   if (schema.type === "number" || schema.type === "integer") {
     return { ok: true, kind: "number" };
@@ -69,7 +70,21 @@ const isObjectSchema = (schema: JsonSchema): boolean => {
   return schema.type === "object";
 };
 
-// An object (or a combinator of objects), or a list of them.
-export const holdsObjects = (schema: JsonSchema): boolean =>
-  isObjectSchema(schema) ||
-  (schema.type === "array" && !!schema.items && isObjectSchema(schema.items));
+const isObjectList = (schema: JsonSchema): boolean =>
+  schema.type === "array" && !!schema.items && isObjectSchema(schema.items);
+
+// `.nullable()` adds a `null` member to `anyOf`, which JSON can carry as is.
+const withoutNull = (schema: JsonSchema): JsonSchema => {
+  const members = schema.anyOf?.filter((member) => member.type !== "null");
+  if (!members?.length || members.length === schema.anyOf?.length) {
+    return schema;
+  }
+  return members.length === 1 && members[0] ? members[0] : { anyOf: members };
+};
+
+// An object (or a combinator of objects), or a list of them, either of which
+// may also be null.
+export const holdsObjects = (schema: JsonSchema): boolean => {
+  const value = withoutNull(schema);
+  return isObjectSchema(value) || isObjectList(value);
+};
