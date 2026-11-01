@@ -15,8 +15,8 @@ export const optionKeyOf = (path: string[]): string =>
     .join("");
 
 // The bare flag name, e.g. "--environment-id". `flagUsage` appends a
-// kind-specific value placeholder ("", " <value>", " <values...>", or
-// " <KEY=VALUE...>") on top of this, so two fields of different kinds that
+// kind-specific value placeholder ("", " <value>", " <values...>",
+// " <KEY=VALUE...>", or " <json>") on top of this, so two fields of different kinds that
 // share a name produce different `flag` strings even though Commander
 // registers them under the same option. Collision detection keys on this
 // name, not on `flag`, so it still catches that case.
@@ -29,5 +29,6 @@ export function flagUsage(path: string[], kind: FlagKind): string {
   if (kind === "boolean") return name;
   if (kind === "string-array") return `${name} <values...>`;
   if (kind === "key-value-record") return `${name} <KEY=VALUE...>`;
+  if (kind === "json") return `${name} <json>`;
   return `${name} <value>`;
 }

@@ -8,34 +8,16 @@ import type {
 import { failureFields } from "~/shell/platform/requestWithRetry.js";
 
 import type { CommandSpec } from "./commandSpecs.js";
+import {
+  flagName,
+  isStringArray,
+  parseJson,
+  parseKeyValueRecord,
+} from "./flagValues.js";
 
 type AssembledInput =
   | { ok: true; input: Record<string, unknown> }
   | { ok: false; error: string };
-
-const flagName = (flag: FlagSpec): string =>
-  flag.flag.split(" ", 1)[0] ?? flag.flag;
-
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((item) => typeof item === "string");
-
-function parseKeyValueRecord(
-  flag: FlagSpec,
-  pairs: string[],
-): { ok: true; record: Record<string, string> } | { ok: false; error: string } {
-  const record: Record<string, string> = {};
-  for (const pair of pairs) {
-    const separatorIndex = pair.indexOf("=");
-    if (separatorIndex < 1) {
-      return {
-        ok: false,
-        error: `Invalid ${flagName(flag)} value "${pair}": expected KEY=VALUE.`,
-      };
-    }
-    record[pair.slice(0, separatorIndex)] = pair.slice(separatorIndex + 1);
-  }
-  return { ok: true, record };
-}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -81,6 +63,10 @@ export function assembleInput(
       const parsed = parseKeyValueRecord(flag, value);
       if (!parsed.ok) return parsed;
       setAtPath(input, flag.path, parsed.record);
+    } else if (flag.kind === "json") {
+      const parsed = parseJson(flag, value);
+      if (!parsed.ok) return parsed;
+      setAtPath(input, flag.path, parsed.value);
     } else if (flag.kind === "number") {
       setAtPath(input, flag.path, Number(value));
     } else {

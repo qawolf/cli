@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import { flagKind, type FlagKind, type JsonSchema } from "./flagKind.js";
+import {
+  flagKind,
+  type FlagKind,
+  holdsObjects,
+  type JsonSchema,
+} from "./flagKind.js";
 import { flagNameOf, flagUsage, optionKeyOf } from "./flagNames.js";
 import { type ObjectShape, toObjectShape } from "./objectShape.js";
 
@@ -50,6 +55,39 @@ function walkableShape(schema: JsonSchema): ObjectShape | undefined {
   return result.ok ? result.shape : undefined;
 }
 
+function fieldFlags(
+  fieldSchema: JsonSchema,
+  fieldPath: string[],
+  required: boolean,
+): FlagSpecsResult {
+  const nested = walkableShape(fieldSchema);
+  if (nested) return collectFlags(nested, fieldPath, required);
+
+  const kind = flagKind(fieldSchema);
+  if (!kind.ok)
+    return { ok: false, field: fieldPath.join("."), reason: kind.reason };
+  return {
+    ok: true,
+    flags: [leafFlag(fieldSchema, fieldPath, required, kind.kind)],
+  };
+}
+
+function leafFlag(
+  fieldSchema: JsonSchema,
+  fieldPath: string[],
+  required: boolean,
+  kind: FlagKind,
+): FlagSpec {
+  return {
+    path: fieldPath,
+    optionKey: optionKeyOf(fieldPath),
+    flag: flagUsage(fieldPath, kind),
+    description: describeFlag(fieldSchema),
+    required,
+    kind,
+  };
+}
+
 function collectFlags(
   shape: ObjectShape,
   path: string[],
@@ -62,26 +100,15 @@ function collectFlags(
     // the whole object.
     const required = parentRequired && shape.required.has(field);
 
-    const nested = walkableShape(fieldSchema);
-    if (nested) {
-      const result = collectFlags(nested, fieldPath, required);
-      if (!result.ok) return result;
-      flags.push(...result.flags);
-      continue;
-    }
-
-    const kind = flagKind(fieldSchema);
-    if (!kind.ok) {
-      return { ok: false, field: fieldPath.join("."), reason: kind.reason };
-    }
-    flags.push({
-      path: fieldPath,
-      optionKey: optionKeyOf(fieldPath),
-      flag: flagUsage(fieldPath, kind.kind),
-      description: describeFlag(fieldSchema),
-      required,
-      kind: kind.kind,
-    });
+    const result = fieldFlags(fieldSchema, fieldPath, required);
+    // A top-level field of objects that won't flatten is one JSON value.
+    const json = path.length === 0 && holdsObjects(fieldSchema);
+    if (!result.ok && !json) return result;
+    flags.push(
+      ...(result.ok
+        ? result.flags
+        : [leafFlag(fieldSchema, fieldPath, required, "json")]),
+    );
   }
   return { ok: true, flags };
 }

@@ -1,11 +1,15 @@
 // The subset of input shapes that can be expressed as CLI flags. Contracts
-// are kept inside this subset by tests in @qawolf/api-contracts.
+// are kept inside this subset by tests in @qawolf/api-contracts. `flagKind`
+// never returns "json": a top-level field only becomes a JSON flag when it
+// holds objects that cannot be flattened into the other kinds (see
+// flagSpecs.ts).
 export type FlagKind =
   | "string"
   | "number"
   | "boolean"
   | "string-array"
-  | "key-value-record";
+  | "key-value-record"
+  | "json";
 
 export type JsonSchema = {
   type?: string;
@@ -58,3 +62,14 @@ export function flagKind(
     reason: `type ${schema.type ?? "unknown"} cannot be expressed as a flag`,
   };
 }
+
+const isObjectSchema = (schema: JsonSchema): boolean => {
+  const members = schema.allOf ?? schema.oneOf ?? schema.anyOf;
+  if (members) return members.every(isObjectSchema);
+  return schema.type === "object";
+};
+
+// An object (or a combinator of objects), or a list of them.
+export const holdsObjects = (schema: JsonSchema): boolean =>
+  isObjectSchema(schema) ||
+  (schema.type === "array" && !!schema.items && isObjectSchema(schema.items));

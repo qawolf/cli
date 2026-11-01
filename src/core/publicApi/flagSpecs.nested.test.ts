@@ -105,18 +105,4 @@ describe("buildFlagSpecs nested inputs", () => {
       reason: "flag --flow-ids collides with field flowIds",
     });
   });
-
-  it("rejects a nested field whose leaf cannot be expressed as a flag", () => {
-    const schema = z.object({
-      config: z.object({ counts: z.array(z.number()) }),
-    });
-
-    const result = buildFlagSpecs(schema);
-
-    expect(result).toEqual({
-      ok: false,
-      field: "config.counts",
-      reason: "only string arrays can be expressed as flags",
-    });
-  });
 });

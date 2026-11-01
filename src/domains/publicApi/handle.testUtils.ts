@@ -40,6 +40,39 @@ export const countSpec = (): CommandSpec => {
   return spec;
 };
 
+// Synthetic contract exercising the json flag kind with a list of objects.
+export const changesSpec = (): CommandSpec => {
+  const contract = {
+    annotations: {
+      destructiveHint: false,
+      openWorldHint: false,
+      readOnlyHint: false,
+    },
+    annotationJustifications: standInAnnotationJustifications,
+    name: "fake.report",
+    kind: "write" as const,
+    description: "synthetic json-flag contract",
+    input: z.object({
+      changes: z
+        .strictObject({
+          items: z.array(
+            z.strictObject({
+              kind: z.enum(["pull-request", "commit"]),
+              title: z.string(),
+            }),
+          ),
+        })
+        .optional(),
+    }),
+    output: z.object({ ok: z.boolean() }),
+  };
+  const spec = buildCommandSpecs({ fake: { report: contract } }).find(
+    (candidate) => candidate.trpcPath === "public.fake.report",
+  );
+  if (!spec) throw new Error("fake.report spec missing");
+  return spec;
+};
+
 export function ctxWith(
   ui: UI,
   platformClient: PlatformClient,
