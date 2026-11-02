@@ -11,7 +11,8 @@ export type FlagKind =
   | "json";
 
 export type JsonSchema = {
-  type?: string;
+  // A union of plain types, nullable included, comes out as a list of types.
+  type?: string | string[];
   description?: string;
   properties?: Record<string, JsonSchema>;
   required?: string[];
@@ -60,7 +61,7 @@ export function flagKind(
   }
   return {
     ok: false,
-    reason: `type ${schema.type ?? "unknown"} cannot be expressed as a flag`,
+    reason: `type ${[schema.type ?? "unknown"].flat().join(" or ")} cannot be expressed as a flag`,
   };
 }
 

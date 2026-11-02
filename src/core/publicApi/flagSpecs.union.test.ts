@@ -234,4 +234,16 @@ describe("buildFlagSpecs union inputs", () => {
       reason: "field has conflicting types across union branches",
     });
   });
+
+  it("rejects a union of plain types", () => {
+    const schema = z.object({ limit: z.union([z.string(), z.number()]) });
+
+    const result = buildFlagSpecs(schema);
+
+    expect(result).toEqual({
+      ok: false,
+      field: "limit",
+      reason: "type string or number cannot be expressed as a flag",
+    });
+  });
 });
