@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-import { flagKind, type FlagKind, type JsonSchema } from "./flagKind.js";
+import {
+  flagKind,
+  type FlagKind,
+  holdsObjects,
+  type JsonSchema,
+} from "./flagKind.js";
+import { describeFlag } from "./flagDescription.js";
 import { flagNameOf, flagUsage, optionKeyOf } from "./flagNames.js";
 import { type ObjectShape, toObjectShape } from "./objectShape.js";
 
@@ -22,20 +28,6 @@ export type FlagSpecsResult =
   | { ok: true; flags: FlagSpec[] }
   | { ok: false; field: string; reason: string };
 
-// An enum field accepts nothing but its own values, so --help lists them rather
-// than leaving a caller to learn them from a rejected invocation. The wording
-// matches what objectShape.ts gives a union discriminator, so generated help
-// describes a closed set of choices the same way wherever one appears.
-function describeFlag(schema: JsonSchema): string {
-  const description = schema.description ?? "";
-  // An array field carries its values on the item schema, so a repeatable flag
-  // like --statuses documents the same closed set a scalar one does.
-  const values = schema.enum ?? schema.items?.enum;
-  if (!values?.length) return description;
-  const choices = `One of: ${values.join(", ")}`;
-  return description ? `${description} ${choices}` : choices;
-}
-
 // A property that flattens to an object shape contributes one flag per leaf
 // instead of one flag for itself. Reusing toObjectShape means a union nested
 // inside a property merges the same way a union at the root does, which is
@@ -50,6 +42,39 @@ function walkableShape(schema: JsonSchema): ObjectShape | undefined {
   return result.ok ? result.shape : undefined;
 }
 
+function fieldFlags(
+  fieldSchema: JsonSchema,
+  fieldPath: string[],
+  required: boolean,
+): FlagSpecsResult {
+  const nested = walkableShape(fieldSchema);
+  if (nested) return collectFlags(nested, fieldPath, required);
+
+  const kind = flagKind(fieldSchema);
+  if (!kind.ok)
+    return { ok: false, field: fieldPath.join("."), reason: kind.reason };
+  return {
+    ok: true,
+    flags: [leafFlag(fieldSchema, fieldPath, required, kind.kind)],
+  };
+}
+
+function leafFlag(
+  fieldSchema: JsonSchema,
+  fieldPath: string[],
+  required: boolean,
+  kind: FlagKind,
+): FlagSpec {
+  return {
+    path: fieldPath,
+    optionKey: optionKeyOf(fieldPath),
+    flag: flagUsage(fieldPath, kind),
+    description: describeFlag(fieldSchema, kind),
+    required,
+    kind,
+  };
+}
+
 function collectFlags(
   shape: ObjectShape,
   path: string[],
@@ -62,26 +87,15 @@ function collectFlags(
     // the whole object.
     const required = parentRequired && shape.required.has(field);
 
-    const nested = walkableShape(fieldSchema);
-    if (nested) {
-      const result = collectFlags(nested, fieldPath, required);
-      if (!result.ok) return result;
-      flags.push(...result.flags);
-      continue;
-    }
-
-    const kind = flagKind(fieldSchema);
-    if (!kind.ok) {
-      return { ok: false, field: fieldPath.join("."), reason: kind.reason };
-    }
-    flags.push({
-      path: fieldPath,
-      optionKey: optionKeyOf(fieldPath),
-      flag: flagUsage(fieldPath, kind.kind),
-      description: describeFlag(fieldSchema),
-      required,
-      kind: kind.kind,
-    });
+    const result = fieldFlags(fieldSchema, fieldPath, required);
+    // A top-level field of objects that won't flatten is one JSON value.
+    const json = path.length === 0 && holdsObjects(fieldSchema);
+    if (!result.ok && !json) return result;
+    flags.push(
+      ...(result.ok
+        ? result.flags
+        : [leafFlag(fieldSchema, fieldPath, required, "json")]),
+    );
   }
   return { ok: true, flags };
 }

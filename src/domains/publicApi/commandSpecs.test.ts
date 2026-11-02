@@ -48,7 +48,7 @@ describe("buildCommandSpecs", () => {
       },
       annotationJustifications: standInAnnotationJustifications,
       description: "Hand-written elsewhere",
-      input: z.object({ config: z.object({ counts: z.array(z.number()) }) }),
+      input: z.object({ counts: z.array(z.number()) }),
       kind: "read",
       name: "flow.list",
       output: z.object({}),
@@ -104,14 +104,14 @@ describe("buildCommandSpecs", () => {
       },
       annotationJustifications: standInAnnotationJustifications,
       description: "Unmappable",
-      input: z.object({ config: z.object({ counts: z.array(z.number()) }) }),
+      input: z.object({ counts: z.array(z.number()) }),
       kind: "read",
       name: "run.inspect",
       output: z.object({}),
     } as const;
 
     expect(() => buildCommandSpecs({ run: { inspect: contract } })).toThrow(
-      'Contract "run.inspect" input "config.counts"',
+      'Contract "run.inspect" input "counts"',
     );
   });
 });
