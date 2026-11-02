@@ -1,5 +1,14 @@
 # @qawolf/cli
 
+## 2.8.1
+
+### Patch Changes
+
+- 46ce85b: `agent get --follow` and `agent send --follow` now wait on the QA Wolf API for news instead of asking again every few seconds: one session waits with a held `agent.get` from where the last read ended, and `--sessions` waits on every session in one held `activity.wait`. `runner events --follow` and `runner run --follow` read every second while entries arrive and slow down to every five seconds while nothing does. `--sessions` now takes at most 50 session ids.
+- 620f38b: Generated commands can now take a top-level input that holds objects and can't be split into flags as one `--<name> <json>` flag, instead of failing to build. The flag also takes `@<path>` to read the JSON from a file, or `-` to read it from stdin. The value is checked against the command's input before anything is sent. No command has such an input with `@qawolf/api-contracts` 0.116.0, so no command's flags change in this release.
+- c2a6262: `npm install @qawolf/cli` and `npx @qawolf/cli` finish again instead of running forever at full CPU. The CLI no longer installs `@qawolf/flows`, `@qawolf/testkit` and Playwright next to itself; it already installed its own copies before each run.
+- b81035a: When nothing was sent because the connection to the QA Wolf API never opened, the CLI now retries the request, including actions like `runner act`.
+
 ## 2.8.0
 
 ### Minor Changes
