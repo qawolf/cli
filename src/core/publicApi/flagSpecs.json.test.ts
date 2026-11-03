@@ -131,7 +131,7 @@ describe("buildFlagSpecs JSON flags", () => {
     expect(buildFlagSpecs(input)).toEqual({
       ok: false,
       field: "ref",
-      reason: "type unknown cannot be expressed as a flag",
+      reason: "type string or null cannot be expressed as a flag",
     });
   });
 });

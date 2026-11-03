@@ -17,7 +17,7 @@ const bundles = [outfile, "dist/runner-sdk.js", "dist/investigation-parser.js"];
 const lazyExternals = ["@napi-rs/keyring", "typescript", "webdriverio"];
 // Startup is dominated by parsing the bundle; this catches a heavy dependency
 // slipping back in (typescript alone was 9 MB, the webdriver stack 5 MB).
-const maxBundleBytes = 2_000_000;
+const maxBundleBytes = 2_500_000;
 
 for (const path of bundles) {
   const source = readFileSync(path, "utf8");

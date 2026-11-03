@@ -186,17 +186,30 @@ describe("buildFlagSpecs", () => {
     );
   });
 
-  it("rejects intersections whose members share a field", () => {
+  it("maps a field that intersection members agree on to one flag", () => {
     const schema = z
       .object({ name: z.string() })
       .and(z.object({ name: z.string().optional() }));
 
     const result = buildFlagSpecs(schema);
 
+    expect(result).toMatchObject({
+      ok: true,
+      flags: [{ path: ["name"], required: true, kind: "string" }],
+    });
+  });
+
+  it("rejects intersections whose members disagree on a field's type", () => {
+    const schema = z
+      .object({ name: z.string() })
+      .and(z.object({ name: z.number() }));
+
+    const result = buildFlagSpecs(schema);
+
     expect(result).toEqual({
       ok: false,
       field: "name",
-      reason: "field appears in multiple intersection members",
+      reason: "type unknown cannot be expressed as a flag",
     });
   });
 
