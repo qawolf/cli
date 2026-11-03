@@ -151,7 +151,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf build list` | read | List the workspace's undeleted builds, newest first. With latestOnly, list what the environment's next run installs. |
 | `qawolf build requestDownload` | read | Get a URL to download a build's file. Deleted builds can be downloaded while their file exists. Answers 404 when the file has expired. |
 | `qawolf build requestUpload` | write | Get a URL to upload an app build: an .apk, .aab or .ipa, up to 500 MB. PUT the file there with uploadHeaders, then call build.create with the buildId. |
-| `qawolf build upload` | write | Upload an app file (.apk, .aab or .ipa, up to 500 MB) and create a build from it. Runs build requestUpload, the PUT and build create in one step |
+| `qawolf build upload` | write | Upload an app file (.apk, .aab, .ipa, or a Linux Electron .deb or .rpm, up to 500 MB) and create a build from it. Runs build requestUpload, the PUT and build create in one step |
 | `qawolf codeHostIntegration find` | read | List the workspace's code host integrations (GitHub or GitLab). A connected integration lets QA Wolf read repositories and receive the code host's webhooks. codeHostIntegration.listRepositories pages the repositories each integration covers. |
 | `qawolf codeHostIntegration listRepositories` | read | List the repositories the workspace's code host integrations cover, alphabetical by full name. The list reflects the last sync from the code host; codeHostIntegration.find lists the integrations themselves. |
 | `qawolf deployment find` | read | List the deployments QA Wolf has received for the workspace, newest first. A deployment arrives through a code host integration's webhook or through deployment.reportStatus, and is what a deployment trigger evaluates against. deployment.listTriggerEvaluations reports each trigger's verdict for one deployment. |
@@ -320,8 +320,8 @@ by default.
 
 ## Uploading an app build: `build upload`
 
-`qawolf build upload <file>` uploads an `.apk`, `.aab` or `.ipa` and creates a
-build from it in one step. Use it instead of `build requestUpload`, a PUT and
+`qawolf build upload <file>` uploads an `.apk`, `.aab`, `.ipa`, or a Linux
+Electron `.deb` or `.rpm`, and creates a build from it in one step. Use it instead of `build requestUpload`, a PUT and
 `build create` whenever the file is on this machine.
 
 Without an environment flag, the build belongs to no environment: only a run
