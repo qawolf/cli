@@ -1,4 +1,4 @@
-import { isAbsolute } from "node:path";
+import { posix, win32 } from "node:path";
 import { buffer } from "node:stream/consumers";
 
 import type { Fs } from "~/shell/fs.js";
@@ -43,6 +43,9 @@ function refusalOf({
   }
 }
 
+const isLocalPath = (source: string): boolean =>
+  posix.isAbsolute(source) || win32.isAbsolute(source);
+
 const sourceOf = (match: RegExpMatchArray): string | undefined =>
   match[2] ?? match[3];
 
@@ -59,7 +62,7 @@ async function inlineLocalImages({
         .map(sourceOf)
         .filter(
           (source): source is string =>
-            source !== undefined && isAbsolute(source),
+            source !== undefined && isLocalPath(source),
         ),
     ),
   ];

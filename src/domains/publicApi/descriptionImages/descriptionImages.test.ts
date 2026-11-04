@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import { tmpdir } from "node:os";
-import { extname, join } from "node:path";
+import { extname, join, posix, sep } from "node:path";
 import { buffer } from "node:stream/consumers";
 
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
@@ -25,6 +25,7 @@ afterEach(() => {
 });
 
 const imageDirectory = join(tmpdir(), "qawolf-issue-images");
+const printedImageDirectory = imageDirectory.split(sep).join(posix.sep);
 
 const pngBytes = Buffer.concat([
   Buffer.from("\x89PNG\r\n\x1a\n", "latin1"),
@@ -69,7 +70,7 @@ function printed(output: ReturnType<typeof setUp>["output"]) {
 const readBytes = (fs: Fs, path: string) => buffer(fs.createReadStream(path));
 
 const savedPath = (markdown: string): string => {
-  const match = /\]\((\/[^)]+)\)/.exec(markdown);
+  const match = /\]\(<?([^()<>]+)>?\)/.exec(markdown);
   if (!match?.[1]) throw new Error(`no image path in ${markdown}`);
   return match[1];
 };
@@ -93,7 +94,7 @@ describe("issue description images", () => {
     expect(result).toBeUndefined();
     const { data, humanMessage } = printed(output);
     const path = savedPath(humanMessage);
-    expect(path.startsWith(`${imageDirectory}/`)).toBe(true);
+    expect(path.startsWith(`${printedImageDirectory}/`)).toBe(true);
     expect(path.endsWith(".png")).toBe(true);
     expect(data).toEqual({
       issue: {
@@ -203,4 +204,32 @@ describe("issue description images", () => {
       issueId: "i-1",
     });
   });
+
+  it.each([
+    ["a drive letter path", "C:\\Users\\me\\shot.png", "/Users/me/shot.png"],
+    [
+      "a drive letter path with forward slashes",
+      "C:/Users/me/shot.png",
+      "/Users/me/shot.png",
+    ],
+    ["a UNC path", "<\\\\server\\share\\shot.png>", "//server/share/shot.png"],
+  ])(
+    "reads an image at %s back into the description",
+    async (_kind, source, storedAt) => {
+      const { callPublicApi, ctx } = setUp({ value: {} });
+      await ctx.fs.mkdir(posix.dirname(storedAt), { recursive: true });
+      await ctx.fs.writeFile(storedAt, pngBytes);
+      const spec = issueSpec("update");
+
+      await handlePublicApiCommand(ctx, spec, {
+        description: `![Cart](${source})`,
+        issueId: "i-1",
+      });
+
+      expect(callPublicApi).toHaveBeenCalledWith(spec.contract, {
+        description: `![Cart](${pngDataUrl})`,
+        issueId: "i-1",
+      });
+    },
+  );
 });

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, posix, sep } from "node:path";
 
 import type { Fs } from "~/shell/fs.js";
 
@@ -46,7 +46,10 @@ function mapStrings({
 }
 
 function markdownDestination(path: string): string {
-  return /[\s()<>]/.test(path) ? `<${path}>` : path;
+  const forwardSlashPath = path.split(sep).join(posix.sep);
+  return /[\s()<>]/.test(forwardSlashPath)
+    ? `<${forwardSlashPath}>`
+    : forwardSlashPath;
 }
 
 async function writeImageFile({
