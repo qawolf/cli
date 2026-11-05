@@ -1,5 +1,17 @@
 # @qawolf/cli
 
+## 2.9.0
+
+### Minor Changes
+
+- 1d6ba18: `qawolf run diagnose` takes `--failures`, which diagnoses an attempt's failures one by one. When one attempt failed on several checks, such as `expect.soft()` checks, each failure can go to its own bug report or blocker: pass it as `<attemptId>:<position>`. `qawolf attempt get` now lists an attempt's failures in `failures`, each with its `position`, soft failures first and the failure that stopped the flow last. `--flow-ids` is now optional, and the command needs `--failures` or `--flow-ids`. With `--flow-ids`, a flow whose attempt failed on several checks is refused with `several-failures`.
+
+  Upgrades `@qawolf/api-contracts` to `0.129.0`, which also changes these commands. `qawolf deployment reportStatus` takes `--changes <json>`, the pull requests, commits and release notes that the deployment ships, so a trigger where QA Wolf chooses the flows works without a pull request. `qawolf issue create --type coverageRequest` takes `--file-paths`, and `qawolf issue attachFiles` also adds files to a coverage request. `qawolf issue get` lists the newest failures diagnosed to the issue in `recentFailures`. `qawolf investigation get` reports the flows the investigation must still finish in `completion`, and whether a person stopped it in `isStopped`. Its fixed findings give `notABugReason`, why the AI decided on its own that the fix hides no bug. `qawolf activity wait` marks a run whose failed flow has no diagnosis with `needsReview`. `qawolf promotion get` gives the session of the AI that resolves the promotion in `aiTaskSessionId`. `qawolf build requestUpload` and `qawolf build upload` take files up to the workspace's limit, 1 GB by default, and `qawolf build upload` now gives the upload an hour to finish instead of 30 minutes.
+
+### Patch Changes
+
+- d345994: Update zod to 4.6.7, which fixes a security issue in zod (CVE-2023-54404). Commands and flags work as before.
+
 ## 2.8.1
 
 ### Patch Changes
