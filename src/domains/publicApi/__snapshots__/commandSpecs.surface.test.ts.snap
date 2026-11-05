@@ -321,7 +321,6 @@ exports[`generated command surface matches the flags generated from the installe
     "--environment-id <value> (string, required)",
     "--environment-variables <KEY=VALUE...> (key-value-record)",
     "--ignore-rules (boolean)",
-    "--investigate-failures (boolean)",
     "--pull-request-number <value> (number)",
     "--repository <value> (string)",
     "--workspace-id <value> (string)",

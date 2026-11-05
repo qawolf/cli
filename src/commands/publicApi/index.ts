@@ -8,7 +8,10 @@ import {
   type ContractTree,
 } from "~/domains/publicApi/commandSpecs.js";
 import { handlePublicApiCommand } from "~/domains/publicApi/handle.js";
-import { skippedContractNames } from "~/domains/publicApi/skippedContracts.js";
+import {
+  skippedContractNames,
+  skippedFlagPaths,
+} from "~/domains/publicApi/skippedContracts.js";
 import { declareCommandKind } from "~/commands/commandKind.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
@@ -110,6 +113,7 @@ export function registerPublicApiCommands(
 ): void {
   const specs = buildCommandSpecs(options.contracts ?? publicContractsV1, {
     skipContractNames: skippedContractNames,
+    skipFlagPaths: skippedFlagPaths,
   });
   for (const spec of specs) {
     registerSpec(program, signals, spec, options.authDeps);

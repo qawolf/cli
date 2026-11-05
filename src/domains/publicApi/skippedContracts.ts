@@ -54,3 +54,7 @@ export const skippedContractNames: ReadonlySet<string> = new Set([
   ...handWrittenContractNames,
   ...deprecatedContractNames,
 ]);
+
+export const skippedFlagPaths: ReadonlySet<string> = new Set([
+  "run.create.investigateFailures",
+]);
