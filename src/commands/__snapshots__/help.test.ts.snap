@@ -168,9 +168,9 @@ Commands:
   investigate [options]  Summarize the evidence for one finished attempt
   inspect [options]      Inspect one kind of evidence for a finished attempt
   get [options]          Get a finished run attempt: its run and flow status,
-                         its place among that flow's attempts in the run, and
-                         signed links to its logs, trace, and video when they
-                         were captured.
+                         its place among that flow's attempts in the run, the
+                         checks that failed in it, and signed links to its logs,
+                         trace, and video when they were captured.
   help [command]         display help for command
 "
 `;
@@ -523,8 +523,8 @@ Stopping a run or ending a runner:
 exports[`--help output qawolf build upload 1`] = `
 "Usage: qawolf build upload [options] <file>
 
-Upload an app file (.apk, .aab or .ipa, up to 500 MB) and create a build from
-it. Runs build requestUpload, the PUT and build create in one step
+Upload an app file (.apk, .aab or .ipa, up to 1 GB by default) and create a
+build from it. Runs build requestUpload, the PUT and build create in one step
 
 Options:
   --environment-id <id>                            Put the build on this existing environment: its runs install it from now on, until a newer build of the same app and platform arrives

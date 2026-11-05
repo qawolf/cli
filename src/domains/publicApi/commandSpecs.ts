@@ -31,6 +31,7 @@ function isContract(
 function buildSpec(
   contract: AnyPublicApiContract,
   path: string[],
+  skipFlagPaths: ReadonlySet<string> | undefined,
 ): CommandSpec {
   const dottedPath = path.join(".");
   if (contract.name !== dottedPath) {
@@ -51,7 +52,9 @@ function buildSpec(
     trpcPath: `public.${contract.name}`,
     kind: contract.kind,
     description: contract.description,
-    flags: flags.flags,
+    flags: flags.flags.filter(
+      (flag) => !skipFlagPaths?.has([...path, ...flag.path].join(".")),
+    ),
     contract,
   };
 }
@@ -60,6 +63,7 @@ type BuildOptions = {
   // Contracts served by hand-written commands. Skipped before spec building,
   // so a hand-written contract never has to be expressible as generated flags.
   skipContractNames?: ReadonlySet<string>;
+  skipFlagPaths?: ReadonlySet<string>;
 };
 
 export function buildCommandSpecs(
@@ -72,7 +76,7 @@ export function buildCommandSpecs(
       const childPath = [...path, key];
       if (!isContract(value)) return walk(value, childPath);
       if (skip?.has(childPath.join("."))) return [];
-      return [buildSpec(value, childPath)];
+      return [buildSpec(value, childPath, options.skipFlagPaths)];
     });
   return walk(tree, []);
 }

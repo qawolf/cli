@@ -48,7 +48,7 @@ export function registerBuildUploadCommand(
 ): void {
   declareCommandKind(build.command("upload <file>"), "write")
     .description(
-      "Upload an app file (.apk, .aab or .ipa, up to 500 MB) and create a build from it. Runs build requestUpload, the PUT and build create in one step",
+      "Upload an app file (.apk, .aab or .ipa, up to 1 GB by default) and create a build from it. Runs build requestUpload, the PUT and build create in one step",
     )
     .option(
       "--environment-id <id>",

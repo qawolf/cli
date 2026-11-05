@@ -80,6 +80,7 @@ describe("buildFlagSpecs", () => {
       { flag: "--environment-id <value>", required: true },
       { flag: "--environment-variables <KEY=VALUE...>", required: false },
       { flag: "--ignore-rules", required: false },
+      { flag: "--investigate-failures", required: false },
       { flag: "--pull-request-number <value>", required: false },
       { flag: "--repository <value>", required: false },
       { flag: "--workspace-id <value>", required: false },

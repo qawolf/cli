@@ -8,8 +8,8 @@ import type { WireResult } from "./createTrpcClient.js";
 import { toError } from "./toError.js";
 
 // A whole-upload deadline rather than a stall timer: fetch reports no upload
-// progress to reset one on. Thirty minutes lets 500 MB through at ~300 KB/s.
-const defaultUploadTimeoutMs = 30 * 60 * 1000;
+// progress to reset one on. Sixty minutes lets 1 GB through at ~300 KB/s.
+const defaultUploadTimeoutMs = 60 * 60 * 1000;
 
 type Deps = {
   fetch: typeof globalThis.fetch;
