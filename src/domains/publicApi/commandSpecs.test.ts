@@ -29,6 +29,7 @@ describe("buildCommandSpecs", () => {
       "environmentId",
       "environmentVariables",
       "ignoreRules",
+      "investigateFailures",
       "pullRequestNumber",
       "repository",
       "workspaceId",

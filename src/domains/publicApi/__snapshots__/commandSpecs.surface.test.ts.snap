@@ -66,6 +66,7 @@ exports[`generated command surface matches the flags generated from the installe
   ],
   "deployment reportStatus": [
     "--builds <values...> (string-array)",
+    "--changes <json> (json)",
     "--deploy-target <value> (string)",
     "--environment-id <value> (string)",
     "--environment-base-ephemeral-environment <value> (string)",
@@ -320,6 +321,7 @@ exports[`generated command surface matches the flags generated from the installe
     "--environment-id <value> (string, required)",
     "--environment-variables <KEY=VALUE...> (key-value-record)",
     "--ignore-rules (boolean)",
+    "--investigate-failures (boolean)",
     "--pull-request-number <value> (number)",
     "--repository <value> (string)",
     "--workspace-id <value> (string)",
@@ -327,7 +329,8 @@ exports[`generated command surface matches the flags generated from the installe
     "--tag-names <values...> (string-array)",
   ],
   "run diagnose": [
-    "--flow-ids <values...> (string-array, required)",
+    "--failures <values...> (string-array)",
+    "--flow-ids <values...> (string-array)",
     "--issue-id <value> (string, required)",
     "--run-id <value> (string, required)",
   ],
