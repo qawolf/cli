@@ -973,7 +973,10 @@ Browser:
   inspect answers one question about the live page and prints the answer on
   stdout by itself, so you can redirect or pipe it. `page-html` is simplified
   for a model to read rather than being the browser's exact markup, and
-  --selector narrows it to one subtree. `variable` reads a top-level variable of
+  --selector trims it to the matched element plus as much of the page around it
+  as fits in about 15,000 characters, so siblings and the rest of a form still
+  come back. A selector that matches nothing returns the whole page. To read one
+  element alone, use `element-html`. `variable` reads a top-level variable of
   the running workflow and prints it as JSON, which is how you see what your own
   code computed rather than what the page shows. Use it before reaching for
   exec: reading a value through a snippet means printing it and then fishing it
@@ -1053,7 +1056,8 @@ Usage: qawolf runner inspect page-html [options]
 Print the page's HTML, simplified for a model to read
 
 Options:
-  --selector <selector>  Limit the output to this subtree
+  --selector <selector>  Trim to this element and as much of the page around it as fits in about
+                         15,000 characters
   --runner <id>          Runner to target. Defaults to QAWOLF_RUNNER_ID, then this directory's
                          stored runner
   -h, --help             display help for command

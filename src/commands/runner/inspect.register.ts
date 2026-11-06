@@ -62,7 +62,10 @@ export function registerRunnerInspectCommands(
 
   declareCommandKind(inspect.command("page-html"), "read")
     .description("Print the page's HTML, simplified for a model to read")
-    .option("--selector <selector>", "Limit the output to this subtree")
+    .option(
+      "--selector <selector>",
+      "Trim to this element and as much of the page around it as fits in about 15,000 characters",
+    )
     .option("--runner <id>", runnerFlagDescription)
     .action((opts: { runner?: string; selector?: string }, command: Command) =>
       withRunnerContext(signals, (ctx) =>
