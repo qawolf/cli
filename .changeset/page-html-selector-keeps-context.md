@@ -2,4 +2,4 @@
 "@qawolf/cli": patch
 ---
 
-The `runner inspect page-html --selector` help says the output keeps as much of the page around the matched element as fits in about 15,000 characters, and that `element-html` reads one element alone.
+The `runner inspect page-html --selector` help says the output may still include the page around the matched element, and that a selector matching nothing returns the whole page.

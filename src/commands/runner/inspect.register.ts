@@ -64,7 +64,7 @@ export function registerRunnerInspectCommands(
     .description("Print the page's HTML, simplified for a model to read")
     .option(
       "--selector <selector>",
-      "Trim to this element and as much of the page around it as fits in about 15,000 characters",
+      "Focus on this element. The output may still include the page around it",
     )
     .option("--runner <id>", runnerFlagDescription)
     .action((opts: { runner?: string; selector?: string }, command: Command) =>
