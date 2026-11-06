@@ -39,6 +39,7 @@ Commands:
   issue                        QA Wolf public API issue commands
   legacyTrigger                QA Wolf public API legacyTrigger commands
   mcpServer                    QA Wolf public API mcpServer commands
+  narratedRecording            QA Wolf public API narratedRecording commands
   promotion                    QA Wolf public API promotion commands
   run                          Trigger and manage QA Wolf runs on the platform
   skill                        QA Wolf public API skill commands

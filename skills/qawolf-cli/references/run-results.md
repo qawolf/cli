@@ -211,7 +211,7 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `buildVersions[].appId` — The package name (Android) or bundle ID (iOS) of the app.
 - `buildVersions[].expected` — The run's build of this app. Absent for an app it got none of.
 - `buildVersions[].expected.buildId` — The id of the build, from build.requestUpload.
-- `buildVersions[].kind` — One of build, info; newer servers may add values, so ignore any you don't know. build: the run got a build of this app. info: any other app an attempt installed, such as a companion app. It has no warnings.
+- `buildVersions[].kind` — One of build, info; newer servers may add values, so ignore any you don't know. build: the run got a build of this app. info: any other app an attempt installed, such as a companion app. Its only warning is changedDuringRun.
 - `buildVersions[].observed` — What attempts installed, one entry per build or version.
 - `buildVersions[].observed[].attempts` — How many attempts reported it.
 - `buildVersions[].observed[].buildId` — Absent when the file is not one of the team's builds.

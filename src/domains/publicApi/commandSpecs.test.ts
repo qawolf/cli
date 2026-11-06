@@ -32,6 +32,7 @@ describe("buildCommandSpecs", () => {
       "ignoreRules",
       "pullRequestNumber",
       "repository",
+      "resolutionRunMode",
       "workspaceId",
       "flowIds",
       "tagNames",
