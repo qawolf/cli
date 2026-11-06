@@ -151,12 +151,10 @@ describe("buildRunnerAction", () => {
       action: { scroll_x: -40, scroll_y: 0, type: "scroll", x: 1, y: 2 },
       ok: true,
     });
-  });
-
-  it("refuses a scroll with no delta at all", () => {
-    const built = build("scroll", { x: "1", y: "2" });
-
-    expect(built.ok).toBe(false);
+    expect(build("scroll", { x: "1", y: "2" })).toEqual({
+      action: { scroll_x: 0, scroll_y: 0, type: "scroll", x: 1, y: 2 },
+      ok: true,
+    });
   });
 
   it("refuses a scroll with no point to scroll at", () => {

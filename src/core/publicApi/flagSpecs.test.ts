@@ -83,6 +83,7 @@ describe("buildFlagSpecs", () => {
       { flag: "--investigate-failures", required: false },
       { flag: "--pull-request-number <value>", required: false },
       { flag: "--repository <value>", required: false },
+      { flag: "--resolution-run-mode <value>", required: false },
       { flag: "--workspace-id <value>", required: false },
       { flag: "--flow-ids <values...>", required: false },
       { flag: "--tag-names <values...>", required: false },
