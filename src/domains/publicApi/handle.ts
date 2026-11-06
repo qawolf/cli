@@ -9,6 +9,8 @@ import { failureFields } from "~/shell/platform/requestWithRetry.js";
 import { readStdin } from "~/shell/stdin.js";
 
 import type { CommandSpec } from "./commandSpecs.js";
+import { inlineDescriptionImages } from "./descriptionImages/inlineLocalImages.js";
+import { saveDataImagesAsFiles } from "./descriptionImages/saveDataImagesAsFiles.js";
 import {
   flagName,
   isStringArray,
@@ -109,9 +111,15 @@ export async function handlePublicApiCommand(
   const assembled = assembleInput(spec.flags, sourced.options);
   if (!assembled.ok) return { error: assembled.error };
 
+  const inlined = await inlineDescriptionImages({
+    fs: ctx.fs,
+    input: assembled.input,
+  });
+  if (!inlined.ok) return { error: inlined.error };
+
   // Validate locally before any network call so flag mistakes get fast,
   // field-level feedback instead of a server error.
-  const parsed = spec.contract.input.safeParse(assembled.input);
+  const parsed = spec.contract.input.safeParse(inlined.input);
   if (!parsed.success) return { error: z.prettifyError(parsed.error) };
 
   const result = await ctx.platformClient.callPublicApi(
@@ -120,6 +128,10 @@ export async function handlePublicApiCommand(
   );
   if (!result.ok) return failureFields(result);
 
-  ctx.ui.output(result.value, renderHuman(result.value));
+  const output = await saveDataImagesAsFiles({
+    fs: ctx.fs,
+    value: result.value,
+  });
+  ctx.ui.output(output, renderHuman(output));
   return undefined;
 }
