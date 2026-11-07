@@ -1303,13 +1303,13 @@ Browser:
   inspect answers one question about the live page and prints the answer on
   stdout by itself, so you can redirect or pipe it. \`page-html\` is simplified
   for a model to read rather than being the browser's exact markup, and
-  --selector focuses it on the matched element but may keep the page around it,
-  such as the rest of a form. A selector that matches nothing returns the whole
-  page. \`variable\` reads a top-level variable of the running workflow and prints
-  it as JSON, which is how you see what your own code computed rather than what
-  the page shows. Use it before reaching for exec: reading a value through a
-  snippet means printing it and then fishing it back out of the console stream,
-  which is two calls and a marker.
+  --selector focuses it on the matched element but can include the page around
+  it, or the whole page if nothing matches. \`variable\` reads a top-level
+  variable of the running workflow and prints it as JSON, which is how you see
+  what your own code computed rather than what the page shows. Use it before
+  reaching for exec: reading a value through a snippet means printing it and
+  then fishing it back out of the console stream, which is two calls and a
+  marker.
 
   One failure covers three causes, because a runner cannot tell them apart: no
   live page, no element matching the selector, no variable under that name. All
