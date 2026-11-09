@@ -10,7 +10,10 @@ import type {
   RunAndroidFlowOptions,
 } from "./runAndroidFlow.js";
 import { runAndroidFlow } from "./runAndroidFlow.js";
+import { mockExpectWebdriverio } from "./expectWebdriverio.fixtures.js";
 import type { FlowRuntimeDeps } from "./flowRuntimeDeps.js";
+
+mockExpectWebdriverio();
 
 afterEach(() => {
   mock.restore();
@@ -44,6 +47,7 @@ const baseOptions: RunAndroidFlowOptions = {
   retries: 0,
   outputDir: "/tmp/qawolf-android-test",
   recordVideo: false,
+  timeout: 30_000,
 };
 
 function fixturePath(name: string): string {
@@ -57,8 +61,36 @@ describe("runAndroidFlow", () => {
       options: baseOptions,
       flowPath: fixturePath("pass"),
     });
+    console.log("PROBE", result.error?.cause);
     expect(result.passed).toBe(true);
     expect(result.attempts).toBe(1);
+  });
+
+  it("should initialize the mobile expect before the flow runs", async () => {
+    const result = await runAndroidFlow({
+      deps: makeAndroidDeps(),
+      options: baseOptions,
+      flowPath: fixturePath("expect"),
+    });
+    expect(result.error?.cause).toBeUndefined();
+    expect(result.passed).toBe(true);
+  });
+
+  it("should warn and still run the flow when the flow runtime cannot be configured", async () => {
+    const warn = mock((_msg: string) => {});
+    const noop = () => {};
+    const deps: RunAndroidFlowDeps = {
+      ...makeAndroidDeps(),
+      logger: { error: noop, warn, info: noop, debug: noop, trace: noop },
+    };
+    const result = await runAndroidFlow({
+      deps,
+      options: baseOptions,
+      flowPath: fixturePath("invalidTarget"),
+    });
+    expect(result.passed).toBe(true);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toContain("Could not initialize expect");
   });
 
   it("should return passed: false and capture error when the flow throws", async () => {
