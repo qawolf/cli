@@ -43,6 +43,7 @@ Commands:
   promotion                    QA Wolf public API promotion commands
   run                          Trigger and manage QA Wolf runs on the platform
   skill                        QA Wolf public API skill commands
+  suggestion                   QA Wolf public API suggestion commands
   tag                          QA Wolf public API tag commands
   trigger                      QA Wolf public API trigger commands
   help [command...]            Display help for a command
@@ -370,7 +371,7 @@ Commands:
   stop-run [options]                       Stop what a runner is currently executing, leaving the runner up
   keepalive [options]                      Reset a runner's inactivity clock, for a caller that pauses between actions
   run [options] <flowFile>                 Run a flow on an interactive runner, shipping the flow and what it imports
-  events [options] <stream>                Print a runner's journal, one entry per line. QA Wolf writes console, recorder, run-events, run-logs, run-status
+  events [options] <stream>                Print a runner's journal, one entry per line. QA Wolf writes console, network, recorder, run-events, run-logs, run-status
   screenshot [options]                     Save a JPEG of an interactive runner's screen to a file, or write it to stdout with --out -
   act [options] <action>                   Perform one raw action on a runner's screen. A browser runner takes click, double_click, scroll, move, drag, keypress, navigate and type; a mobile runner takes tap, swipe, fill and type. A browser runner answers mobile actions with action-not-supported-on-browser; a mobile runner answers the other browser actions with action-not-supported-on-mobile. Use - to read a whole action as JSON from stdin
   actions [options] <sequence>             Perform a sequence of up to ten raw actions on a runner's screen in one request, as a JSON array of the same actions \`runner act\` takes. Use - to read the array from stdin. Actions run back to back, so batch only steps whose targets are on the screen you last saw, and end the sequence at the step that changes the page. Each result carries an effect: performed, not-performed, or unknown when the runner stopped answering and the action may have landed
@@ -743,8 +744,8 @@ Environment variables:
 exports[`--help output qawolf runner events 1`] = `
 "Usage: qawolf runner events [options] <stream>
 
-Print a runner's journal, one entry per line. QA Wolf writes console, recorder,
-run-events, run-logs, run-status
+Print a runner's journal, one entry per line. QA Wolf writes console, network,
+recorder, run-events, run-logs, run-status
 
 Options:
   --follow             Keep reading as new entries arrive. Reading counts as
@@ -777,10 +778,10 @@ Examples:
 Streams:
   Everything observable is an append-only stream on the pod, read by cursor or
   tail rather than subscribed to, so attaching late still gets you the history
-  that is still there. QA Wolf writes recorder, console, run-events, run-logs
-  and run-status; a stream nobody has written reads as empty rather than as an
-  error, and a stream this CLI version does not know about is still readable by
-  name. One payload per line, so shell tools compose:
+  that is still there. QA Wolf writes recorder, console, network, run-events,
+  run-logs and run-status; a stream nobody has written reads as empty rather
+  than as an error, and a stream this CLI version does not know about is still
+  readable by name. One payload per line, so shell tools compose:
 
   $ qawolf runner events console --tail 20 | jq -r '.message'
   $ qawolf runner events run-logs --run <runId> --follow > run.log

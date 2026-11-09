@@ -241,11 +241,6 @@ exports[`generated command surface matches the flags generated from the installe
     "--effort <value> (string)",
     "--reason <value> (string)",
   ],
-  "issue decideSuggestion": [
-    "--decision <value> (string, required)",
-    "--issue-id <value> (string, required)",
-    "--skip-reason <value> (string)",
-  ],
   "issue find": [
     "--cursor <value> (string)",
     "--limit <value> (number)",
@@ -305,6 +300,21 @@ exports[`generated command surface matches the flags generated from the installe
   ],
   "promotion get": [
     "--promotion-id <value> (string, required)",
+  ],
+  "promotion reportDecision": [
+    "--base-outcome <value> (string)",
+    "--base-run-id <value> (string)",
+    "--combined-outcome <value> (string)",
+    "--combined-run-id <value> (string)",
+    "--decision <value> (string, required)",
+    "--expected-source-commit-hash <value> (string, required)",
+    "--expected-target-commit-hash <value> (string, required)",
+    "--head-outcome <value> (string)",
+    "--head-run-id <value> (string)",
+    "--kept <value> (string)",
+    "--path <value> (string, required)",
+    "--promotion-id <value> (string, required)",
+    "--reason <value> (string, required)",
   ],
   "promotion resolve": [
     "--deletes <values...> (string-array)",
@@ -378,6 +388,20 @@ exports[`generated command surface matches the flags generated from the installe
     "--name <value> (string, required)",
   ],
   "skill list": [],
+  "suggestion decide": [
+    "--decision <value> (string, required)",
+    "--skip-reason <value> (string)",
+    "--suggestion-id <value> (string, required)",
+  ],
+  "suggestion find": [
+    "--state <value> (string)",
+    "--workspace-id <value> (string)",
+    "--cursor <value> (string)",
+    "--limit <value> (number)",
+  ],
+  "suggestion get": [
+    "--suggestion-id <value> (string, required)",
+  ],
   "tag create": [
     "--name <value> (string, required)",
     "--workspace-id <value> (string)",
