@@ -192,7 +192,7 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `supersededBy.runId` — The id of the run.
 - `supersededBy.url` — Absolute URL of the replacement run's page.
 - `blockingBugCount` — How many bugs this run found are blocking: still open, and priority urgent, high, or unprioritized — unprioritized counts because nobody has ruled it out yet. This is what `failed` is derived from, so it explains a failure rather than adding a second verdict: gate on `status`, then read this to say how many bugs are holding the build. It counts a bug filed against a later run by an investigation that carried over from this one, and it drops a bug once that bug is resolved.
-- `builds` — The builds the run installs, one per app and platform. Empty when the run has none.
+- `builds` — The builds the run got that its flows installed, one per app and platform: a build counts once a finished or stopped attempt reported installing it. Empty while no attempt has, and when the run got none. `buildVersions[].expected` names the build the run got for each app.
 - `builds[].appId` — The package name (Android) or bundle ID (iOS) read from the file. A flow launches it with `launch({ app: { id } })`.
 - `builds[].appName` — The app's display name, when the file names one.
 - `builds[].branch` — The branch the uploader said the build came from.
@@ -229,6 +229,8 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `flows[].attempts[].status` — One of: passed, failed, canceled
 - `flows[].attempts[].url` — Absolute URL of the attempt's page in the app, which opens this flow at this attempt. Link this page to show one flow's attempt: the run page opens a different flow. Absent only in replies from servers older than this field.
 - `flows[].attempts[].canceledReason` — Why the attempt was canceled. userCanceled means a person stopped it; do not immediately retry that activity.
+- `flows[].failure.blockedBy` — Present when the flow never started because flows it depends on failed in this run. This flow has no failure of its own: the named flows' failures explain it, and it runs again in the next run after those flows pass.
+- `flows[].failure.blockedBy[].flowId` — The id of the flow.
 - `flows[].failure.diagnosis` — QA Wolf's investigation verdict for the failure: `bug` means the application is broken, `maintenance` means the test needed an update and the failure does not indicate an application problem. Absent until the investigation reaches a verdict, and absent when the flow was opted out of investigation. Pass issueId to issue.get for details.
 - `flows[].failure.diagnosis.issueId` — The id of the issue.
 - `flows[].failure.diagnosis.type` — One of: bug, maintenance
@@ -236,6 +238,13 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `flows[].failure.optedOutOfInvestigation.by` — One of: user, system
 - `flows[].flowId` — The id of the flow.
 - `flows[].status` — One of: failed, queued, running, passed, canceled
+- `runAlertNotifications` — Where QA Wolf sent this run's alert, oldest first. Empty when it was not sent anywhere. Lists only destinations your team can see: your own Slack's channels, and QA Wolf's channels shared through Slack Connect. A destination QA Wolf could not check with Slack just now is left out, so if an entry you expect is missing, ask again later.
+- `runAlertNotifications[].destination` — Where on the channel the alert went.
+- `runAlertNotifications[].destination.channelId` — The Slack channel's id.
+- `runAlertNotifications[].destination.workspaceId` — The Slack workspace the channel is in (Slack's team id), not a QA Wolf workspace.
+- `runAlertNotifications[].messageId` — The alert's message at that destination. In Slack this is the message's `ts`: pass it as `thread_ts` to reply in the alert's thread.
+- `runAlertNotifications[].permalink` — Link to the message. Absent for the moment between sending and the provider returning one.
+- `runAlertNotifications[].sentAt` — When the alert's message was sent. In Slack this is the time in its `ts`, which stays the same when QA Wolf later updates the message.
 - `siteVersions` — The versions the run's attempts saw on each site origin, with warnings. Empty when no attempt reported one.
 - `siteVersions[].expected` — The commit the run should see. Only on the origin the deployment reported as its target. Absent when no deployment names a commit and a target, or the deployment has a service.
 - `siteVersions[].expected.from` — One of deployment, latestDeployment; newer servers may add values, so ignore any you don't know. deployment: the run's own deployment. latestDeployment: the environment's latest successful deployment before the run.
