@@ -73,6 +73,7 @@ describe("dispatchFlow manifest stamping", () => {
         retries: 0,
         outputDir: "qawolf-output",
         recordVideo: false,
+        timeout: 30_000,
       },
     });
 
@@ -116,6 +117,7 @@ describe("dispatchFlow manifest stamping", () => {
         retries: 0,
         outputDir: "qawolf-output",
         recordVideo: false,
+        timeout: 30_000,
       },
     });
 
@@ -155,6 +157,7 @@ describe("dispatchFlow manifest stamping", () => {
         retries: 0,
         outputDir: "qawolf-output",
         recordVideo: false,
+        timeout: 30_000,
       },
     });
 
