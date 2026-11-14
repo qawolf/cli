@@ -57,6 +57,8 @@ export const authErrorMessages = {
       noun === undefined
         ? "QA Wolf found nothing matching the request (HTTP 404)."
         : `QA Wolf found nothing matching the ${noun} request (HTTP 404).`,
+    notServedYet: (noun: string | undefined, baseUrl: string) =>
+      `QA Wolf at ${baseUrl} does not support ${noun ?? "this request"} yet (HTTP 404). This CLI is newer than the server, so try again once the server has been updated.`,
     failedWithStatus: (status: number, noun: string | undefined) =>
       `QA Wolf API${noun ? ` ${noun}` : ""} request failed (HTTP ${status}).`,
     notSent: "Nothing was sent, so this request did not take effect.",

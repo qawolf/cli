@@ -9,4 +9,5 @@ export { installMessages } from "./install.js";
 export { interactiveRunnerMessages } from "./interactiveRunner/index.js";
 export { runnerMessages } from "./runner.js";
 export { packageLoadFailed } from "./toolNotFound.js";
+export { triggerMessages } from "./triggers.js";
 export { updateCheckMessages } from "./updateCheck.js";

@@ -16,6 +16,7 @@ import {
   parseKeyValueRecord,
 } from "./flagValues.js";
 import { readJsonFlagSources } from "./jsonFlagSources.js";
+import { enforceRequestedPause } from "./requestedPause.js";
 
 type AssembledInput =
   | { ok: true; input: Record<string, unknown> }
@@ -119,6 +120,14 @@ export async function handlePublicApiCommand(
     parsed.data,
   );
   if (!result.ok) return failureFields(result);
+
+  const unconfirmedPause = await enforceRequestedPause(
+    ctx,
+    spec,
+    parsed.data,
+    result.value,
+  );
+  if (unconfirmedPause) return unconfirmedPause;
 
   ctx.ui.output(result.value, renderHuman(result.value));
   return undefined;

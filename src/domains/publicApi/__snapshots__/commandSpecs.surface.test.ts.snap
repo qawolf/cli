@@ -50,6 +50,10 @@ exports[`generated command surface matches the flags generated from the installe
   "codeHostIntegration find": [
     "--workspace-id <value> (string)",
   ],
+  "codeHostIntegration findForRepository": [
+    "--url <value> (string, required)",
+    "--workspace-id <value> (string)",
+  ],
   "codeHostIntegration listRepositories": [
     "--provider <value> (string)",
     "--workspace-id <value> (string)",
@@ -425,6 +429,8 @@ exports[`generated command surface matches the flags generated from the installe
     "--limit <value> (number)",
   ],
   "trigger create": [
+    "--description <value> (string)",
+    "--is-paused (boolean)",
     "--name <value> (string, required)",
     "--workspace-id <value> (string)",
     "--action-flow-ids <values...> (string-array)",
@@ -464,13 +470,25 @@ exports[`generated command surface matches the flags generated from the installe
   "trigger get": [
     "--trigger-id <value> (string, required)",
   ],
+  "trigger listFirings": [
+    "--trigger-id <value> (string, required)",
+    "--cursor <value> (string)",
+    "--limit <value> (number)",
+  ],
   "trigger pause": [
     "--trigger-id <value> (string, required)",
   ],
   "trigger resume": [
     "--trigger-id <value> (string, required)",
   ],
+  "trigger runNow": [
+    "--deployment-id <value> (string)",
+    "--request-id <value> (string, required)",
+    "--trigger-id <value> (string, required)",
+  ],
   "trigger update": [
+    "--description <value> (string)",
+    "--is-paused (boolean)",
     "--name <value> (string, required)",
     "--trigger-id <value> (string, required)",
     "--action-flow-ids <values...> (string-array)",
@@ -499,6 +517,14 @@ exports[`generated command surface matches the flags generated from the installe
     "--environment-pattern <value> (string)",
     "--repository-pattern <value> (string)",
     "--service-pattern <value> (string)",
+  ],
+  "usage breakdown": [
+    "--from <value> (string, required)",
+    "--group-by <values...> (string-array)",
+    "--limit <value> (number)",
+    "--scope <value> (string)",
+    "--to <value> (string, required)",
+    "--workspace-id <value> (string)",
   ],
 }
 `;
