@@ -480,10 +480,20 @@ exports[`generated command surface matches the flags generated from the installe
   "trigger get": [
     "--trigger-id <value> (string, required)",
   ],
+  "trigger listFirings": [
+    "--trigger-id <value> (string, required)",
+    "--cursor <value> (string)",
+    "--limit <value> (number)",
+  ],
   "trigger pause": [
     "--trigger-id <value> (string, required)",
   ],
   "trigger resume": [
+    "--trigger-id <value> (string, required)",
+  ],
+  "trigger runNow": [
+    "--deployment-id <value> (string)",
+    "--request-id <value> (string, required)",
     "--trigger-id <value> (string, required)",
   ],
   "trigger update": [
