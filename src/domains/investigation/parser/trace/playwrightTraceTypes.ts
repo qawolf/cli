@@ -7,6 +7,7 @@ export type TraceEvent = {
   class?: string | undefined;
   endTime?: number | undefined;
   error?: { message: string } | undefined;
+  file?: string | undefined;
   height?: number | undefined;
   message?: string | undefined;
   messageType?: string | undefined;
@@ -24,7 +25,8 @@ export type TraceEvent = {
         html: unknown;
         isMainFrame?: boolean | undefined;
         pageId?: string | undefined;
-        snapshotName: string;
+        phase?: string | undefined;
+        snapshotName?: string | undefined;
         timestamp?: number | undefined;
       }
     | undefined;
@@ -125,7 +127,7 @@ export type TraceSnapshot = {
   frameId: string;
   id: string;
   isMainFrame: boolean | undefined;
-  name: string;
+  name: string | undefined;
   pageId: string | undefined;
   phase: "after" | "before" | "input" | "other";
   streamId: string;

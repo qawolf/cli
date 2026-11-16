@@ -4,6 +4,7 @@ import type { Bounded } from "./playwrightTraceTypes.js";
 
 export type JsonObject = Record<string, unknown> & {
   _failureText?: unknown;
+  _file?: unknown;
   _frameref?: unknown;
   _monotonicTime?: unknown;
   _sha1?: unknown;
@@ -13,6 +14,7 @@ export type JsonObject = Record<string, unknown> & {
   endTime?: unknown;
   error?: unknown;
   expression?: unknown;
+  file?: unknown;
   files?: unknown;
   frameId?: unknown;
   frameUrl?: unknown;
@@ -27,6 +29,7 @@ export type JsonObject = Record<string, unknown> & {
   pageId?: unknown;
   pageref?: unknown;
   params?: unknown;
+  phase?: unknown;
   request?: unknown;
   response?: unknown;
   selector?: unknown;
