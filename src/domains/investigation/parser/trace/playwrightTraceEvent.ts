@@ -124,7 +124,7 @@ export function normalizeTraceEvent(value: unknown): TraceEvent | undefined {
           snapshotName:
             typeof snapshot.snapshotName === "string"
               ? snapshot.snapshotName
-              : undefined,
+              : "",
           timestamp:
             typeof snapshot.timestamp === "number"
               ? snapshot.timestamp

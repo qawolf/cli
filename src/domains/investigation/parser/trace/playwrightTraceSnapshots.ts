@@ -13,10 +13,10 @@ function phase(
   snapshot: NonNullable<TraceEvent["snapshot"]>,
 ): TraceSnapshot["phase"] {
   const name = snapshot.snapshotName;
-  if (snapshot.phase === "before" || name?.startsWith("before@"))
+  if (snapshot.phase === "before" || name.startsWith("before@"))
     return "before";
-  if (snapshot.phase === "action" || name?.startsWith("input@")) return "input";
-  if (snapshot.phase === "after" || name?.startsWith("after@")) return "after";
+  if (snapshot.phase === "action" || name.startsWith("input@")) return "input";
+  if (snapshot.phase === "after" || name.startsWith("after@")) return "after";
   return "other";
 }
 
