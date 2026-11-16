@@ -7,6 +7,7 @@ export type TraceEvent = {
   class?: string | undefined;
   endTime?: number | undefined;
   error?: { message: string } | undefined;
+  file?: string | undefined;
   height?: number | undefined;
   message?: string | undefined;
   messageType?: string | undefined;
@@ -24,6 +25,7 @@ export type TraceEvent = {
         html: unknown;
         isMainFrame?: boolean | undefined;
         pageId?: string | undefined;
+        phase?: string | undefined;
         snapshotName: string;
         timestamp?: number | undefined;
       }

@@ -7,6 +7,7 @@ export function normalizeTraceEvent(value: unknown): TraceEvent | undefined {
   const stringFields = [
     "callId",
     "class",
+    "file",
     "message",
     "messageType",
     "method",
@@ -57,7 +58,8 @@ export function normalizeTraceEvent(value: unknown): TraceEvent | undefined {
     (!snapshot ||
       typeof snapshot.frameId !== "string" ||
       typeof snapshot.frameUrl !== "string" ||
-      typeof snapshot.snapshotName !== "string" ||
+      (typeof snapshot.snapshotName !== "string" &&
+        typeof snapshot.phase !== "string") ||
       (snapshot.callId !== undefined && typeof snapshot.callId !== "string") ||
       (snapshot.pageId !== undefined && typeof snapshot.pageId !== "string") ||
       (snapshot.isMainFrame !== undefined &&
@@ -72,7 +74,9 @@ export function normalizeTraceEvent(value: unknown): TraceEvent | undefined {
     (event.type === "frame-snapshot" && !snapshot) ||
     (event.type === "log" && typeof event.message !== "string") ||
     (event.type === "console" && typeof event.text !== "string") ||
-    (event.type === "screencast-frame" && typeof event.sha1 !== "string")
+    (event.type === "screencast-frame" &&
+      typeof event.sha1 !== "string" &&
+      typeof event.file !== "string")
   )
     return undefined;
   return {
@@ -83,6 +87,7 @@ export function normalizeTraceEvent(value: unknown): TraceEvent | undefined {
       error && typeof error.message === "string"
         ? { message: error.message }
         : undefined,
+    file: typeof event.file === "string" ? event.file : undefined,
     height: typeof event.height === "number" ? event.height : undefined,
     message: typeof event.message === "string" ? event.message : undefined,
     messageType:
@@ -114,6 +119,8 @@ export function normalizeTraceEvent(value: unknown): TraceEvent | undefined {
               : undefined,
           pageId:
             typeof snapshot.pageId === "string" ? snapshot.pageId : undefined,
+          phase:
+            typeof snapshot.phase === "string" ? snapshot.phase : undefined,
           snapshotName:
             typeof snapshot.snapshotName === "string"
               ? snapshot.snapshotName

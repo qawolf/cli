@@ -19,13 +19,13 @@ function listTraceScreenshots(
   const items = trace.streams
     .flatMap((stream) =>
       stream.events.flatMap((event, index) =>
-        event.type === "screencast-frame" && event.sha1
+        event.type === "screencast-frame" && (event.file ?? event.sha1)
           ? [
               {
                 height: event.height,
                 id: `${stream.id}:screenshot:${index}`,
                 pageId: event.pageId,
-                resourceName: `resources/${event.sha1}`,
+                resourceName: event.file ?? `resources/${event.sha1}`,
                 streamId: stream.id,
                 timestamp: event.timestamp,
                 width: event.width,

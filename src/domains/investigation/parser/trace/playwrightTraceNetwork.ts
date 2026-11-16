@@ -125,9 +125,11 @@ async function readNetwork(trace: PlaywrightTrace, maxEntryBytes: number) {
     )
       return [];
     const bodyResourceName =
-      typeof content?._sha1 === "string"
-        ? `resources/${content._sha1}`
-        : undefined;
+      typeof content?._file === "string"
+        ? content._file
+        : typeof content?._sha1 === "string"
+          ? `resources/${content._sha1}`
+          : undefined;
     return [
       {
         bodyAvailable:
