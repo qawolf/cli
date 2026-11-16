@@ -74,7 +74,7 @@ async function expectResponseBody(trace: Uint8Array) {
 }
 
 function playwright164Trace() {
-  return readFile(join(import.meta.dir, "playwright-1.64.1.trace.zip"));
+  return readFile(join(import.meta.dir, "playwright-1.64.1-trace.fixture.zip"));
 }
 
 async function legacyTrace() {
