@@ -265,9 +265,19 @@ exports[`generated command surface matches the flags generated from the installe
     "--cursor <value> (string)",
     "--limit <value> (number)",
   ],
+  "issue markFixReadyForReview": [
+    "--issue-id <value> (string, required)",
+  ],
   "issue removeFlows": [
     "--environment-id <value> (string)",
     "--flow-ids <values...> (string-array, required)",
+    "--issue-id <value> (string, required)",
+  ],
+  "issue requestFix": [
+    "--issue-id <value> (string, required)",
+    "--repository <value> (string)",
+  ],
+  "issue retryFix": [
     "--issue-id <value> (string, required)",
   ],
   "issue update": [
@@ -429,6 +439,8 @@ exports[`generated command surface matches the flags generated from the installe
     "--limit <value> (number)",
   ],
   "trigger create": [
+    "--description <value> (string)",
+    "--is-paused (boolean)",
     "--name <value> (string, required)",
     "--workspace-id <value> (string)",
     "--action-flow-ids <values...> (string-array)",
@@ -475,6 +487,8 @@ exports[`generated command surface matches the flags generated from the installe
     "--trigger-id <value> (string, required)",
   ],
   "trigger update": [
+    "--description <value> (string)",
+    "--is-paused (boolean)",
     "--name <value> (string, required)",
     "--trigger-id <value> (string, required)",
     "--action-flow-ids <values...> (string-array)",

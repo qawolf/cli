@@ -221,6 +221,7 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `flows` — The run's flows, ordered alphabetically by name. Only the flows matching flowStatuses when the request set it.
 - `flows[].attempts` — The flow's finished execution attempts, oldest first, including manual Wolf Browser attempts. Present once at least one attempt has finished, so a flow that passed after retries also lists its failed attempts. Artifact URLs appear only on attempts that reached a verdict, and on a manual attempt only when its Wolf Browser run kept them. They stay valid for at least a day (call run.get again for fresh ones), and can return 404 when the attempt did not produce that artifact.
 - `flows[].attempts[].logsUrl` — Signed URL for the attempt's execution logs.
+- `flows[].attempts[].networkLogsUrl` — Signed URL for the attempt's iOS network log, as NDJSON: request and connection lines are HAR 1.2 entries, DNS and WebSocket lines are `_qawolf` objects, and the last line is a summary. For up to 2 minutes after the attempt ends, the file can be partial or 404 while the runner uploads it; it is final once the summary line is there. Signed for every attempt; after that, a 404 means the attempt captured no network.
 - `flows[].attempts[].traceUrl` — Signed URL for the attempt's Playwright trace (a trace.zip; open it with `npx playwright show-trace`).
 - `flows[].attempts[].videoUrl` — Signed URL for the attempt's screen recording.
 - `flows[].attempts[].attemptId` — The id of the run attempt.

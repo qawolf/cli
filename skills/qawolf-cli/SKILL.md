@@ -200,7 +200,10 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf issue get` | read | Get an issue by id. |
 | `qawolf issue listActivity` | read | List an issue's activity, oldest first: creation, status and priority changes, and the flows that started or stopped reproducing it. Use it to measure time to fix or to find issues that came back. |
 | `qawolf issue listComments` | read | List the comments on a bug report, blocker (issue type `maintenance`), or coverage request, oldest first, with who wrote each one. |
+| `qawolf issue markFixReadyForReview` | write | Mark the draft pull request of the bug's fix ready for review, so the code host asks its code owners. The pull request stays a draft unless a loop's instructions ask for this. Only a QA Wolf session that a loop started can call it. Refused as no-fix-pull-request when the bug's fix has no open pull request. |
 | `qawolf issue removeFlows` | write | Remove flows from a coverage request or remove bug report or blocker reproductions in an environment. Unlinked flows are left alone. Reports auto-close when no active reproductions remain and auto-close is enabled. For reports, omit environmentId only when each selected flow is linked in at most one environment. |
+| `qawolf issue requestFix` | write | Hand a bug report to the team's own coding agent, which fixes it in the team's CI. Only a QA Wolf session that a loop started can call it, when the loop's instructions use /coding-agent. A bug has one open fix: a second request returns that fix. |
+| `qawolf issue retryFix` | write | Ask the team's coding agent for one more try at a bug that the check of its fix still shows. QA Wolf sends the same agent the failure of the check's run, as a new fix on the same branch, and checks again. Only a QA Wolf session that a loop started can call it, when the loop's instructions ask for it. A bug gets one extra try at most. Refused as bug-not-still-showing when the check of the bug's fix does not show the bug, and as no-tries-left after the extra try. |
 | `qawolf issue update` | write | Update an issue owned by the caller's team. Omitted fields remain unchanged. |
 | `qawolf legacyTrigger find` | read | List a workspace's legacy per-environment triggers; trigger.find lists the current ones. For migration only; it goes when legacy triggers go. adaptiveFlowSelection becomes a generativeSuite action, which takes no tags. |
 | `qawolf legacyTrigger pause` | write | Pause one legacy trigger, the older per-environment kind, so it stops firing; use trigger.pause for a current one. Its copies in pull request environments pause too. For migration only; it goes when legacy triggers go. |
@@ -256,13 +259,13 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf suggestion get` | read | Read one coverage suggestion QA Wolf made while exploring an environment: its state, the flow it proposes, the bug report or coverage request behind it, and the decisions it takes now. Use this, not issue.get, for a suggestion id. A suggestion QA Wolf withdrew reads as not found. |
 | `qawolf tag create` | write | Create a tag on the caller's team. Tags select flows in run.create. |
 | `qawolf tag list` | read | List the team's tags, alphabetical by name. Tag names select flows in run.create. |
-| `qawolf trigger create` | write | Create a trigger. A schedule trigger runs a named set of flows on a cadence; a deployment trigger runs when a matching deployment is reported. |
+| `qawolf trigger create` | write | Create a trigger. A schedule trigger fires on a cadence; a deployment trigger fires when a matching deployment is reported. Its action runs flows, or, as startAgent, starts a QA Wolf session that carries out its instructions. A startAgent trigger made with a team API key has no owner, so it stays paused until a person takes ownership of it in the app. |
 | `qawolf trigger delete` | write | Delete a trigger permanently. The runs it already created are kept. To stop a trigger without losing it, use trigger.pause. |
 | `qawolf trigger find` | read | List the team's triggers, newest first. |
 | `qawolf trigger get` | read | Get one trigger by id. |
 | `qawolf trigger pause` | write | Pause a trigger so it stops firing. Pausing is idempotent. A team whose triggers are all paused reports no trigger activity at all. |
 | `qawolf trigger resume` | write | Resume a paused trigger. A schedule trigger restarts from the next upcoming slot: the slots it missed while paused do not run. |
-| `qawolf trigger update` | write | Replace a trigger's configuration. Every field is written, so read the trigger first and send its configuration back with your changes applied. Pausing is separate: use trigger.pause and trigger.resume. |
+| `qawolf trigger update` | write | Replace a trigger's configuration. Every configuration field is written, so read the trigger first and send its definition back with your changes applied. isPaused and description are kept when omitted. |
 | `qawolf usage breakdown` | read | Show where credits went over a range of UTC days, grouped by time, workspace, environment, platform, source, trigger or user. Use it to find what uses the most credits, or to build a usage dashboard. Credits only, no dollar amounts. |
 
 <!-- commands-table:end -->
