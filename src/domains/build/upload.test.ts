@@ -42,6 +42,25 @@ describe("handleBuildUpload", () => {
     ]);
   });
 
+  it("uploads a Linux Electron .deb", async () => {
+    const { callPublicApi, ctx } = makeAuthCtx();
+    callPublicApi
+      .mockResolvedValueOnce(requested)
+      .mockResolvedValueOnce(created);
+
+    const result = await handleBuildUpload(
+      ctx,
+      { ...baseOptions, filePath: "out/make/deb/x64/my-app_1.0.0_amd64.deb" },
+      makeDeps(new Blob(["deb bytes"])),
+    );
+
+    expect(result).toBeUndefined();
+    expect(callPublicApi.mock.calls[0]?.[1]).toEqual({
+      fileName: "my-app_1.0.0_amd64.deb",
+      fileSizeBytes: 9,
+    });
+  });
+
   it("puts the build on the environment, branch and commit it was given", async () => {
     const { callPublicApi, ctx } = makeAuthCtx();
     callPublicApi
@@ -102,7 +121,7 @@ describe("handleBuildUpload", () => {
     );
 
     expect(result?.exitCode).toBe(exitCodes.invalidArgs);
-    expect(result?.error).toContain(".apk, .aab or .ipa");
+    expect(result?.error).toContain(".apk, .aab, .ipa, .deb or .rpm");
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 

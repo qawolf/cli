@@ -46,6 +46,7 @@ Commands:
   suggestion                   QA Wolf public API suggestion commands
   tag                          QA Wolf public API tag commands
   trigger                      QA Wolf public API trigger commands
+  usage                        QA Wolf public API usage commands
   help [command...]            Display help for a command
 "
 `;
