@@ -291,6 +291,17 @@ exports[`generated command surface matches the flags generated from the installe
     "--narrated-recording-id <value> (string, required)",
     "--workspace-id <value> (string)",
   ],
+  "promotion answerQuestions": [
+    "--answers <json> (json, required)",
+    "--promotion-id <value> (string, required)",
+  ],
+  "promotion askQuestion": [
+    "--content <json> (json, required)",
+    "--expected-source-commit-hash <value> (string, required)",
+    "--expected-target-commit-hash <value> (string, required)",
+    "--path <value> (string, required)",
+    "--promotion-id <value> (string, required)",
+  ],
   "promotion find": [
     "--environment-id <value> (string)",
     "--status <value> (string)",

@@ -3,15 +3,20 @@ import { serializeSnapshotHtml } from "./playwrightTraceSnapshotSerialize.js";
 import type {
   Bounded,
   PlaywrightTrace,
+  TraceEvent,
   TraceSnapshot,
 } from "./playwrightTraceTypes.js";
 import { traceLimits } from "./playwrightTraceTypes.js";
 import { bounded } from "./playwrightTraceUtils.js";
 
-function phase(name: string): TraceSnapshot["phase"] {
-  if (name.startsWith("before@")) return "before";
-  if (name.startsWith("input@")) return "input";
-  if (name.startsWith("after@")) return "after";
+function phase(
+  snapshot: NonNullable<TraceEvent["snapshot"]>,
+): TraceSnapshot["phase"] {
+  const name = snapshot.snapshotName;
+  if (snapshot.phase === "before" || name.startsWith("before@"))
+    return "before";
+  if (snapshot.phase === "action" || name.startsWith("input@")) return "input";
+  if (snapshot.phase === "after" || name.startsWith("after@")) return "after";
   return "other";
 }
 
@@ -50,7 +55,7 @@ export function listTraceSnapshots(
             isMainFrame: value.isMainFrame,
             name: value.snapshotName,
             pageId: value.pageId,
-            phase: phase(value.snapshotName),
+            phase: phase(value),
             streamId: stream.id,
             timestamp: value.timestamp,
             url: value.frameUrl,
