@@ -1,5 +1,21 @@
 # @qawolf/cli
 
+## 2.14.0
+
+### Minor Changes
+
+- ebee319: Upgrade `@qawolf/api-contracts` to `0.142.0`.
+  - `qawolf issue requestFix` hands a bug report to the team's own coding agent, which fixes it in the team's CI. A QA Wolf session that a loop started calls it when the loop's instructions use `/coding-agent`.
+  - `qawolf issue markFixReadyForReview` marks the draft pull request of a bug's fix ready for review.
+  - `qawolf issue retryFix` asks the team's coding agent for one more try at a bug that the check of its fix still shows.
+  - `qawolf trigger create` and `qawolf trigger update` take `--description` and `--is-paused`, and a trigger's action can start a QA Wolf session with instructions.
+  - `run get` documents `flows[].attempts[].networkLogsUrl`, the signed URL of an attempt's iOS network log.
+
+- decb786: Upgrade `@qawolf/api-contracts` to `0.140.0`.
+  - `qawolf build upload` uploads Linux Electron builds, `.deb` and `.rpm` files, for workspaces with desktop builds turned on.
+  - `qawolf codeHostIntegration findForRepository` checks whether QA Wolf can read a repository through the workspace's code host integrations.
+  - `qawolf usage breakdown` shows where credits went over a range of UTC days, grouped by time, workspace, environment, platform, source, trigger or user.
+
 ## 2.13.1
 
 ### Patch Changes
