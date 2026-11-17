@@ -193,19 +193,19 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `supersededBy.url` — Absolute URL of the replacement run's page.
 - `blockingBugCount` — How many bugs this run found are blocking: still open, and priority urgent, high, or unprioritized — unprioritized counts because nobody has ruled it out yet. This is what `failed` is derived from, so it explains a failure rather than adding a second verdict: gate on `status`, then read this to say how many bugs are holding the build. It counts a bug filed against a later run by an investigation that carried over from this one, and it drops a bug once that bug is resolved.
 - `builds` — The builds the run got that its flows installed, one per app and platform: a build counts once a finished or stopped attempt reported installing it. Empty while no attempt has, and when the run got none. `buildVersions[].expected` names the build the run got for each app.
-- `builds[].appId` — The package name (Android) or bundle ID (iOS) read from the file. A flow launches it with `launch({ app: { id } })`.
+- `builds[].appId` — The package name (Android, Linux) or bundle ID (iOS) read from the file. A flow launches it with `launch({ app: { id } })`.
 - `builds[].appName` — The app's display name, when the file names one.
 - `builds[].branch` — The branch the uploader said the build came from.
-- `builds[].buildNumber` — versionCode (Android) or CFBundleVersion (iOS), when the file has one.
+- `builds[].buildNumber` — versionCode (Android), CFBundleVersion (iOS) or RPM release (Linux), when the file has one.
 - `builds[].commitSha` — The commit the uploader said the build came from.
 - `builds[].createdAt` — When the build was created.
 - `builds[].deletedAt` — When the build was deleted. Runs never install it after.
 - `builds[].environmentId` — The environment whose runs install the build while it is the newest one there for its app and platform. Absent: only a run created with the build installs it.
 - `builds[].fileName` — The uploaded file's name.
 - `builds[].id` — The id of the build, from build.requestUpload.
-- `builds[].platform` — One of: android, ios
+- `builds[].platform` — One of android, ios, linux; newer servers may add values, so ignore any you don't know. The OS the build runs on, read from its file type. `linux` builds are Electron apps that Electron flows launch.
 - `builds[].sizeBytes` — The file's size in bytes.
-- `builds[].version` — versionName (Android) or CFBundleShortVersionString (iOS), when the file has one.
+- `builds[].version` — versionName (Android), CFBundleShortVersionString (iOS) or package version (Linux), when the file has one.
 - `builds[].url` — Absolute URL of the team's Builds page.
 - `buildVersions` — The apps the run's attempts installed, one per app and platform, with warnings. Empty when no attempt reported an install and the run has no builds.
 - `buildVersions[].appId` — The package name (Android) or bundle ID (iOS) of the app.
@@ -215,7 +215,7 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `buildVersions[].observed` — What attempts installed, one entry per build or version.
 - `buildVersions[].observed[].attempts` — How many attempts reported it.
 - `buildVersions[].observed[].buildId` — Absent when the file is not one of the team's builds.
-- `buildVersions[].platform` — One of: android, ios
+- `buildVersions[].platform` — One of android, ios, linux; newer servers may add values, so ignore any you don't know. The OS the build runs on, read from its file type. `linux` builds are Electron apps that Electron flows launch.
 - `buildVersions[].unreportedAttempts` — Finished attempts that reported no installed app, such as web attempts or attempts on an older Flows SDK.
 - `buildVersions[].warnings` — Why the installed apps may not be what the run should test.
 - `flows` — The run's flows, ordered alphabetically by name. Only the flows matching flowStatuses when the request set it.
