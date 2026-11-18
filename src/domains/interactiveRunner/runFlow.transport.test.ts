@@ -20,6 +20,7 @@ async function runAfterFailing(failure: {
       lines: undefined,
       linesFile: undefined,
       runner: "ci",
+      target: undefined,
       timeout: undefined,
       logs: false,
       recorderEvents: false,

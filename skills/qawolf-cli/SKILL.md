@@ -263,8 +263,10 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf trigger delete` | write | Delete a trigger permanently. The runs it already created are kept. To stop a trigger without losing it, use trigger.pause. |
 | `qawolf trigger find` | read | List the team's triggers, newest first. |
 | `qawolf trigger get` | read | Get one trigger by id. |
+| `qawolf trigger listFirings` | read | List when a trigger fired and what each firing started: a run, a QA Wolf session, or nothing and why. |
 | `qawolf trigger pause` | write | Pause a trigger so it stops firing. Pausing is idempotent. A team whose triggers are all paused reports no trigger activity at all. |
 | `qawolf trigger resume` | write | Resume a paused trigger. A schedule trigger restarts from the next upcoming slot: the slots it missed while paused do not run. |
+| `qawolf trigger runNow` | write | Fire a trigger once by hand. It works on a paused trigger too, and does the same as any other firing, except that a run it starts is not linked to the deployment or its pull request. Follow the firing with trigger.listFirings. |
 | `qawolf trigger update` | write | Replace a trigger's configuration. Every configuration field is written, so read the trigger first and send its definition back with your changes applied. isPaused and description are kept when omitted. |
 | `qawolf usage breakdown` | read | Show where credits went over a range of UTC days, grouped by time, workspace, environment, platform, source, trigger or user. Use it to find what uses the most credits, or to build a usage dashboard. Credits only, no dollar amounts. |
 

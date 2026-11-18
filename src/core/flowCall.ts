@@ -1,9 +1,14 @@
+import { readStringList } from "~/core/stringList.js";
 import { readStringLiteral } from "~/core/stringLiteral.js";
 
 export type FlowCallMeta = {
   name: string | undefined;
   target: string | undefined;
+  /** Every target of a file that lists several, in list order. */
+  targets?: readonly string[];
 };
+
+type TargetRead = { target: string } | { targets: string[] } | undefined;
 
 // Keeps `workflow(`, `_flow(`, `$flow(` and `this.#flow(` out while still
 // allowing `obj.flow(`. `\b` is not enough: it tests \w, which excludes `$`,
@@ -14,6 +19,15 @@ const argSeparatorRe = /\s*,\s*/y;
 const keyValueRe = /\s*:\s*/y;
 const wordChar = /\w/;
 
+function readTargetValue(source: string, start: number): TargetRead {
+  if (source.charAt(start) === "[") {
+    const targets = readStringList(source, start);
+    return targets ? { targets } : undefined;
+  }
+  const target = readStringLiteral(source, start)?.value;
+  return target === undefined ? undefined : { target };
+}
+
 /**
  * Reads `target` from the options object opening at `start`.
  *
@@ -21,10 +35,7 @@ const wordChar = /\w/;
  * Literals are skipped whole, so a brace or the word `target` inside a string
  * value cannot be read as structure.
  */
-function readTargetFromObject(
-  source: string,
-  start: number,
-): string | undefined {
+function readTargetFromObject(source: string, start: number): TargetRead {
   let depth = 0;
   let i = start;
   while (i < source.length) {
@@ -57,7 +68,7 @@ function readTargetFromObject(
     ) {
       keyValueRe.lastIndex = i + "target".length;
       if (keyValueRe.test(source)) {
-        return readStringLiteral(source, keyValueRe.lastIndex)?.value;
+        return readTargetValue(source, keyValueRe.lastIndex);
       }
     }
 
@@ -66,7 +77,7 @@ function readTargetFromObject(
   return undefined;
 }
 
-function readTarget(source: string, afterName: number): string | undefined {
+function readTarget(source: string, afterName: number): TargetRead {
   argSeparatorRe.lastIndex = afterName;
   if (!argSeparatorRe.test(source)) return undefined;
 
@@ -75,7 +86,8 @@ function readTarget(source: string, afterName: number): string | undefined {
     return readTargetFromObject(source, argStart);
   }
   // `||`, not `??`: an empty target is no more useful than a missing one.
-  return readStringLiteral(source, argStart)?.value || undefined;
+  const target = readStringLiteral(source, argStart)?.value || undefined;
+  return target === undefined ? undefined : { target };
 }
 
 /**
@@ -89,7 +101,7 @@ function readTarget(source: string, afterName: number): string | undefined {
  */
 export function parseFlowCall(source: string): FlowCallMeta {
   let name: string | undefined;
-  let target: string | undefined;
+  let target: TargetRead;
 
   for (const match of source.matchAll(flowCallRe)) {
     const nameLiteral = readStringLiteral(
@@ -108,5 +120,8 @@ export function parseFlowCall(source: string): FlowCallMeta {
     if (name !== undefined && target !== undefined) break;
   }
 
-  return { name, target };
+  if (target !== undefined && "targets" in target) {
+    return { name, target: undefined, targets: target.targets };
+  }
+  return { name, target: target?.target };
 }

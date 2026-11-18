@@ -84,14 +84,26 @@ export async function flowsList(
     async (f) => ({ file: f, ...(await deps.peekFlowMeta(f)) }),
     flowBatchSize,
   )) {
-    all.push({
-      file: path.relative(deps.cwd, file),
-      name: meta.name ?? flowBasename(file),
-      env: envLabelFor(file, envLabels),
-      tags: cachedTags.get(file),
-      target: meta.target,
-      browser: meta.target ? targetToBrowser(meta.target) : undefined,
-    });
+    const name = meta.name ?? flowBasename(file);
+    // A file that lists several targets is one flow per target on the
+    // platform, named as sync names it, so the local list matches --remote.
+    const entries =
+      meta.targets === undefined
+        ? [{ name, target: meta.target }]
+        : meta.targets.map((target) => ({
+            name: `${name} · ${target}`,
+            target,
+          }));
+    for (const entry of entries) {
+      all.push({
+        file: path.relative(deps.cwd, file),
+        name: entry.name,
+        env: envLabelFor(file, envLabels),
+        tags: cachedTags.get(file),
+        target: entry.target,
+        browser: entry.target ? targetToBrowser(entry.target) : undefined,
+      });
+    }
   }
 
   const items = all.filter((item) => matchesSelectors(item, selectors));

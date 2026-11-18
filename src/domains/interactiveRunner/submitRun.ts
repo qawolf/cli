@@ -36,6 +36,7 @@ export async function submitRun(
     files: RunFiles;
     resolved: Runner;
     selection: RunSelection | undefined;
+    target: string | undefined;
   },
   deps: InteractiveRunnerDeps,
 ): Promise<SubmittedRun> {

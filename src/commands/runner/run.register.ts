@@ -22,7 +22,8 @@ Examples:
   $ qawolf runner run flows/checkout.flow.ts --lines 4-9 --lines-file pages/login.ts
   $ qawolf runner run flows/checkout.flow.ts --env-id staging
   $ qawolf runner run flows/checkout.flow.ts --env-var RUN_INPUT_PATH=uploads/app.apk
-  $ qawolf runner run flows/checkout.flow.ts --builds <buildId> <buildId>`;
+  $ qawolf runner run flows/checkout.flow.ts --builds <buildId> <buildId>
+  $ qawolf runner run flows/login.flow.ts --target "macOS - Any Mac (macOS 26)"`;
 
 type RunFlags = {
   builds: string[];
@@ -36,6 +37,7 @@ type RunFlags = {
   recorderEvents: boolean;
   runEvents: boolean;
   runner?: string;
+  target?: string;
   timeout: string;
 };
 
@@ -96,6 +98,10 @@ export function registerRunCommand(
       "--lines-file <path>",
       "File the --lines range lives in. Defaults to <flowFile>; pass it only when the lines are in another file, such as a page object",
     )
+    .option(
+      "--target <preset>",
+      "For a flow file that lists several targets, the one to run, as the file lists it. Defaults to the first listed target the runner can run. Launch a runner of that target's OS first",
+    )
     .option("--runner <id>", runnerFlagDescription)
     .option(
       "--timeout <seconds>",
@@ -120,6 +126,7 @@ export function registerRunCommand(
             recorderEvents: opts.recorderEvents,
             runEvents: opts.runEvents,
             runner: opts.runner,
+            target: opts.target,
             timeout: opts.timeout,
             vars: opts.envVar,
           },

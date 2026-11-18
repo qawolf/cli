@@ -33,6 +33,7 @@ export async function sendRunFlowRequest(
     environmentId: string | undefined;
     resolved: Runner;
     selection: RunSelection | undefined;
+    target: string | undefined;
   },
   delta: {
     files: RunFiles;
@@ -55,6 +56,7 @@ export async function sendRunFlowRequest(
       ...(options.selection === undefined
         ? {}
         : { selection: options.selection }),
+      ...(options.target === undefined ? {} : { target: options.target }),
       ...(delta.unchangedFiles === undefined
         ? {}
         : { unchangedFiles: delta.unchangedFiles }),

@@ -26,6 +26,7 @@ async function run(builds: string[]) {
       recorderEvents: false,
       runEvents: false,
       runner: "ci",
+      target: undefined,
       timeout: undefined,
       vars: [],
     },
