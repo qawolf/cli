@@ -9,8 +9,8 @@ import {
 } from "~/domains/publicApi/commandSpecs.js";
 import { handlePublicApiCommand } from "~/domains/publicApi/handle.js";
 import {
+  negatedFlagPaths,
   skippedContractNames,
-  skippedFlagPaths,
 } from "~/domains/publicApi/skippedContracts.js";
 import { declareCommandKind } from "~/commands/commandKind.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
@@ -96,10 +96,35 @@ function registerSpec(
         handlePublicApiCommand(
           ctx,
           spec,
-          withoutExclusiveConflict(spec, leaf, options),
+          withoutExclusiveConflict(
+            spec,
+            leaf,
+            withoutNegatedDefaults(spec, leaf, options),
+          ),
         ),
       authDeps ?? {},
     )(options, leaf),
+  );
+}
+
+// Commander gives a lone `--no-<flag>` the default `true`; a flag the caller
+// left out sends nothing, as it did before the flag existed.
+function withoutNegatedDefaults(
+  spec: CommandSpec,
+  command: Command,
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  const defaulted = new Set(
+    spec.flags
+      .filter(
+        (flag) =>
+          flag.flag.startsWith("--no-") &&
+          command.getOptionValueSource(flag.optionKey) === "default",
+      )
+      .map((flag) => flag.optionKey),
+  );
+  return Object.fromEntries(
+    Object.entries(options).filter(([key]) => !defaulted.has(key)),
   );
 }
 
@@ -113,7 +138,7 @@ export function registerPublicApiCommands(
 ): void {
   const specs = buildCommandSpecs(options.contracts ?? publicContractsV1, {
     skipContractNames: skippedContractNames,
-    skipFlagPaths: skippedFlagPaths,
+    negatedFlagPaths,
   });
   for (const spec of specs) {
     registerSpec(program, signals, spec, options.authDeps);

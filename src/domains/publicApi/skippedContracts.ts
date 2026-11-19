@@ -55,6 +55,9 @@ export const skippedContractNames: ReadonlySet<string> = new Set([
   ...deprecatedContractNames,
 ]);
 
-export const skippedFlagPaths: ReadonlySet<string> = new Set([
+// An optional boolean whose omission and `true` mean the same thing, so only
+// `false` changes anything: each is offered as `--no-<flag>`, sending `false`
+// when given and nothing when left out.
+export const negatedFlagPaths: ReadonlySet<string> = new Set([
   "run.create.investigateFailures",
 ]);
