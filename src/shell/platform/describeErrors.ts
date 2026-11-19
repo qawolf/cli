@@ -41,6 +41,9 @@ export function describeIdentityError(err: WireError): PlatformFailure {
   return { error: m.identity.unexpectedFormat };
 }
 
+const isUnservedRoute = (reason: string): boolean =>
+  /^No (procedure found|"\w+"-procedure) on path /.test(reason);
+
 // The title stays short and stable so a caller can branch on it; the server's
 // reason goes in the body.
 export function describeRequestError(
@@ -71,6 +74,11 @@ export function describeRequestError(
       return parseJson(err.body) === undefined
         ? { error: m.request.blocked403(noun) }
         : { error: m.request.rejected403(noun), ...body };
+    if (err.status === 404 && isUnservedRoute(reason))
+      return {
+        error: m.request.notServedYet(noun, baseUrl),
+        exitCode: exitCodes.notFound,
+      };
     if (err.status === 404) return describeNotFound(notFound, noun, reason);
     return { error: m.request.failedWithStatus(err.status, noun), ...body };
   }
