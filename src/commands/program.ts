@@ -12,6 +12,7 @@ import { registerInstallCommand } from "./install/index.js";
 import { registerAttemptCommand } from "./attempt/index.js";
 import { registerPublicApiCommands } from "./publicApi/index.js";
 import { registerRunnerCommand } from "./runner/index.js";
+import { registerSlackCommand } from "./slack/index.js";
 import { exitCodes, exit } from "~/shell/exit.js";
 import packageJson from "../../package.json" with { type: "json" };
 
@@ -40,6 +41,7 @@ export function createProgram({
   registerInstallCommand(program, signals);
   registerAttemptCommand(program, signals);
   registerRunnerCommand(program, signals);
+  registerSlackCommand(program, signals);
   registerPublicApiCommands(program, signals);
   registerHelpCommand(program);
 
