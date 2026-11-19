@@ -43,6 +43,7 @@ Commands:
   promotion                    QA Wolf public API promotion commands
   run                          Trigger and manage QA Wolf runs on the platform
   skill                        QA Wolf public API skill commands
+  slack                        QA Wolf public API slack commands
   suggestion                   QA Wolf public API suggestion commands
   tag                          QA Wolf public API tag commands
   trigger                      QA Wolf public API trigger commands
