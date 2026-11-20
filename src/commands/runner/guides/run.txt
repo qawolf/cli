@@ -35,6 +35,12 @@ The lines-file has to be one of the files that travel, so it lives under the dir
 
 A --lines selection is the one call that does not need a run first. If the runner had no browser, one is started before your lines run, and the command says so on stderr. Those lines then ran against a fresh page rather than the one an earlier run left, which is worth reading before you act on what you see.
 
+# A flow file with several targets
+
+A flow file can list several targets, such as `target: ["macOS - Any Mac (Latest)", "Windows 11 - Desktop"]`. Each target is its own flow, named `<name> · <target>`, and `qawolf flows list` shows one row per target.
+
+run takes the first listed target the runner can run. To run another one, pass --target with its name as the file lists it, on a runner of that target's OS: `--target "Windows 11 - Desktop"` on a Windows runner. A name the file does not list is refused, and a runner of another OS fails with a runner-target mismatch.
+
 # Environment variables
 
 A run's variables come from up to three places, each on top of the one before:

@@ -383,6 +383,9 @@ Options:
                                  instead of the whole flow from a fresh one
   --lines-file <path>            File the --lines range lives in. Defaults to <flowFile>; pass it
                                  only when the lines are in another file, such as a page object
+  --target <preset>              For a flow file that lists several targets, the one to run, as the
+                                 file lists it. Defaults to the first listed target the runner can
+                                 run. Launch a runner of that target's OS first
   --runner <id>                  Runner to target. Defaults to QAWOLF_RUNNER_ID, then this
                                  directory's stored runner
   --timeout <seconds>            Give up following after this long. Following keeps the runner
@@ -407,6 +410,7 @@ Examples:
   $ qawolf runner run flows/checkout.flow.ts --env-id staging
   $ qawolf runner run flows/checkout.flow.ts --env-var RUN_INPUT_PATH=uploads/app.apk
   $ qawolf runner run flows/checkout.flow.ts --builds <buildId> <buildId>
+  $ qawolf runner run flows/login.flow.ts --target "macOS - Any Mac (macOS 26)"
 
 What travels:
   run ships the flow file, everything it imports, and your package.json and
@@ -494,6 +498,17 @@ Running part of a flow:
   says so on stderr. Those lines then ran against a fresh page rather than the
   one an earlier run left, which is worth reading before you act on what you
   see.
+
+A flow file with several targets:
+  A flow file can list several targets, such as `target: ["macOS - Any Mac
+  (Latest)", "Windows 11 - Desktop"]`. Each target is its own flow, named
+  `<name> · <target>`, and `qawolf flows list` shows one row per target.
+
+  run takes the first listed target the runner can run. To run another one, pass
+  --target with its name as the file lists it, on a runner of that target's OS:
+  `--target "Windows 11 - Desktop"` on a Windows runner. A name the file does
+  not list is refused, and a runner of another OS fails with a runner-target
+  mismatch.
 
 Environment variables:
   A run's variables come from up to three places, each on top of the one before:

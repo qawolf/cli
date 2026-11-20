@@ -82,6 +82,7 @@ export function createRunVerbs({ deps, platformClient }: SdkContext) {
           files: prepared.files,
           resolved: { ...givenRunner(runnerId), type: "resolved" },
           selection: prepared.selection,
+          target: undefined,
         },
         deps,
       );

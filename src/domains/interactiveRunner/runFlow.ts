@@ -33,6 +33,7 @@ export async function handleRunnerRun(
     recorderEvents: boolean;
     runEvents: boolean;
     runner: string | undefined;
+    target: string | undefined;
     timeout: string | undefined;
     vars: readonly string[];
   },
@@ -97,6 +98,7 @@ export async function handleRunnerRun(
       files: prepared.files,
       resolved,
       selection: prepared.selection,
+      target: options.target,
     },
     deps,
   );

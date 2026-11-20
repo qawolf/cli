@@ -31,6 +31,7 @@ const runFollowing = (
       recorderEvents: options.recorderEvents ?? false,
       runEvents: options.runEvents ?? false,
       runner: options.launch ? undefined : "ci",
+      target: undefined,
       timeout: options.timeout ?? "1",
       vars: [],
     },

@@ -50,6 +50,7 @@ export const runWithEnvironment = async ({
       recorderEvents: false,
       runEvents: false,
       runner: "ci",
+      target: undefined,
       timeout: undefined,
       vars,
     },

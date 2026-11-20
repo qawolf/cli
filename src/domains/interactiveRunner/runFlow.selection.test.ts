@@ -49,6 +49,7 @@ async function runWith(options: {
       recorderEvents: false,
       runEvents: false,
       runner: "ci",
+      target: undefined,
       timeout: undefined,
       vars: [],
     },
