@@ -414,12 +414,6 @@ exports[`generated command surface matches the flags generated from the installe
     "--name <value> (string, required)",
   ],
   "skill list": [],
-  "slack post": [
-    "--channel-id <value> (string, required)",
-    "--new-id <value> (string, required)",
-    "--text <value> (string, required)",
-    "--thread-ts <value> (string)",
-  ],
   "suggestion decide": [
     "--decision <value> (string, required)",
     "--skip-reason <value> (string)",

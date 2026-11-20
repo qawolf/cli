@@ -45,6 +45,7 @@ const handWrittenContractNames: readonly string[] = [
   "runner.stopRun",
   "runner.takeScreenshot",
   "runner.terminate",
+  "slack.post",
 ];
 
 const deprecatedContractNames: readonly string[] = ["automate"];
