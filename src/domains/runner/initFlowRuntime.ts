@@ -1,12 +1,17 @@
-import { defaultWebPreset, parseExecutionTarget } from "@qawolf/flow-targets";
+import {
+  defaultWebPreset,
+  parseExecutionTarget,
+  type ExecutionTargetOutput,
+} from "@qawolf/flow-targets";
 import { makeDefaultFs, type Fs } from "~/shell/fs.js";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { isNoEntError } from "~/core/errors.js";
 
 type ConfigureFlowRuntime = (opts: {
-  target: unknown;
+  target: ExecutionTargetOutput;
   webExpectAttributes?: { defaultExpectTimeoutMs: number };
+  mobileExpectAttributes?: { expectTimeoutMs: number };
 }) => Promise<void>;
 
 export type InitFlowRuntimeOptions = {
@@ -18,6 +23,13 @@ export type InitFlowRuntimeOptions = {
    * applied separately via `context.setDefaultTimeout` at launch.
    */
   timeout: number;
+  /**
+   * The flow's execution target. Defaults to the web preset: launch() takes
+   * the browser from the web flow's own target and reads this one only to
+   * rule out Electron. A mobile target makes @qawolf/flows initialize its
+   * mobile `expect`.
+   */
+  target?: ExecutionTargetOutput;
   // When set, resolve @qawolf/flows/_runner from this dir instead of walking up from the flow file.
   depsRoot?: string;
 };
@@ -71,11 +83,10 @@ async function findFlowsRunnerPath(flowPath: string, fs: Fs): Promise<string> {
   }
 }
 
-const initCache = new Map<string, Promise<void>>();
-
 async function doInit(
   flowPath: string,
   timeout: number,
+  target: ExecutionTargetOutput,
   fs: Fs,
   depsRoot?: string,
 ): Promise<void> {
@@ -98,13 +109,20 @@ async function doInit(
     throw new Error(
       `@qawolf/flows _runner at ${runnerPath} does not export configureFlowRuntime`,
     );
-  // One runtime target for every local web flow: launch() takes the browser
-  // from the flow's own target and reads this one to rule out Electron.
+  const isMobile = target.platform === "android" || target.platform === "ios";
   await mod.configureFlowRuntime({
-    target: parseExecutionTarget(defaultWebPreset),
+    target,
     webExpectAttributes: { defaultExpectTimeoutMs: timeout },
+    ...(isMobile
+      ? { mobileExpectAttributes: { expectTimeoutMs: timeout } }
+      : {}),
   });
 }
+
+// The @qawolf/flows runtime is process-global, so only the last
+// configuration is current. A run in one process can mix web and Android
+// flows: a call with a different directory or target configures again.
+let lastInit: { key: string; promise: Promise<void> } | undefined;
 
 export function initFlowRuntime(
   flowPath: string,
@@ -112,17 +130,20 @@ export function initFlowRuntime(
   fs: Fs = makeDefaultFs(),
 ): Promise<void> {
   const startDir = path.dirname(flowPath);
-  // Cache key is startDir, not fs — tests reusing the same startDir must call
-  // _resetInitCache() between runs. Timeout is omitted deliberately: it is a
-  // single run-global flag, so every flow in a process shares one value.
-  let p = initCache.get(startDir);
-  if (!p) {
-    p = doInit(flowPath, options.timeout, fs, options.depsRoot);
-    initCache.set(startDir, p);
+  const target = options.target ?? parseExecutionTarget(defaultWebPreset);
+  // Cache key is startDir and target, not fs — tests reusing the same startDir
+  // must call _resetInitCache() between runs. Timeout is omitted deliberately:
+  // it is a single run-global flag, so every flow in a process shares one value.
+  const key = `${startDir}\0${JSON.stringify(target)}`;
+  if (lastInit?.key !== key) {
+    lastInit = {
+      key,
+      promise: doInit(flowPath, options.timeout, target, fs, options.depsRoot),
+    };
   }
-  return p;
+  return lastInit.promise;
 }
 
 export function _resetInitCache(): void {
-  initCache.clear();
+  lastInit = undefined;
 }

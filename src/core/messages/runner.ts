@@ -29,6 +29,8 @@ export const runnerMessages = {
   noTargetedFlows: `No matched flow declares a target. ${allowNoMatchHint}`,
   noRunnableFlows: `No matched flow has a target the CLI can run locally. ${allowNoMatchHint}`,
   androidBootFailed: "Android boot failed",
+  mobileExpectInitFailed: (detail: string) =>
+    `Could not initialize expect for the Android flow; expect calls will fail: ${detail}`,
   preparingEnvironment: "Preparing environment",
   environmentReady: "Environment ready",
   unrecognizedTarget: (target: string) =>
