@@ -8,13 +8,20 @@ import { redactAndBoundAttemptEvidenceResult } from "./attemptEvidenceText.js";
 const summaryLimit = 10;
 const maxMetadataBytes = 2 * 1024;
 
-function boundNetworkLogText(text: string | undefined, maxBytes: number) {
+export function boundNetworkLogText(
+  text: string | undefined,
+  maxBytes: number,
+) {
   return text === undefined
     ? undefined
     : redactAndBoundAttemptEvidenceResult(text, maxBytes);
 }
 
-function networkLogCoverage(log: NetworkLog, returned: number, total: number) {
+export function networkLogCoverage(
+  log: NetworkLog,
+  returned: number,
+  total: number,
+) {
   return {
     incomplete: !log.closed || log.droppedRows > 0,
     malformed: log.malformed,
@@ -26,13 +33,15 @@ function networkLogCoverage(log: NetworkLog, returned: number, total: number) {
 
 // Stable sort: rows that started at the same time keep the device's order. A
 // row with no start time sorts first, as in the trace summary.
-function byNetworkLogStart(entries: NetworkLogEntry[]): NetworkLogEntry[] {
+export function byNetworkLogStart(
+  entries: NetworkLogEntry[],
+): NetworkLogEntry[] {
   const start = (entry: NetworkLogEntry) =>
     entry.startedAtMilliseconds ?? Number.NEGATIVE_INFINITY;
   return entries.toSorted((left, right) => start(left) - start(right) || 0);
 }
 
-function shapeNetworkLogEntry(entry: NetworkLogEntry) {
+export function shapeNetworkLogEntry(entry: NetworkLogEntry) {
   const url = redactAndBoundAttemptEvidenceResult(entry.url, maxMetadataBytes);
   const failureText = boundNetworkLogText(entry.failureText, maxMetadataBytes);
   return {

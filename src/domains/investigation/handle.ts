@@ -34,6 +34,7 @@ export type InspectOptions = {
   endTimeMs?: string;
   endTimestamp?: string;
   evidenceId?: string;
+  failed?: boolean;
   format: "html" | "text";
   limit?: string;
   method?: string;
@@ -88,10 +89,24 @@ export async function loadSummaryArtifacts(
   return { logs, networkLog: state, trace };
 }
 
+// An attempt without a trace (iOS) reads its requests from the network log.
+async function loadNetworkLogFallback(
+  value: Extract<AttemptArtifacts, { artifactStatus: "signed" }>,
+  type: InspectType,
+  trace: ArtifactInput,
+): Promise<{ networkLog?: ArtifactInput }> {
+  const readsRequests = type === "network" || type === "request";
+  const url = value.artifacts.networkLogsUrl;
+  if (!readsRequests || trace.status === "available" || !url) return {};
+  const download = await downloadNetworkLog(url);
+  const { completedAt } = value.attempt;
+  return { networkLog: networkLogState(download, completedAt, Date.now()) };
+}
+
 export async function loadInspectArtifact(
   value: AttemptArtifacts,
   type: InspectType,
-): Promise<{ logs: ArtifactInput; trace: ArtifactInput }> {
+): Promise<InvestigationRequest["artifacts"]> {
   const inactive = artifactUnavailable("not-captured");
   if (value.artifactStatus !== "signed") {
     const unavailable = artifactUnavailable(value.artifactStatus);
@@ -107,11 +122,13 @@ export async function loadInspectArtifact(
       trace: inactive,
     };
   }
+  const trace = value.artifacts.traceUrl
+    ? await downloadTrace(value.artifacts.traceUrl)
+    : inactive;
   return {
     logs: inactive,
-    trace: value.artifacts.traceUrl
-      ? await downloadTrace(value.artifacts.traceUrl)
-      : inactive,
+    ...(await loadNetworkLogFallback(value, type, trace)),
+    trace,
   };
 }
 
@@ -129,6 +146,7 @@ const filterSelectors: [keyof InspectOptions, string, InspectType[]][] = [
   ["method", "--method", ["network"]],
   ["status", "--status", ["network"]],
   ["urlContains", "--url-contains", ["network"]],
+  ["failed", "--failed", ["network"]],
 ];
 
 function inapplicableFilter(options: InspectOptions): CommandResult {
@@ -278,6 +296,7 @@ export async function handleInvestigationInspect(
       endTimeMilliseconds,
       endTimestamp: options.endTimestamp,
       evidenceId: options.evidenceId,
+      failed: options.failed,
       format: options.format,
       limit,
       method: options.method,
