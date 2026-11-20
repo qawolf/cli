@@ -1,5 +1,19 @@
 # @qawolf/cli
 
+## 2.17.0
+
+### Minor Changes
+
+- d4ebd96: `qawolf attempt inspect --network` and `--request <id>` read the device network log of an iOS attempt: request IDs are the log's cursors and times are epoch milliseconds. `--network --failed` returns only failed requests, for a trace too. When the log cannot be read, the `unavailable` answer has its `networkLogStatus`, such as `pending` for 2 minutes after the attempt ends.
+- 63fa056: `qawolf attempt investigate` lists the failed requests of an iOS attempt. An iOS attempt has no trace, so `networkErrors` now comes from the device network log (`networkLogsUrl`). Each request has a `failureReason`: `http-error`, `connection-failed`, `canceled` or `interrupted`. A normal close of a tunnel QA Wolf did not read is not a failure. App cancels fill only the places other failures leave. For 2 minutes after the attempt ends, a missing log shows as `pending`, and a log that was not read sets `coverage.incomplete`.
+- 582737b: Upgrade `@qawolf/api-contracts` to `0.147.0`.
+  - `qawolf runner run --target <preset>` runs one target of a flow file that lists several, such as a second Mac version.
+  - `qawolf flows list` shows one row per target of such a file, as `--remote` does.
+  - `qawolf slack post` posts a message, or a thread reply, in one of the workspace's own Slack channels. Only a QA Wolf session that a loop started can call it.
+  - `qawolf usage breakdown` documents `qaWolfStaff`, the staff totals that QA Wolf staff see.
+  - `qawolf issue retryFix` documents that the extra try lands on a new branch.
+  - `qawolf issue markFixReadyForReview` documents that QA Wolf opens its own fix pull request ready for review.
+
 ## 2.16.0
 
 ### Minor Changes
