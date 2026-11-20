@@ -45,15 +45,17 @@ const handWrittenContractNames: readonly string[] = [
   "runner.stopRun",
   "runner.takeScreenshot",
   "runner.terminate",
-  "slack.post",
 ];
 
 const deprecatedContractNames: readonly string[] = ["automate"];
+
+const notInPublicCliContractNames: readonly string[] = ["slack.post"];
 
 /** Every contract the generator passes over. */
 export const skippedContractNames: ReadonlySet<string> = new Set([
   ...handWrittenContractNames,
   ...deprecatedContractNames,
+  ...notInPublicCliContractNames,
 ]);
 
 // An optional boolean whose omission and `true` mean the same thing, so only
