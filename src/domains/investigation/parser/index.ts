@@ -12,6 +12,7 @@ import {
   inspectAction,
   inspectActionTimeline,
 } from "./projection/inspectAttemptActions.js";
+import { type NetworkLog, parseNetworkLog } from "./networkLog/networkLog.js";
 import { inspectNetwork } from "./projection/inspectAttemptNetwork.js";
 import { inspectSnapshot } from "./projection/inspectAttemptPage.js";
 import {
@@ -20,6 +21,7 @@ import {
   inspectScreenshot,
 } from "./projection/inspectAttemptRecorded.js";
 import { summarizeAttemptTrace } from "./projection/summarizeAttemptTrace.js";
+import { summarizeNetworkLogErrors } from "./projection/summarizeNetworkLog.js";
 import { parsePlaywrightTraceArchive } from "./trace/playwrightTrace.js";
 
 function traceUnavailable(
@@ -41,12 +43,24 @@ async function parseTrace(request: InvestigationRequest) {
     : undefined;
 }
 
+function parseNetworkLogArtifact(
+  request: InvestigationRequest,
+): NetworkLog | undefined {
+  const input = request.artifacts.networkLog;
+  return input?.status === "available"
+    ? parseNetworkLog(input.bytes)
+    : undefined;
+}
+
 async function summarize(
   request: InvestigationRequest,
 ): Promise<InvestigationResult> {
   const parsed = await parseTrace(request);
   const logs = summarizeExecutionLogs(request.artifacts.logs);
   const traceStatus = parsed?.status ?? request.artifacts.trace.status;
+  // iOS attempts have no trace: their requests come from the network log.
+  const networkLog =
+    parsed && "trace" in parsed ? undefined : parseNetworkLogArtifact(request);
   const emptyCoverage = {
     incomplete: false,
     malformed: 0,
@@ -54,6 +68,13 @@ async function summarize(
     total: 0,
     truncated: false,
   };
+  // A log that exists but was not read (still uploading, too large, link
+  // expired) leaves the failed requests unknown. A 404: nothing was captured.
+  const networkLogStatus = request.artifacts.networkLog?.status;
+  const unread = !["not-captured", "not-found", undefined].includes(
+    networkLogStatus,
+  );
+  const unreadLogCoverage = { ...emptyCoverage, incomplete: unread };
   const traceEvidence =
     parsed && "trace" in parsed
       ? await summarizeAttemptTrace(parsed.trace, request.attempt.error)
@@ -61,11 +82,17 @@ async function summarize(
           actions: { coverage: emptyCoverage, items: [] },
           browserConsole: { coverage: emptyCoverage, items: [] },
           failedBrowserActionAttribution: "none",
-          networkErrors: { coverage: emptyCoverage, items: [] },
+          networkErrors: networkLog
+            ? summarizeNetworkLogErrors(networkLog)
+            : { coverage: unreadLogCoverage, items: [] },
         };
   return {
     ...traceEvidence,
-    artifactStates: { executionLog: logs.artifactState, trace: traceStatus },
+    artifactStates: {
+      executionLog: logs.artifactState,
+      ...(networkLogStatus && { networkLog: networkLogStatus }),
+      trace: traceStatus,
+    },
     importantExecutionLogs: logs.evidence,
     traceStatus,
   };

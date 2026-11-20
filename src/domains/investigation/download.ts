@@ -12,6 +12,8 @@ export type ArtifactDownload =
     };
 
 const traceLimit = 75 * 1024 * 1024;
+// The runner adds no row after 64 MiB; the summary line comes after that.
+const networkLogLimit = 65 * 1024 * 1024;
 const logTailLimit = 5 * 1024 * 1024;
 const logTransferLimit = 50 * 1024 * 1024;
 // Covers the whole transfer: 75 MiB in two minutes requires ~5.24 Mbit/s.
@@ -91,21 +93,36 @@ async function readBounded(
   return { bytes, offset, status: "available" };
 }
 
-export async function downloadTrace(
+async function downloadWhole(
   url: string,
-  fetchImpl: typeof globalThis.fetch = globalThis.fetch,
+  limit: number,
+  fetchImpl: typeof globalThis.fetch,
 ): Promise<ArtifactDownload> {
   try {
     const signal = AbortSignal.timeout(downloadTimeoutMs);
     const response = await fetchImpl(url, { redirect: "follow", signal });
     return await readBounded(response, {
       keepTail: false,
-      retainBytes: traceLimit,
-      transferBytes: traceLimit,
+      retainBytes: limit,
+      transferBytes: limit,
     });
   } catch (error) {
     return downloadFailure(error);
   }
+}
+
+export function downloadTrace(
+  url: string,
+  fetchImpl: typeof globalThis.fetch = globalThis.fetch,
+): Promise<ArtifactDownload> {
+  return downloadWhole(url, traceLimit, fetchImpl);
+}
+
+export function downloadNetworkLog(
+  url: string,
+  fetchImpl: typeof globalThis.fetch = globalThis.fetch,
+): Promise<ArtifactDownload> {
+  return downloadWhole(url, networkLogLimit, fetchImpl);
 }
 
 export async function downloadLogTail(

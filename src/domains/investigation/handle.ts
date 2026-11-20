@@ -11,7 +11,11 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 
-import { downloadLogTail, downloadTrace } from "./download.js";
+import {
+  downloadLogTail,
+  downloadNetworkLog,
+  downloadTrace,
+} from "./download.js";
 import { loadInvestigationParser } from "./lazyParser.js";
 import type {
   ArtifactInput,
@@ -49,22 +53,39 @@ function artifactUnavailable(status: "not-captured" | "signing-failed") {
   return { status } as const;
 }
 
+// The runner can upload the network log up to 2 minutes after the attempt
+// ends: a 404 before that means "not uploaded yet", not "nothing captured".
+const networkLogUploadMilliseconds = 2 * 60 * 1000;
+
+function networkLogState(
+  log: ArtifactInput,
+  completedAt: string | undefined,
+  now: number,
+): ArtifactInput {
+  const sinceEnd = now - Date.parse(completedAt ?? "");
+  const uploading = sinceEnd < networkLogUploadMilliseconds;
+  return log.status === "not-found" && uploading ? { status: "pending" } : log;
+}
+
 export async function loadSummaryArtifacts(
   value: AttemptArtifacts,
-): Promise<{ logs: ArtifactInput; trace: ArtifactInput }> {
+  now = Date.now(),
+): Promise<InvestigationRequest["artifacts"]> {
   if (value.artifactStatus !== "signed") {
     const unavailable = artifactUnavailable(value.artifactStatus);
-    return { logs: unavailable, trace: unavailable };
+    return { logs: unavailable, networkLog: unavailable, trace: unavailable };
   }
-  const [logs, trace] = await Promise.all([
-    value.artifacts.logsUrl
-      ? downloadLogTail(value.artifacts.logsUrl)
-      : artifactUnavailable("not-captured"),
-    value.artifacts.traceUrl
-      ? downloadTrace(value.artifacts.traceUrl)
-      : artifactUnavailable("not-captured"),
+  const { logsUrl, networkLogsUrl, traceUrl } = value.artifacts;
+  const notCaptured = artifactUnavailable("not-captured");
+  const [logs, trace, networkLog] = await Promise.all([
+    logsUrl ? downloadLogTail(logsUrl) : notCaptured,
+    traceUrl ? downloadTrace(traceUrl) : notCaptured,
+    networkLogsUrl ? downloadNetworkLog(networkLogsUrl) : notCaptured,
   ]);
-  return { logs, trace };
+  // A trace has the requests: the network log is not read.
+  if (trace.status === "available") return { logs, trace };
+  const state = networkLogState(networkLog, value.attempt.completedAt, now);
+  return { logs, networkLog: state, trace };
 }
 
 export async function loadInspectArtifact(
