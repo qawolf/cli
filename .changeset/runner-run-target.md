@@ -9,3 +9,4 @@ Upgrade `@qawolf/api-contracts` to `0.147.0`.
 - `qawolf slack post` posts a message, or a thread reply, in one of the workspace's own Slack channels. Only a QA Wolf session that a loop started can call it.
 - `qawolf usage breakdown` documents `qaWolfStaff`, the staff totals that QA Wolf staff see.
 - `qawolf issue retryFix` documents that the extra try lands on a new branch.
+- `qawolf issue markFixReadyForReview` documents that QA Wolf opens its own fix pull request ready for review.
