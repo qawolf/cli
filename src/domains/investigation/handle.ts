@@ -11,7 +11,11 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 
-import { downloadLogTail, downloadTrace } from "./download.js";
+import {
+  downloadLogTail,
+  downloadNetworkLog,
+  downloadTrace,
+} from "./download.js";
 import { loadInvestigationParser } from "./lazyParser.js";
 import type {
   ArtifactInput,
@@ -51,20 +55,19 @@ function artifactUnavailable(status: "not-captured" | "signing-failed") {
 
 export async function loadSummaryArtifacts(
   value: AttemptArtifacts,
-): Promise<{ logs: ArtifactInput; trace: ArtifactInput }> {
+): Promise<InvestigationRequest["artifacts"]> {
   if (value.artifactStatus !== "signed") {
     const unavailable = artifactUnavailable(value.artifactStatus);
     return { logs: unavailable, trace: unavailable };
   }
-  const [logs, trace] = await Promise.all([
-    value.artifacts.logsUrl
-      ? downloadLogTail(value.artifacts.logsUrl)
-      : artifactUnavailable("not-captured"),
-    value.artifacts.traceUrl
-      ? downloadTrace(value.artifacts.traceUrl)
-      : artifactUnavailable("not-captured"),
+  const { logsUrl, networkLogsUrl, traceUrl } = value.artifacts;
+  const notCaptured = artifactUnavailable("not-captured");
+  const [logs, trace, networkLog] = await Promise.all([
+    logsUrl ? downloadLogTail(logsUrl) : notCaptured,
+    traceUrl ? downloadTrace(traceUrl) : notCaptured,
+    networkLogsUrl ? downloadNetworkLog(networkLogsUrl) : notCaptured,
   ]);
-  return { logs, trace };
+  return { logs, networkLog, trace };
 }
 
 export async function loadInspectArtifact(

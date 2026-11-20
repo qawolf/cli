@@ -53,6 +53,7 @@ describe("investigation artifact selection", () => {
 
     expect(requested.sort()).toEqual([
       "https://storage.invalid/logs.txt?token=secret",
+      "https://storage.invalid/network.ndjson?token=secret",
       "https://storage.invalid/trace.zip?token=secret",
     ]);
   });

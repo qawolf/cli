@@ -5,6 +5,7 @@ export function attemptArtifactsFixture(): AttemptArtifacts {
     artifactStatus: "signed",
     artifacts: {
       logsUrl: "https://storage.invalid/logs.txt?token=secret",
+      networkLogsUrl: "https://storage.invalid/network.ndjson?token=secret",
       traceUrl: "https://storage.invalid/trace.zip?token=secret",
     },
     attempt: {

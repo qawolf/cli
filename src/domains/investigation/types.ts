@@ -21,7 +21,12 @@ export type InspectType =
   | "log";
 
 export type InvestigationRequest = {
-  artifacts: { logs: ArtifactInput; trace: ArtifactInput };
+  artifacts: {
+    logs: ArtifactInput;
+    /** The iOS device network log; absent when it was not downloaded. */
+    networkLog?: ArtifactInput;
+    trace: ArtifactInput;
+  };
   attempt: {
     attemptId: string;
     error?: string | undefined;
