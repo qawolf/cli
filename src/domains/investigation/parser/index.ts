@@ -32,8 +32,11 @@ function traceUnavailable(
   request: InvestigationRequest,
   traceStatus: string,
 ): InvestigationResult {
+  // Why an iOS attempt has no requests: the log is pending, missing, too large…
+  const networkLogStatus = request.artifacts.networkLog?.status;
   return {
     attemptId: request.attempt.attemptId,
+    ...(networkLogStatus && { networkLogStatus }),
     status: "unavailable",
     traceStatus,
     type: request.inspect?.type ?? "summary",

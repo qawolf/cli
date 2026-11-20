@@ -219,8 +219,9 @@ Options:
   --method <method>         Network HTTP method
   --status <code>           Network HTTP status
   --url-contains <text>     Network URL substring
-  --failed                  Only failed network requests: no response, HTTP
-                            status 400 or more, or an error
+  --failed                  Only failed network requests. In a trace: no
+                            response, HTTP status 400 or more, or an error. In
+                            an iOS network log: requests with a failureReason
   --format <format>         Snapshot format (text or html) (default: "text")
   --output-file <path>      Write HTML or screenshot bytes without overwriting
   -h, --help                display help for command

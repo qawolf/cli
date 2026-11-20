@@ -98,7 +98,9 @@ async function loadNetworkLogFallback(
   const readsRequests = type === "network" || type === "request";
   const url = value.artifacts.networkLogsUrl;
   if (!readsRequests || trace.status === "available" || !url) return {};
-  return { networkLog: await downloadNetworkLog(url) };
+  const download = await downloadNetworkLog(url);
+  const { completedAt } = value.attempt;
+  return { networkLog: networkLogState(download, completedAt, Date.now()) };
 }
 
 export async function loadInspectArtifact(

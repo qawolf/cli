@@ -71,7 +71,7 @@ export function registerAttemptCommand(
     .option("--url-contains <text>", "Network URL substring")
     .option(
       "--failed",
-      "Only failed network requests: no response, HTTP status 400 or more, or an error",
+      "Only failed network requests. In a trace: no response, HTTP status 400 or more, or an error. In an iOS network log: requests with a failureReason",
     )
     .option(
       "--format <format>",

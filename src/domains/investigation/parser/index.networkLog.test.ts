@@ -114,10 +114,11 @@ describe("investigation of an attempt with a network log and no trace", () => {
   it("keeps the trace answer for other evidence and for no network log", async () => {
     const timeline = await investigate(iosRequest({ type: "timeline" }));
     const withoutLog = iosRequest({});
-    withoutLog.artifacts.networkLog = { status: "not-found" };
+    withoutLog.artifacts.networkLog = { status: "pending" };
 
     expect(timeline).toMatchObject({ status: "unavailable" });
     expect(await investigate(withoutLog)).toMatchObject({
+      networkLogStatus: "pending",
       status: "unavailable",
       traceStatus: "not-found",
     });
