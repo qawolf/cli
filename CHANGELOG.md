@@ -1,5 +1,11 @@
 # @qawolf/cli
 
+## 2.19.0
+
+### Minor Changes
+
+- dc773cc: Removes `qawolf slack post`, which was not meant to ship in the public CLI. Running it now reports an unknown command.
+
 ## 2.18.0
 
 ### Minor Changes
