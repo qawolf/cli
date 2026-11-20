@@ -28,8 +28,6 @@ Commands:
                                evidence
   runner [options]             Drive an interactive runner on the QA Wolf
                                platform
-  slack                        Post in the workspace's Slack channels from a
-                               loop
   activity                     QA Wolf public API activity commands
   codeHostIntegration          QA Wolf public API codeHostIntegration commands
   deployment                   QA Wolf public API deployment commands
