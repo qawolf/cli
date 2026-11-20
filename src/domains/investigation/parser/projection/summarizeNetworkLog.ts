@@ -24,11 +24,12 @@ function networkLogCoverage(log: NetworkLog, returned: number, total: number) {
   };
 }
 
-// Stable sort: rows that started at the same time keep the device's order.
+// Stable sort: rows that started at the same time keep the device's order. A
+// row with no start time sorts first, as in the trace summary.
 function byNetworkLogStart(entries: NetworkLogEntry[]): NetworkLogEntry[] {
   const start = (entry: NetworkLogEntry) =>
-    entry.startedAtMilliseconds ?? Number.MAX_SAFE_INTEGER;
-  return entries.toSorted((left, right) => start(left) - start(right));
+    entry.startedAtMilliseconds ?? Number.NEGATIVE_INFINITY;
+  return entries.toSorted((left, right) => start(left) - start(right) || 0);
 }
 
 function shapeNetworkLogEntry(entry: NetworkLogEntry) {
@@ -51,14 +52,23 @@ function shapeNetworkLogEntry(entry: NetworkLogEntry) {
   };
 }
 
-// The last failed requests before the attempt ended, as for a trace.
+// The last failed requests before the attempt ended, as for a trace. App
+// cancels only fill the places that other failures leave.
 export function summarizeNetworkLogErrors(log: NetworkLog) {
   const failed = byNetworkLogStart(
     log.entries.filter((entry) => entry.failureReason),
   );
-  const items = failed.slice(-summaryLimit).map(shapeNetworkLogEntry);
+  const isCanceled = (entry: NetworkLogEntry) =>
+    entry.failureReason === "canceled";
+  const others = failed.filter((entry) => !isCanceled(entry));
+  const places = Math.max(0, summaryLimit - others.length);
+  const kept = new Set([
+    ...others.slice(-summaryLimit),
+    ...(places === 0 ? [] : failed.filter(isCanceled).slice(-places)),
+  ]);
+  const items = failed.filter((entry) => kept.has(entry));
   return {
     coverage: networkLogCoverage(log, items.length, failed.length),
-    items,
+    items: items.map(shapeNetworkLogEntry),
   };
 }

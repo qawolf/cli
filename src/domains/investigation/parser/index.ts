@@ -68,6 +68,13 @@ async function summarize(
     total: 0,
     truncated: false,
   };
+  // A log that exists but was not read (still uploading, too large, link
+  // expired) leaves the failed requests unknown. A 404: nothing was captured.
+  const networkLogStatus = request.artifacts.networkLog?.status;
+  const unread = !["not-captured", "not-found", undefined].includes(
+    networkLogStatus,
+  );
+  const unreadLogCoverage = { ...emptyCoverage, incomplete: unread };
   const traceEvidence =
     parsed && "trace" in parsed
       ? await summarizeAttemptTrace(parsed.trace, request.attempt.error)
@@ -77,9 +84,8 @@ async function summarize(
           failedBrowserActionAttribution: "none",
           networkErrors: networkLog
             ? summarizeNetworkLogErrors(networkLog)
-            : { coverage: emptyCoverage, items: [] },
+            : { coverage: unreadLogCoverage, items: [] },
         };
-  const networkLogStatus = request.artifacts.networkLog?.status;
   return {
     ...traceEvidence,
     artifactStates: {

@@ -74,8 +74,8 @@ function toHeaders(value: unknown): Record<string, string> {
   );
 }
 
-// A tunnel QA Wolf did not read (`encrypted`, `connection`) ends with EOF when
-// either side closes it: that is not a failure.
+// A tunnel QA Wolf did not read ends with EOF when either side closes it: not a
+// failure. Another error on a `connection` line (no TLS seen) is a failed dial.
 export function networkFailureReason(
   kind: string,
   status: number,
@@ -86,7 +86,7 @@ export function networkFailureReason(
   if (failureText === undefined) return undefined;
   if (failureText === "context canceled") return "canceled";
   if (kind !== "http" && failureText === "EOF") return undefined;
-  return "interrupted";
+  return kind === "connection" ? "connection-failed" : "interrupted";
 }
 
 function toEntry(

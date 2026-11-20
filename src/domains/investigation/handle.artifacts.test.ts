@@ -57,4 +57,19 @@ describe("investigation artifact selection", () => {
       "https://storage.invalid/trace.zip?token=secret",
     ]);
   });
+
+  it("keeps a 404 network log pending for 2 minutes after the attempt", async () => {
+    globalThis.fetch = mock(
+      async () => new Response("", { status: 404 }),
+    ) as unknown as typeof fetch;
+    const value = fixture();
+    if (value.artifactStatus !== "signed") throw new Error("signed fixture");
+    value.attempt.completedAt = "2026-09-29T00:10:00.000Z";
+    const ended = Date.parse(value.attempt.completedAt);
+
+    const soon = await loadSummaryArtifacts(value, ended + 60_000);
+    const later = await loadSummaryArtifacts(value, ended + 180_000);
+    expect(soon.networkLog?.status).toBe("pending");
+    expect(later.networkLog?.status).toBe("not-found");
+  });
 });

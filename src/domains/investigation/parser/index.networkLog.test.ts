@@ -5,16 +5,17 @@ import type { InvestigationRequest } from "~/domains/investigation/types.js";
 import { investigate } from "./index.js";
 import {
   networkLogFixture,
+  networkLogRow,
   networkLogSummaryRow,
   toNdjson,
 } from "./networkLog/networkLog.fixtures.js";
 
-function iosRequest(): InvestigationRequest {
+function iosRequest(rows = networkLogFixture()): InvestigationRequest {
   return {
     artifacts: {
       logs: { status: "not-captured" },
       networkLog: {
-        bytes: toNdjson([...networkLogFixture(), networkLogSummaryRow]),
+        bytes: toNdjson([...rows, networkLogSummaryRow]),
         offset: 0,
         status: "available",
       },
@@ -61,5 +62,34 @@ describe("investigation of an attempt with a network log and no trace", () => {
         }),
       ],
     });
+  });
+
+  it("lists other failures before app cancels", async () => {
+    const cancels = Array.from({ length: 11 }, (_, index) =>
+      networkLogRow({ err: "context canceled", seq: 10 + index, status: 0 }),
+    );
+    const noStart = networkLogRow({ seq: 2, startedAt: "", status: 404 });
+    const rows = [networkLogRow({ seq: 1, status: 500 }), ...cancels, noStart];
+    const result = await investigate(iosRequest(rows));
+
+    const { coverage, items } = result["networkErrors"] as {
+      coverage: unknown;
+      items: { status: number }[];
+    };
+    expect(coverage).toMatchObject({ total: 13, truncated: true });
+    const statuses = items.map((item) => item.status).join(" ");
+    expect(statuses).toBe("404 500 0 0 0 0 0 0 0 0");
+  });
+
+  it("marks the failed requests unknown while the log is not read", async () => {
+    const coverageFor = async (status: "not-found" | "pending") => {
+      const request = iosRequest();
+      request.artifacts.networkLog = { status };
+      const result = await investigate(request);
+      return (result["networkErrors"] as { coverage: unknown }).coverage;
+    };
+
+    expect(await coverageFor("pending")).toMatchObject({ incomplete: true });
+    expect(await coverageFor("not-found")).toMatchObject({ incomplete: false });
   });
 });

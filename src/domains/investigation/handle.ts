@@ -53,12 +53,27 @@ function artifactUnavailable(status: "not-captured" | "signing-failed") {
   return { status } as const;
 }
 
+// The runner can upload the network log up to 2 minutes after the attempt
+// ends: a 404 before that means "not uploaded yet", not "nothing captured".
+const networkLogUploadMilliseconds = 2 * 60 * 1000;
+
+function networkLogState(
+  log: ArtifactInput,
+  completedAt: string | undefined,
+  now: number,
+): ArtifactInput {
+  const sinceEnd = now - Date.parse(completedAt ?? "");
+  const uploading = sinceEnd < networkLogUploadMilliseconds;
+  return log.status === "not-found" && uploading ? { status: "pending" } : log;
+}
+
 export async function loadSummaryArtifacts(
   value: AttemptArtifacts,
+  now = Date.now(),
 ): Promise<InvestigationRequest["artifacts"]> {
   if (value.artifactStatus !== "signed") {
     const unavailable = artifactUnavailable(value.artifactStatus);
-    return { logs: unavailable, trace: unavailable };
+    return { logs: unavailable, networkLog: unavailable, trace: unavailable };
   }
   const { logsUrl, networkLogsUrl, traceUrl } = value.artifacts;
   const notCaptured = artifactUnavailable("not-captured");
@@ -67,7 +82,10 @@ export async function loadSummaryArtifacts(
     traceUrl ? downloadTrace(traceUrl) : notCaptured,
     networkLogsUrl ? downloadNetworkLog(networkLogsUrl) : notCaptured,
   ]);
-  return { logs, networkLog, trace };
+  // A trace has the requests: the network log is not read.
+  if (trace.status === "available") return { logs, trace };
+  const state = networkLogState(networkLog, value.attempt.completedAt, now);
+  return { logs, networkLog: state, trace };
 }
 
 export async function loadInspectArtifact(

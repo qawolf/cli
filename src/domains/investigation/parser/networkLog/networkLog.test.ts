@@ -59,6 +59,7 @@ describe("networkFailureReason", () => {
     ["http", 200, undefined, undefined],
     ["encrypted", 0, "EOF", undefined],
     ["connection", 0, "EOF", undefined],
+    ["connection", 0, "no such host", "connection-failed"],
     ["encrypted", 0, "read: connection reset by peer", "interrupted"],
     ["connection-failed", 0, "remote error", "connection-failed"],
   ] as const)("%s %d %s → %s", (kind, status, failureText, expected) => {

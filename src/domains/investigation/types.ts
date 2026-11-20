@@ -4,6 +4,7 @@ export type ArtifactInput =
       status:
         | "expired-url"
         | "not-found"
+        | "pending"
         | "timed-out"
         | "too-large"
         | "unavailable";
