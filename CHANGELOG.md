@@ -1,5 +1,11 @@
 # @qawolf/cli
 
+## 2.16.0
+
+### Minor Changes
+
+- dce7d15: `qawolf run create --no-investigate-failures` creates a run that QA Wolf does not investigate automatically. Leaving it out keeps the workspace's policy, as before.
+
 ## 2.15.0
 
 ### Minor Changes
