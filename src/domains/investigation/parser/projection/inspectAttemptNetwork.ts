@@ -43,6 +43,7 @@ export async function inspectNetwork(
   target: {
     beforeRequestId?: string;
     endTimeMilliseconds?: number;
+    failed?: boolean;
     limit: number;
     method?: string;
     startTimeMilliseconds?: number;
@@ -57,6 +58,10 @@ export async function inspectNetwork(
   const filtered = listed.items
     .filter(
       (request) =>
+        (target.failed !== true ||
+          !request.status ||
+          request.status >= 400 ||
+          request.failureText !== undefined) &&
         (target.method === undefined ||
           request.method.toLowerCase() === target.method.toLowerCase()) &&
         (target.status === undefined || request.status === target.status) &&

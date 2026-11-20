@@ -58,6 +58,25 @@ describe("investigation artifact selection", () => {
     ]);
   });
 
+  it("reads requests from the network log only when the trace is missing", async () => {
+    const requested: string[] = [];
+    globalThis.fetch = mock(async (input: string | URL | Request) => {
+      const url = requestUrl(input);
+      requested.push(url);
+      return new Response("", { status: url.includes("trace") ? 404 : 200 });
+    }) as unknown as typeof fetch;
+
+    const network = await loadInspectArtifact(fixture(), "network");
+    await loadInspectArtifact(fixture(), "timeline");
+
+    expect(network.networkLog?.status).toBe("available");
+    expect(requested).toEqual([
+      "https://storage.invalid/trace.zip?token=secret",
+      "https://storage.invalid/network.ndjson?token=secret",
+      "https://storage.invalid/trace.zip?token=secret",
+    ]);
+  });
+
   it("keeps a 404 network log pending for 2 minutes after the attempt", async () => {
     globalThis.fetch = mock(
       async () => new Response("", { status: 404 }),

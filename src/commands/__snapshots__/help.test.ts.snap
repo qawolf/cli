@@ -208,8 +208,10 @@ Options:
   --limit <number>          Maximum entries to return, 20 by default and up to
                             100: the most recent for --timeline, --network and
                             --log, the earliest for --console
-  --start-time-ms <number>  Earliest trace timestamp in milliseconds
-  --end-time-ms <number>    Latest trace timestamp in milliseconds
+  --start-time-ms <number>  Earliest trace timestamp in milliseconds (epoch
+                            milliseconds for an iOS network log)
+  --end-time-ms <number>    Latest trace timestamp in milliseconds (epoch
+                            milliseconds for an iOS network log)
   --start-timestamp <iso>   Earliest execution log timestamp
   --end-timestamp <iso>     Latest execution log timestamp
   --source <source>         Execution log source (choices:
@@ -217,6 +219,8 @@ Options:
   --method <method>         Network HTTP method
   --status <code>           Network HTTP status
   --url-contains <text>     Network URL substring
+  --failed                  Only failed network requests: no response, HTTP
+                            status 400 or more, or an error
   --format <format>         Snapshot format (text or html) (default: "text")
   --output-file <path>      Write HTML or screenshot bytes without overwriting
   -h, --help                display help for command

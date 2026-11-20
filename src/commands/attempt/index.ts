@@ -52,9 +52,12 @@ export function registerAttemptCommand(
     )
     .option(
       "--start-time-ms <number>",
-      "Earliest trace timestamp in milliseconds",
+      "Earliest trace timestamp in milliseconds (epoch milliseconds for an iOS network log)",
     )
-    .option("--end-time-ms <number>", "Latest trace timestamp in milliseconds")
+    .option(
+      "--end-time-ms <number>",
+      "Latest trace timestamp in milliseconds (epoch milliseconds for an iOS network log)",
+    )
     .option("--start-timestamp <iso>", "Earliest execution log timestamp")
     .option("--end-timestamp <iso>", "Latest execution log timestamp")
     .addOption(
@@ -66,6 +69,10 @@ export function registerAttemptCommand(
     .option("--method <method>", "Network HTTP method")
     .option("--status <code>", "Network HTTP status")
     .option("--url-contains <text>", "Network URL substring")
+    .option(
+      "--failed",
+      "Only failed network requests: no response, HTTP status 400 or more, or an error",
+    )
     .option(
       "--format <format>",
       "Snapshot format (text or html)",

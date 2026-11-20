@@ -39,6 +39,7 @@ export type InvestigationRequest = {
     endTimeMilliseconds?: number | undefined;
     endTimestamp?: string | undefined;
     evidenceId?: string | undefined;
+    failed?: boolean | undefined;
     format: "html" | "text";
     limit: number;
     method?: string | undefined;

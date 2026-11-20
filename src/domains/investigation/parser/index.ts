@@ -20,8 +20,12 @@ import {
   inspectRequest,
   inspectScreenshot,
 } from "./projection/inspectAttemptRecorded.js";
-import { summarizeAttemptTrace } from "./projection/summarizeAttemptTrace.js";
+import {
+  inspectNetworkLog,
+  inspectNetworkLogRequest,
+} from "./projection/inspectNetworkLog.js";
 import { summarizeNetworkLogErrors } from "./projection/summarizeNetworkLog.js";
+import { summarizeAttemptTrace } from "./projection/summarizeAttemptTrace.js";
 import { parsePlaywrightTraceArchive } from "./trace/playwrightTrace.js";
 
 function traceUnavailable(
@@ -52,13 +56,56 @@ function parseNetworkLogArtifact(
     : undefined;
 }
 
+function networkFilter(target: NonNullable<InvestigationRequest["inspect"]>) {
+  return {
+    ...(target.endTimeMilliseconds !== undefined && {
+      endTimeMilliseconds: target.endTimeMilliseconds,
+    }),
+    ...(target.failed === true && { failed: true }),
+    limit: target.limit,
+    ...(target.method !== undefined && { method: target.method }),
+    ...(target.startTimeMilliseconds !== undefined && {
+      startTimeMilliseconds: target.startTimeMilliseconds,
+    }),
+    ...(target.status !== undefined && { status: target.status }),
+    type: "network" as const,
+    ...(target.urlContains !== undefined && {
+      urlContains: target.urlContains,
+    }),
+  };
+}
+
+// iOS attempts have no trace: requests come from the device network log, with
+// the log's cursor as request ID and epoch milliseconds as times.
+function inspectFromNetworkLog(
+  request: InvestigationRequest,
+  log: NetworkLog,
+): InvestigationResult {
+  const target = request.inspect!;
+  const common = {
+    attemptId: request.attempt.attemptId,
+    flowId: request.flowId,
+    networkLogStatus:
+      log.closed && log.droppedRows === 0
+        ? ("ready" as const)
+        : ("partial" as const),
+    runId: request.runId,
+    traceStatus: "not-applicable" as const,
+  };
+  return target.type === "request"
+    ? inspectNetworkLogRequest(log, common, {
+        requestId: target.requestId!,
+        type: target.type,
+      })
+    : inspectNetworkLog(log, common, networkFilter(target));
+}
+
 async function summarize(
   request: InvestigationRequest,
 ): Promise<InvestigationResult> {
   const parsed = await parseTrace(request);
   const logs = summarizeExecutionLogs(request.artifacts.logs);
   const traceStatus = parsed?.status ?? request.artifacts.trace.status;
-  // iOS attempts have no trace: their requests come from the network log.
   const networkLog =
     parsed && "trace" in parsed ? undefined : parseNetworkLogArtifact(request);
   const emptyCoverage = {
@@ -104,11 +151,15 @@ async function inspect(
   const target = request.inspect!;
   if (target.type === "log") return inspectExecutionLogs(request);
   const parsed = await parseTrace(request);
-  if (!parsed || !("trace" in parsed))
+  if (!parsed || !("trace" in parsed)) {
+    const networkLog = parseNetworkLogArtifact(request);
+    if (networkLog && (target.type === "network" || target.type === "request"))
+      return inspectFromNetworkLog(request, networkLog);
     return traceUnavailable(
       request,
       parsed?.status ?? request.artifacts.trace.status,
     );
+  }
   const common = {
     attemptId: request.attempt.attemptId,
     flowId: request.flowId,
@@ -130,21 +181,7 @@ async function inspect(
         type: target.type,
       });
     case "network":
-      return inspectNetwork(parsed.trace, common, {
-        ...(target.endTimeMilliseconds !== undefined && {
-          endTimeMilliseconds: target.endTimeMilliseconds,
-        }),
-        limit: target.limit,
-        ...(target.method !== undefined && { method: target.method }),
-        ...(target.startTimeMilliseconds !== undefined && {
-          startTimeMilliseconds: target.startTimeMilliseconds,
-        }),
-        ...(target.status !== undefined && { status: target.status }),
-        type: target.type,
-        ...(target.urlContains !== undefined && {
-          urlContains: target.urlContains,
-        }),
-      });
+      return inspectNetwork(parsed.trace, common, networkFilter(target));
     case "request":
       return inspectRequest(parsed.trace, common, {
         requestId: target.requestId!,
