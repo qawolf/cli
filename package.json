@@ -88,8 +88,8 @@
   },
   "devDependencies": {
     "@changesets/cli": "2.31.0",
-    "@qawolf/flows": "0.3.0",
-    "@qawolf/testkit": "1.2.1",
+    "@qawolf/flows": "0.5.0",
+    "@qawolf/testkit": "3.0.0",
     "@tsconfig/bun": "1.0.10",
     "@tsconfig/strictest": "2.0.8",
     "@types/bun": "1.4.1",
@@ -103,7 +103,7 @@
     "oxfmt": "0.54.0",
     "oxlint": "1.69.0",
     "oxlint-tsgolint": "0.23.0",
-    "playwright": "1.62.0",
+    "playwright": "1.65.1",
     "webdriverio": "9.27.1"
   },
   "engines": {
