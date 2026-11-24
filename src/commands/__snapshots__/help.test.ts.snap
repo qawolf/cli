@@ -30,6 +30,7 @@ Commands:
                                platform
   activity                     QA Wolf public API activity commands
   codeHostIntegration          QA Wolf public API codeHostIntegration commands
+  codingAgent                  QA Wolf public API codingAgent commands
   deployment                   QA Wolf public API deployment commands
   email                        QA Wolf public API email commands
   environment                  QA Wolf public API environment commands

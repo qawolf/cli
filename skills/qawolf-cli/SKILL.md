@@ -155,6 +155,11 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf codeHostIntegration find` | read | List the workspace's code host integrations (GitHub or GitLab). A connected integration lets QA Wolf read repositories and receive the code host's webhooks. codeHostIntegration.listRepositories pages the repositories each integration covers. |
 | `qawolf codeHostIntegration findForRepository` | read | Check whether QA Wolf can read a repository through the workspace's code host integrations, and what it can access: the repository's code and its pull requests. A CI job calls this before reporting a deployment to decide which changes to include. Not covered means QA Wolf only knows the changes the report includes; settingsUrl is where a workspace admin connects the code host. |
 | `qawolf codeHostIntegration listRepositories` | read | List the repositories the workspace's code host integrations cover, alphabetical by full name. The list reflects the last sync from the code host; codeHostIntegration.find lists the integrations themselves. |
+| `qawolf codingAgent getWebhook` | read | Get the workspace's coding agent webhook: its host, its status, and the last four characters of its signing secret. The URL is shown only to a caller who can change the webhook. QA Wolf never shows the full secret here. |
+| `qawolf codingAgent removeWebhook` | write | Remove the workspace's coding agent webhook. QA Wolf deletes its URL and its signing secrets. New fixes then go to the GitHub workflow or the GitLab job. Only a signed-in admin of the workspace's organization can call it. |
+| `qawolf codingAgent rotateWebhookSecret` | write | Replace the signing secret of the workspace's coding agent webhook, and return the new secret one time. Store it at once, because QA Wolf cannot show it again. Deploy it to your receiver in 24 hours or less: after that, QA Wolf signs with the new secret only. Only a signed-in admin of the workspace's organization can call it. |
+| `qawolf codingAgent sendWebhookTest` | write | Send one signed test request with "test": true and a sample bug to the workspace's coding agent webhook, and return how the endpoint answered. A workspace can send one test every 10 seconds. Only a signed-in admin of the workspace's organization can call it. |
+| `qawolf codingAgent submitWebhook` | write | Save the URL of the workspace's coding agent webhook. While the webhook is on, QA Wolf posts each fix of the workspace to it. The first save creates a signing secret and returns it one time. For the qawolf format, store it at once, because QA Wolf cannot show it again. The cursor-automation and claude-code-routine formats do not use it. A new URL for an existing webhook keeps the secret. Only a signed-in admin of the workspace's organization can call it. |
 | `qawolf deployment find` | read | List the deployments QA Wolf has received for the workspace, newest first. A deployment arrives through a code host integration's webhook or through deployment.reportStatus, and is what a deployment trigger evaluates against. deployment.listTriggerEvaluations reports each trigger's verdict for one deployment. |
 | `qawolf deployment listTriggerEvaluations` | read | List the per-trigger verdicts recorded when a deployment was evaluated against the workspace's triggers. Each verdict says whether the trigger matched, did not match with the reason per condition, or was never considered and why. Verdicts are a snapshot from evaluation time: editing or deleting a trigger later does not change them. |
 | `qawolf deployment reportStatus` | write | Report a deployment lifecycle status. A deployment's first success report evaluates global triggers asynchronously, and it is the only report that does: a trigger added or unpaused later does not make an already reported deployment evaluate again. Report that deployment under a new providerDeploymentId to evaluate it against the current triggers. The response contains the deployment only, not the resulting runs. |
@@ -259,7 +264,7 @@ that `url`; never guess a route and never send a repository link in its place.
 | `qawolf suggestion get` | read | Read one coverage suggestion QA Wolf made while exploring an environment: its state, the flow it proposes, the bug report or coverage request behind it, and the decisions it takes now. Use this, not issue.get, for a suggestion id. A suggestion QA Wolf withdrew reads as not found. |
 | `qawolf tag create` | write | Create a tag on the caller's team. Tags select flows in run.create. |
 | `qawolf tag list` | read | List the team's tags, alphabetical by name. Tag names select flows in run.create. |
-| `qawolf trigger create` | write | Create a trigger. A schedule trigger fires on a cadence; a deployment trigger fires when a matching deployment is reported. Its action runs flows, or, as startAgent, starts a QA Wolf session that carries out its instructions. A startAgent trigger made with a team API key has no owner, so it stays paused until a person takes ownership of it in the app. |
+| `qawolf trigger create` | write | Create a trigger, which the app calls a loop. A schedule trigger fires on a cadence. A deployment trigger fires when a matching deployment is reported. An issue trigger fires when a bug, a blocker (maintenance) or a coverage request changes. Its action runs flows, or, as startAgent, starts a QA Wolf session that carries out its instructions. To fix each new bug, send kind "issue", issueType "bug", issueEvent "created", and an action of kind "startAgent" with the instructions to follow. A startAgent trigger made with a team API key has no owner, so it stays paused until a person takes ownership of it in the app. |
 | `qawolf trigger delete` | write | Delete a trigger permanently. The runs it already created are kept. To stop a trigger without losing it, use trigger.pause. |
 | `qawolf trigger find` | read | List the team's triggers, newest first. |
 | `qawolf trigger get` | read | Get one trigger by id. |
@@ -330,6 +335,45 @@ Expect quiet stretches. QA Wolf reports a session as working and says nothing
 more until the AI speaks, so several minutes with no output is the session
 working, not the command hanging. `--timeout` bounds the wait; it is 30 minutes
 by default.
+
+## Fixing bugs with the team's coding agent
+
+QA Wolf can send each new bug to the team's own cloud coding agent. Two steps
+set it up.
+
+1. Save the webhook with `qawolf codingAgent submitWebhook --url <url>`. Pick
+   the `--format` from the agent that receives it:
+   - `qawolf` is the generic webhook: a signed `fix.requested` JSON for Warp,
+     Devin, Factory, the QA Wolf relay or the team's own service. A new webhook
+     uses it when `--format` is omitted. A saved webhook keeps its format.
+   - `cursor-automation` takes the webhook URL of a Cursor automation.
+   - `claude-code-routine` takes the Fire URL of a Claude Code scheduled task.
+
+   The two vendor formats need `--trigger-token` on each save. Read the token
+   from an environment variable, so it does not stay in the shell history.
+
+2. Create the loop that sends each new bug to the agent:
+
+   ```bash
+   qawolf trigger create --name "Fix new bugs" --kind issue \
+     --issue-type bug --issue-event created --action-kind startAgent \
+     --action-instructions "Fix the bug using /coding-agent. Keep the change small."
+   ```
+
+The first save of a `qawolf` webhook, and `rotateWebhookSecret`, return the
+signing secret one time. Give it to the user for the service that receives the
+webhook. Never write it to a file, a log or a commit, because QA Wolf cannot
+show it again. `qawolf codingAgent getWebhook` shows only its last four
+characters.
+
+Only a signed-in admin of the workspace's organization can save, test, rotate
+or remove the webhook. After a save, `qawolf codingAgent sendWebhookTest`
+sends one signed test request and reports how the endpoint answered. It can
+run once every 10 seconds.
+
+A loop created with a team API key has no owner, so it stays paused until a
+person takes ownership of it in the app. Tell the user to open the loop and
+take ownership.
 
 ## Uploading an app build: `build upload`
 
