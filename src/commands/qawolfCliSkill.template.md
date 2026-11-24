@@ -201,8 +201,8 @@ set it up.
 1. Save the webhook with `qawolf codingAgent submitWebhook --url <url>`. Pick
    the `--format` from the agent that receives it:
    - `qawolf` is the generic webhook: a signed `fix.requested` JSON for Warp,
-     Devin, Factory, the QA Wolf relay or the team's own service. A new webhook
-     uses it when `--format` is omitted. A saved webhook keeps its format.
+     Devin, Factory or the team's own service. A new webhook uses it when
+     `--format` is omitted. A saved webhook keeps its format.
    - `cursor-automation` takes the webhook URL of a Cursor automation.
    - `claude-code-routine` takes the Fire URL of a Claude Code scheduled task.
 
