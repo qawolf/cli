@@ -15,6 +15,7 @@ import {
 import { declareCommandKind } from "~/commands/commandKind.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
+import { commandExamples } from "./commandExamples.js";
 import {
   optionEnvironmentVariable,
   withoutExclusiveConflict,
@@ -74,6 +75,8 @@ function registerSpec(
     parent.command(leafName),
     spec.kind,
   ).description(spec.description);
+  const examples = commandExamples[spec.commandPath.join(" ")];
+  if (examples) command.addHelpText("after", examples);
   for (const flag of spec.flags) {
     const environmentVariable = optionEnvironmentVariable(spec, flag.path);
     if (environmentVariable) {

@@ -193,6 +193,45 @@ more until the AI speaks, so several minutes with no output is the session
 working, not the command hanging. `--timeout` bounds the wait; it is 30 minutes
 by default.
 
+## Fixing bugs with the team's coding agent
+
+QA Wolf can send each new bug to the team's own cloud coding agent. Two steps
+set it up.
+
+1. Save the webhook with `qawolf codingAgent submitWebhook --url <url>`. Pick
+   the `--format` from the agent that receives it:
+   - `qawolf` is the generic webhook: a signed `fix.requested` JSON for Warp,
+     Devin, Factory, the QA Wolf relay or the team's own service. A new webhook
+     uses it when `--format` is omitted. A saved webhook keeps its format.
+   - `cursor-automation` takes the webhook URL of a Cursor automation.
+   - `claude-code-routine` takes the Fire URL of a Claude Code scheduled task.
+
+   The two vendor formats need `--trigger-token` on each save. Read the token
+   from an environment variable, so it does not stay in the shell history.
+
+2. Create the loop that sends each new bug to the agent:
+
+   ```bash
+   qawolf trigger create --name "Fix new bugs" --kind issue \
+     --issue-type bug --issue-event created --action-kind startAgent \
+     --action-instructions "Fix the bug using /coding-agent. Keep the change small."
+   ```
+
+The first save of a `qawolf` webhook, and `rotateWebhookSecret`, return the
+signing secret one time. Give it to the user for the service that receives the
+webhook. Never write it to a file, a log or a commit, because QA Wolf cannot
+show it again. `qawolf codingAgent getWebhook` shows only its last four
+characters.
+
+Only a signed-in admin of the workspace's organization can save, test, rotate
+or remove the webhook. After a save, `qawolf codingAgent sendWebhookTest`
+sends one signed test request and reports how the endpoint answered. It can
+run once every 10 seconds.
+
+A loop created with a team API key has no owner, so it stays paused until a
+person takes ownership of it in the app. Tell the user to open the loop and
+take ownership.
+
 ## Uploading an app build: `build upload`
 
 `qawolf build upload <file>` uploads an `.apk`, `.aab`, `.ipa`, or a Linux

@@ -60,6 +60,24 @@ exports[`generated command surface matches the flags generated from the installe
     "--cursor <value> (string)",
     "--limit <value> (number)",
   ],
+  "codingAgent getWebhook": [
+    "--workspace-id <value> (string)",
+  ],
+  "codingAgent removeWebhook": [
+    "--workspace-id <value> (string)",
+  ],
+  "codingAgent rotateWebhookSecret": [
+    "--workspace-id <value> (string)",
+  ],
+  "codingAgent sendWebhookTest": [
+    "--workspace-id <value> (string)",
+  ],
+  "codingAgent submitWebhook": [
+    "--format <value> (string)",
+    "--trigger-token <value> (string)",
+    "--url <value> (string, required)",
+    "--workspace-id <value> (string)",
+  ],
   "deployment find": [
     "--workspace-id <value> (string)",
     "--cursor <value> (string)",
@@ -470,6 +488,12 @@ exports[`generated command surface matches the flags generated from the installe
     "--environment-pattern <value> (string)",
     "--repository-pattern <value> (string)",
     "--service-pattern <value> (string)",
+    "--blocker-reasons <values...> (string-array)",
+    "--issue-event <value> (string)",
+    "--issue-priorities <values...> (string-array)",
+    "--issue-type <value> (string)",
+    "--to-priorities <values...> (string-array)",
+    "--to-statuses <values...> (string-array)",
   ],
   "trigger delete": [
     "--trigger-id <value> (string, required)",
@@ -528,6 +552,12 @@ exports[`generated command surface matches the flags generated from the installe
     "--environment-pattern <value> (string)",
     "--repository-pattern <value> (string)",
     "--service-pattern <value> (string)",
+    "--blocker-reasons <values...> (string-array)",
+    "--issue-event <value> (string)",
+    "--issue-priorities <values...> (string-array)",
+    "--issue-type <value> (string)",
+    "--to-priorities <values...> (string-array)",
+    "--to-statuses <values...> (string-array)",
   ],
   "usage breakdown": [
     "--from <value> (string, required)",
