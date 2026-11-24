@@ -1,5 +1,11 @@
 # @qawolf/cli
 
+## 2.20.1
+
+### Patch Changes
+
+- d530593: The skill no longer names the QA Wolf relay for the generic coding agent webhook, because QA Wolf dropped the relay.
+
 ## 2.20.0
 
 ### Minor Changes
