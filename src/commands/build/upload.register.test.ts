@@ -44,8 +44,11 @@ describe("build upload flags", () => {
         "1a2b3c4",
         "--workspace-id",
         "ws_1",
+        "--app-id",
+        "figma",
       ]),
     ).toEqual({
+      appId: "figma",
       branch: "feat/login",
       commitSha: "1a2b3c4",
       environmentBaseEphemeralEnvironment: "staging",
@@ -59,6 +62,7 @@ describe("build upload flags", () => {
 
   it("passes --environment-id on its own", async () => {
     expect(await parseUploadOptions(["--environment-id", "env_1"])).toEqual({
+      appId: undefined,
       branch: undefined,
       commitSha: undefined,
       environmentBaseEphemeralEnvironment: undefined,

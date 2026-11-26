@@ -14,12 +14,14 @@ Examples:
   $ qawolf build upload app-release.apk
   $ qawolf build upload App.ipa --environment-id <id>
   $ qawolf build upload my-app_1.0.0_amd64.deb --environment-id <id>
+  $ qawolf build upload Figma.msi --app-id figma --environment-name staging
   $ qawolf build upload app-release.aab --environment-name pr-42 --environment-ephemeral --environment-base-ephemeral-environment staging --branch feat/login --commit-sha 1a2b3c4
 
 Without an environment flag, the build belongs to no environment: only a run
 created with it installs it.`;
 
 export type UploadFlags = {
+  appId?: string;
   branch?: string;
   commitSha?: string;
   environmentBaseEphemeralEnvironment?: string;
@@ -33,6 +35,7 @@ export const toUploadOptions = (
   filePath: string,
   opts: UploadFlags,
 ): BuildUploadOptions => ({
+  appId: opts.appId,
   branch: opts.branch,
   commitSha: opts.commitSha,
   environmentBaseEphemeralEnvironment: opts.environmentBaseEphemeralEnvironment,
@@ -49,7 +52,7 @@ export function registerBuildUploadCommand(
 ): void {
   declareCommandKind(build.command("upload <file>"), "write")
     .description(
-      "Upload an app file (.apk, .aab, .ipa, or a Linux Electron .deb or .rpm, up to 1 GB by default) and create a build from it. Runs build requestUpload, the PUT and build create in one step",
+      "Upload an app file (.apk, .aab, .ipa, a Linux Electron .deb or .rpm, or a Windows .msi, up to 1 GB by default) and create a build from it. Runs build requestUpload, the PUT and build create in one step",
     )
     .option(
       "--environment-id <id>",
@@ -66,6 +69,10 @@ export function registerBuildUploadCommand(
     .option(
       "--environment-base-ephemeral-environment <name>",
       "With --environment-ephemeral, the alias or name of the environment a created ephemeral environment copies from",
+    )
+    .option(
+      "--app-id <id>",
+      "The app ID flows name a Windows .msi build by, as in launch({ app: { id } }). Without it, the .msi's ProductName. Other builds take the app ID in the file",
     )
     .option("--branch <branch>", "The branch the build came from")
     .option("--commit-sha <sha>", "The commit the build came from")

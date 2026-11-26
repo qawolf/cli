@@ -5,6 +5,7 @@ import type { BuildUploadDeps, BuildUploadOptions } from "./upload.js";
 export const buildId = "abcdefghijklmnopqrstuvwxobld";
 
 export const baseOptions: BuildUploadOptions = {
+  appId: undefined,
   branch: undefined,
   commitSha: undefined,
   environmentBaseEphemeralEnvironment: undefined,

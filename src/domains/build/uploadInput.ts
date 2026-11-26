@@ -6,6 +6,7 @@ import { buildMessages } from "~/core/messages/index.js";
 import type { WireError } from "~/shell/platform/createTrpcClient.js";
 
 export type BuildUploadOptions = {
+  appId: string | undefined;
   branch: string | undefined;
   commitSha: string | undefined;
   environmentBaseEphemeralEnvironment: string | undefined;
@@ -77,6 +78,7 @@ export function parseCreateFlags(
 ): { ok: true; value: CreateFlags } | { ok: false; error: z.ZodError } {
   const parsed = publicContractsV1.build.create.input.safeParse({
     ...definedOnly({
+      appId: options.appId,
       branch: options.branch,
       commitSha: options.commitSha,
       workspaceId: options.workspaceId,

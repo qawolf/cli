@@ -115,7 +115,7 @@ describe("handleBuildUpload failures", () => {
     const result = await handleBuildUpload(ctx, baseOptions, makeDeps());
 
     expect(result).toEqual({
-      error: `The file is uploaded as build ${buildId}, but the build could not be created: QA Wolf API request failed (HTTP 503). If the cause was temporary, finish it with qawolf build create --build-id ${buildId} and the same environment, branch, commit and workspace flags.`,
+      error: `The file is uploaded as build ${buildId}, but the build could not be created: QA Wolf API request failed (HTTP 503). If the cause was temporary, finish it with qawolf build create --build-id ${buildId} and the same app ID, environment, branch, commit and workspace flags.`,
     });
   });
 
