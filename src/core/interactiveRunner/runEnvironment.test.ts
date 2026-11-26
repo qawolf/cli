@@ -15,11 +15,12 @@ describe("buildRunEnvironment", () => {
   });
 
   it("names the line it cannot parse", () => {
-    const built = buildRunEnvironment("BASE_URL=no-quotes\n");
+    const invalidLine = 'BASE_URL="missing-close';
+    const built = buildRunEnvironment(`${invalidLine}\n`);
 
     expect(built.ok).toBe(false);
     if (built.ok) return;
-    expect(built.error).toContain("BASE_URL=no-quotes");
+    expect(built.error).toContain(JSON.stringify(invalidLine));
   });
 
   it("refuses a name a shell would not accept", () => {

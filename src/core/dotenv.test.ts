@@ -86,6 +86,8 @@ describe("parseDotenv", () => {
   it("throws on a malformed line", () => {
     expect(() => parseDotenv("not-a-valid-line\n")).toThrow(/Cannot parse/i);
     expect(() => parseDotenv('UNTERMINATED="oops\n')).toThrow(/Cannot parse/i);
+    expect(() => parseDotenv("TOKEN= 'value'\n")).toThrow(/Cannot parse/i);
+    expect(() => parseDotenv("TOKEN=`value`\n")).toThrow(/Cannot parse/i);
   });
 
   it("parses a quoted-key line", () => {
