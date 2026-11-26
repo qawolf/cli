@@ -7,8 +7,8 @@
 import { flowsMessages } from "~/core/messages/index.js";
 
 const bareKeyPattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
-const lineRe =
-  /^(?:([A-Za-z_][A-Za-z0-9_]*)|"((?:[^"\\]|\\.)*)")="((?:[^"\\]|\\.)*)"$/;
+const linePattern =
+  /^(?:([A-Za-z_][A-Za-z0-9_]*)|"((?:[^"\\]|\\.)*)")=(?:"((?:[^"\\]|\\.)*)"|((?!\s*['`])[^"]*))$/;
 
 export function serializeDotenv(vars: Record<string, string>): string {
   const keys = Object.keys(vars).sort();
@@ -38,11 +38,14 @@ export function parseDotenv(content: string): Record<string, string> {
   for (const raw of content.split("\n")) {
     const line = raw.trim();
     if (line === "") continue;
-    const match = lineRe.exec(line);
-    if (!match) {
+    const [, bareKey, quotedKey, quotedValue, bareValue] =
+      linePattern.exec(line) ?? [];
+    const key = quotedKey === undefined ? bareKey : unquote(quotedKey);
+    const value = quotedValue === undefined ? bareValue : unquote(quotedValue);
+    if (key === undefined || value === undefined) {
       throw new Error(flowsMessages.dotenv.unparseableLine(line));
     }
-    out[match[1] ?? unquote(match[2]!)] = unquote(match[3]!);
+    out[key] = value;
   }
   return out;
 }

@@ -13,6 +13,28 @@ describe("handleRunnerRun with --env-file and --env-id", () => {
     expect(sentRequest(callPublicApi)).toMatchObject({ env: { A: "1" } });
   });
 
+  it("sends unquoted values from --env-file", async () => {
+    const { callPublicApi, result } = await run({
+      content:
+        "FOO=bar\nADMIN_EMAIL=bar@baz.com\nEMPTY=\nNAME=O'Brien\nQUERY=a=b\n" +
+        'PATH_VALUE=C:\\tools\nQUOTED="line\\nvalue"\n',
+      envFile: ".env",
+    });
+
+    expect(result).toBeUndefined();
+    expect(sentRequest(callPublicApi)).toMatchObject({
+      env: {
+        ADMIN_EMAIL: "bar@baz.com",
+        EMPTY: "",
+        FOO: "bar",
+        NAME: "O'Brien",
+        PATH_VALUE: "C:\\tools",
+        QUERY: "a=b",
+        QUOTED: "line\nvalue",
+      },
+    });
+  });
+
   it("sends no environment when neither flag is passed", async () => {
     const { callPublicApi } = await run({});
     const request = sentRequest(callPublicApi);
