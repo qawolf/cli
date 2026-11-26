@@ -15,6 +15,7 @@ Examples:
   $ qawolf build upload App.ipa --environment-id <id>
   $ qawolf build upload my-app_1.0.0_amd64.deb --environment-id <id>
   $ qawolf build upload Figma.msi --app-id figma --environment-name staging
+  $ qawolf build upload My-App-1.0.0-arm64-mac.zip --environment-name staging
   $ qawolf build upload app-release.aab --environment-name pr-42 --environment-ephemeral --environment-base-ephemeral-environment staging --branch feat/login --commit-sha 1a2b3c4
 
 Without an environment flag, the build belongs to no environment: only a run
@@ -52,7 +53,7 @@ export function registerBuildUploadCommand(
 ): void {
   declareCommandKind(build.command("upload <file>"), "write")
     .description(
-      "Upload an app file (.apk, .aab, .ipa, a Linux Electron .deb or .rpm, or a Windows .msi, up to 1 GB by default) and create a build from it. Runs build requestUpload, the PUT and build create in one step",
+      "Upload an app file (.apk, .aab, .ipa, a Linux Electron .deb or .rpm, a Windows .msi, or a Mac .zip of the .app, up to 1 GB by default) and create a build from it. Runs build requestUpload, the PUT and build create in one step",
     )
     .option(
       "--environment-id <id>",

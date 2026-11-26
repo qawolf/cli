@@ -234,8 +234,8 @@ take ownership.
 
 ## Uploading an app build: `build upload`
 
-`qawolf build upload <file>` uploads an `.apk`, `.aab`, `.ipa`, or a Linux
-Electron `.deb` or `.rpm`, and creates a build from it in one step. Use it instead of `build requestUpload`, a PUT and
+`qawolf build upload <file>` uploads an `.apk`, `.aab`, `.ipa`, a Linux
+Electron `.deb` or `.rpm`, a Windows `.msi`, or a Mac `.zip` of the `.app`, and creates a build from it in one step. Use it instead of `build requestUpload`, a PUT and
 `build create` whenever the file is on this machine.
 
 Without an environment flag, the build belongs to no environment: only a run
