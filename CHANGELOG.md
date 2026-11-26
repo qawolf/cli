@@ -1,5 +1,11 @@
 # @qawolf/cli
 
+## 2.20.2
+
+### Patch Changes
+
+- 4540af2: `qawolf runner run --env-file` accepts unquoted values such as `FOO=bar`.
+
 ## 2.20.1
 
 ### Patch Changes
