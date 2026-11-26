@@ -40,6 +40,7 @@ export function buildRunOptions(flags: FlowsRunFlags): {
       retries: flags.retries,
       outputDir: flags.outputDir,
       recordVideo: flags.video !== "off",
+      timeout: flags.timeout,
     },
   };
 }

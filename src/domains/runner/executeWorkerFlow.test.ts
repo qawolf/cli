@@ -30,7 +30,12 @@ function makeInput(): WorkerInput {
       har: "off",
       harContent: "omit",
     },
-    androidOptions: { retries: 1, outputDir: "out", recordVideo: false },
+    androidOptions: {
+      retries: 1,
+      outputDir: "out",
+      recordVideo: false,
+      timeout: 30_000,
+    },
   };
 }
 

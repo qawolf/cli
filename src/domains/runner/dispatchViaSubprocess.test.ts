@@ -28,6 +28,7 @@ const androidOptions: RunAndroidFlowOptions = {
   retries: 1,
   outputDir: "out",
   recordVideo: false,
+  timeout: 30_000,
 };
 
 const flow: ResolvedFlow = {

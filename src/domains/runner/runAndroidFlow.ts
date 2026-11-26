@@ -23,6 +23,7 @@ import type { FlowRuntimeDeps } from "./flowRuntimeDeps.js";
 import { FailWithoutRetryError, FlowRunError } from "./errors.js";
 import { notSupported } from "./runWebFlowUtils.js";
 import {
+  configureAndroidFlowRuntime,
   resolveAvdName,
   unsupportedAndroidDepNames,
 } from "./runAndroidFlowUtils.js";
@@ -36,6 +37,8 @@ export type RunAndroidFlowOptions = RunnerOptions &
   Omit<AndroidLaunchOptions, "avdName"> & {
     /** Overrides the AVD name derived from the flow target. */
     avdName?: string;
+    /** Default timeout (ms) for mobile `expect` assertions. */
+    timeout: number;
   };
 
 export async function runAndroidFlow({
@@ -75,6 +78,13 @@ export async function runAndroidFlow({
     target,
   } = exported as AndroidFlowDefinition;
   const avdName = options.avdName ?? resolveAvdName(target);
+
+  await configureAndroidFlowRuntime({
+    flowPath,
+    target,
+    timeout: options.timeout,
+    deps,
+  });
 
   const openCtxs: AndroidLaunchContext[] = [];
   const unregisters: (() => void)[] = [];
