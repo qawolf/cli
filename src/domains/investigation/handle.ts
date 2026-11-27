@@ -11,12 +11,9 @@ import type {
   CommandResult,
 } from "~/shell/commandContext.js";
 
-import {
-  downloadLogTail,
-  downloadNetworkLog,
-  downloadTrace,
-} from "./download.js";
+import { downloadLogTail, downloadNetworkLog } from "./download.js";
 import { loadInvestigationParser } from "./lazyParser.js";
+import { downloadTrace } from "./traceDownload.js";
 import type {
   ArtifactInput,
   InspectType,
@@ -68,6 +65,10 @@ function networkLogState(
   return log.status === "not-found" && uploading ? { status: "pending" } : log;
 }
 
+function traceReadable(trace: ArtifactInput): boolean {
+  return trace.status === "available" || trace.status === "ranged";
+}
+
 export async function loadSummaryArtifacts(
   value: AttemptArtifacts,
   now = Date.now(),
@@ -84,7 +85,7 @@ export async function loadSummaryArtifacts(
     networkLogsUrl ? downloadNetworkLog(networkLogsUrl) : notCaptured,
   ]);
   // A trace has the requests: the network log is not read.
-  if (trace.status === "available") return { logs, trace };
+  if (traceReadable(trace)) return { logs, trace };
   const state = networkLogState(networkLog, value.attempt.completedAt, now);
   return { logs, networkLog: state, trace };
 }
@@ -97,7 +98,7 @@ async function loadNetworkLogFallback(
 ): Promise<{ networkLog?: ArtifactInput }> {
   const readsRequests = type === "network" || type === "request";
   const url = value.artifacts.networkLogsUrl;
-  if (!readsRequests || trace.status === "available" || !url) return {};
+  if (!readsRequests || traceReadable(trace) || !url) return {};
   const download = await downloadNetworkLog(url);
   const { completedAt } = value.attempt;
   return { networkLog: networkLogState(download, completedAt, Date.now()) };

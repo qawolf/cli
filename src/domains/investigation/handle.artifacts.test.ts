@@ -77,6 +77,30 @@ describe("investigation artifact selection", () => {
     ]);
   });
 
+  it("reads a trace over the download limit by range and skips the network log", async () => {
+    const size = 80 * 1024 * 1024;
+    globalThis.fetch = mock(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        if (!requestUrl(input).includes("trace"))
+          return new Response("", { status: 404 });
+        return new Headers(init?.headers).has("range")
+          ? new Response("P", {
+              headers: { "content-range": `bytes 0-0/${size}` },
+              status: 206,
+            })
+          : new Response("", { headers: { "content-length": String(size) } });
+      },
+    ) as unknown as typeof fetch;
+
+    const artifacts = await loadSummaryArtifacts(fixture());
+
+    expect(artifacts.trace).toMatchObject({
+      sizeBytes: size,
+      status: "ranged",
+    });
+    expect(artifacts.networkLog).toBeUndefined();
+  });
+
   it("keeps a 404 network log pending for 2 minutes after the attempt", async () => {
     globalThis.fetch = mock(
       async () => new Response("", { status: 404 }),

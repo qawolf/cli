@@ -1,8 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import JSZip from "jszip";
 
-import { downloadLogTail, downloadTrace } from "./download.js";
+import { downloadLogTail } from "./download.js";
 import { parsePlaywrightTraceArchive } from "./parser/trace/playwrightTrace.js";
+import { downloadTrace } from "./traceDownload.js";
 
 describe("investigation artifact downloads", () => {
   it.each([

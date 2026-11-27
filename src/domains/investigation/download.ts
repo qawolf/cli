@@ -1,29 +1,25 @@
 import { isTimeoutError } from "~/core/errors.js";
 
+import type { ArtifactFailure } from "./types.js";
+
 export type ArtifactDownload =
   | { bytes: Uint8Array; offset: number; status: "available" }
-  | {
-      status:
-        | "expired-url"
-        | "not-found"
-        | "timed-out"
-        | "too-large"
-        | "unavailable";
-    };
+  | ArtifactFailure;
 
-const traceLimit = 75 * 1024 * 1024;
 // The runner adds no row after 64 MiB; the summary line comes after that.
 const networkLogLimit = 65 * 1024 * 1024;
 const logTailLimit = 5 * 1024 * 1024;
 const logTransferLimit = 50 * 1024 * 1024;
 // Covers the whole transfer: 75 MiB in two minutes requires ~5.24 Mbit/s.
-const downloadTimeoutMs = 120_000;
+export const downloadTimeoutMs = 120_000;
 
-function downloadFailure(error: unknown): ArtifactDownload {
+export function downloadFailure(error: unknown): ArtifactFailure {
   return { status: isTimeoutError(error) ? "timed-out" : "unavailable" };
 }
 
-async function responseFailure(response: Response): Promise<ArtifactDownload> {
+export async function responseFailure(
+  response: Response,
+): Promise<ArtifactFailure> {
   await response.body?.cancel().catch(() => undefined);
   if (response.status === 404) return { status: "not-found" };
   if (response.status === 401 || response.status === 403)
@@ -31,7 +27,7 @@ async function responseFailure(response: Response): Promise<ArtifactDownload> {
   return { status: "unavailable" };
 }
 
-async function readBounded(
+export async function readBounded(
   response: Response,
   options: { keepTail: boolean; retainBytes: number; transferBytes: number },
 ): Promise<ArtifactDownload> {
@@ -93,7 +89,7 @@ async function readBounded(
   return { bytes, offset, status: "available" };
 }
 
-async function downloadWhole(
+export async function downloadWhole(
   url: string,
   limit: number,
   fetchImpl: typeof globalThis.fetch,
@@ -109,13 +105,6 @@ async function downloadWhole(
   } catch (error) {
     return downloadFailure(error);
   }
-}
-
-export function downloadTrace(
-  url: string,
-  fetchImpl: typeof globalThis.fetch = globalThis.fetch,
-): Promise<ArtifactDownload> {
-  return downloadWhole(url, traceLimit, fetchImpl);
 }
 
 export function downloadNetworkLog(
