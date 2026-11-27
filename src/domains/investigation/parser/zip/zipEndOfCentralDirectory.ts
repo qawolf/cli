@@ -11,7 +11,6 @@ export type CentralDirectoryLocation = {
   size: number;
 };
 
-/** A position that holds the end record's signature, and the classic fields read there. */
 export type RecordCandidate = {
   classic: CentralDirectoryLocation;
   recordPosition: number;

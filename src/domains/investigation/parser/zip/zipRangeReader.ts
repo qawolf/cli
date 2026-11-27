@@ -13,7 +13,6 @@ export function viewOf(bytes: Uint8Array): DataView {
   return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 }
 
-/** A little-endian 64-bit size, or undefined when it can't be a JS number. */
 export function readSafeUint64(
   view: DataView,
   offset: number,

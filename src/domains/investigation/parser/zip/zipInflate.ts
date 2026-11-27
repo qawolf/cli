@@ -10,7 +10,6 @@ function arrayBufferView(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
     : new Uint8Array(bytes);
 }
 
-/** Writes the chunks into the inflater, and answers the read failure that stopped it, if any. */
 async function feed(
   chunks: AsyncIterable<Uint8Array | ArtifactFailure>,
   writer: ReturnType<DecompressionStream["writable"]["getWriter"]>,
