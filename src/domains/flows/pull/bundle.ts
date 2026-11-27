@@ -1,5 +1,8 @@
 import { join, relative } from "node:path";
 
+import { isFlowFile } from "~/core/flowMeta.js";
+import { walkFiles } from "~/shell/walkFiles.js";
+
 import { toPosix } from "~/core/repoRelativePath.js";
 
 import { hashFile } from "~/shell/manifest/io.js";
@@ -48,8 +51,6 @@ function extractQawolfCommitSha(
   return /-([0-9a-f]{40})$/i.exec(wrapperName)?.[1];
 }
 
-const flowExtensions = [".flow.ts", ".flow.js"];
-
 /**
  * Tags fetched for an env at pull time, keyed by repo-relative flow path.
  * Undefined when the fetch did not happen or failed.
@@ -74,7 +75,7 @@ export async function buildManifest(
   },
   fs: Fs = makeDefaultFs(),
 ): Promise<Manifest> {
-  const flowPaths = await walkForFlows(args.bundleDir, fs);
+  const flowPaths = await flowPathsIn(args.bundleDir, fs);
   const flows = await Promise.all(
     flowPaths.map(async (rel) => ({
       // Stored posix so a manifest written on one platform resolves on
@@ -102,30 +103,11 @@ export async function buildManifest(
   };
 }
 
-async function walkForFlows(root: string, fs: Fs): Promise<string[]> {
-  const out: string[] = [];
-  await walk(root, root, out, fs);
-  return out.sort();
-}
-
-async function walk(
-  current: string,
-  root: string,
-  out: string[],
-  fs: Fs,
-): Promise<void> {
-  const entries = await fs.readdirWithTypes(current);
-  for (const e of entries) {
-    const abs = join(current, e.name);
-    if (e.isDirectory()) {
-      await walk(abs, root, out, fs);
-    } else if (
-      e.isFile() &&
-      flowExtensions.some((ext) => e.name.endsWith(ext))
-    ) {
-      out.push(relative(root, abs));
-    }
-  }
+// Flow files under `root`, relative to it and sorted, so the manifest lists
+// them in the same order on every pull.
+async function flowPathsIn(root: string, fs: Fs): Promise<string[]> {
+  const found = await walkFiles(root, isFlowFile, fs);
+  return found.map((path) => toPosix(relative(root, path))).sort();
 }
 
 // Samples the mtime of any flow file in the bundle. GitHub-archive bundles
@@ -136,7 +118,7 @@ export async function sampleQawolfCommittedAt(
   bundleDir: string,
   fs: Fs = makeDefaultFs(),
 ): Promise<string | undefined> {
-  const flowPaths = await walkForFlows(bundleDir, fs);
+  const flowPaths = await flowPathsIn(bundleDir, fs);
   const sample = flowPaths[0];
   if (!sample) return undefined;
   return (await fs.stat(join(bundleDir, sample))).mtime.toISOString();
