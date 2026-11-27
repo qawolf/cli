@@ -1,5 +1,8 @@
 // oxlint-disable eslint/max-lines -- Keep media IDs, reads, and nearest-screenshot selection aligned with the platform reader.
 
+import { isReadFailure } from "~/domains/investigation/parser/zip/zipRangeReader.js";
+import type { ArtifactFailure } from "~/domains/investigation/types.js";
+
 import { listTraceSnapshots } from "./playwrightTraceSnapshots.js";
 import type {
   Bounded,
@@ -52,7 +55,10 @@ export async function readTraceScreenshot(
       screenshot: TraceScreenshot;
       status: "available";
     }
-  | { screenshot: TraceScreenshot; status: "missing" | "too-large" }
+  | {
+      screenshot: TraceScreenshot;
+      status: "missing" | ArtifactFailure["status"];
+    }
   | undefined
 > {
   const screenshot = listTraceScreenshots(trace, {
@@ -65,6 +71,7 @@ export async function readTraceScreenshot(
     screenshot.resourceName,
     options.maxBytes ?? traceLimits.maxBodyBytes,
   );
+  if (isReadFailure(content)) return { screenshot, status: content.status };
   if (content.malformed) return { screenshot, status: "missing" };
   if (content.incomplete) return { screenshot, status: "too-large" };
   return {

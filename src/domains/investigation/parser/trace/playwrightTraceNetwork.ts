@@ -1,5 +1,9 @@
 // oxlint-disable eslint/max-lines -- Keep aggregate archive budgets and page-to-stream attribution aligned with the optimized platform reader.
 
+import { isReadFailure } from "~/domains/investigation/parser/zip/zipRangeReader.js";
+import type { ArtifactFailure } from "~/domains/investigation/types.js";
+
+import { readZipText } from "./playwrightTraceArchive.js";
 import { indexTraceStreamPages } from "./playwrightTraceNetworkStreams.js";
 import type {
   Bounded,
@@ -7,12 +11,7 @@ import type {
   TraceNetworkEntry,
 } from "./playwrightTraceTypes.js";
 import { traceLimits } from "./playwrightTraceTypes.js";
-import {
-  asObject,
-  bounded,
-  parseJson,
-  readZipText,
-} from "./playwrightTraceUtils.js";
+import { asObject, bounded, parseJson } from "./playwrightTraceUtils.js";
 
 const sensitive =
   /^(authorization|cookie|set-cookie|proxy-authorization|x-api-key)$/i;
@@ -69,6 +68,10 @@ async function parseNetwork(trace: PlaywrightTrace, maxEntryBytes: number) {
       ),
     );
     if (!content) continue;
+    if (isReadFailure(content)) {
+      incomplete = true;
+      break;
+    }
     decodedBytes += Buffer.byteLength(content.text);
     memberCount += 1;
     incomplete ||= content.incomplete;
@@ -188,7 +191,7 @@ export async function readTraceResponseBody(
   options: { maxBytes?: number } = {},
 ): Promise<
   | { bodyBase64: string; status: "available"; truncated: boolean }
-  | { status: "unavailable" }
+  | ArtifactFailure
 > {
   const entry = (
     await listTraceNetwork(trace, { limit: Number.MAX_SAFE_INTEGER })
@@ -198,6 +201,7 @@ export async function readTraceResponseBody(
     return { status: "unavailable" };
   const limit = options.maxBytes ?? traceLimits.maxBodyBytes;
   const content = await trace.archive.read(entry.bodyResourceName, limit);
+  if (isReadFailure(content)) return content;
   if (content.malformed) return { status: "unavailable" };
   return {
     bodyBase64: content.bytes.toString("base64"),

@@ -97,6 +97,7 @@ async function parseTraceArchive(
       limits,
       traceEntry: entry,
     });
+    if (isReadFailure(parsed)) return parsed;
     budget.decodedBytes += parsed.decodedBytes;
     budget.events += parsed.events;
     budget.members += parsed.members;

@@ -26,7 +26,10 @@ export const rangedZipLimits: RangedZipLimits = {
 
 export type RangedZip = {
   entries: ZipEntry[];
-  read: (entry: ZipEntry, limit: number) => Promise<EntryRead>;
+  read: (
+    entry: ZipEntry,
+    limit: number,
+  ) => Promise<EntryRead | ArtifactFailure>;
 };
 
 /**

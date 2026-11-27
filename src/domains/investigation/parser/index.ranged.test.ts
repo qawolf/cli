@@ -154,6 +154,56 @@ describe("investigating a trace read by byte range", () => {
     expect(result).toEqual({ status: "too-large" });
   });
 
+  it("reports a timeout reading the trace's events as the trace status, not as malformed", async () => {
+    const zip = playwrightTraceZip();
+    const source = memoryRangeReader(zip);
+    const directoryStart = zip.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
+
+    const summary = await investigateTrace({
+      readRange: async (start, length) =>
+        start < directoryStart
+          ? { status: "timed-out" }
+          : source.readRange(start, length),
+      sizeBytes: zip.length,
+      status: "ranged",
+    });
+
+    expect(summary).toMatchObject({
+      artifactStates: { trace: "timed-out" },
+      traceStatus: "timed-out",
+    });
+  });
+
+  it("reports a timeout reading a screenshot or a response body as that status", async () => {
+    const zip = playwrightTraceZip();
+    const source = memoryRangeReader(zip);
+    const resourcesStart = zip.indexOf("resources/frame.jpeg") - 30;
+    const directoryStart = zip.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
+    const readsResource = (start: number, length: number) =>
+      start >= resourcesStart && start + length <= directoryStart;
+    const trace: ArtifactInput = {
+      readRange: async (start, length) =>
+        readsResource(start, length)
+          ? { status: "timed-out" }
+          : source.readRange(start, length),
+      sizeBytes: zip.length,
+      status: "ranged",
+    };
+
+    const screenshot = await investigateTrace(trace, inspections[6]![1]);
+    const request = await investigateTrace(trace, inspections[4]![1]);
+
+    expect(screenshot).toMatchObject({
+      status: "timed-out",
+      traceStatus: "ready",
+    });
+    expect(request).toMatchObject({
+      body: { status: "timed-out" },
+      status: "available",
+      traceStatus: "ready",
+    });
+  });
+
   it("reports an expired link found while reading the directory", async () => {
     const result = await investigateTrace(
       {

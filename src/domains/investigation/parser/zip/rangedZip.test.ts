@@ -71,9 +71,12 @@ describe("openRangedZip", () => {
       ]);
       const trace = await readEntry(zip, "0-trace.trace");
       const jpeg = await readEntry(zip, "resources/a.jpeg");
-      expect(trace.bytes.toString()).toBe(longText);
-      expect(trace).toMatchObject({ incomplete: false, malformed: false });
-      expect(jpeg.bytes.toString()).toBe("jpeg-bytes");
+      expect(trace).toEqual({
+        bytes: Buffer.from(longText),
+        incomplete: false,
+        malformed: false,
+      });
+      expect(jpeg).toMatchObject({ bytes: Buffer.from("jpeg-bytes") });
     },
   );
 
@@ -127,7 +130,7 @@ describe("openRangedZip", () => {
     expect(await open(zip, { maxEntries: 1 })).toEqual({ status: "too-large" });
   });
 
-  it("reads an entry past the fetch budget as incomplete without fetching it", async () => {
+  it("fails a read past the fetch budget as too-large without fetching it", async () => {
     const zip = buildZip([
       { content: randomBytes(64 * 1024), name: "resources/big.jpeg" },
     ]);
@@ -145,11 +148,7 @@ describe("openRangedZip", () => {
 
     const read = await opened.read(entry, 1024 * 1024);
 
-    expect(read).toEqual({
-      bytes: Buffer.alloc(0),
-      incomplete: true,
-      malformed: false,
-    });
+    expect(read).toEqual({ status: "too-large" });
     expect(source.bytesRead() - fetchedToOpen).toBeLessThan(1024);
   });
 

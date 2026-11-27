@@ -25,12 +25,6 @@ export const unreadableEntry: EntryRead = {
   malformed: true,
 };
 
-function failedRead(failure: ArtifactFailure): EntryRead {
-  return failure.status === "too-large"
-    ? { bytes: Buffer.alloc(0), incomplete: true, malformed: false }
-    : unreadableEntry;
-}
-
 /** The most compressed bytes a deflate stream needs for `bytes` of output, with room for block headers. */
 function deflateBound(bytes: number): number {
   return bytes + Math.ceil(bytes / 1024) + 1024;
@@ -76,7 +70,7 @@ async function dataStartOf(
 
 /**
  * Reads up to `limit` uncompressed bytes of an entry. An entry over `limit` comes back as an incomplete prefix;
- * a whole entry must match its declared size and CRC-32. A read over the fetch budget is incomplete, not malformed.
+ * a whole entry must match its declared size and CRC-32. A failed storage read, including one over the fetch budget, is that failure.
  */
 export async function readZipEntry({
   dataEnd,
@@ -90,7 +84,7 @@ export async function readZipEntry({
   limit: number;
   rangeBytes: number;
   readRange: RangeReader;
-}): Promise<EntryRead> {
+}): Promise<EntryRead | ArtifactFailure> {
   const deflate = entry.compressionMethod === deflated;
   if (entry.encrypted || (!deflate && entry.compressionMethod !== stored))
     return unreadableEntry;
@@ -101,7 +95,7 @@ export async function readZipEntry({
     return unreadableEntry;
   const dataStart = await dataStartOf(readRange, entry);
   if (dataStart === "corrupt") return unreadableEntry;
-  if (typeof dataStart !== "number") return failedRead(dataStart);
+  if (typeof dataStart !== "number") return dataStart;
   if (dataStart + entry.compressedSize > dataEnd) return unreadableEntry;
   const wanted = Math.min(entry.uncompressedSize, limit);
   const compressed = rangeChunks(readRange, {
@@ -117,7 +111,7 @@ export async function readZipEntry({
     whole,
   );
   if (bytes === "corrupt") return unreadableEntry;
-  if (isReadFailure(bytes)) return failedRead(bytes);
+  if (isReadFailure(bytes)) return bytes;
   if (!whole)
     return bytes.byteLength >= limit
       ? { bytes: bytes.subarray(0, limit), incomplete: true, malformed: false }

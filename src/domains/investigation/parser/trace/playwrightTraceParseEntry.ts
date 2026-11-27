@@ -1,6 +1,9 @@
 // oxlint-disable eslint/max-lines -- Keep the per-entry archive budget and stream segmentation in one module.
 
-import type { TraceArchive } from "./playwrightTraceArchive.js";
+import { isReadFailure } from "~/domains/investigation/parser/zip/zipRangeReader.js";
+import type { ArtifactFailure } from "~/domains/investigation/types.js";
+
+import { type TraceArchive, readZipText } from "./playwrightTraceArchive.js";
 import { normalizeTraceEvent } from "./playwrightTraceEvent.js";
 import type {
   TraceLimits,
@@ -8,7 +11,7 @@ import type {
   TraceStacks,
   TraceStream,
 } from "./playwrightTraceTypes.js";
-import { asObject, parseJson, readZipText } from "./playwrightTraceUtils.js";
+import { asObject, parseJson } from "./playwrightTraceUtils.js";
 
 function parseStacks(raw: string | undefined): TraceStacks {
   const value = raw === undefined ? undefined : asObject(parseJson(raw));
@@ -46,14 +49,17 @@ export async function parseTraceEntry({
   budget: { decodedBytes: number; events: number; members: number };
   limits: TraceLimits;
   traceEntry: string;
-}): Promise<{
-  decodedBytes: number;
-  events: number;
-  incomplete: boolean;
-  malformedLineCount: number;
-  members: number;
-  streams: TraceStream[];
-}> {
+}): Promise<
+  | {
+      decodedBytes: number;
+      events: number;
+      incomplete: boolean;
+      malformedLineCount: number;
+      members: number;
+      streams: TraceStream[];
+    }
+  | ArtifactFailure
+> {
   const traceLimit = Math.min(
     limits.maxEntryBytes,
     Math.max(0, limits.maxTotalDecodedBytes - budget.decodedBytes),
@@ -69,6 +75,7 @@ export async function parseTraceEntry({
     };
   }
   const traceText = await readZipText(archive, traceEntry, traceLimit);
+  if (traceText && isReadFailure(traceText)) return traceText;
   if (!traceText || traceText.malformed) {
     return {
       decodedBytes: traceText ? Buffer.byteLength(traceText.text) : 0,
@@ -98,6 +105,7 @@ export async function parseTraceEntry({
     stacksBudgetExceeded ? undefined : stacksEntry,
     stacksLimit,
   );
+  if (stacksText && isReadFailure(stacksText)) return stacksText;
   decodedBytes += stacksText ? Buffer.byteLength(stacksText.text) : 0;
   const stacks = parseStacks(
     stacksText?.malformed ? undefined : stacksText?.text,

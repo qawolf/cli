@@ -1,6 +1,9 @@
 import type JSZip from "jszip";
 
+import type { ArtifactFailure } from "~/domains/investigation/types.js";
+
 import type { RangedZip } from "~/domains/investigation/parser/zip/rangedZip.js";
+import { isReadFailure } from "~/domains/investigation/parser/zip/zipRangeReader.js";
 import {
   type EntryRead,
   unreadableEntry,
@@ -8,12 +11,12 @@ import {
 
 import { readZipBytes } from "./playwrightTraceUtils.js";
 
-/** The files of a trace zip, read one at a time; an entry over `limit` reads as an incomplete prefix. */
+/** The files of a trace zip, read one at a time; an entry over `limit` reads as an incomplete prefix, and a failed storage read as that failure. */
 export type TraceArchive = {
   has: (name: string) => boolean;
   /** Every file's name, in archive order, without directories. */
   names: () => string[];
-  read: (name: string, limit: number) => Promise<EntryRead>;
+  read: (name: string, limit: number) => Promise<EntryRead | ArtifactFailure>;
 };
 
 export function jsZipTraceArchive(zip: JSZip): TraceArchive {
@@ -44,4 +47,19 @@ export function rangedTraceArchive(zip: RangedZip): TraceArchive {
       return entry ? zip.read(entry, limit) : unreadableEntry;
     },
   };
+}
+
+export async function readZipText(
+  archive: TraceArchive,
+  name: string | undefined,
+  limit: number,
+): Promise<
+  | { incomplete: boolean; malformed: boolean; text: string }
+  | ArtifactFailure
+  | undefined
+> {
+  if (name === undefined) return undefined;
+  const content = await archive.read(name, limit);
+  if (isReadFailure(content)) return content;
+  return { ...content, text: content.bytes.toString("utf8") };
 }
