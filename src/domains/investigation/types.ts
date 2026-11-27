@@ -1,5 +1,20 @@
+export type ArtifactFailure = {
+  status:
+    | "expired-url"
+    | "not-found"
+    | "timed-out"
+    | "too-large"
+    | "unavailable";
+};
+
+export type RangeReader = (
+  start: number,
+  length: number,
+) => Promise<Uint8Array | ArtifactFailure>;
+
 export type ArtifactInput =
   | { bytes: Uint8Array; offset: number; status: "available" }
+  | { readRange: RangeReader; sizeBytes: number; status: "ranged" }
   | {
       status:
         | "expired-url"

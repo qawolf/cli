@@ -1,6 +1,8 @@
 // oxlint-disable eslint/max-lines -- The lazy parser publishes one internal trace model shared by all projections.
 
-import type JSZip from "jszip";
+import type { ArtifactFailure } from "~/domains/investigation/types.js";
+
+import type { TraceArchive } from "./playwrightTraceArchive.js";
 
 export type TraceEvent = {
   callId?: string | undefined;
@@ -50,7 +52,7 @@ export type TraceStream = {
   stacks: TraceStacks;
 };
 export type PlaywrightTrace = {
-  archive: JSZip;
+  archive: TraceArchive;
   artifactBudget: {
     decodedBytes: number;
     events: number;
@@ -62,6 +64,7 @@ export type PlaywrightTrace = {
   streams: TraceStream[];
 };
 export type TraceReadResult =
+  | ArtifactFailure
   | { status: "missing" }
   | { status: "storage-unavailable" }
   | {

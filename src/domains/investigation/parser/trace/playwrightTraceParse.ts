@@ -1,5 +1,18 @@
 import JSZip from "jszip";
 
+import {
+  type RangedZipLimits,
+  openRangedZip,
+  rangedZipLimits,
+} from "~/domains/investigation/parser/zip/rangedZip.js";
+import { isReadFailure } from "~/domains/investigation/parser/zip/zipRangeReader.js";
+import type { RangeReader } from "~/domains/investigation/types.js";
+
+import {
+  type TraceArchive,
+  jsZipTraceArchive,
+  rangedTraceArchive,
+} from "./playwrightTraceArchive.js";
 import { parseTraceEntry } from "./playwrightTraceParseEntry.js";
 import type {
   PlaywrightTrace,
@@ -7,6 +20,13 @@ import type {
   TraceReadResult,
 } from "./playwrightTraceTypes.js";
 import { traceLimits } from "./playwrightTraceTypes.js";
+
+const invalidZip: TraceReadResult = {
+  incomplete: true,
+  malformedLineCount: 1,
+  reason: "invalid-zip",
+  status: "malformed",
+};
 
 export async function parsePlaywrightTraceArchive(
   raw: Buffer,
@@ -25,16 +45,40 @@ export async function parsePlaywrightTraceArchive(
   try {
     archive = await JSZip.loadAsync(raw);
   } catch {
-    return {
-      incomplete: true,
-      malformedLineCount: 1,
-      reason: "invalid-zip",
-      status: "malformed",
-    };
+    return invalidZip;
   }
-  const entries = Object.values(archive.files)
-    .filter((entry) => !entry.dir && entry.name.endsWith(".trace"))
-    .sort((left, right) => left.name.localeCompare(right.name));
+  return parseTraceArchive(jsZipTraceArchive(archive), limits);
+}
+
+/** Parses a trace zip read by range, fetching only the directory and the entries a projection reads. */
+export async function parseRangedPlaywrightTrace(
+  source: { readRange: RangeReader; sizeBytes: number },
+  options: {
+    limits?: Partial<TraceLimits>;
+    zipLimits?: Partial<RangedZipLimits>;
+  } = {},
+): Promise<TraceReadResult> {
+  const zip = await openRangedZip({
+    limits: { ...rangedZipLimits, ...options.zipLimits },
+    readRange: source.readRange,
+    sizeBytes: source.sizeBytes,
+  });
+  if (zip === "malformed") return invalidZip;
+  if (isReadFailure(zip)) return zip;
+  return parseTraceArchive(rangedTraceArchive(zip), {
+    ...traceLimits,
+    ...options.limits,
+  });
+}
+
+async function parseTraceArchive(
+  archive: TraceArchive,
+  limits: TraceLimits,
+): Promise<TraceReadResult> {
+  const entries = archive
+    .names()
+    .filter((name) => name.endsWith(".trace"))
+    .sort((left, right) => left.localeCompare(right));
   if (!entries.length) {
     return {
       incomplete: false,

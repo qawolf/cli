@@ -11,7 +11,6 @@ import {
   asObject,
   bounded,
   parseJson,
-  readZipBytes,
   readZipText,
 } from "./playwrightTraceUtils.js";
 
@@ -41,9 +40,10 @@ const headers = (value: unknown): Record<string, string> =>
     : {};
 
 async function parseNetwork(trace: PlaywrightTrace, maxEntryBytes: number) {
-  const entries = Object.values(trace.archive.files)
-    .filter((entry) => !entry.dir && entry.name.endsWith(".network"))
-    .sort((left, right) => left.name.localeCompare(right.name));
+  const entries = trace.archive
+    .names()
+    .filter((name) => name.endsWith(".network"))
+    .sort((left, right) => left.localeCompare(right));
   const items: { object: Record<string, unknown>; streamId: string }[] = [];
   let decodedBytes = trace.artifactBudget.decodedBytes;
   let eventCount = trace.artifactBudget.events;
@@ -60,6 +60,7 @@ async function parseNetwork(trace: PlaywrightTrace, maxEntryBytes: number) {
       break;
     }
     const content = await readZipText(
+      trace.archive,
       entry,
       Math.min(
         maxEntryBytes,
@@ -75,7 +76,7 @@ async function parseNetwork(trace: PlaywrightTrace, maxEntryBytes: number) {
       malformed += 1;
       continue;
     }
-    const tracePrefix = `${entry.name.replace(/\.network$/, ".trace")}#`;
+    const tracePrefix = `${entry.replace(/\.network$/, ".trace")}#`;
     const pairedStreams = trace.streams.filter((stream) =>
       stream.id.startsWith(tracePrefix),
     );
@@ -133,8 +134,7 @@ async function readNetwork(trace: PlaywrightTrace, maxEntryBytes: number) {
     return [
       {
         bodyAvailable:
-          bodyResourceName !== undefined &&
-          trace.archive.file(bodyResourceName) !== null,
+          bodyResourceName !== undefined && trace.archive.has(bodyResourceName),
         bodyResourceName,
         durationMilliseconds:
           typeof snapshot?.time === "number" ? snapshot.time : undefined,
@@ -194,10 +194,10 @@ export async function readTraceResponseBody(
     await listTraceNetwork(trace, { limit: Number.MAX_SAFE_INTEGER })
   ).items.find((item) => item.id === networkId);
   if (!entry?.bodyResourceName) return { status: "unavailable" };
-  const resource = trace.archive.file(entry.bodyResourceName);
-  if (!resource) return { status: "unavailable" };
+  if (!trace.archive.has(entry.bodyResourceName))
+    return { status: "unavailable" };
   const limit = options.maxBytes ?? traceLimits.maxBodyBytes;
-  const content = await readZipBytes(resource, limit);
+  const content = await trace.archive.read(entry.bodyResourceName, limit);
   if (content.malformed) return { status: "unavailable" };
   return {
     bodyBase64: content.bytes.toString("base64"),

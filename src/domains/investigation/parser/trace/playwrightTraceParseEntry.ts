@@ -1,7 +1,6 @@
 // oxlint-disable eslint/max-lines -- Keep the per-entry archive budget and stream segmentation in one module.
 
-import type JSZip from "jszip";
-
+import type { TraceArchive } from "./playwrightTraceArchive.js";
 import { normalizeTraceEvent } from "./playwrightTraceEvent.js";
 import type {
   TraceLimits,
@@ -43,10 +42,10 @@ export async function parseTraceEntry({
   limits,
   traceEntry,
 }: {
-  archive: JSZip;
+  archive: TraceArchive;
   budget: { decodedBytes: number; events: number; members: number };
   limits: TraceLimits;
-  traceEntry: JSZip.JSZipObject;
+  traceEntry: string;
 }): Promise<{
   decodedBytes: number;
   events: number;
@@ -69,7 +68,7 @@ export async function parseTraceEntry({
       streams: [],
     };
   }
-  const traceText = await readZipText(traceEntry, traceLimit);
+  const traceText = await readZipText(archive, traceEntry, traceLimit);
   if (!traceText || traceText.malformed) {
     return {
       decodedBytes: traceText ? Buffer.byteLength(traceText.text) : 0,
@@ -81,8 +80,10 @@ export async function parseTraceEntry({
     };
   }
   let decodedBytes = Buffer.byteLength(traceText.text);
-  const stem = traceEntry.name.replace(/\.trace$/, "");
-  const stacksEntry = archive.file(`${stem}.stacks`) ?? undefined;
+  const stem = traceEntry.replace(/\.trace$/, "");
+  const stacksEntry = archive.has(`${stem}.stacks`)
+    ? `${stem}.stacks`
+    : undefined;
   const stacksBudgetExceeded =
     stacksEntry !== undefined && budget.members + 1 >= limits.maxMembers;
   const stacksLimit = Math.min(
@@ -93,6 +94,7 @@ export async function parseTraceEntry({
     ),
   );
   const stacksText = await readZipText(
+    archive,
     stacksBudgetExceeded ? undefined : stacksEntry,
     stacksLimit,
   );
@@ -126,7 +128,7 @@ export async function parseTraceEntry({
     if (!current || event.type === "context-options") {
       current = {
         events: [],
-        id: `${traceEntry.name}#${(segment += 1)}`,
+        id: `${traceEntry}#${(segment += 1)}`,
         incomplete: false,
         malformedLineCount: pendingMalformed,
         stacks,

@@ -1,5 +1,6 @@
 import type { JSZipObject } from "jszip";
 
+import type { TraceArchive } from "./playwrightTraceArchive.js";
 import type { Bounded } from "./playwrightTraceTypes.js";
 
 export type JsonObject = Record<string, unknown> & {
@@ -80,13 +81,14 @@ export function bounded<Item>(
   };
 }
 export async function readZipText(
-  entry: JSZipObject | undefined,
+  archive: TraceArchive,
+  name: string | undefined,
   limit: number,
 ): Promise<
   { incomplete: boolean; malformed: boolean; text: string } | undefined
 > {
-  if (!entry) return undefined;
-  const content = await readZipBytes(entry, limit);
+  if (name === undefined) return undefined;
+  const content = await archive.read(name, limit);
   return { ...content, text: content.bytes.toString("utf8") };
 }
 

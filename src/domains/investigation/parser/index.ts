@@ -26,7 +26,10 @@ import {
 } from "./projection/inspectNetworkLog.js";
 import { summarizeNetworkLogErrors } from "./projection/summarizeNetworkLog.js";
 import { summarizeAttemptTrace } from "./projection/summarizeAttemptTrace.js";
-import { parsePlaywrightTraceArchive } from "./trace/playwrightTrace.js";
+import {
+  parsePlaywrightTraceArchive,
+  parseRangedPlaywrightTrace,
+} from "./trace/playwrightTrace.js";
 
 function traceUnavailable(
   request: InvestigationRequest,
@@ -45,6 +48,7 @@ function traceUnavailable(
 
 async function parseTrace(request: InvestigationRequest) {
   const input = request.artifacts.trace;
+  if (input.status === "ranged") return parseRangedPlaywrightTrace(input);
   return input.status === "available"
     ? parsePlaywrightTraceArchive(Buffer.from(input.bytes))
     : undefined;

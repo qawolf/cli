@@ -10,7 +10,6 @@ import type {
 } from "./playwrightTraceTypes.js";
 import { traceLimits } from "./playwrightTraceTypes.js";
 import { bounded } from "./playwrightTraceUtils.js";
-import { readZipBytes } from "./playwrightTraceUtils.js";
 
 function listTraceScreenshots(
   trace: PlaywrightTrace,
@@ -60,10 +59,10 @@ export async function readTraceScreenshot(
     limit: Number.MAX_SAFE_INTEGER,
   }).items.find((item) => item.id === screenshotId);
   if (!screenshot) return undefined;
-  const entry = trace.archive.file(screenshot.resourceName);
-  if (!entry) return { screenshot, status: "missing" };
-  const content = await readZipBytes(
-    entry,
+  if (!trace.archive.has(screenshot.resourceName))
+    return { screenshot, status: "missing" };
+  const content = await trace.archive.read(
+    screenshot.resourceName,
     options.maxBytes ?? traceLimits.maxBodyBytes,
   );
   if (content.malformed) return { screenshot, status: "missing" };

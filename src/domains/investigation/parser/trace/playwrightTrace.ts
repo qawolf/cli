@@ -13,7 +13,10 @@ export {
   listTraceNetwork,
   readTraceResponseBody,
 } from "./playwrightTraceNetwork.js";
-export { parsePlaywrightTraceArchive } from "./playwrightTraceParse.js";
+export {
+  parsePlaywrightTraceArchive,
+  parseRangedPlaywrightTrace,
+} from "./playwrightTraceParse.js";
 export {
   listTraceSnapshots,
   readTraceSnapshot,
