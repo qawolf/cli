@@ -232,10 +232,8 @@ describe("a range read of a trace", () => {
       "timed-out",
     ],
     [
-      "a network failure",
-      async () => {
-        throw new TypeError("network down");
-      },
+      "more bytes than asked for",
+      async () => partial("abcdef", `bytes 10-15/${size}`),
       "unavailable",
     ],
   ] as const)("maps %s to %s", async (_, respond, expected) => {

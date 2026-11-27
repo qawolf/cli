@@ -1,5 +1,4 @@
-import { isTimeoutError } from "~/core/errors.js";
-
+import { fetchAndRead } from "./artifactRequest.js";
 import type { ArtifactFailure } from "./types.js";
 
 export type ArtifactDownload =
@@ -10,12 +9,6 @@ export type ArtifactDownload =
 const networkLogLimit = 65 * 1024 * 1024;
 const logTailLimit = 5 * 1024 * 1024;
 const logTransferLimit = 50 * 1024 * 1024;
-// Covers the whole transfer: 75 MiB in two minutes requires ~5.24 Mbit/s.
-export const downloadTimeoutMs = 120_000;
-
-export function downloadFailure(error: unknown): ArtifactFailure {
-  return { status: isTimeoutError(error) ? "timed-out" : "unavailable" };
-}
 
 export async function responseFailure(
   response: Response,
@@ -89,22 +82,18 @@ export async function readBounded(
   return { bytes, offset, status: "available" };
 }
 
-export async function downloadWhole(
+export function downloadWhole(
   url: string,
   limit: number,
   fetchImpl: typeof globalThis.fetch,
 ): Promise<ArtifactDownload> {
-  try {
-    const signal = AbortSignal.timeout(downloadTimeoutMs);
-    const response = await fetchImpl(url, { redirect: "follow", signal });
-    return await readBounded(response, {
+  return fetchAndRead({ fetchImpl, url }, (response) =>
+    readBounded(response, {
       keepTail: false,
       retainBytes: limit,
       transferBytes: limit,
-    });
-  } catch (error) {
-    return downloadFailure(error);
-  }
+    }),
+  );
 }
 
 export function downloadNetworkLog(
@@ -114,23 +103,16 @@ export function downloadNetworkLog(
   return downloadWhole(url, networkLogLimit, fetchImpl);
 }
 
-export async function downloadLogTail(
+export function downloadLogTail(
   url: string,
   fetchImpl: typeof globalThis.fetch = globalThis.fetch,
 ): Promise<ArtifactDownload> {
-  try {
-    const signal = AbortSignal.timeout(downloadTimeoutMs);
-    const response = await fetchImpl(url, {
-      headers: { range: `bytes=-${logTailLimit}` },
-      redirect: "follow",
-      signal,
-    });
-    return await readBounded(response, {
+  const headers = { range: `bytes=-${logTailLimit}` };
+  return fetchAndRead({ fetchImpl, headers, url }, (response) =>
+    readBounded(response, {
       keepTail: true,
       retainBytes: logTailLimit,
       transferBytes: logTransferLimit,
-    });
-  } catch (error) {
-    return downloadFailure(error);
-  }
+    }),
+  );
 }

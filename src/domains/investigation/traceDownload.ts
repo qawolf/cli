@@ -1,7 +1,6 @@
+import { downloadTimeoutMs, fetchAndRead } from "./artifactRequest.js";
 import {
   type ArtifactDownload,
-  downloadFailure,
-  downloadTimeoutMs,
   downloadWhole,
   readBounded,
   responseFailure,
@@ -14,20 +13,8 @@ type TraceDownload =
 
 const traceLimit = 75 * 1024 * 1024;
 
-function requestRange(
-  target: {
-    fetchImpl: typeof globalThis.fetch;
-    signal: AbortSignal;
-    url: string;
-  },
-  start: number,
-  length: number,
-): Promise<Response> {
-  return target.fetchImpl(target.url, {
-    headers: { range: `bytes=${start}-${start + length - 1}` },
-    redirect: "follow",
-    signal: target.signal,
-  });
+function rangeHeaders(start: number, length: number) {
+  return { range: `bytes=${start}-${start + length - 1}` };
 }
 
 async function partialContent(
@@ -45,6 +32,7 @@ async function partialContent(
     retainBytes: length,
     transferBytes: length,
   });
+  if (read.status === "too-large") return { status: "unavailable" };
   if (read.status !== "available") return read;
   return read.offset === start && read.bytes.byteLength === length
     ? read.bytes
@@ -56,34 +44,39 @@ function totalSize(response: Response): number | undefined {
   return total ? Number(total[1]) : undefined;
 }
 
+/** Every read shares one deadline, which starts at the first read so earlier downloads don't spend it. */
+function rangeReader(
+  url: string,
+  fetchImpl: typeof globalThis.fetch,
+): RangeReader {
+  let deadline: AbortSignal | undefined;
+  return (start, length) => {
+    if (length < 1) return Promise.resolve(new Uint8Array());
+    deadline ??= AbortSignal.timeout(downloadTimeoutMs);
+    const headers = rangeHeaders(start, length);
+    return fetchAndRead({ deadline, fetchImpl, headers, url }, (response) =>
+      partialContent(response, start, length),
+    );
+  };
+}
+
 async function openRangedTrace(
   url: string,
   fetchImpl: typeof globalThis.fetch,
 ): Promise<TraceDownload> {
-  const target = {
-    fetchImpl,
-    signal: AbortSignal.timeout(downloadTimeoutMs),
-    url,
-  };
-  const readRange: RangeReader = async (start, length) => {
-    if (length < 1) return new Uint8Array();
-    try {
-      const response = await requestRange(target, start, length);
-      return await partialContent(response, start, length);
-    } catch (error) {
-      return downloadFailure(error);
-    }
-  };
-  try {
-    const probe = await requestRange(target, 0, 1);
-    const sizeBytes = totalSize(probe);
-    const firstByte = await partialContent(probe, 0, 1);
-    if (!(firstByte instanceof Uint8Array)) return firstByte;
-    if (sizeBytes === undefined) return { status: "too-large" };
-    return { readRange, sizeBytes, status: "ranged" };
-  } catch (error) {
-    return downloadFailure(error);
-  }
+  const headers = rangeHeaders(0, 1);
+  const probe = await fetchAndRead(
+    { fetchImpl, headers, url },
+    async (response) => ({
+      firstByte: await partialContent(response, 0, 1),
+      sizeBytes: totalSize(response),
+    }),
+  );
+  if ("status" in probe) return probe;
+  if (!(probe.firstByte instanceof Uint8Array)) return probe.firstByte;
+  if (probe.sizeBytes === undefined) return { status: "too-large" };
+  const readRange = rangeReader(url, fetchImpl);
+  return { readRange, sizeBytes: probe.sizeBytes, status: "ranged" };
 }
 
 export async function downloadTrace(

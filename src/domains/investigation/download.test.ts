@@ -1,4 +1,8 @@
 import { describe, expect, it } from "bun:test";
+import { type ServerResponse, createServer } from "node:http";
+import type { AddressInfo } from "node:net";
+import { setTimeout as delay } from "node:timers/promises";
+
 import JSZip from "jszip";
 
 import { downloadLogTail } from "./download.js";
@@ -58,6 +62,40 @@ describe("investigation artifact downloads", () => {
       Buffer.from(downloaded.bytes),
     );
     expect(parsed.status).toBe("ready");
+  });
+
+  it("closes the connection of a refused trace instead of draining it", async () => {
+    const size = 200 * 1024 * 1024;
+    const chunk = Buffer.alloc(64 * 1024);
+    const sent = { bytes: 0 };
+    const closed: Promise<void>[] = [];
+    const stream = (response: ServerResponse, remaining: number): void => {
+      if (remaining <= 0) return void response.end();
+      sent.bytes += chunk.length;
+      if (response.write(chunk))
+        return stream(response, remaining - chunk.length);
+      response.once("drain", () => stream(response, remaining - chunk.length));
+    };
+    const server = createServer((_request, response) => {
+      closed.push(
+        new Promise((resolve) => response.socket?.on("close", resolve)),
+      );
+      response.writeHead(200, { "content-length": String(size) });
+      stream(response, size);
+    });
+    await new Promise<void>((resolve) =>
+      server.listen(0, "127.0.0.1", resolve),
+    );
+    const { port } = server.address() as AddressInfo;
+
+    const result = await downloadTrace(`http://127.0.0.1:${port}/trace.zip`);
+    await Promise.race([Promise.all(closed), delay(3000)]);
+    server.closeAllConnections();
+    server.close();
+
+    expect(result).toEqual({ status: "too-large" });
+    expect(closed).toHaveLength(2);
+    expect(sent.bytes).toBeLessThan(32 * 1024 * 1024);
   });
 
   it("requests a bounded log tail without authorization", async () => {
