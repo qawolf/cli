@@ -1,5 +1,8 @@
 import { join } from "node:path";
 
+import { flowsMessages } from "~/core/messages/index.js";
+
+import type { MissingEnvVar } from "~/core/envVarAnalysis/missing.js";
 import { manifestFilename } from "~/shell/manifest/io.js";
 import type { UI } from "~/shell/ui/index.js";
 
@@ -8,6 +11,8 @@ type StageResult = {
   readonly flowCount: number;
   readonly envVarCount: number;
   readonly flowsWithTeamStorageRefs: string[];
+  readonly missingEnvVars: MissingEnvVar[];
+  readonly incompleteFlowCount: number;
 };
 
 type AssetResult = {
@@ -17,8 +22,10 @@ type AssetResult = {
 };
 
 /**
- * Emits the machine-readable pull result. Human and agent modes already got
- * the progress summary, so only JSON mode has anything left to say.
+ * Reports what the pull found once the spinner has stopped: a warning, in every
+ * mode, for variables the flows read that this environment does not set; then
+ * the machine-readable result in JSON mode. Human and agent modes already got
+ * the progress summary.
  */
 export function reportPullResult(
   ui: UI,
@@ -30,6 +37,10 @@ export function reportPullResult(
     readonly assets: AssetResult;
   },
 ): void {
+  // Here rather than in the progress steps, so the spinner cannot overwrite it.
+  if (args.stage.missingEnvVars.length > 0) {
+    ui.warn(flowsMessages.pull.missingEnvVars(args.stage.missingEnvVars));
+  }
   if (ui.mode !== "json") return;
   ui.output(
     {
@@ -40,6 +51,8 @@ export function reportPullResult(
       flowCount: args.stage.flowCount,
       envVarCount: args.stage.envVarCount,
       flowsWithTeamStorageRefs: args.stage.flowsWithTeamStorageRefs,
+      missingEnvVars: args.stage.missingEnvVars,
+      incompleteFlowCount: args.stage.incompleteFlowCount,
       assetDownloadedCount: args.assets.downloadedCount,
       assetReusedCount: args.assets.reusedCount,
       assetSkippedCount: args.assets.skippedCount,

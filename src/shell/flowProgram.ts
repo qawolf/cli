@@ -4,6 +4,7 @@ import type ts from "typescript";
 import { isFlowFile } from "~/core/flowMeta.js";
 
 import { loadTypescript, type TypescriptModule } from "./typescript.js";
+import { makeDefaultFs, type Fs } from "./fs.js";
 
 type FlowProgram = {
   readonly compiler: TypescriptModule;
@@ -18,6 +19,7 @@ type FlowProgram = {
 function compilerOptions(
   compiler: TypescriptModule,
   bundleDir: string,
+  host: ts.ParseConfigHost,
 ): ts.CompilerOptions {
   const fallback: ts.CompilerOptions = {
     allowJs: true,
@@ -30,13 +32,13 @@ function compilerOptions(
 
   const configPath = join(bundleDir, "tsconfig.json");
   const read = compiler.readConfigFile(configPath, (path) =>
-    compiler.sys.readFile(path),
+    host.readFile(path),
   );
   if (read.error !== undefined || read.config === undefined) return fallback;
 
   const parsed = compiler.parseJsonConfigFileContent(
     read.config,
-    compiler.sys,
+    host,
     bundleDir,
   );
   return { ...parsed.options, allowJs: true, noEmit: true, skipLibCheck: true };
@@ -45,12 +47,33 @@ function compilerOptions(
 export async function createFlowProgram(args: {
   bundleDir: string;
   sourcePaths: readonly string[];
+  fs?: Fs;
 }): Promise<FlowProgram> {
   const compiler = await loadTypescript();
-  const program = compiler.createProgram(
-    [...args.sourcePaths],
-    compilerOptions(compiler, args.bundleDir),
-  );
+  const fs = args.fs ?? makeDefaultFs();
+  const readFile = (path: string): string | undefined => {
+    try {
+      return fs.readFileSync(path.replaceAll("\\", "/"));
+    } catch {
+      return undefined;
+    }
+  };
+  const fileExists = (path: string): boolean =>
+    fs.existsSync(path.replaceAll("\\", "/"));
+  const options = compilerOptions(compiler, args.bundleDir, {
+    useCaseSensitiveFileNames: compiler.sys.useCaseSensitiveFileNames,
+    readFile,
+    fileExists,
+    readDirectory: () => [],
+  });
+  const host = compiler.createCompilerHost(options);
+  host.readFile = readFile;
+  host.fileExists = fileExists;
+  delete host.directoryExists;
+  delete host.getDirectories;
+  delete host.realpath;
+  delete host.readDirectory;
+  const program = compiler.createProgram([...args.sourcePaths], options, host);
   const checker = program.getTypeChecker();
 
   // TypeScript normalizes SourceFile.fileName to forward slashes on Windows.

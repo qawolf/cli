@@ -1,9 +1,9 @@
 import { join, relative } from "node:path";
 
+import type { FlowEnvVars } from "~/core/envVarAnalysis/types.js";
 import { isFlowFile } from "~/core/flowMeta.js";
-import { walkFiles } from "~/shell/walkFiles.js";
-
 import { toPosix } from "~/core/repoRelativePath.js";
+import { walkFiles } from "~/shell/walkFiles.js";
 
 import { hashFile } from "~/shell/manifest/io.js";
 import type { Manifest } from "~/shell/manifest/types.js";
@@ -41,6 +41,13 @@ export async function flattenSingleWrapper(
   return innerName;
 }
 
+// Flow files under `root`, relative to it and sorted, so the manifest lists
+// them in the same order on every pull.
+async function flowPathsIn(root: string, fs: Fs): Promise<string[]> {
+  const found = await walkFiles(root, isFlowFile, fs);
+  return found.map((path) => toPosix(relative(root, path))).sort();
+}
+
 // GitHub's tarball archives wrap content in `<owner>-<repo>-<sha>/`, where
 // the trailing 40 hex chars are the commit SHA. Defensive: returns undefined
 // when the wrapper name doesn't match — keeps manifest writes infallible.
@@ -72,6 +79,9 @@ export async function buildManifest(
     wrapperName: string | undefined;
     qawolfCommittedAt: string | undefined;
     tags: FetchedTags | undefined;
+    // A flow missing from the map records no env vars rather than an empty
+    // set: unknown, not none.
+    envVarsByFlow: ReadonlyMap<string, FlowEnvVars> | undefined;
   },
   fs: Fs = makeDefaultFs(),
 ): Promise<Manifest> {
@@ -86,6 +96,9 @@ export async function buildManifest(
       // Left unset when the fetch did not cover this file — unknown, not
       // untagged.
       tags: args.tags?.byPath.get(toPosix(rel)),
+      envVars: args.envVarsByFlow?.get(toPosix(rel))?.names,
+      envVarsMayBeIncomplete: args.envVarsByFlow?.get(toPosix(rel))
+        ?.mayBeIncomplete,
     })),
   );
 
@@ -101,13 +114,6 @@ export async function buildManifest(
     tagsFetchedAt: args.tags?.fetchedAt.toISOString(),
     flows,
   };
-}
-
-// Flow files under `root`, relative to it and sorted, so the manifest lists
-// them in the same order on every pull.
-async function flowPathsIn(root: string, fs: Fs): Promise<string[]> {
-  const found = await walkFiles(root, isFlowFile, fs);
-  return found.map((path) => toPosix(relative(root, path))).sort();
 }
 
 // Samples the mtime of any flow file in the bundle. GitHub-archive bundles

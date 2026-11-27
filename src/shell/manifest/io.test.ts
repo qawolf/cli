@@ -12,6 +12,7 @@ import {
   writeManifest,
 } from "./io.js";
 import type { Manifest } from "./types.js";
+import { makeManifestFlow } from "./manifest.testUtils.js";
 
 const envDir = "/qawolf/manifest-test";
 
@@ -26,7 +27,7 @@ const sample: Manifest = {
   tagsFetchedAt: undefined,
   envVarsFetchedAt: "2026-05-10T12:30:00.000Z",
   flows: [
-    { path: "src/checkout.flow.ts", contentHash: "deadbeef", tags: undefined },
+    makeManifestFlow({ path: "src/checkout.flow.ts", contentHash: "deadbeef" }),
   ],
 };
 
@@ -64,6 +65,31 @@ describe("readManifest", () => {
     expect(result).toBe("malformed");
   });
 
+  // Same guarantee for the newer per-flow env var fields: an env pulled by an
+  // older CLI must still list and run.
+  it("parses a manifest written before per-flow env vars existed", async () => {
+    const memFs = makeMemoryFs();
+    await memFs.mkdir(envDir, { recursive: true });
+    await memFs.writeFile(
+      join(envDir, manifestFilename),
+      JSON.stringify({
+        envId: "env-abc",
+        fetchedAt: "2026-05-10T12:00:00.000Z",
+        cliFlowsVersion: "0.1.0",
+        tagsFetchedAt: "2026-05-10T12:00:00.000Z",
+        flows: [
+          { path: "src/checkout.flow.ts", contentHash: "deadbeef", tags: [] },
+        ],
+      }),
+    );
+
+    const result = await readManifest(envDir, memFs);
+
+    if (typeof result === "string") throw new Error(result);
+    expect(result.flows[0]?.envVars).toBeUndefined();
+    expect(result.flows[0]?.envVarsMayBeIncomplete).toBeUndefined();
+  });
+
   // Manifests written before tags existed must keep parsing: a hard failure
   // here would break `flows run` against any env pulled by an older CLI.
   it("parses a manifest written before tags existed", async () => {
@@ -79,7 +105,6 @@ describe("readManifest", () => {
           {
             path: "src/checkout.flow.ts",
             contentHash: "deadbeef",
-            tags: undefined,
           },
         ],
       }),
@@ -99,12 +124,16 @@ describe("readManifest", () => {
       ...sample,
       tagsFetchedAt: "2026-05-10T12:45:00.000Z",
       flows: [
-        {
+        makeManifestFlow({
           path: "src/checkout.flow.ts",
           contentHash: "deadbeef",
           tags: ["smoke", "auth"],
-        },
-        { path: "src/untagged.flow.ts", contentHash: "cafe", tags: [] },
+        }),
+        makeManifestFlow({
+          path: "src/untagged.flow.ts",
+          contentHash: "cafe",
+          tags: [],
+        }),
       ],
     };
 
