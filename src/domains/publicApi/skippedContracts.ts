@@ -26,6 +26,7 @@
 const handWrittenContractNames: readonly string[] = [
   "agent.get",
   "agent.send",
+  "attempt.listActions",
   "flow.list",
   "runner.evaluateSnippet",
   "runner.get",

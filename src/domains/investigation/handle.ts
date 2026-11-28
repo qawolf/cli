@@ -21,6 +21,7 @@ import type {
   ArtifactInput,
   InspectType,
   InvestigationRequest,
+  LocalInspectType,
   InvestigationResult,
 } from "./types.js";
 
@@ -31,6 +32,7 @@ export type AttemptArtifacts = z.infer<
 export type InspectOptions = {
   actionId?: string;
   attemptId: string;
+  beforeAction?: string;
   endTimeMs?: string;
   endTimestamp?: string;
   evidenceId?: string;
@@ -92,7 +94,7 @@ export async function loadSummaryArtifacts(
 // An attempt without a trace (iOS) reads its requests from the network log.
 async function loadNetworkLogFallback(
   value: Extract<AttemptArtifacts, { artifactStatus: "signed" }>,
-  type: InspectType,
+  type: LocalInspectType,
   trace: ArtifactInput,
 ): Promise<{ networkLog?: ArtifactInput }> {
   const readsRequests = type === "network" || type === "request";
@@ -105,7 +107,7 @@ async function loadNetworkLogFallback(
 
 export async function loadInspectArtifact(
   value: AttemptArtifacts,
-  type: InspectType,
+  type: LocalInspectType,
 ): Promise<InvestigationRequest["artifacts"]> {
   const inactive = artifactUnavailable("not-captured");
   if (value.artifactStatus !== "signed") {
@@ -136,6 +138,7 @@ const defaultInspectLimit = "20";
 const maxInspectLimit = 100;
 
 const filterSelectors: [keyof InspectOptions, string, InspectType[]][] = [
+  ["beforeAction", "--before-action", ["timeline"]],
   ["evidenceId", "--evidence-id", ["console", "log"]],
   ["limit", "--limit", ["timeline", "network", "console", "log"]],
   ["startTimeMs", "--start-time-ms", ["network", "console"]],
@@ -226,6 +229,29 @@ async function fetchAttempt(ctx: AuthCommandContext, attemptId: string) {
   });
 }
 
+async function inspectTimeline(
+  ctx: AuthCommandContext,
+  input: {
+    attemptId: string;
+    beforeActionId: string | undefined;
+    limit: number;
+  },
+): Promise<CommandResult> {
+  const answered = await ctx.platformClient.callPublicApi(
+    publicContractsV1.attempt.listActions,
+    {
+      attemptId: input.attemptId,
+      ...(input.beforeActionId !== undefined && {
+        beforeActionId: input.beforeActionId,
+      }),
+      limit: input.limit,
+    },
+  );
+  if (!answered.ok) return failureFields(answered);
+  ctx.ui.output(answered.value, renderText(answered.value));
+  return undefined;
+}
+
 export async function handleInvestigationSummary(
   ctx: AuthCommandContext,
   attemptId: string,
@@ -267,6 +293,12 @@ export async function handleInvestigationInspect(
     min: 1,
   });
   if (typeof limit !== "number") return limit;
+  if (options.type === "timeline")
+    return inspectTimeline(ctx, {
+      attemptId: options.attemptId,
+      beforeActionId: options.beforeAction,
+      limit,
+    });
   const startTimeMilliseconds = numberFlag(
     options.startTimeMs,
     "--start-time-ms",

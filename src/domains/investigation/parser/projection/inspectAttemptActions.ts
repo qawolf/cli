@@ -13,34 +13,6 @@ import {
   shapeInspectionAction,
 } from "./inspectAttemptShared.js";
 
-export function inspectActionTimeline(
-  trace: PlaywrightTrace,
-  common: InspectionCommon,
-  target: { limit: number; type: "timeline" },
-) {
-  const listed = listTraceActions(trace, { limit: Number.MAX_SAFE_INTEGER });
-  const actions = chronologicallySortActions(listed.items);
-  const start = Math.max(0, actions.length - target.limit);
-  const selected = actions.slice(start);
-  const logs = listTraceActionLogs(trace, {
-    limit: Number.MAX_SAFE_INTEGER,
-    maxTextBytes: Number.MAX_SAFE_INTEGER,
-  }).items;
-  return {
-    ...common,
-    actions: selected.map((action) =>
-      shapeInspectionAction(trace, action, logs),
-    ),
-    coverage: {
-      ...listed.coverage,
-      returned: selected.length,
-      truncated: start > 0,
-    },
-    status: "available" as const,
-    type: target.type,
-  };
-}
-
 export async function inspectAction(
   trace: PlaywrightTrace,
   common: InspectionCommon,

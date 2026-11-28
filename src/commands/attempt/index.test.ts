@@ -95,6 +95,7 @@ describe("attempt command registration", () => {
       "--attempt-id",
       "--action",
       "--timeline",
+      "--before-action",
       "--network",
       "--request",
       "--snapshot",

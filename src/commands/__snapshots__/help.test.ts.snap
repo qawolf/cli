@@ -203,6 +203,9 @@ Options:
   --attempt-id <id>         Attempt to inspect
   --action <id>             Inspect one action evidence ID
   --timeline                Inspect the action timeline
+  --before-action <id>      With --timeline, return the actions before this
+                            action evidence ID (the nextBeforeActionId of the
+                            previous page)
   --network                 Inspect network requests
   --request <id>            Inspect one network request evidence ID
   --snapshot <id>           Inspect one page snapshot evidence ID

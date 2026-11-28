@@ -91,7 +91,7 @@ qawolf attempt inspect --attempt-id <attempt-id> --screenshot <screenshot-id> --
 
 An iOS attempt has no trace. For it, `networkErrors` and `--network` / `--request` read the device network log (`networkLogsUrl`): request IDs are the log's cursors, times are epoch milliseconds, and each failed request has a `failureReason` (`http-error`, `connection-failed`, `canceled` or `interrupted`). App cancels come last when more than 10 requests failed. For 2 minutes after the attempt ends, a missing log is `pending` and `networkErrors.coverage.incomplete` is `true`. Add `--failed` to `--network` to return only failed requests. When the log cannot be read, `--network` and `--request` answer `unavailable` with its `networkLogStatus` (`pending`, `not-found`, `too-large`, …).
 
-The trace and logs are downloaded from the signed links `qawolf attempt get` returns and parsed on your machine. Downloads, output text, HTML, request bodies, and log retention are bounded; `incomplete`, `truncated`, `malformed`, and artifact status fields describe evidence that could not be read in full.
+QA Wolf answers `--timeline` from the stored trace, so a trace of any size has a timeline; when earlier actions exist, pass the answer's `nextBeforeActionId` to `--before-action` to read the page before. For the other evidence, the trace and logs are downloaded from the signed links `qawolf attempt get` returns and parsed on your machine. Downloads, output text, HTML, request bodies, and log retention are bounded; `incomplete`, `truncated`, `malformed`, and artifact status fields describe evidence that could not be read in full.
 
 ## Agent integration
 
