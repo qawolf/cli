@@ -39,6 +39,10 @@ export function registerAttemptCommand(
     .requiredOption("--attempt-id <id>", "Attempt to inspect")
     .option("--action <id>", "Inspect one action evidence ID")
     .option("--timeline", "Inspect the action timeline")
+    .option(
+      "--before-action <id>",
+      "With --timeline, return the actions before this action evidence ID (the nextBeforeActionId of the previous page)",
+    )
     .option("--network", "Inspect network requests")
     .option("--request <id>", "Inspect one network request evidence ID")
     .option("--snapshot <id>", "Inspect one page snapshot evidence ID")

@@ -8,10 +8,7 @@ import {
   inspectExecutionLogs,
   summarizeExecutionLogs,
 } from "./executionLogs.js";
-import {
-  inspectAction,
-  inspectActionTimeline,
-} from "./projection/inspectAttemptActions.js";
+import { inspectAction } from "./projection/inspectAttemptActions.js";
 import { type NetworkLog, parseNetworkLog } from "./networkLog/networkLog.js";
 import { inspectNetwork } from "./projection/inspectAttemptNetwork.js";
 import { inspectSnapshot } from "./projection/inspectAttemptPage.js";
@@ -176,11 +173,6 @@ async function inspect(
     case "action":
       return inspectAction(parsed.trace, common, {
         actionId: target.actionId!,
-        type: target.type,
-      });
-    case "timeline":
-      return inspectActionTimeline(parsed.trace, common, {
-        limit: target.limit,
         type: target.type,
       });
     case "network":

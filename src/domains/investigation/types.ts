@@ -21,6 +21,8 @@ export type InspectType =
   | "console"
   | "log";
 
+export type LocalInspectType = Exclude<InspectType, "timeline">;
+
 export type InvestigationRequest = {
   artifacts: {
     logs: ArtifactInput;
@@ -50,7 +52,7 @@ export type InvestigationRequest = {
     startTimeMilliseconds?: number | undefined;
     startTimestamp?: string | undefined;
     status?: number | undefined;
-    type: InspectType;
+    type: LocalInspectType;
     urlContains?: string | undefined;
   };
   mode: "inspect" | "summary";

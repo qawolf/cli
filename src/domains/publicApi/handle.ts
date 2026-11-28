@@ -15,6 +15,11 @@ import {
   parseJson,
   parseKeyValueRecord,
 } from "./flagValues.js";
+import {
+  refusedOverwrite,
+  requestedImageOutputFile,
+  saveRequestedImage,
+} from "./imageOutputFile.js";
 import { readJsonFlagSources } from "./jsonFlagSources.js";
 import { enforceRequestedPause } from "./requestedPause.js";
 
@@ -115,6 +120,10 @@ export async function handlePublicApiCommand(
   const parsed = spec.contract.input.safeParse(assembled.input);
   if (!parsed.success) return { error: z.prettifyError(parsed.error) };
 
+  const outputFile = requestedImageOutputFile(spec.contract, options);
+  if (outputFile !== undefined && (await ctx.fs.pathExists(outputFile)))
+    return refusedOverwrite(outputFile);
+
   const result = await ctx.platformClient.callPublicApi(
     spec.contract,
     parsed.data,
@@ -129,6 +138,11 @@ export async function handlePublicApiCommand(
   );
   if (unconfirmedPause) return unconfirmedPause;
 
-  ctx.ui.output(result.value, renderHuman(result.value));
+  const saved = await saveRequestedImage(ctx.fs, {
+    answer: result.value,
+    outputFile,
+  });
+  if (!saved.ok) return saved.failure;
+  ctx.ui.output(saved.answer, renderHuman(saved.answer));
   return undefined;
 }

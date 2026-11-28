@@ -110,7 +110,7 @@ describe("investigation parser", () => {
       },
       attempt: { attemptId: "attempt-1", status: "failed" },
       flowId: "flow-1",
-      inspect: { format: "text", limit: 20, type: "timeline" },
+      inspect: { format: "text", limit: 20, type: "console" },
       mode: "inspect",
       runId: "run-1",
     });

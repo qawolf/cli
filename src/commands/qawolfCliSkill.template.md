@@ -84,6 +84,12 @@ sequence, omit it when you want the payloads themselves.
 
 A `--json` response shows you most of its own shape, so read it first.
 
+A command whose answer carries an image as `imageJpegBase64`, such as
+`qawolf attempt getScreenshot`, takes `--output-file <path>`. It writes the
+JPEG there, refusing to overwrite an existing file, and prints the rest of the
+answer without the base64. Pass it rather than reading or decoding the base64
+yourself.
+
 `qawolf run get` is the exception worth reading about before you use it. A
 suite run can hold hundreds of flows, so start with
 `--flow-statuses failed` and widen only if you need the rest. Its

@@ -203,7 +203,7 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `builds[].environmentId` — The environment whose runs install the build while it is the newest one there for its app and platform. Absent: only a run created with the build installs it.
 - `builds[].fileName` — The uploaded file's name.
 - `builds[].id` — The id of the build, from build.requestUpload.
-- `builds[].platform` — One of android, ios, linux; newer servers may add values, so ignore any you don't know. The OS the build runs on, read from its file type. `linux` builds are Electron apps that Electron flows launch.
+- `builds[].platform` — One of android, ios, linux, mac, windows; newer servers may add values, so ignore any you don't know. The OS the build runs on, read from its file type. `linux` builds are Electron apps that Electron flows launch; `mac` and `windows` builds are desktop apps for macOS and Windows flows.
 - `builds[].sizeBytes` — The file's size in bytes.
 - `builds[].version` — versionName (Android), CFBundleShortVersionString (iOS) or package version (Linux), when the file has one.
 - `builds[].url` — Absolute URL of the team's Builds page.
@@ -215,7 +215,7 @@ Every documented field of the `run.get` response. `[]` marks an array, so
 - `buildVersions[].observed` — What attempts installed, one entry per build or version.
 - `buildVersions[].observed[].attempts` — How many attempts reported it.
 - `buildVersions[].observed[].buildId` — Absent when the file is not one of the team's builds.
-- `buildVersions[].platform` — One of android, ios, linux; newer servers may add values, so ignore any you don't know. The OS the build runs on, read from its file type. `linux` builds are Electron apps that Electron flows launch.
+- `buildVersions[].platform` — One of android, ios, linux, mac, windows; newer servers may add values, so ignore any you don't know. The OS the build runs on, read from its file type. `linux` builds are Electron apps that Electron flows launch; `mac` and `windows` builds are desktop apps for macOS and Windows flows.
 - `buildVersions[].unreportedAttempts` — Finished attempts that reported no installed app, such as web attempts or attempts on an older Flows SDK.
 - `buildVersions[].warnings` — Why the installed apps may not be what the run should test.
 - `flows` — The run's flows, ordered alphabetically by name. Only the flows matching flowStatuses when the request set it.

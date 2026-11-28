@@ -26,6 +26,15 @@ describe("investigation inspect flag validation", () => {
     });
   });
 
+  it.each(["0", "101", "2.5", "many"])(
+    "rejects --limit %s for --timeline before calling the API",
+    async (limit) => {
+      expect(await inspectError({ limit, type: "timeline" })).toHaveProperty(
+        "error",
+      );
+    },
+  );
+
   it.each([
     ["startTimestamp", "--start-timestamp"],
     ["endTimestamp", "--end-timestamp"],
@@ -48,6 +57,10 @@ describe("investigation inspect flag validation", () => {
     [
       { source: "serverConsole", type: "network" },
       "--source does not apply to --network; use it with --log.",
+    ],
+    [
+      { beforeAction: "action-1", type: "network" },
+      "--before-action does not apply to --network; use it with --timeline.",
     ],
     [
       { limit: "5", actionId: "action-1", type: "action" },

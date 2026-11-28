@@ -33,6 +33,7 @@ describe("attempt command registration", () => {
       "investigate",
       "inspect",
       "get",
+      "getScreenshot",
     ]);
     expect(investigation.commands.map((command) => command.name())).toContain(
       "get",
@@ -94,6 +95,7 @@ describe("attempt command registration", () => {
       "--attempt-id",
       "--action",
       "--timeline",
+      "--before-action",
       "--network",
       "--request",
       "--snapshot",

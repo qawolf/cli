@@ -35,7 +35,7 @@ describe("investigation artifact selection", () => {
       return new Response("", { status: 200 });
     }) as unknown as typeof fetch;
 
-    await loadInspectArtifact(fixture(), "timeline");
+    await loadInspectArtifact(fixture(), "console");
 
     expect(requested).toEqual([
       "https://storage.invalid/trace.zip?token=secret",
@@ -67,7 +67,7 @@ describe("investigation artifact selection", () => {
     }) as unknown as typeof fetch;
 
     const network = await loadInspectArtifact(fixture(), "network");
-    await loadInspectArtifact(fixture(), "timeline");
+    await loadInspectArtifact(fixture(), "console");
 
     expect(network.networkLog?.status).toBe("available");
     expect(requested).toEqual([
