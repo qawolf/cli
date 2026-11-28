@@ -121,7 +121,7 @@ describe("handleBuildUpload", () => {
     );
 
     expect(result?.exitCode).toBe(exitCodes.invalidArgs);
-    expect(result?.error).toContain(".apk, .aab, .ipa, .deb or .rpm");
+    expect(result?.error).toContain(".apk, .aab, .ipa, .deb, .rpm");
     expect(callPublicApi).not.toHaveBeenCalled();
   });
 

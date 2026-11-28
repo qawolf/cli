@@ -1,4 +1,4 @@
-import { Option, type Command } from "commander";
+import type { Command } from "commander";
 import { publicContractsV1 } from "@qawolf/api-contracts/v1";
 
 import { withAuthContext } from "~/commands/context.js";
@@ -16,10 +16,8 @@ import { declareCommandKind } from "~/commands/commandKind.js";
 import type { SignalRegistry } from "~/shell/signals/createSignalRegistry.js";
 
 import { commandExamples } from "./commandExamples.js";
-import {
-  optionEnvironmentVariable,
-  withoutExclusiveConflict,
-} from "./environmentOptions.js";
+import { withoutExclusiveConflict } from "./environmentOptions.js";
+import { addSpecOptions } from "./specOptions.js";
 
 type AuthDeps = Parameters<typeof withAuthContext>[2];
 
@@ -77,20 +75,7 @@ function registerSpec(
   ).description(spec.description);
   const examples = commandExamples[spec.commandPath.join(" ")];
   if (examples) command.addHelpText("after", examples);
-  for (const flag of spec.flags) {
-    const environmentVariable = optionEnvironmentVariable(spec, flag.path);
-    if (environmentVariable) {
-      const option = new Option(flag.flag, flag.description).env(
-        environmentVariable,
-      );
-      if (flag.required) option.makeOptionMandatory();
-      command.addOption(option);
-    } else if (flag.required) {
-      command.requiredOption(flag.flag, flag.description);
-    } else {
-      command.option(flag.flag, flag.description);
-    }
-  }
+  addSpecOptions(command, spec);
 
   command.action((options: Record<string, unknown>, leaf: Command) =>
     withAuthContext(

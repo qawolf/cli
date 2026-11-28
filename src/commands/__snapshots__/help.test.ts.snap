@@ -166,16 +166,20 @@ exports[`--help output qawolf attempt 1`] = `
 Investigate a finished run attempt from recorded evidence
 
 Options:
-  -h, --help             display help for command
+  -h, --help               display help for command
 
 Commands:
-  investigate [options]  Summarize the evidence for one finished attempt
-  inspect [options]      Inspect one kind of evidence for a finished attempt
-  get [options]          Get a finished run attempt: its run and flow status,
-                         its place among that flow's attempts in the run, the
-                         checks that failed in it, and signed links to its logs,
-                         trace, and video when they were captured.
-  help [command]         display help for command
+  investigate [options]    Summarize the evidence for one finished attempt
+  inspect [options]        Inspect one kind of evidence for a finished attempt
+  get [options]            Get a finished run attempt: its run and flow status,
+                           its place among that flow's attempts in the run, the
+                           checks that failed in it, and signed links to its
+                           logs, trace, and video when they were captured.
+  getScreenshot [options]  Get one screenshot an automated attempt's trace
+                           recorded, as base64: the one nearest a time, or the
+                           one at a position. Reads selected parts of the trace,
+                           subject to size limits.
+  help [command]           display help for command
 "
 `;
 
@@ -226,6 +230,27 @@ Options:
   --format <format>         Snapshot format (text or html) (default: "text")
   --output-file <path>      Write HTML or screenshot bytes without overwriting
   -h, --help                display help for command
+"
+`;
+
+exports[`--help output qawolf attempt getScreenshot 1`] = `
+"Usage: qawolf attempt getScreenshot [options]
+
+Get one screenshot an automated attempt's trace recorded, as base64: the one
+nearest a time, or the one at a position. Reads selected parts of the trace,
+subject to size limits.
+
+Options:
+  --at <value>          A time during the attempt, such as a log line's
+                        timestamp from \`qawolf attempt inspect --log\`. Returns
+                        the screenshot recorded nearest it.
+  --attempt-id <value>  The id of the run attempt.
+  --index <value>       The screenshot's position in the attempt, in time order
+                        from 0. Negative counts from the end: -1 is the last.
+  --output-file <path>  Write the image to this file as a JPEG, refusing to
+                        overwrite an existing file, and print the rest of the
+                        answer without its base64
+  -h, --help            display help for command
 "
 `;
 
