@@ -89,6 +89,7 @@ describe("handleInvestigationInspect --timeline", () => {
     "not-captured",
     "expired",
     "not-found",
+    "pending",
     "too-large",
     "malformed",
     "unavailable",
