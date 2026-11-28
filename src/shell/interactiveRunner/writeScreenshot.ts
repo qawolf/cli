@@ -13,6 +13,10 @@ import type { Fs } from "~/shell/fs.js";
  */
 const jpegStartOfImage = [0xff, 0xd8, 0xff];
 
+export function isJpeg(bytes: Uint8Array): boolean {
+  return jpegStartOfImage.every((byte, index) => bytes[index] === byte);
+}
+
 /**
  * The `--out` value that sends the image to stdout instead of a file, the same
  * `-` that reads stdin for `act` and `exec`. A caller that wants the bytes in a
@@ -54,7 +58,7 @@ export async function writeScreenshot(options: {
   stdout?: ScreenshotStdout;
 }): Promise<ScreenshotWrite> {
   const bytes = Buffer.from(options.imageJpegBase64, "base64");
-  if (jpegStartOfImage.some((byte, index) => bytes[index] !== byte)) {
+  if (!isJpeg(bytes)) {
     return { ok: false, reason: "not-a-jpeg" };
   }
   try {

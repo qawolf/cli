@@ -11,7 +11,13 @@ exports[`generated command surface matches the flags generated from the installe
   "attempt get": [
     "--attempt-id <value> (string, required)",
   ],
+  "attempt getScreenshot": [
+    "--at <value> (string)",
+    "--attempt-id <value> (string, required)",
+    "--index <value> (number)",
+  ],
   "build create": [
+    "--app-id <value> (string)",
     "--branch <value> (string)",
     "--build-id <value> (string, required)",
     "--commit-sha <value> (string)",
@@ -82,6 +88,14 @@ exports[`generated command surface matches the flags generated from the installe
     "--workspace-id <value> (string)",
     "--cursor <value> (string)",
     "--limit <value> (number)",
+  ],
+  "deployment findLastDeployedCommit": [
+    "--deploying-commit-sha <value> (string)",
+    "--environment-id <value> (string)",
+    "--environment-name <value> (string)",
+    "--repository <value> (string)",
+    "--service <value> (string)",
+    "--workspace-id <value> (string)",
   ],
   "deployment listTriggerEvaluations": [
     "--deployment-id <value> (string, required)",

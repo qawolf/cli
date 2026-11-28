@@ -76,6 +76,10 @@ describe("--help output", () => {
     expect(helpFor("attempt", "inspect")).toMatchSnapshot();
   });
 
+  it("qawolf attempt getScreenshot", () => {
+    expect(helpFor("attempt", "getScreenshot")).toMatchSnapshot();
+  });
+
   it("qawolf flows", () => {
     expect(helpFor("flows")).toMatchSnapshot();
   });
